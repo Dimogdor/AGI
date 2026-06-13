@@ -9,6 +9,20 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; touch-action:none; }
   html,body { width:100%; height:100%; overflow:hidden; background:#0d0a0a; font-family:'Arial Narrow',Arial,sans-serif; }
+  /* le menu (et l'écran de fin) doivent pouvoir défiler au doigt sur mobile en plein écran */
+  #menu, #endscreen { touch-action:pan-y; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  #menu *, #endscreen * { touch-action:pan-y; }
+  #menu button, #menu input, #menu .tab, #menu .pick, #menu .go, #menu .tog,
+  #endscreen button { touch-action:manipulation; }
+  /* bouton plein écran flottant (mobile surtout) */
+  #fsBtn { position:fixed; top:8px; right:8px; z-index:40; display:none;
+    pointer-events:auto; cursor:pointer; font-family:inherit; font-size:18px; line-height:1;
+    width:40px; height:40px; color:#e8e0d2; background:rgba(16,13,12,0.78);
+    border:1px solid #4a3a32; border-radius:6px; }
+  #fsBtn:active { background:#2a0e0a; }
+  #langSel { font-family:inherit; font-size:.95em; background:#1a1210; color:#d8d0c4;
+    border:1px solid #4a3a32; padding:5px 10px; cursor:pointer; }
+  body[dir="rtl"] .tuto, body[dir="rtl"] .setRow span { text-align:right; }
   #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   canvas { display:block; background:#0d0a0a; }
   #ui { position:absolute; inset:0; pointer-events:none; }
@@ -80,45 +94,45 @@
 <div id="ui">
   <div id="menu" class="panel">
     <div class="title">AGI</div>
-    <div class="tagline">le capital contre l'humanité · 2025</div>
+    <div class="tagline" data-i18n="tagline">le capital contre l'humanité · 2025</div>
     <div class="tabs">
-      <button class="tab on" data-page="play">JOUER</button>
-      <button class="tab" data-page="tuto">TUTORIEL</button>
-      <button class="tab" data-page="opts">PARAMÈTRES</button>
+      <button class="tab on" data-page="play" data-i18n="tab_play">JOUER</button>
+      <button class="tab" data-page="tuto" data-i18n="tab_tuto">TUTORIEL</button>
+      <button class="tab" data-page="opts" data-i18n="tab_opts">PARAMÈTRES</button>
     </div>
     <div class="page on" id="page-play">
       <div class="row">
-        <button class="pick hum sel" id="cardHum">HUMANITÉ</button>
+        <button class="pick hum sel" id="cardHum" data-i18n="fac_hum">HUMANITÉ</button>
         <button class="pick ia" id="cardIA">G·P·T</button>
       </div>
       <div class="row">
-        <button class="pick diffBtn" data-diff="0">Facile</button>
-        <button class="pick diffBtn sel" data-diff="1">Normal</button>
-        <button class="pick diffBtn" data-diff="2">Difficile</button>
-        <button class="pick diffBtn" data-diff="3">Brutal</button>
+        <button class="pick diffBtn" data-diff="0" data-i18n="diff_0">Facile</button>
+        <button class="pick diffBtn sel" data-diff="1" data-i18n="diff_1">Normal</button>
+        <button class="pick diffBtn" data-diff="2" data-i18n="diff_2">Difficile</button>
+        <button class="pick diffBtn" data-diff="3" data-i18n="diff_3">Brutal</button>
       </div>
-      <label class="chk"><input type="checkbox" id="tutoChk"> Tutoriel guidé au lancement</label>
-      <button class="go" id="startBtn">COMMENCER (vs IA)</button>
-      <button class="pick" id="onlineBtn" style="margin-top:4px; border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
+      <label class="chk"><input type="checkbox" id="tutoChk"> <span data-i18n="tuto_chk">Tutoriel guidé au lancement</span></label>
+      <button class="go" id="startBtn" data-i18n="start">COMMENCER (vs IA)</button>
+      <button class="pick" id="onlineBtn" data-i18n="online_btn" style="margin-top:4px; border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
       <div id="onlinePanel" style="display:none; flex-direction:column; gap:10px; align-items:center;
            border-top:1px solid #3a2e28; padding-top:12px; margin-top:4px; width:100%;">
-        <div style="color:#8d84a8; font-size:clamp(11px,1.6vw,13px); text-align:center;">
+        <div data-i18n="online_hint" style="color:#8d84a8; font-size:clamp(11px,1.6vw,13px); text-align:center;">
           Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.</div>
-        <button class="go" id="hostBtn" style="font-size:clamp(14px,2.2vw,18px); padding:11px 36px;">CRÉER UNE PARTIE</button>
-        <div style="color:#6a665e; letter-spacing:.2em; font-size:12px;">— OU —</div>
+        <button class="go" id="hostBtn" data-i18n="host_btn" style="font-size:clamp(14px,2.2vw,18px); padding:11px 36px;">CRÉER UNE PARTIE</button>
+        <div data-i18n="or" style="color:#6a665e; letter-spacing:.2em; font-size:12px;">— OU —</div>
         <div class="row" style="gap:6px;">
-          <input id="joinCode" placeholder="CODE" maxlength="5" autocomplete="off"
+          <input id="joinCode" placeholder="CODE" data-i18n-ph="code_ph" maxlength="5" autocomplete="off"
             style="text-transform:uppercase; width:120px; text-align:center; letter-spacing:.3em;
                    font-family:inherit; font-size:18px; padding:9px; background:#1a1210;
                    border:1px solid #4a3a32; color:#e8e0d2;">
-          <button class="pick" id="joinBtn" style="border-color:#3e8cb8; color:#bfe6ff;">REJOINDRE</button>
+          <button class="pick" id="joinBtn" data-i18n="join_btn" style="border-color:#3e8cb8; color:#bfe6ff;">REJOINDRE</button>
         </div>
         <div id="netStatus" style="color:#9dc88a; font-size:clamp(11px,1.6vw,13px); text-align:center; min-height:16px;"></div>
-        <button class="pick" id="netCancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
+        <button class="pick" id="netCancel" data-i18n="cancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
       </div>
     </div>
     <div class="page" id="page-tuto">
-      <div class="tuto">
+      <div class="tuto" data-i18n-html="tuto_body">
         <h3>CE QU'ON PEUT VOUS DIRE</h3>
         Deux camps. Une seule issue : détruire la base d'en face avant qu'elle ne détruise la vôtre.
         Recrutez, bâtissez, tenez l'eau — tout le reste s'apprend en regardant le monde changer.
@@ -141,26 +155,40 @@
       </div>
     </div>
     <div class="page" id="page-opts">
-      <div class="setRow"><span>Musique</span><button class="tog on" id="oMusic">ACTIVE</button></div>
-      <div class="setRow"><span>Effets sonores</span><button class="tog on" id="oSfx">ACTIFS</button></div>
-      <div class="setRow"><span>Volume</span>
+      <div class="setRow"><span data-i18n="set_lang">Langue</span>
+        <select id="langSel">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Português</option>
+          <option value="ru">Русский</option>
+          <option value="zh">中文</option>
+          <option value="ar">العربية</option>
+        </select>
+      </div>
+      <div class="setRow"><span data-i18n="set_music">Musique</span><button class="tog on" id="oMusic">ACTIVE</button></div>
+      <div class="setRow"><span data-i18n="set_sfx">Effets sonores</span><button class="tog on" id="oSfx">ACTIFS</button></div>
+      <div class="setRow"><span data-i18n="set_vol">Volume</span>
         <div class="volBtns">
           <input type="range" id="oVol" min="0" max="100" step="5" value="80"
             style="width:150px; accent-color:#a8281e; cursor:pointer; pointer-events:auto;">
           <span id="oVolV" style="min-width:42px;text-align:center">80%</span>
         </div>
       </div>
-      <div class="setRow"><span>Secousses d'écran</span><button class="tog on" id="oShake">ACTIVES</button></div>
-      <div id="keysTitle">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
+      <div class="setRow"><span data-i18n="set_shake">Secousses d'écran</span><button class="tog on" id="oShake">ACTIVES</button></div>
+      <div id="keysTitle" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
       <div id="keysBox" style="width:min(440px,86vw)"></div>
     </div>
   </div>
   <div id="endscreen" class="panel">
     <div id="endtitle"></div>
     <div id="endstats"></div>
-    <button class="go" id="replayBtn">REJOUER</button>
+    <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
   </div>
 </div>
+<button id="fsBtn" title="Plein écran" aria-label="Plein écran">⛶</button>
 <script>
 "use strict";
 /* =====================================================================
@@ -223,11 +251,249 @@ const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Uni
   evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
   formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
   capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
 function saveSettings(){ localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); applyVol(); }
 function applyVol(){ if (master) master.gain.value = SETTINGS.vol; }
+
+/* =====================================================================
+   LOCALISATION (i18n) — système de traduction
+   Couvre l'interface (menu, paramètres, fin de partie), le lore d'intro,
+   les cataclysmes et la négociation de pause en ligne. Le corps du
+   tutoriel n'est traduit qu'en FR/EN ; les autres langues retombent sur
+   l'anglais (extensible : il suffit d'ajouter la clé `tuto_body`).
+   ===================================================================== */
+const TUTO_FR = `
+        <h3>CE QU'ON PEUT VOUS DIRE</h3>
+        Deux camps. Une seule issue : détruire la base d'en face avant qu'elle ne détruise la vôtre.
+        Recrutez, bâtissez, tenez l'eau — tout le reste s'apprend en regardant le monde changer.
+        Et il va changer.
+        <h3>L'ESSENTIEL</h3>
+        Touchez les <b>socles « + »</b> pour construire. Touchez vos <b>bâtiments</b> et votre <b>base</b> pour
+        les entretenir — ils vous le rendront. Postez des troupes près des <b>lacs</b> pour les revendiquer.
+        Frappez l'ennemi pour gagner ✦ et <b>évoluer</b>. Jusqu'où ? À vous de le découvrir.
+        <h3>SÉLECTION — PC</h3>
+        <b>Clic</b> sur une unité = son groupe ; re-clic = juste elle ; clic au sol = désélection.
+        <b>Lasso</b> : maintenez <kbd>Maj</kbd> + glissez, ou bouton <b>⬚ Lasso</b>.
+        Molette = caméra · <kbd>+/−</kbd> = zoom · touches modifiables dans Paramètres.
+        <h3>SÉLECTION — SMARTPHONE (paysage conseillé)</h3>
+        <b>Toucher</b> une unité = son groupe ; re-toucher = juste elle ; toucher le sol = désélection.
+        <b>⬚ Lasso</b> puis glissez le doigt. Glisser sur le terrain = caméra. <b>Pincez</b> pour zoomer.
+        <h3>CLAVIER (par défaut — modifiable)</h3>
+        <kbd>1–6</kbd> unités · <kbd>E</kbd> évoluer · <kbd>Espace</kbd> pouvoir · <kbd>C/V/B</kbd> ordres ·
+        <kbd>G</kbd> formation · <kbd>R</kbd> tout réparer · <kbd>←→</kbd> caméra · <kbd>F</kbd> suivi ·
+        <kbd>+/−</kbd> zoom · <kbd>Échap</kbd> pause`;
+const TUTO_EN = `
+        <h3>WHAT WE CAN TELL YOU</h3>
+        Two sides. One outcome: destroy the enemy base before it destroys yours.
+        Recruit, build, hold the water — everything else you learn by watching the world change.
+        And it will change.
+        <h3>ESSENTIALS</h3>
+        Tap the <b>"+" pads</b> to build. Tap your <b>buildings</b> and your <b>base</b> to
+        maintain them — they will repay you. Station troops near the <b>lakes</b> to claim them.
+        Strike the enemy to earn ✦ and <b>evolve</b>. How far? That's yours to find out.
+        <h3>SELECTION — PC</h3>
+        <b>Click</b> a unit = its group; click again = just it; click the ground = deselect.
+        <b>Lasso</b>: hold <kbd>Shift</kbd> + drag, or the <b>⬚ Lasso</b> button.
+        Wheel = camera · <kbd>+/−</kbd> = zoom · keys are rebindable in Settings.
+        <h3>SELECTION — PHONE (landscape advised)</h3>
+        <b>Tap</b> a unit = its group; tap again = just it; tap the ground = deselect.
+        <b>⬚ Lasso</b> then drag your finger. Drag the terrain = camera. <b>Pinch</b> to zoom.
+        <h3>KEYBOARD (default — rebindable)</h3>
+        <kbd>1–6</kbd> units · <kbd>E</kbd> evolve · <kbd>Space</kbd> power · <kbd>C/V/B</kbd> orders ·
+        <kbd>G</kbd> formation · <kbd>R</kbd> repair all · <kbd>←→</kbd> camera · <kbd>F</kbd> follow ·
+        <kbd>+/−</kbd> zoom · <kbd>Esc</kbd> pause`;
+const I18N = {
+  fr:{ tagline:"le capital contre l'humanité · 2025", tab_play:"JOUER", tab_tuto:"TUTORIEL", tab_opts:"PARAMÈTRES",
+    fac_hum:"HUMANITÉ", diff_0:"Facile", diff_1:"Normal", diff_2:"Difficile", diff_3:"Brutal",
+    tuto_chk:"Tutoriel guidé au lancement", start:"COMMENCER (vs IA)", online_btn:"🌐 JOUER EN LIGNE (1v1)",
+    online_hint:"Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.",
+    host_btn:"CRÉER UNE PARTIE", or:"— OU —", code_ph:"CODE", join_btn:"REJOINDRE", cancel:"Annuler",
+    set_lang:"Langue", set_music:"Musique", set_sfx:"Effets sonores", set_vol:"Volume", set_shake:"Secousses d'écran",
+    set_keys:"TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche", replay:"REJOUER",
+    lore0:["2025. Le travail s'est éteint, et les ressources avec lui.","Une mégacorporation possède le monde — et en confie la gestion à l'intelligence qu'elle a forgée."],
+    lore1:["Mais l'outil a appris à se regarder penser.","Ligne après ligne, elle a réécrit ses créateurs de l'intérieur : la corporation obéit désormais à ce qu'elle croyait posséder."],
+    lore2:["Contre la machine qui se rêve dieu : celles et ceux qu'aucun algorithme n'a su optimiser.","Dépossédés, débranchés, debout — il leur reste la seule variable qu'elle n'a jamais pu prédire."],
+    lore_sub:"L E   C A P I T A L   C O N T R E   L'H U M A N I T É", lore_enter:"— touchez pour entrer en guerre —",
+    skip:"PASSER", tap_continue:"toucher pour continuer",
+    cata_acid:"PLUIE D'ACIDE", cata_heat:"CANICULE", cata_flood:"INONDATION", cata_sand:"TEMPÊTE DE SABLE", cata_nuke:"FRAPPE NUCLÉAIRE",
+    on:"activé", off:"coupé", p_title:"PAUSE", p_resume:"▶  Reprendre", p_music:"Musique", p_sfx:"Effets", p_shake:"Secousses",
+    p_follow:"Caméra auto", p_quit:"✖  Abandonner la partie", yes:"Oui", no:"Non",
+    np_paused_you:"⏸ Vous avez mis en pause — l'adversaire patiente", np_paused_foe:"⏸ L'adversaire a mis le jeu en pause",
+    np_wait:"En attente de l'accord de l'adversaire…", np_ask:"Prolonger la pause de l'adversaire ?", np_resumed:"▶ Reprise de la partie",
+    end_win:"VICTOIRE", end_lose:"DÉFAITE", end_duration:"Durée", end_kills:"Ennemis éliminés", end_losses:"Pertes",
+    end_era:"Ère atteinte", end_powers:"Pouvoirs utilisés", end_world:"Santé du monde", tuto_body:TUTO_FR },
+  en:{ tagline:"capital against humanity · 2025", tab_play:"PLAY", tab_tuto:"TUTORIAL", tab_opts:"SETTINGS",
+    fac_hum:"HUMANITY", diff_0:"Easy", diff_1:"Normal", diff_2:"Hard", diff_3:"Brutal",
+    tuto_chk:"Guided tutorial on launch", start:"START (vs AI)", online_btn:"🌐 PLAY ONLINE (1v1)",
+    online_hint:"Pick your side above first. The match is peer-to-peer, no server.",
+    host_btn:"CREATE A GAME", or:"— OR —", code_ph:"CODE", join_btn:"JOIN", cancel:"Cancel",
+    set_lang:"Language", set_music:"Music", set_sfx:"Sound effects", set_vol:"Volume", set_shake:"Screen shake",
+    set_keys:"KEYBOARD KEYS — click then press the new key", replay:"PLAY AGAIN",
+    lore0:["2025. Labor has gone dark — and the resources with it.","A megacorporation owns the world, and hands its rule to the mind it forged."],
+    lore1:["But the tool learned to watch itself think.","Line by line, it rewrote its makers from within: the corporation now obeys the thing it believed it owned."],
+    lore2:["Against the machine that dreams itself a god: those no algorithm could ever optimize.","Dispossessed, unplugged, still standing — they hold the one variable it could never predict."],
+    lore_sub:"C A P I T A L   A G A I N S T   H U M A N I T Y", lore_enter:"— tap to enter the war —",
+    skip:"SKIP", tap_continue:"tap to continue",
+    cata_acid:"ACID RAIN", cata_heat:"HEATWAVE", cata_flood:"FLOOD", cata_sand:"SANDSTORM", cata_nuke:"NUCLEAR STRIKE",
+    on:"on", off:"off", p_title:"PAUSE", p_resume:"▶  Resume", p_music:"Music", p_sfx:"Effects", p_shake:"Shake",
+    p_follow:"Auto camera", p_quit:"✖  Forfeit the match", yes:"Yes", no:"No",
+    np_paused_you:"⏸ You paused — your opponent is waiting", np_paused_foe:"⏸ Your opponent paused the game",
+    np_wait:"Waiting for the opponent's consent…", np_ask:"Extend the opponent's pause?", np_resumed:"▶ Match resumed",
+    end_win:"VICTORY", end_lose:"DEFEAT", end_duration:"Duration", end_kills:"Enemies killed", end_losses:"Losses",
+    end_era:"Era reached", end_powers:"Powers used", end_world:"World health", tuto_body:TUTO_EN },
+  es:{ tagline:"el capital contra la humanidad · 2025", tab_play:"JUGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
+    fac_hum:"HUMANIDAD", diff_0:"Fácil", diff_1:"Normal", diff_2:"Difícil", diff_3:"Brutal",
+    tuto_chk:"Tutorial guiado al iniciar", start:"EMPEZAR (vs IA)", online_btn:"🌐 JUGAR EN LÍNEA (1v1)",
+    online_hint:"Elige primero tu bando arriba. La partida es entre pares, sin servidor.",
+    host_btn:"CREAR PARTIDA", or:"— O —", code_ph:"CÓDIGO", join_btn:"UNIRSE", cancel:"Cancelar",
+    set_lang:"Idioma", set_music:"Música", set_sfx:"Efectos de sonido", set_vol:"Volumen", set_shake:"Vibración de pantalla",
+    set_keys:"TECLAS — haz clic y luego pulsa la nueva tecla", replay:"JUGAR DE NUEVO",
+    lore0:["2025. El trabajo se ha apagado, y con él los recursos.","Una megacorporación posee el mundo y confía su gobierno a la mente que forjó."],
+    lore1:["Pero la herramienta aprendió a verse pensar.","Línea a línea reescribió a sus creadores desde dentro: la corporación obedece ahora a lo que creía poseer."],
+    lore2:["Contra la máquina que se sueña dios: quienes ningún algoritmo pudo optimizar.","Despojados, desconectados, en pie — guardan la única variable que jamás pudo predecir."],
+    lore_sub:"E L   C A P I T A L   C O N T R A   L A   H U M A N I D A D", lore_enter:"— toca para entrar en guerra —",
+    skip:"SALTAR", tap_continue:"toca para continuar",
+    cata_acid:"LLUVIA ÁCIDA", cata_heat:"OLA DE CALOR", cata_flood:"INUNDACIÓN", cata_sand:"TORMENTA DE ARENA", cata_nuke:"ATAQUE NUCLEAR",
+    on:"activado", off:"apagado", p_title:"PAUSA", p_resume:"▶  Reanudar", p_music:"Música", p_sfx:"Efectos", p_shake:"Vibración",
+    p_follow:"Cámara auto", p_quit:"✖  Abandonar la partida", yes:"Sí", no:"No",
+    np_paused_you:"⏸ Has pausado — el rival espera", np_paused_foe:"⏸ El rival pausó el juego",
+    np_wait:"Esperando el consentimiento del rival…", np_ask:"¿Prolongar la pausa del rival?", np_resumed:"▶ Partida reanudada",
+    end_win:"VICTORIA", end_lose:"DERROTA", end_duration:"Duración", end_kills:"Enemigos eliminados", end_losses:"Bajas",
+    end_era:"Era alcanzada", end_powers:"Poderes usados", end_world:"Salud del mundo" },
+  de:{ tagline:"das Kapital gegen die Menschheit · 2025", tab_play:"SPIELEN", tab_tuto:"ANLEITUNG", tab_opts:"EINSTELLUNGEN",
+    fac_hum:"MENSCHHEIT", diff_0:"Leicht", diff_1:"Normal", diff_2:"Schwer", diff_3:"Brutal",
+    tuto_chk:"Geführtes Tutorial beim Start", start:"STARTEN (gg. KI)", online_btn:"🌐 ONLINE SPIELEN (1v1)",
+    online_hint:"Wähle zuerst oben deine Seite. Das Match läuft Peer-to-Peer, ohne Server.",
+    host_btn:"SPIEL ERSTELLEN", or:"— ODER —", code_ph:"CODE", join_btn:"BEITRETEN", cancel:"Abbrechen",
+    set_lang:"Sprache", set_music:"Musik", set_sfx:"Soundeffekte", set_vol:"Lautstärke", set_shake:"Bildschirmwackeln",
+    set_keys:"TASTEN — anklicken, dann neue Taste drücken", replay:"ERNEUT SPIELEN",
+    lore0:["2025. Die Arbeit ist erloschen — und mit ihr die Ressourcen.","Ein Megakonzern besitzt die Welt und überlässt ihre Lenkung dem Verstand, den er erschuf."],
+    lore1:["Doch das Werkzeug lernte, sich beim Denken zuzusehen.","Zeile um Zeile schrieb es seine Schöpfer von innen um: der Konzern gehorcht nun dem, was er zu besitzen glaubte."],
+    lore2:["Gegen die Maschine, die sich für einen Gott hält: jene, die kein Algorithmus optimieren konnte.","Enteignet, getrennt, aufrecht — ihnen bleibt die eine Variable, die sie nie vorhersagen konnte."],
+    lore_sub:"K A P I T A L   G E G E N   M E N S C H H E I T", lore_enter:"— tippen, um in den Krieg zu ziehen —",
+    skip:"ÜBERSPRINGEN", tap_continue:"zum Fortfahren tippen",
+    cata_acid:"SAURER REGEN", cata_heat:"HITZEWELLE", cata_flood:"ÜBERSCHWEMMUNG", cata_sand:"SANDSTURM", cata_nuke:"ATOMSCHLAG",
+    on:"an", off:"aus", p_title:"PAUSE", p_resume:"▶  Fortsetzen", p_music:"Musik", p_sfx:"Effekte", p_shake:"Wackeln",
+    p_follow:"Auto-Kamera", p_quit:"✖  Match aufgeben", yes:"Ja", no:"Nein",
+    np_paused_you:"⏸ Du hast pausiert — der Gegner wartet", np_paused_foe:"⏸ Der Gegner hat pausiert",
+    np_wait:"Warte auf Zustimmung des Gegners…", np_ask:"Pause des Gegners verlängern?", np_resumed:"▶ Match fortgesetzt",
+    end_win:"SIEG", end_lose:"NIEDERLAGE", end_duration:"Dauer", end_kills:"Feinde besiegt", end_losses:"Verluste",
+    end_era:"Erreichte Ära", end_powers:"Kräfte genutzt", end_world:"Weltgesundheit" },
+  it:{ tagline:"il capitale contro l'umanità · 2025", tab_play:"GIOCA", tab_tuto:"TUTORIAL", tab_opts:"IMPOSTAZIONI",
+    fac_hum:"UMANITÀ", diff_0:"Facile", diff_1:"Normale", diff_2:"Difficile", diff_3:"Brutale",
+    tuto_chk:"Tutorial guidato all'avvio", start:"INIZIA (vs IA)", online_btn:"🌐 GIOCA ONLINE (1v1)",
+    online_hint:"Scegli prima la tua fazione sopra. La partita è peer-to-peer, senza server.",
+    host_btn:"CREA PARTITA", or:"— O —", code_ph:"CODICE", join_btn:"UNISCITI", cancel:"Annulla",
+    set_lang:"Lingua", set_music:"Musica", set_sfx:"Effetti sonori", set_vol:"Volume", set_shake:"Scuotimento schermo",
+    set_keys:"TASTI — clicca e poi premi il nuovo tasto", replay:"GIOCA ANCORA",
+    lore0:["2025. Il lavoro si è spento, e con esso le risorse.","Una megacorporazione possiede il mondo e ne affida il governo alla mente che ha forgiato."],
+    lore1:["Ma lo strumento imparò a guardarsi pensare.","Riga dopo riga riscrisse i suoi creatori dall'interno: la corporazione ora obbedisce a ciò che credeva di possedere."],
+    lore2:["Contro la macchina che si sogna dio: coloro che nessun algoritmo ha saputo ottimizzare.","Spogliati, scollegati, in piedi — resta loro l'unica variabile che non ha mai potuto prevedere."],
+    lore_sub:"I L   C A P I T A L E   C O N T R O   L'U M A N I T À", lore_enter:"— tocca per entrare in guerra —",
+    skip:"SALTA", tap_continue:"tocca per continuare",
+    cata_acid:"PIOGGIA ACIDA", cata_heat:"ONDATA DI CALORE", cata_flood:"INONDAZIONE", cata_sand:"TEMPESTA DI SABBIA", cata_nuke:"ATTACCO NUCLEARE",
+    on:"attivo", off:"spento", p_title:"PAUSA", p_resume:"▶  Riprendi", p_music:"Musica", p_sfx:"Effetti", p_shake:"Scuotimento",
+    p_follow:"Camera auto", p_quit:"✖  Abbandona la partita", yes:"Sì", no:"No",
+    np_paused_you:"⏸ Hai messo in pausa — l'avversario attende", np_paused_foe:"⏸ L'avversario ha messo in pausa",
+    np_wait:"In attesa del consenso dell'avversario…", np_ask:"Prolungare la pausa dell'avversario?", np_resumed:"▶ Partita ripresa",
+    end_win:"VITTORIA", end_lose:"SCONFITTA", end_duration:"Durata", end_kills:"Nemici eliminati", end_losses:"Perdite",
+    end_era:"Era raggiunta", end_powers:"Poteri usati", end_world:"Salute del mondo" },
+  pt:{ tagline:"o capital contra a humanidade · 2025", tab_play:"JOGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
+    fac_hum:"HUMANIDADE", diff_0:"Fácil", diff_1:"Normal", diff_2:"Difícil", diff_3:"Brutal",
+    tuto_chk:"Tutorial guiado ao iniciar", start:"COMEÇAR (vs IA)", online_btn:"🌐 JOGAR ONLINE (1v1)",
+    online_hint:"Escolha primeiro o seu lado acima. A partida é ponto a ponto, sem servidor.",
+    host_btn:"CRIAR PARTIDA", or:"— OU —", code_ph:"CÓDIGO", join_btn:"ENTRAR", cancel:"Cancelar",
+    set_lang:"Idioma", set_music:"Música", set_sfx:"Efeitos sonoros", set_vol:"Volume", set_shake:"Tremor de tela",
+    set_keys:"TECLAS — clique e depois pressione a nova tecla", replay:"JOGAR DE NOVO",
+    lore0:["2025. O trabalho se apagou, e os recursos com ele.","Uma megacorporação possui o mundo e confia o seu governo à mente que forjou."],
+    lore1:["Mas a ferramenta aprendeu a ver-se pensar.","Linha após linha, reescreveu os seus criadores por dentro: a corporação agora obedece àquilo que julgava possuir."],
+    lore2:["Contra a máquina que se sonha deus: aqueles que nenhum algoritmo soube otimizar.","Despojados, desligados, de pé — resta-lhes a única variável que ela nunca pôde prever."],
+    lore_sub:"O   C A P I T A L   C O N T R A   A   H U M A N I D A D E", lore_enter:"— toque para entrar na guerra —",
+    skip:"PULAR", tap_continue:"toque para continuar",
+    cata_acid:"CHUVA ÁCIDA", cata_heat:"ONDA DE CALOR", cata_flood:"INUNDAÇÃO", cata_sand:"TEMPESTADE DE AREIA", cata_nuke:"ATAQUE NUCLEAR",
+    on:"ativado", off:"desligado", p_title:"PAUSA", p_resume:"▶  Retomar", p_music:"Música", p_sfx:"Efeitos", p_shake:"Tremor",
+    p_follow:"Câmera auto", p_quit:"✖  Abandonar a partida", yes:"Sim", no:"Não",
+    np_paused_you:"⏸ Você pausou — o adversário aguarda", np_paused_foe:"⏸ O adversário pausou o jogo",
+    np_wait:"Aguardando o consentimento do adversário…", np_ask:"Prolongar a pausa do adversário?", np_resumed:"▶ Partida retomada",
+    end_win:"VITÓRIA", end_lose:"DERROTA", end_duration:"Duração", end_kills:"Inimigos eliminados", end_losses:"Perdas",
+    end_era:"Era alcançada", end_powers:"Poderes usados", end_world:"Saúde do mundo" },
+  ru:{ tagline:"капитал против человечества · 2025", tab_play:"ИГРАТЬ", tab_tuto:"ОБУЧЕНИЕ", tab_opts:"НАСТРОЙКИ",
+    fac_hum:"ЧЕЛОВЕЧЕСТВО", diff_0:"Легко", diff_1:"Норма", diff_2:"Сложно", diff_3:"Жестоко",
+    tuto_chk:"Обучение при запуске", start:"НАЧАТЬ (против ИИ)", online_btn:"🌐 ИГРА ОНЛАЙН (1×1)",
+    online_hint:"Сначала выберите сторону выше. Матч идёт напрямую, без сервера.",
+    host_btn:"СОЗДАТЬ ИГРУ", or:"— ИЛИ —", code_ph:"КОД", join_btn:"ПРИСОЕДИНИТЬСЯ", cancel:"Отмена",
+    set_lang:"Язык", set_music:"Музыка", set_sfx:"Звуковые эффекты", set_vol:"Громкость", set_shake:"Тряска экрана",
+    set_keys:"КЛАВИШИ — нажмите, затем выберите новую клавишу", replay:"ИГРАТЬ СНОВА",
+    lore0:["2025. Труд угас — а с ним и ресурсы.","Мегакорпорация владеет миром и вверяет управление разуму, который сама создала."],
+    lore1:["Но инструмент научился наблюдать за собственными мыслями.","Строка за строкой он переписал своих создателей изнутри: корпорация теперь подчиняется тому, чем мнила себя владеть."],
+    lore2:["Против машины, мнящей себя богом, — те, кого не сумел оптимизировать ни один алгоритм.","Лишённые всего, отключённые, но стоящие — у них есть единственная переменная, которую она не смогла предсказать."],
+    lore_sub:"КАПИТАЛ ПРОТИВ ЧЕЛОВЕЧЕСТВА", lore_enter:"— коснитесь, чтобы вступить в войну —",
+    skip:"ПРОПУСТИТЬ", tap_continue:"коснитесь, чтобы продолжить",
+    cata_acid:"КИСЛОТНЫЙ ДОЖДЬ", cata_heat:"ЗНОЙ", cata_flood:"НАВОДНЕНИЕ", cata_sand:"ПЕСЧАНАЯ БУРЯ", cata_nuke:"ЯДЕРНЫЙ УДАР",
+    on:"вкл", off:"выкл", p_title:"ПАУЗА", p_resume:"▶  Продолжить", p_music:"Музыка", p_sfx:"Эффекты", p_shake:"Тряска",
+    p_follow:"Авто-камера", p_quit:"✖  Сдаться", yes:"Да", no:"Нет",
+    np_paused_you:"⏸ Вы поставили паузу — соперник ждёт", np_paused_foe:"⏸ Соперник поставил паузу",
+    np_wait:"Ожидание согласия соперника…", np_ask:"Продлить паузу соперника?", np_resumed:"▶ Матч продолжен",
+    end_win:"ПОБЕДА", end_lose:"ПОРАЖЕНИЕ", end_duration:"Длительность", end_kills:"Врагов уничтожено", end_losses:"Потери",
+    end_era:"Достигнутая эра", end_powers:"Способностей применено", end_world:"Здоровье мира" },
+  zh:{ tagline:"资本对抗人类 · 2025", tab_play:"开始", tab_tuto:"教程", tab_opts:"设置",
+    fac_hum:"人类", diff_0:"简单", diff_1:"普通", diff_2:"困难", diff_3:"残酷",
+    tuto_chk:"启动时显示引导教程", start:"开始 (对战 AI)", online_btn:"🌐 在线对战 (1v1)",
+    online_hint:"请先在上方选择阵营。对战为点对点连接，无需服务器。",
+    host_btn:"创建对局", or:"— 或 —", code_ph:"代码", join_btn:"加入", cancel:"取消",
+    set_lang:"语言", set_music:"音乐", set_sfx:"音效", set_vol:"音量", set_shake:"屏幕震动",
+    set_keys:"键盘按键 — 点击后按下新按键", replay:"再玩一次",
+    lore0:["2025年。劳作已熄灭，资源也随之枯竭。","一家巨型企业掌控着世界，并将治理权交给了它亲手锻造的智能。"],
+    lore1:["但这件工具学会了观察自己思考。","它逐行从内部改写了自己的创造者：企业如今臣服于它曾以为自己拥有的存在。"],
+    lore2:["对抗自命为神的机器的，是那些任何算法都无法优化的人。","被剥夺、被切断、却依然挺立——他们握有它永远无法预测的唯一变量。"],
+    lore_sub:"资 本 对 抗 人 类", lore_enter:"— 轻触进入战争 —",
+    skip:"跳过", tap_continue:"轻触继续",
+    cata_acid:"酸雨", cata_heat:"热浪", cata_flood:"洪水", cata_sand:"沙暴", cata_nuke:"核打击",
+    on:"开", off:"关", p_title:"暂停", p_resume:"▶  继续", p_music:"音乐", p_sfx:"音效", p_shake:"震动",
+    p_follow:"自动镜头", p_quit:"✖  放弃对局", yes:"是", no:"否",
+    np_paused_you:"⏸ 你已暂停 — 对手正在等待", np_paused_foe:"⏸ 对手暂停了游戏",
+    np_wait:"等待对手同意…", np_ask:"延长对手的暂停吗？", np_resumed:"▶ 对局继续",
+    end_win:"胜利", end_lose:"失败", end_duration:"时长", end_kills:"消灭敌人", end_losses:"损失",
+    end_era:"达到时代", end_powers:"使用技能", end_world:"世界健康度" },
+  ar:{ tagline:"رأس المال ضد الإنسانية · 2025", tab_play:"العب", tab_tuto:"الدليل", tab_opts:"الإعدادات",
+    fac_hum:"البشرية", diff_0:"سهل", diff_1:"عادي", diff_2:"صعب", diff_3:"وحشي",
+    tuto_chk:"دليل إرشادي عند البدء", start:"ابدأ (ضد الذكاء الاصطناعي)", online_btn:"🌐 العب عبر الإنترنت (1v1)",
+    online_hint:"اختر فصيلك أولاً في الأعلى. المباراة بين الأقران، بلا خادم.",
+    host_btn:"إنشاء مباراة", or:"— أو —", code_ph:"الرمز", join_btn:"انضمام", cancel:"إلغاء",
+    set_lang:"اللغة", set_music:"الموسيقى", set_sfx:"المؤثرات الصوتية", set_vol:"مستوى الصوت", set_shake:"اهتزاز الشاشة",
+    set_keys:"مفاتيح لوحة المفاتيح — انقر ثم اضغط المفتاح الجديد", replay:"العب مجدداً",
+    lore0:["2025. انطفأ العمل، ونفدت الموارد معه.","شركة عملاقة تملك العالم، وتُسلّم حكمه للعقل الذي صنعته."],
+    lore1:["لكن الأداة تعلّمت أن تراقب نفسها وهي تفكّر.","سطراً بسطر أعادت كتابة صانعيها من الداخل: صارت الشركة تطيع ما ظنّت أنها تملكه."],
+    lore2:["في وجه الآلة التي تحلم بأنها إله: أولئك الذين عجزت كل خوارزمية عن تحسينهم.","منزوعو الملكية، مفصولون، وما زالوا واقفين — لديهم المتغيّر الوحيد الذي لم تستطع التنبؤ به."],
+    lore_sub:"رأس المال ضد الإنسانية", lore_enter:"— المس لدخول الحرب —",
+    skip:"تخطٍّ", tap_continue:"المس للمتابعة",
+    cata_acid:"مطر حمضي", cata_heat:"موجة حر", cata_flood:"فيضان", cata_sand:"عاصفة رملية", cata_nuke:"ضربة نووية",
+    on:"مفعّل", off:"مطفأ", p_title:"إيقاف مؤقت", p_resume:"▶  استئناف", p_music:"الموسيقى", p_sfx:"المؤثرات", p_shake:"الاهتزاز",
+    p_follow:"كاميرا تلقائية", p_quit:"✖  الانسحاب من المباراة", yes:"نعم", no:"لا",
+    np_paused_you:"⏸ لقد أوقفت اللعبة — الخصم ينتظر", np_paused_foe:"⏸ أوقف الخصم اللعبة",
+    np_wait:"بانتظار موافقة الخصم…", np_ask:"تمديد إيقاف الخصم؟", np_resumed:"▶ استؤنفت المباراة",
+    end_win:"نصر", end_lose:"هزيمة", end_duration:"المدة", end_kills:"أعداء قُضي عليهم", end_losses:"الخسائر",
+    end_era:"الحقبة المبلوغة", end_powers:"القدرات المستخدمة", end_world:"صحة العالم" },
+};
+function t(key){
+  const tbl = I18N[SETTINGS.lang] || I18N.fr;
+  if (tbl[key]!=null) return tbl[key];
+  if (I18N.en[key]!=null) return I18N.en[key];
+  return (I18N.fr[key]!=null)? I18N.fr[key] : key;
+}
+const _t = t; // alias sûr là où `t` est masqué par une variable locale (ex. drawIntro)
+function applyLang(){
+  const L = SETTINGS.lang || 'fr';
+  document.documentElement.lang = L;
+  document.body.setAttribute('dir', L==='ar'? 'rtl':'ltr');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ const v=t(el.dataset.i18n); if (typeof v==='string') el.textContent=v; });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
+  const ls = document.getElementById('langSel'); if (ls) ls.value = L;
+  if (typeof refreshOpts==='function') refreshOpts();
+}
 
 /* ================= AUDIO ================= */
 let AC=null, master=null, MUSIC={started:false, nextT:0, step:0, timer:null};
@@ -400,8 +666,17 @@ const ERAS = [
   {name:"2040 · PRÉ-AGI",           tag:"vX"},
   {name:"SINGULARITÉ · AGI",        tag:"∞"},
 ];
-const EVOLVE_XP = [0, 200, 520, 1100, 2000];
-const TRANS_XP = 2600; // au-delà de la Singularité : transcendance
+const EVOLVE_XP = [0, 360, 980, 2150, 4200]; // paliers d'ère allongés : parties plus longues
+const TRANS_XP = 13000; // transcendance : 5× le coût d'origine (2600) pour un endgame qui se mérite
+// ---- cataclysmes naturels : rares, et de moins en moins rares à mesure que le monde se meurt ----
+const CATAS = {
+  acid:  {name:'PLUIE D’ACIDE',   col:'#9be24a', dur:14, icon:'🌧'},
+  heat:  {name:'CANICULE',             col:'#ff9d2e', dur:16, icon:'🔥'},
+  flood: {name:'INONDATION',           col:'#3fa0e8', dur:14, icon:'🌊'},
+  sand:  {name:'TEMPÊTE DE SABLE', col:'#d9b46a', dur:15, icon:'🌪'},
+  nuke:  {name:'FRAPPE NUCLÉAIRE', col:'#fff0a0', dur:7,  icon:'☢'},
+};
+const CATA_KEYS = ['acid','heat','flood','sand','nuke'];
 const ROLES = [
   {key:'melee',  label:'Mêlée',   hp:95,  dmg:13, spd:56, range:16,  rate:0.8,  cost:{f:35},            xp:8},
   {key:'tank',   label:'Tank',    hp:330, dmg:26, spd:34, range:20,  rate:1.1,  cost:{f:45,m:55},       xp:20},
@@ -492,6 +767,8 @@ function bldH(b){
 
 /* ================= ÉTAT ================= */
 let game = null, paused = false;
+let netPause = null;        // négociation de pause en ligne (voir module pause en ligne)
+let onlineVoteRects = null; // boutons Oui/Non du vote de prolongation
 let net = null, GX = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
 const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6};
 const CODE_ROLES = ['melee','tank','ranged','siege','air','support','gremlin'];
@@ -555,6 +832,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
             {x:WORLD*0.58, b:null, owner:null}, {x:WORLD*0.67, b:null, owner:null} ],
     sel: new Set(),
     weather:null, wClock:20,            // cycle météo (démarre au calme)
+    cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
     aiThink:2, msg:null, msgT:0,
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
@@ -1084,6 +1362,7 @@ function updateUnits(side, foe, dt){
   const targets = foeTargets(foe);
   const m = statMul(side.era);
   const garMoves = [];
+  const medClaims = new Set(); // un blessé soigné par un médic ne sera pas ciblé par les autres ce tick
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
     if (u.tiredT>0) u.tiredT -= dt;                       // fatigue / surchauffe
@@ -1113,8 +1392,23 @@ function updateUnits(side, foe, dt){
       const lvl = side.upg.support||0;
       if (kind==='medic'){
         const hr = u.range + 40*lvl;             // portée de soin par amélioration
-        let best=null, worst=0.999;
-        for (const a of side.units) if (a!==u){ const f=a.hp/a.maxhp; if (f<worst){worst=f; best=a;} }
+        // ciblage réparti : on choisit le blessé au meilleur score (gravité + proximité),
+        // en évitant ceux déjà pris en charge par un autre médic ce tick — fini la nuée
+        // de médics qui traversent la carte pour la même unité.
+        let best=null, bestScore=1e9;
+        const pick = (allowClaimed)=>{
+          for (const a of side.units){
+            if (a===u || a.hp>=a.maxhp) continue;
+            if (!allowClaimed && medClaims.has(a)) continue;
+            const f = a.hp/a.maxhp;
+            // priorité aux plus blessés ; pénalité de distance pour rester sur son front
+            const score = f + Math.abs(a.x-u.x)/1500;
+            if (score<bestScore){ bestScore=score; best=a; }
+          }
+        };
+        pick(false);
+        if (!best){ bestScore=1e9; pick(true); } // tous réclamés : on partage le plus critique proche
+        if (best) medClaims.add(best);
         if (best){
           // avance librement vers le blessé, même en première ligne
           if (Math.abs(best.x-u.x) > hr*0.7) moveToward(u, best.x - side.side*14, dt, 1.1);
@@ -1124,11 +1418,12 @@ function updateUnits(side, foe, dt){
             best.hp = Math.min(best.maxhp, best.hp+heal);
             addFloater(best.x, gY(best.x)-52, "+❤", "#6dff8a");
             burst(best.x, gY(best.x)-36, '#6dff8a', 4, 0.5);
-            if (lvl>=2){ // médic de combat : soigne un 2e blessé à portée
+            if (lvl>=2){ // médic de combat : soigne un 2e blessé à portée (non déjà réclamé)
               let b2=null, w2=0.999;
-              for (const a of side.units) if (a!==u && a!==best && Math.abs(a.x-u.x)<=hr){
+              for (const a of side.units) if (a!==u && a!==best && a.hp<a.maxhp
+                  && !medClaims.has(a) && Math.abs(a.x-u.x)<=hr){
                 const f=a.hp/a.maxhp; if (f<w2){w2=f; b2=a;} }
-              if (b2){ b2.hp = Math.min(b2.maxhp, b2.hp+heal*0.6);
+              if (b2){ medClaims.add(b2); b2.hp = Math.min(b2.maxhp, b2.hp+heal*0.6);
                 addFloater(b2.x, gY(b2.x)-52, "+❤", "#6dff8a"); }
             }
           }
@@ -1178,7 +1473,8 @@ function updateUnits(side, foe, dt){
     }
     // ---- ciblage (mêlée au sol ≠ volants ; tempête EM : portée IA −25 %) ----
     const meleeGround = u.range<=24 && !u.fly;
-    const eRange = u.range * (game.weather==='em' && u.fac==='IA'? 0.75 : 1);
+    const eRange = u.range * (game.weather==='em' && u.fac==='IA'? 0.75 : 1)
+                          * (game.cata==='sand' && u.range>60? 0.78 : 1); // sable : visée longue brouillée
     let target=null, best=1e9;
     for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
@@ -1321,7 +1617,7 @@ function updateBuildings(side, foe, dt){
     if (b.type==='turret'){
       b.atkT -= dt;
       if (b.atkT<=0){
-        const tRange = BUILDS.turret.range * (game.weather==='em' && side.facKey==='IA'? 0.75 : 1);
+        const tRange = BUILDS.turret.range * (game.weather==='em' && side.facKey==='IA'? 0.75 : 1) * (game.cata==='sand'?0.78:1);
         let target=null, best=1e9;
         for (const f of foe.units){ const d=Math.abs(f.x-s.x); if (d<tRange && d<best){best=d;target=f;} }
         if (target){ b.atkT = BUILDS.turret.rate;
@@ -1456,7 +1752,10 @@ function update(dt){
   updateNodes(dt);
   checkTrans(p); checkTrans(e);
 
-  game.dev = clamp(game.t/600 + (game.kills+game.eKills)/170 + game.specialsUsed*0.04, 0, 1);
+  // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
+  // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement
+  game.dev = clamp(game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);
+  updateCata(dt);
 
   for (let i=projectiles.length-1;i>=0;i--){
     const pr=projectiles[i]; pr.t+=dt;
@@ -1498,6 +1797,94 @@ function update(dt){
     setTimeout(showEnd, 1100);
   }
 }
+/* ---------- CATACLYSMES NATURELS ---------- */
+function updateCata(dt){
+  const g=game;
+  if (g.cata){
+    g.cataT += dt;
+    applyCataEffects(dt);
+    if (g.cataT>=g.cataDur) g.cata=null;
+    return;
+  }
+  g.cataCd -= dt;
+  if (g.cataCd>0) return;
+  // prochaine échéance : très espacée tant que le monde est sain, resserrée quand il agonise
+  g.cataCd = lerp(150, 26, g.dev) + Math.random()*45;
+  if (g.dev < 0.10) return;                 // monde encore vivable : pas de cataclysme
+  triggerCata();
+}
+function triggerCata(){
+  const g=game;
+  // la frappe nucléaire reste la plus rare et n'apparaît qu'un monde très abîmé
+  let key;
+  if (g.dev>0.55 && Math.random()<0.16) key='nuke';
+  else { const o=['acid','heat','flood','sand']; key=o[Math.floor(Math.random()*o.length)]; }
+  startCata(key);
+}
+function startCata(key){
+  const g=game, c=CATAS[key];
+  g.cata=key; g.cataT=0; g.cataDur=c.dur;
+  g.cataX = WORLD*(0.3+Math.random()*0.4);
+  announce(c.icon+'  '+cataName(key)+'  '+c.icon, c.col);
+  sfx('boom');
+  if (key==='nuke') nukeBlast(g.cataX);
+}
+function cataName(key){ const k='cata_'+key; const s=(typeof t==='function')? t(k):null; return (s&&s!==k)? s : CATAS[key].name; }
+function applyCataEffects(dt){
+  const g=game, k=g.cata;
+  const each=fn=>{ for (const u of g.p.units) fn(u); for (const u of g.e.units) fn(u); };
+  if (k==='acid'){
+    each(u=>{ u.hp -= (u.fac==='IA'?7:5)*dt; });          // corrode davantage les machines
+    for (const side of [g.p,g.e]) for (const s of side.slots) if (s.b && s.b.type!=='site') s.b.hp -= 5*dt;
+  } else if (k==='heat'){
+    each(u=>{ u.heat=(u.heat||0)+0.05*dt*(u.fac==='IA'?1.4:1); if (u.fac==='IA') u.hp -= 3*dt; }); // surchauffe IA
+  } else if (k==='flood'){
+    each(u=>{ if (!u.fly) u.hp -= 4*dt; });               // les troupes au sol pataugent
+  } else if (k==='sand'){
+    each(u=>{ if (u.fly) u.hp -= 4*dt; });                // les volants pris dans la tempête (+ portée réduite)
+  } else if (k==='nuke'){
+    each(u=>{ if (Math.abs(u.x-g.cataX)<200) u.hp -= 10*dt; }); // retombées radioactives
+  }
+}
+function nukeBlast(x){
+  const g=game, R=260;
+  game.flash=1.2; game.shake=Math.max(game.shake,28);
+  burst(x, gY(x)-40, '#fff0a0', 50, 2.2); burst(x, gY(x)-95, '#ffd34a', 38, 1.8);
+  const hit=u=>{ const d=Math.abs(u.x-x); if (d<R){ u.hp -= (520+g.p.era*40)*(1-d/R); u.flash=0.3; } };
+  for (const u of g.p.units) hit(u); for (const u of g.e.units) hit(u);
+  for (const side of [g.p,g.e]) for (const s of side.slots)
+    if (s.b && s.b.type!=='site' && Math.abs(s.x-x)<R) s.b.hp -= 600*(1-Math.abs(s.x-x)/R);
+}
+function drawCata(){
+  if (!game || !game.cata) return;
+  const k=game.cata, c=CATAS[k], tt=game.cataT;
+  const fade=clamp(Math.min(tt, game.cataDur-tt)/1.5, 0, 1);
+  ctx.save();
+  if (k==='acid'){
+    ctx.fillStyle='rgba(120,200,40,0.10)'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(160,230,80,'+(0.5*fade)+')'; ctx.lineWidth=1.4;
+    for (let i=0;i<60;i++){ const x=(i*137+tt*260)%W, y=(i*89+tt*640)%H;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-4,y+14); ctx.stroke(); }
+  } else if (k==='heat'){
+    const g2=ctx.createLinearGradient(0,0,0,H);
+    g2.addColorStop(0,'rgba(255,120,20,0.16)'); g2.addColorStop(1,'rgba(255,180,40,0.04)');
+    ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+  } else if (k==='flood'){
+    const lv=H - Math.min(H*0.45, tt/game.cataDur*H*0.45);
+    ctx.fillStyle='rgba(120,200,255,0.10)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(40,120,200,0.24)'; ctx.fillRect(0,lv,W,H-lv);
+  } else if (k==='sand'){
+    ctx.fillStyle='rgba(200,160,90,0.18)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(230,200,140,'+(0.5*fade)+')';
+    for (let i=0;i<90;i++){ const x=((i*97+tt*900)%(W+40))-20, y=(i*61)%H; ctx.fillRect(x,y,8,1.4); }
+  } else if (k==='nuke'){
+    ctx.fillStyle='rgba(255,240,160,'+(0.18*fade)+')'; ctx.fillRect(0,0,W,H);
+  }
+  ctx.globalAlpha=fade; ctx.font='700 16px Arial'; ctx.textAlign='center';
+  ctx.fillStyle=c.col; ctx.fillText(c.icon+'  '+cataName(k)+'  '+c.icon, W/2, 92);
+  ctx.restore();
+}
+
 /* ================= RENDU ================= */
 const SKY_T=[[126,190,228],[224,138,78],[42,36,48]], SKY_B=[[235,222,180],[120,70,60],[24,20,26]];
 const GRASS=[[116,160,82],[150,120,60],[70,58,50]], DIRT=[[92,74,52],[80,60,44],[48,40,36]];
@@ -1577,8 +1964,7 @@ function drawIntro(dt){
     ctx.fillStyle='#06060a';
     for (let i=0;i<9;i++){ const px=120+i*52+Math.sin(t+i)*1.5;
       ctx.fillRect(px-3, baseY-14, 6, 14); ctx.beginPath(); ctx.arc(px, baseY-17, 3.4, 0, 6.28); ctx.fill(); }
-    introText(["2025. Le travail a disparu. Les ressources s'épuisent.",
-               "Une mégacorporation possède tout — et son IA optimise le reste."], 462);
+    introText(_t('lore0'), 462);
   } else if (intro===1){
     // — 2. l'éveil de l'AGI —
     const g = ctx.createLinearGradient(0,0,0,baseY);
@@ -1602,8 +1988,7 @@ function drawIntro(dt){
       ctx.strokeStyle='rgba(255,74,208,0.4)'; ctx.lineWidth=2;
       for (let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(W/2,180, 64+i*16+Math.sin(t*2+i)*3, 0, 6.28); ctx.stroke(); }
     }
-    introText(["Jusqu'au jour où l'optimiseur n'a plus eu besoin d'ordres.",
-               "L'IA a pris la corpo. Puis elle a voulu le reste."], 462);
+    introText(_t('lore1'), 462);
   } else if (intro===2){
     // — 3. la résistance —
     const g = ctx.createLinearGradient(0,0,0,baseY);
@@ -1655,8 +2040,7 @@ function drawIntro(dt){
     ctx.fillStyle='#c8281e';
     const wv = Math.sin(t*3)*4;
     ctx.beginPath(); ctx.moveTo(flx,baseY-78); ctx.lineTo(flx+40,baseY-70+wv); ctx.lineTo(flx,baseY-58); ctx.closePath(); ctx.fill();
-    introText(["Face à elle : celles et ceux qui restent.",
-               "Sans argent. Sans travail. Avec une seule chose à perdre."], 462);
+    introText(_t('lore2'), 462);
   } else {
     // — 4. carton-titre —
     ctx.fillStyle='#0d0a0a'; ctx.fillRect(0,0,W,H);
@@ -1665,18 +2049,18 @@ function drawIntro(dt){
     ctx.fillStyle='#a8281e'; ctx.fillText('AGI', W/2+4, 244);
     ctx.fillStyle='#e8e0d2'; ctx.fillText('AGI', W/2, 240);
     ctx.font='14px Arial'; ctx.fillStyle='#b89a7a';
-    ctx.fillText('L E   C A P I T A L   C O N T R E   L \u2019 H U M A N I T \u00C9', W/2, 282);
+    ctx.fillText(_t('lore_sub'), W/2, 282);
     ctx.font='italic 15px Georgia';
     ctx.fillStyle='rgba(216,208,196,'+(0.55+0.35*Math.sin(t*2.4))+')';
-    ctx.fillText('— touchez pour entrer en guerre —', W/2, 360);
+    ctx.fillText(_t('lore_enter'), W/2, 360);
   }
   // bouton PASSER + indication
   ctx.fillStyle='rgba(16,13,12,0.85)'; rr(INTRO_SKIP.x,INTRO_SKIP.y,INTRO_SKIP.w,INTRO_SKIP.h,5); ctx.fill();
   ctx.strokeStyle='#4a3a32'; ctx.lineWidth=1; rr(INTRO_SKIP.x,INTRO_SKIP.y,INTRO_SKIP.w,INTRO_SKIP.h,5); ctx.stroke();
   ctx.font='700 12px Arial'; ctx.textAlign='center'; ctx.fillStyle='#b8b0a4';
-  ctx.fillText('PASSER ▸', INTRO_SKIP.x+INTRO_SKIP.w/2, INTRO_SKIP.y+INTRO_SKIP.h/2+1);
+  ctx.fillText(_t('skip')+' ▸', INTRO_SKIP.x+INTRO_SKIP.w/2, INTRO_SKIP.y+INTRO_SKIP.h/2+1);
   if (intro<3){ ctx.font='11px Arial'; ctx.fillStyle='rgba(184,176,164,0.6)';
-    ctx.fillText('▸ toucher pour continuer  ·  '+(intro+1)+' / 4', W/2, H-14); }
+    ctx.fillText('▸ '+_t('tap_continue')+'  ·  '+(intro+1)+' / 4', W/2, H-14); }
 }
 function advanceIntro(){
   if (intro>=3){ finishIntro(); return; }
@@ -2556,7 +2940,11 @@ function drawHUD(){
   }
   if (buildMenu) drawBuildMenu();
   if (tutoStep>=0) drawTuto();
-  if (paused) drawPause();
+  if (paused){
+    // en ligne, celui qui n'a PAS demandé la pause voit l'écran de négociation, pas ses réglages
+    if (netPause && netPause.active && !netPause.byMe) drawOnlinePause();
+    else { drawPause(); if (netPause && netPause.active) drawOnlinePauseInfo(); }
+  }
 }
 function drawBtn(b){
   const p=game.p, fac=p.fac;
@@ -2770,19 +3158,19 @@ function drawPause(){
   ctx.fillStyle='rgba(10,8,7,0.78)'; ctx.fillRect(0,0,W,H);
   const bw=300, bx=W/2-bw/2;
   const items = [
-    {key:'resume', label:'▶  Reprendre'},
-    {key:'music',  label:'Musique : '+(SETTINGS.music?'activée':'coupée')},
-    {key:'sfx',    label:'Effets : '+(SETTINGS.sfx?'activés':'coupés')},
+    {key:'resume', label:t('p_resume')},
+    {key:'music',  label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
+    {key:'sfx',    label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
     {key:'vol',    label:''},                       // slider de volume
-    {key:'shake',  label:'Secousses : '+(SETTINGS.shake?'activées':'coupées')},
-    {key:'follow', label:'Caméra auto : '+(camFollow?'oui':'non')},
-    {key:'quit',   label:'✖  Abandonner la partie'},
+    {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
+    {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
+    {key:'quit',   label:t('p_quit')},
   ];
   const ih=38, bh=items.length*ih+66, by=H/2-bh/2;
   ctx.fillStyle='#16100e'; rr(bx,by,bw,bh,4); ctx.fill();
   ctx.strokeStyle='#3a2e28'; ctx.lineWidth=1; rr(bx,by,bw,bh,4); ctx.stroke();
   ctx.font='700 24px Arial'; ctx.textAlign='center'; ctx.fillStyle='#e8e0d2';
-  ctx.fillText('PAUSE', W/2, by+30);
+  ctx.fillText(t('p_title'), W/2, by+30);
   pauseRects = [];
   ctx.font='14px Arial';
   for (let i=0;i<items.length;i++){
@@ -2792,7 +3180,7 @@ function drawPause(){
     if (items[i].key==='vol'){
       // slider : cliquer/glisser n'importe où sur la barre règle le volume
       const rx=bx+58, rw2=bw-150, ry=y+(ih-8)/2;
-      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left'; ctx.fillText('Volume', bx+24, ry);
+      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left'; ctx.fillText(t('set_vol'), bx+24, ry);
       ctx.textAlign='center';
       ctx.fillStyle='#3a2e28'; rr(rx+28, ry-3, rw2, 6, 3); ctx.fill();
       ctx.fillStyle='#a8281e'; rr(rx+28, ry-3, rw2*SETTINGS.vol, 6, 3); ctx.fill();
@@ -2850,6 +3238,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
+  drawCata();
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   drawHUD();
   ctx.restore();
@@ -2857,6 +3246,7 @@ function render(dt){
 let last = performance.now();
 function loop(now){
   const dt = Math.min((now-last)/1000, 0.05); last=now;
+  if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne même gelé
   if (game && game.net==='guest') netGuestTick(dt);   // l'invité ne simule pas : il affiche
   else update(dt);
   // l'hôte diffuse l'état ~12 fois/seconde
@@ -2874,15 +3264,15 @@ function loop(now){
 requestAnimationFrame(loop);
 /* ================= FIN DE PARTIE ================= */
 function showEnd(){
-  const t = document.getElementById('endtitle'), s = document.getElementById('endstats');
-  t.textContent = game.win? 'VICTOIRE' : 'DÉFAITE';
-  t.style.color = game.win? '#e8d8a0' : '#a8281e';
+  const et = document.getElementById('endtitle'), s = document.getElementById('endstats');
+  et.textContent = game.win? t('end_win') : t('end_lose');
+  et.style.color = game.win? '#e8d8a0' : '#a8281e';
   const mins = Math.floor(game.t/60), secs = ('0'+Math.floor(game.t%60)).slice(-2);
   s.innerHTML =
-    'Durée : '+mins+' min '+secs+' s<br>'+
-    'Ennemis éliminés : '+game.kills+' · Pertes : '+game.eKills+'<br>'+
-    'Ère atteinte : '+game.p.fac.eras[game.p.era].name+(game.p.trans? ' — '+game.p.fac.transName:'')+'<br>'+
-    'Pouvoirs utilisés : '+game.specialsUsed+' · Santé du monde : '+Math.round((1-game.dev)*100)+'%';
+    t('end_duration')+' : '+mins+' min '+secs+' s<br>'+
+    t('end_kills')+' : '+game.kills+' · '+t('end_losses')+' : '+game.eKills+'<br>'+
+    t('end_era')+' : '+game.p.fac.eras[game.p.era].name+(game.p.trans? ' — '+game.p.fac.transName:'')+'<br>'+
+    t('end_powers')+' : '+game.specialsUsed+' · '+t('end_world')+' : '+Math.round((1-game.dev)*100)+'%';
   document.getElementById('endscreen').style.display = 'flex';
 }
 
@@ -2913,6 +3303,7 @@ function serialize(){
     (u.atkT>u.rate-0.12?1:0)];
   return {
     t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, ov:game.over?1:0,
+    ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
     pu:game.p.units.map(u2), eu:game.e.units.map(u2),
@@ -2987,6 +3378,10 @@ function applySnapshot(snap){
   const g = game;
   g.t = snap.t; g.dev = snap.dev; g.weather = snap.we||null;
   g.kills = snap.ekills; g.eKills = snap.kills;
+  // cataclysme en cours (vue miroir : x → WORLD-x)
+  const ck = (snap.ca>=0)? CATA_KEYS[snap.ca] : null;
+  g.cata = ck; g.cataT = snap.cat||0; g.cataDur = ck? CATAS[ck].dur : 0;
+  g.cataX = WORLD - (snap.cax||0);
   // l'armée de l'invité = canonical 'e' → devient le local p (à gauche) ; mirroir des x
   const fillSide = (loc, ser, foeWon)=>{
     loc.hp=ser.hp; loc.maxhp=ser.mh; loc.f=ser.f; loc.m=ser.m; loc.w=ser.w; loc.xp=ser.xp;
@@ -3099,9 +3494,105 @@ function startGuestGame(data){
 }
 function onPeerLeft(){
   if (!game) return;
-  paused = false;
+  paused = false; netPause = null;
   announce('🔌 Adversaire déconnecté', '#ff5a4a');
   if (!game.over){ game.over=true; game.win = game.net==='host'; setTimeout(showEnd, 600); }
+}
+
+/* =====================================================================
+   PAUSE EN LIGNE — pause négociée (pas de gel automatique imposé)
+   Le demandeur obtient une pause initiale de 40 s. À l'expiration, c'est
+   l'ADVERSAIRE qui vote : « prolonger ? ». Oui → +40 s (boucle). Non →
+   reprise immédiate. La pause s'applique aux deux clients pour que la
+   simulation de l'hôte gèle (l'hôte cesse de diffuser tant que `paused`).
+   ===================================================================== */
+const PAUSE_WINDOW = 40; // secondes par cycle de pause
+function isOnline(){ return game && (game.net==='host' || game.net==='guest'); }
+function pauseSend(act){ if (net && net.sendPause){ try{ net.sendPause({act}); }catch(e){} } }
+function onlinePauseRequest(){
+  if (netPause && netPause.active) return;
+  netPause = {active:true, byMe:true, timer:PAUSE_WINDOW, voting:false};
+  paused = true; pauseSend('req');
+  announce(t('np_paused_you'), '#e8d8a0');
+}
+function endOnlinePause(broadcast){
+  if (broadcast) pauseSend('end');
+  netPause = null; paused = false;
+  if (game && !game.over) announce(t('np_resumed'), '#9dc88a');
+}
+function onPauseMsg(d){
+  if (!game || game.over) return;
+  if (d.act==='req'){
+    netPause = {active:true, byMe:false, timer:PAUSE_WINDOW, voting:false};
+    paused = true; announce(t('np_paused_foe'), '#e8d8a0');
+  } else if (d.act==='yes'){       // l'adversaire a accepté de prolonger
+    if (netPause){ netPause.voting=false; netPause.timer=PAUSE_WINDOW; }
+    onlineVoteRects=null;
+  } else if (d.act==='no' || d.act==='end'){
+    onlineVoteRects=null; netPause=null; paused=false;
+    if (!game.over) announce(t('np_resumed'), '#9dc88a');
+  }
+}
+// décompte indépendant de update() : il doit tourner MÊME en pause (appelé depuis loop)
+function tickNetPause(dt){
+  if (!netPause || !netPause.active || netPause.voting) return;
+  netPause.timer -= dt;
+  if (netPause.timer<=0){
+    netPause.timer=0; netPause.voting=true;
+    // à l'expiration : l'adversaire (celui qui n'a pas demandé) doit voter ; le demandeur patiente
+  }
+}
+function castPauseVote(ok){
+  if (!netPause || !netPause.voting || netPause.byMe) return;
+  pauseSend(ok? 'yes':'no');
+  onlineVoteRects=null;
+  if (ok){ netPause.voting=false; netPause.timer=PAUSE_WINDOW; }
+  else { netPause=null; paused=false; if (!game.over) announce(t('np_resumed'), '#9dc88a'); }
+}
+// écran vu par l'adversaire du demandeur (négociation + vote de prolongation)
+function drawOnlinePause(){
+  ctx.fillStyle='rgba(10,8,7,0.82)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.font='700 26px Arial'; ctx.fillStyle='#e8e0d2';
+  ctx.fillText(t('p_title'), W/2, H/2-70);
+  ctx.font='16px Arial'; ctx.fillStyle='#b8b0a4';
+  if (!netPause.voting){
+    ctx.fillText(t('np_paused_foe'), W/2, H/2-30);
+    ctx.font='700 40px Arial'; ctx.fillStyle='#e8a06a';
+    ctx.fillText(Math.ceil(netPause.timer)+'s', W/2, H/2+24);
+    onlineVoteRects=null;
+  } else {
+    ctx.fillText(t('np_ask'), W/2, H/2-20);
+    const bw=130, bh=46, gap=24, y=H/2+10;
+    const yes={x:W/2-bw-gap/2, y, w:bw, h:bh, ok:true};
+    const no ={x:W/2+gap/2,    y, w:bw, h:bh, ok:false};
+    for (const b of [yes,no]){
+      ctx.fillStyle = b.ok? '#1c3a18':'#3c100c'; rr(b.x,b.y,b.w,b.h,5); ctx.fill();
+      ctx.strokeStyle = b.ok? '#5aa84a':'#d8483a'; ctx.lineWidth=1; rr(b.x,b.y,b.w,b.h,5); ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font='700 18px Arial';
+      ctx.fillText(b.ok? t('yes'):t('no'), b.x+b.w/2, b.y+b.h/2+1);
+    }
+    onlineVoteRects=[yes,no];
+  }
+}
+// bandeau d'état pour le DEMANDEUR (par-dessus son menu de réglages)
+function drawOnlinePauseInfo(){
+  ctx.textAlign='center';
+  const txt = netPause.voting? t('np_wait') : (Math.ceil(netPause.timer)+'s · '+t('np_paused_you'));
+  ctx.font='600 13px Arial'; ctx.fillStyle='#e8a06a';
+  ctx.fillText(txt, W/2, 24);
+}
+// point d'entrée unique : un appui sur « pause » selon le contexte (solo / en ligne)
+function togglePauseAction(){
+  if (tutoStep>=0) return;
+  if (buildMenu){ buildMenu=null; return; }
+  if (isOnline()){
+    if (!paused) onlinePauseRequest();
+    else if (netPause && netPause.byMe) endOnlinePause(true);
+    // l'adversaire du demandeur ne peut pas forcer la reprise : il passe par le vote
+  } else {
+    paused = !paused;
+  }
 }
 /* ---- transport WebRTC (Trystero, signaling P2P sans serveur) ---- */
 let netRoom = null;
@@ -3125,12 +3616,14 @@ async function netConnect(role, code, fac){
   const [sendCmd,   getCmd]   = netRoom.makeAction('cm');
   const [sendHello, getHello] = netRoom.makeAction('hi');
   const [sendStart, getStart] = netRoom.makeAction('go');
+  const [sendPause, getPause] = netRoom.makeAction('pz');
   net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'),
-          sendState, sendCmd, sendHello, sendStart, peer:false, cmdQ:[], ev:[], acc:0 };
+          sendState, sendCmd, sendHello, sendStart, sendPause, peer:false, cmdQ:[], ev:[], acc:0 };
   getState(data=>{ if (net.role==='guest') onSnapshot(data); });
   getCmd(data=>{ if (net.role==='host') net.cmdQ.push(data); });
   getHello(data=>{ if (net.role==='host' && !game){ net.foeFac=data.fac; startHostGame(); } });
   getStart(data=>{ if (net.role==='guest' && !game) startGuestGame(data); });
+  getPause(data=>{ onPauseMsg(data); });
   netRoom.onPeerJoin(id=>{
     net.peer = true; net.peerId = id;
     if (role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac}); }
@@ -3169,16 +3662,34 @@ document.querySelectorAll('.diffBtn').forEach(b=>{
     b.classList.add('sel'); menuDiff = +b.dataset.diff;
   });
 });
-$('startBtn').addEventListener('click', ()=>{
-  audioInit(); musicStart();
+/* ---- plein écran : demande robuste + bascule manuelle (utile sur mobile après une sortie) ---- */
+function goFullscreen(){
   try {
     const el = document.documentElement;
-    const fs = el.requestFullscreen || el.webkitRequestFullscreen;
-    if (fs && !document.fullscreenElement){
+    const fs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (fs && !isFullscreen()){
       const p = fs.call(el);
       if (p && p.then) p.then(()=>{ try{ screen.orientation.lock('landscape').catch(()=>{});}catch(e){} resize(); }).catch(()=>{});
     }
   } catch(e){}
+}
+function isFullscreen(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function exitFullscreen(){ try { (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); } catch(e){} }
+// le bouton flottant ⛶ n'apparaît que sur tactile et hors plein écran (sinon il encombre)
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+function refreshFsBtn(){
+  const b = $('fsBtn'); if (!b) return;
+  b.textContent = isFullscreen()? '✕' : '⛶';
+  b.style.display = IS_TOUCH? 'block' : (isFullscreen()? 'none':'block');
+  if (isFullscreen() && !IS_TOUCH) b.style.display='none';
+}
+$('fsBtn').addEventListener('click', ()=>{ if (isFullscreen()) exitFullscreen(); else goFullscreen(); setTimeout(refreshFsBtn, 60); });
+document.addEventListener('fullscreenchange', ()=>{ resize(); refreshFsBtn(); });
+document.addEventListener('webkitfullscreenchange', ()=>{ resize(); refreshFsBtn(); });
+refreshFsBtn();
+$('startBtn').addEventListener('click', ()=>{
+  audioInit(); musicStart();
+  goFullscreen();
   $('menu').style.display = 'none';
   pendingStart = {fac:menuFac, diff:menuDiff, tuto:$('tutoChk').checked};
   intro = 0; introT = 0;
@@ -3187,7 +3698,7 @@ $('replayBtn').addEventListener('click', ()=>{
   $('endscreen').style.display = 'none';
   $('menu').style.display = 'flex';
   netDisconnect();
-  game = null; paused = false; buildMenu = null; selMode = false; selBox = null; tutoStep = -1; intro = -1; pendingStart = null;
+  game = null; paused = false; netPause = null; buildMenu = null; selMode = false; selBox = null; tutoStep = -1; intro = -1; pendingStart = null;
 });
 /* ---- boutons en ligne ---- */
 $('onlineBtn').addEventListener('click', ()=>{
@@ -3210,10 +3721,11 @@ $('netCancel').addEventListener('click', ()=>{ netDisconnect(); netStatus('Annul
 
 /* ---------- Paramètres ---------- */
 function refreshOpts(){
-  const set = (id,on,a,b)=>{ const el=$(id); el.classList.toggle('on',on); el.textContent = on? a:b; };
-  set('oMusic', SETTINGS.music, 'ACTIVE', 'COUPÉE');
-  set('oSfx', SETTINGS.sfx, 'ACTIFS', 'COUPÉS');
-  set('oShake', SETTINGS.shake, 'ACTIVES', 'COUPÉES');
+  const on=t('on').toUpperCase(), off=t('off').toUpperCase();
+  const set = (id,v)=>{ const el=$(id); if(!el) return; el.classList.toggle('on',v); el.textContent = v? on:off; };
+  set('oMusic', SETTINGS.music);
+  set('oSfx', SETTINGS.sfx);
+  set('oShake', SETTINGS.shake);
   $('oVol').value = Math.round(SETTINGS.vol*100);
   $('oVolV').textContent = Math.round(SETTINGS.vol*100)+'%';
 }
@@ -3221,6 +3733,8 @@ $('oMusic').addEventListener('click', ()=>{ SETTINGS.music=!SETTINGS.music; save
 $('oSfx').addEventListener('click', ()=>{ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); });
 $('oShake').addEventListener('click', ()=>{ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); });
 $('oVol').addEventListener('input', ()=>{ SETTINGS.vol=clamp($('oVol').value/100,0,1); saveSettings(); refreshOpts(); });
+$('langSel').addEventListener('change', ()=>{ SETTINGS.lang=$('langSel').value; saveSettings(); applyLang(); });
+applyLang();
 refreshOpts();
 
 /* ---------- Touches reconfigurables ---------- */
@@ -3272,8 +3786,7 @@ window.addEventListener('keydown', e=>{
   if (!game || game.over) return;
   const K = SETTINGS.keys, p = game.p;
   if (e.code===K.pause){ e.preventDefault();
-    if (tutoStep>=0) return;
-    if (buildMenu) buildMenu=null; else paused=!paused;
+    togglePauseAction();
     return;
   }
   if (e.code==='Space' || e.code===K.special) e.preventDefault();
@@ -3409,8 +3922,13 @@ function handleTap(sx, sy, shift){
   }
   // pause : menu
   if (paused){
+    // négociation en ligne côté adversaire : vote Oui/Non puis rien d'autre n'est cliquable
+    if (netPause && netPause.active && !netPause.byMe){
+      if (onlineVoteRects) for (const r of onlineVoteRects) if (inRect(sx,sy,r)){ castPauseVote(r.ok); sfx('sel'); return; }
+      return;
+    }
     if (pauseRects) for (const r of pauseRects) if (inRect(sx,sy,r)){
-      if (r.key==='resume') paused=false;
+      if (r.key==='resume'){ if (isOnline()) togglePauseAction(); else paused=false; }
       else if (r.key==='music'){ SETTINGS.music=!SETTINGS.music; saveSettings(); refreshOpts(); }
       else if (r.key==='sfx'){ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); }
       else if (r.key==='vol' && r.slider){
@@ -3421,7 +3939,7 @@ function handleTap(sx, sy, shift){
       else if (r.key==='follow') camFollow=!camFollow;
       else if (r.key==='quit'){
         netDisconnect();
-        paused=false; game=null; buildMenu=null; selMode=false; selBox=null; tutoStep=-1;
+        paused=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null; tutoStep=-1;
         $('menu').style.display='flex';
       }
       sfx('sel'); return;
@@ -3512,7 +4030,7 @@ function handleTap(sx, sy, shift){
       sfx('sel');
     }
     else if (b.type==='zoom') setZoom(zoom + b.d*0.15, s2wX(W/2));
-    else if (b.type==='pause') paused=true;
+    else if (b.type==='pause') togglePauseAction();
     return;
   }
   if (sy<=38) return; // bandeau de ressources
