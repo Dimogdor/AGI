@@ -1907,7 +1907,8 @@ function introText(lines, y){
   ctx.font='italic 16px Georgia';
   for (let i=0;i<lines.length;i++){
     ctx.fillStyle='#d8d0c4';
-    ctx.fillText(lines[i], W/2, y+8+i*24);
+    // maxWidth : condense les lignes longues (lore enrichi, traductions DE/RU…) pour ne jamais déborder
+    ctx.fillText(lines[i], W/2, y+8+i*24, W-48);
   }
 }
 function drawIntroTower(x, baseY, hue, glitch, t){
