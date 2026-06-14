@@ -1,0 +1,15 @@
+# dépendances & artefacts de build (régénérés par `npm run build`)
+node_modules/
+www/
+dist-pc/
+dist-ota/
+
+# projets natifs générés localement (créés par `npx cap add …`,
+# nécessitent Xcode / Android Studio — non versionnés ici)
+android/
+ios/
+
+# divers
+.DS_Store
+*.log
+.env

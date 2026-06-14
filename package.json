@@ -1,0 +1,41 @@
+{
+  "name": "agi-guerre-des-eres",
+  "version": "1.1.0",
+  "description": "AGI — Guerre des Ères : jeu de stratégie style Age of War (web, iOS, Android, PC).",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs && npx --yes serve www",
+    "sync": "node build.mjs && cap sync",
+    "android": "node build.mjs && cap sync android && cap open android",
+    "ios": "node build.mjs && cap sync ios && cap open ios",
+    "electron": "node build.mjs && electron .",
+    "dist:pc": "node build.mjs && electron-builder",
+    "ota:bundle": "node build.mjs && cd www && zip -r ../dist-ota/bundle-$npm_package_version.zip . && cd .."
+  },
+  "build": {
+    "appId": "com.agi.guerredeseres",
+    "productName": "AGI — Guerre des Ères",
+    "directories": { "output": "dist-pc" },
+    "files": ["www/**/*", "electron/**/*"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg", "category": "public.app-category.games" },
+    "linux": { "target": "AppImage", "category": "Game" }
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.1",
+    "terser": "^5.31.0",
+    "sharp": "^0.33.0"
+  },
+  "optionalDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/ios": "^6.1.2",
+    "@capgo/capacitor-updater": "^6.3.0",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "canvas": "^2.11.2"
+  }
+}

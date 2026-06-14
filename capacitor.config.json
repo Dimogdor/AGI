@@ -1,0 +1,12 @@
+{
+  "appId": "com.agi.guerredeseres",
+  "appName": "AGI — Guerre des Ères",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "plugins": {
+    "CapacitorUpdater": {
+      "autoUpdate": true,
+      "appReadyTimeout": 10000
+    }
+  }
+}
