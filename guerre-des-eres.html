@@ -993,11 +993,19 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
   } else {
     const r = ROLES[ri];
     const lvl = side.upg[r.key]||0;
-    const up = 1 + 0.12*lvl;
+    // IDENTITÉ DE PROGRESSION : les machines (GPT) tirent plus de leurs améliorations
+    // (scaling payé en données) ; les humains, eux, montent par vétérance gratuite (voir morts).
+    const up = 1 + (side.facKey==='IA'? 0.17 : 0.12)*lvl;
     // portée et cadence progressent avec l'ère ET les améliorations
     const range = r.range>60? r.range*(1+0.07*side.era+0.05*lvl) : r.range;
-    const rate = r.rate*Math.max(0.55, 1-0.05*side.era-0.04*lvl);
-    u = { role:r.key, hp:r.hp*m*up, maxhp:r.hp*m*up, dmg:r.dmg*m*up, spd:r.spd, range, rate,
+    // IDENTITÉ DE COMBAT (DPS strictement identique entre factions) : HUM frappe vite & léger,
+    // GPT fort & lent. dégât×cadence inchangé. Siège (burst d'artillerie) et soutien exemptés.
+    let cdmg=1, crate=1;
+    if (r.key!=='support' && r.key!=='siege'){
+      if (side.facKey==='HUM'){ cdmg=0.82; crate=0.82; } else { cdmg=1.22; crate=1.22; }
+    }
+    const rate = r.rate*Math.max(0.55, 1-0.05*side.era-0.04*lvl)*crate;
+    u = { role:r.key, hp:r.hp*m*up, maxhp:r.hp*m*up, dmg:r.dmg*m*up*cdmg, spd:r.spd, range, rate,
           arc:r.arc, aoe:r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
     if (r.fly) u.flyH = 44 + (side.units.length%3)*10 + (side.facKey==='IA'?8:0);
   }
@@ -1280,8 +1288,12 @@ function tryHero(side){
   return true;
 }
 function spawnHero(side){
-  const mm = statMul(side.era);
-  const u = { role:'hero', hp:HERO.hp*mm, maxhp:HERO.hp*mm, dmg:HERO.dmg*mm, spd:HERO.spd,
+  const mm = statMul(side.era), hum = side.facKey==='HUM';
+  // profils opposés (le buff d'équipe ×3/×2 reste identique) : Che = meneur tanky avec aura de
+  // soin ; Singularité = glass-cannon. Valeur totale équivalente.
+  const hp = HERO.hp*mm*(hum? 1.45 : 0.7);
+  const dmg = HERO.dmg*mm*(hum? 0.7 : 1.5);
+  const u = { role:'hero', hp, maxhp:hp, dmg, spd:HERO.spd,
     range:HERO.range, rate:HERO.rate, fly:false, xpv:Math.round(140*(1+side.era*0.7)) };
   u.x = side.x + side.side*60;
   u.side=side.side; u.era=side.era; u.fac=side.facKey; u.trans=side.trans;
@@ -1446,8 +1458,19 @@ function updateUnits(side, foe, dt){
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
     if (u.tiredT>0) u.tiredT -= dt;                       // fatigue / surchauffe
-    if (u.heat>0) u.heat = Math.max(0, u.heat-0.035*dt);  // récupère hors combat
+    // récupération hors combat : les humains soufflent plus vite que les machines ne refroidissent
+    if (u.heat>0) u.heat = Math.max(0, u.heat-(u.fac==='IA'?0.030:0.05)*dt);
     if (u.role==='support') u.supT -= dt;
+    // aura du héros humain (Che) : soigne en continu les alliés proches, en plus de combattre
+    if (u.role==='hero' && u.fac==='HUM'){
+      u.auraT = (u.auraT||0) - dt;
+      if (u.auraT<=0){ u.auraT = 1;
+        for (const a of side.units) if (a!==u && a.hp<a.maxhp && Math.abs(a.x-u.x)<150){
+          a.hp = Math.min(a.maxhp, a.hp + 28*m);
+          addFloater(a.x, gY(a.x)-50, '+❤', '#6dff8a', 11);
+        }
+      }
+    }
     const st = u.ord || side.stance;
     // ---- tâche assignée : chantier ou garnison (envoi direct depuis le pool) ----
     if (u.task){
@@ -1555,15 +1578,17 @@ function updateUnits(side, foe, dt){
     if (target && best<=eRange){
       if (u.atkT<=0){
         const tired = u.tiredT>0;
-        u.atkT = u.rate * (tired? 1.5 : 1);            // épuisé : frappe plus lentement...
-        // ×3 si héros allié vivant, + bonus offensif de comeback ; −30 % si épuisé
-        const dmgOut = u.dmg * (tired? 0.7 : 1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0));
-        // jauge d'effort : le combat continu mène à la fatigue / surchauffe
-        u.heat = (u.heat||0) + 0.06;
+        const isIA = u.fac==='IA';
+        // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
+        u.atkT = u.rate * (tired? (isIA?1.8:1.3) : 1);
+        // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
+        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0));
+        // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
+        u.heat = (u.heat||0) + (isIA? 0.08 : 0.045);
         if (u.heat>=1){
-          u.heat = 0; u.tiredT = 4;
+          u.heat = 0; u.tiredT = isIA? 6 : 3;
           addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0),
-            u.fac==='HUM'? '😮‍💨 fatigue':'🔥 surchauffe', '#d8a06a', 11);
+            isIA? '🔥 surchauffe':'😮‍💨 fatigue', '#d8a06a', 11);
         }
         const sy0 = gY(u.x)-26-(u.fly? u.flyH:0);
         const ty0 = gY(target.x)-(target.isBase?56:(target.fly? 24+target.flyH : 24));
@@ -1620,11 +1645,15 @@ function updateUnits(side, foe, dt){
       const k = u.lastHit;
       if (k && k.hp>0 && k.side!==u.side && k.role){
         k.kills = (k.kills||0)+1;
-        if (k.kills>=5 && !k.vet){
-          k.vet = true; k.dmg *= 1.08;
-          addFloater(k.x, gY(k.x)-62-(k.fly?k.flyH:0),
-            '★ '+(k.fac==='HUM'? 'Conscience de classe':'Optimisation'), '#ffd34a', 12);
-          sfx('cap');
+        // VÉTÉRANCE HUMAINE : permanente, par paliers (récompense la survie). Les machines,
+        // elles, ne « vétéranisent » pas — leur montée en puissance passe par les améliorations.
+        if (k.fac==='HUM'){
+          const tier = Math.min(3, Math.floor(k.kills/4));
+          if (tier > (k.vetTier||0)){
+            k.vetTier = tier; k.vet = true; k.dmg *= 1.06;
+            addFloater(k.x, gY(k.x)-62-(k.fly?k.flyH:0), '★ Conscience de classe '+tier, '#ffd34a', 12);
+            sfx('cap');
+          }
         }
       }
       burst(u.x, gY(u.x)-22-(u.fly?u.flyH:0), FACTIONS[u.fac].eraCols[u.era], 12);

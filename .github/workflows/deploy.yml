@@ -1,0 +1,48 @@
+name: Déployer le jeu sur GitHub Pages
+
+# Construit le bundle obfusqué (www/) et le publie sur GitHub Pages.
+# Déclencheurs : push sur main OU sur la branche de travail, et bouton manuel.
+on:
+  push:
+    branches:
+      - main
+      - claude/age-of-war-online-balance-xn6ump
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# une seule publication à la fois ; on n'annule pas un déploiement en cours
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # seuls terser + javascript-obfuscator sont requis ; on saute les deps lourdes (electron…)
+      - run: npm install --no-audit --no-fund --omit=optional
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true        # active Pages automatiquement au 1er run
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

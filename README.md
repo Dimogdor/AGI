@@ -5,6 +5,8 @@
 **Le capital contre l'humanité.** Un jeu de stratégie temps réel façon
 « age of war », modernisé pour iOS, Android, PC et le web.
 
+**▶ Jouer en ligne : https://dimogdor.github.io/AGI/** *(déployé automatiquement à chaque push)*
+
 <img src="resources/icon-512.png" width="160" alt="AGI icon">
 
 </div>
