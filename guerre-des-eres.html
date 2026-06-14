@@ -1942,10 +1942,16 @@ function updateCata(dt){
 }
 function triggerCata(){
   const g=game;
-  // la frappe nucléaire reste la plus rare et n'apparaît qu'un monde très abîmé
-  let key;
-  if (g.dev>0.55 && Math.random()<0.16) key='nuke';
-  else { const o=['acid','heat','flood','sand']; key=o[Math.floor(Math.random()*o.length)]; }
+  // Pondération : l'inondation et la frappe nucléaire restent RARES même à monde mort
+  // (santé du monde = 0). L'essentiel des cataclysmes vient des fléaux « doux ».
+  const pool = [
+    ['acid', 32], ['heat', 32], ['sand', 32],
+    ['flood', 5],                       // crue : exceptionnelle (était ~25 %)
+    ['nuke', g.dev>0.7 ? 3 : 0],        // frappe atomique : très rare et monde très abîmé
+  ];
+  let total=0; for (const [,w] of pool) total+=w;
+  let r=Math.random()*total, key='acid';
+  for (const [k,w] of pool){ r-=w; if (r<0){ key=k; break; } }
   startCata(key);
 }
 function startCata(key){
@@ -1956,13 +1962,13 @@ function startCata(key){
   sfx('boom');
   // effets INSTANTANÉS et radicaux au déclenchement
   if (key==='nuke'){
-    g.flash=1.4; g.shake=Math.max(g.shake,30);
-    burst(g.cataX, gY(g.cataX)-60, '#fff0a0', 60, 2.6); burst(g.cataX, gY(g.cataX)-130, '#ffd34a', 44, 2);
-    razeMap();                                   // rase TOUT sauf les bases
+    g.flash=1.2; g.shake=Math.max(g.shake,24);
+    burst(g.cataX, gY(g.cataX)-60, '#fff0a0', 46, 2.4); burst(g.cataX, gY(g.cataX)-130, '#ffd34a', 34, 1.8);
+    nukeBlast(g.cataX, 260);                      // cratère localisé — ne rase PLUS toute la carte
   } else if (key==='flood'){
-    g.shake=Math.max(g.shake,10);
-    // détruit toutes les unités AU SOL ; celles en garnison (tours/château) sont à l'abri
-    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.hp=0; burst(u.x, gY(u.x)-16, '#3fa0e8', 6); }
+    g.shake=Math.max(g.shake,8);
+    // la crue submerge les unités au sol mais ne les anéantit plus : gros dégâts, pas un balayage total
+    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.hp -= u.maxhp*0.4; burst(u.x, gY(u.x)-16, '#3fa0e8', 5); }
   } else if (key==='sand'){
     g.shake=Math.max(g.shake,8);
     for (const s of [g.p,g.e]) for (const u of s.units) if (u.fly){ u.hp=0; burst(u.x, gY(u.x)-30, '#d9b46a', 6); }
@@ -1977,11 +1983,22 @@ function applyCataEffects(dt){
     for (const side of [g.p,g.e]) for (const s of sideBuildSlots(side)) if (s.b && s.b.type!=='site') s.b.hp -= 24*dt;
   } else if (k==='heat'){                                   // DoT lourd + surchauffe + ralentit
     each(u=>{ u.hp -= (u.fac==='IA'?20:16)*dt; u.heat=(u.heat||0)+0.12*dt; if (u.heat>=1){u.heat=0;u.tiredT=3;} });
-  } else if (k==='flood'){                                  // la crue continue de noyer les nouveaux arrivants
-    each(u=>{ if (!u.fly) u.hp -= 26*dt; });
+  } else if (k==='flood'){                                  // la crue continue de gêner les unités au sol (dégâts modérés)
+    each(u=>{ if (!u.fly) u.hp -= 11*dt; });
   } else if (k==='sand'){                                   // la tempête continue d'arracher tout volant
     each(u=>{ if (u.fly) u.hp -= 30*dt; });
   }
+}
+// frappe nucléaire (cataclysme) : un cratère LOCALISÉ autour de cx, pas la carte entière.
+// (la Bombe H scénarisée, elle, garde razeMap : c'est la chute d'une base.)
+function nukeBlast(cx, r){
+  const g=game;
+  for (const side of [g.p,g.e]){
+    for (const u of side.units) if (Math.abs(u.x-cx)<r){ u.hp=0; burst(u.x, gY(u.x)-16, '#fff0a0', 5); }
+    for (const s of side.slots) if (s.b && Math.abs(s.x-cx)<r){
+      s.b.hp -= s.b.maxhp*0.85; if (s.b.hp<=0){ s.b=null; s.owner=null; } }
+  }
+  for (const n of g.neut) if (n.b && Math.abs(n.x-cx)<r){ n.b=null; n.owner=null; }
 }
 // rase TOUTES les unités et constructions de la carte — JAMAIS les bases (ni leur garnison).
 function razeMap(){
@@ -3801,12 +3818,14 @@ let netRoom = null;
 async function netConnect(role, code, fac){
   netStatus('Chargement du réseau P2P…');
   let joinRoom;
+  // CRUCIAL : les deux joueurs doivent partager EXACTEMENT la même stratégie de
+  // signalisation, sinon ils n'atterrissent jamais sur le même réseau de mise en
+  // relation. On fige donc « nostr » (relais publics fiables) partout ; les CDN ne
+  // servent qu'à charger le module — pas à changer de stratégie en cours de route.
   const sources = [
-    'https://esm.sh/trystero/torrent',
-    'https://cdn.jsdelivr.net/npm/trystero/+esm',
-    'https://esm.sh/trystero/nostr',
-    'https://cdn.jsdelivr.net/npm/trystero@0.21.4/+esm',
-    'https://unpkg.com/trystero/+esm',
+    'https://esm.sh/trystero@0.21.4/nostr',
+    'https://cdn.jsdelivr.net/npm/trystero@0.21.4/nostr/+esm',
+    'https://unpkg.com/trystero@0.21.4/nostr/+esm',
   ];
   // import borné dans le temps : sans cela, un CDN lent gèle l'écran sur « Connexion… »
   const withTimeout = (pr, ms) => Promise.race([pr,
@@ -3822,8 +3841,21 @@ async function netConnect(role, code, fac){
     netStatus('⚠ Réseau P2P inaccessible (connexion ? pare-feu ?). Réessayez dans un instant.');
     return;
   }
+  // STUN pour traverser les NAT classiques ; TURN (relais public gratuit) indispensable
+  // derrière un NAT symétrique / CGNAT — typique en 4G/5G — sinon le flux n'aboutit jamais.
+  const RTC = { iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
+    { urls: 'turns:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+  ] };
+  // relais nostr publics et redondants : la découverte tient même si certains sont saturés.
+  const RELAYS = ['wss://relay.damus.io','wss://nos.lol','wss://relay.nostr.band',
+                  'wss://relay.snort.social','wss://nostr.wine'];
   try {
-    netRoom = joinRoom({appId:'agi-lane-war-v1'}, code);
+    netRoom = joinRoom({appId:'agi-lane-war-v1', rtcConfig:RTC, relayUrls:RELAYS, relayRedundancy:4}, code);
   } catch(err){ netStatus('⚠ Impossible de créer le salon.'); return; }
   const [sendState, getState] = netRoom.makeAction('st');
   const [sendCmd,   getCmd]   = netRoom.makeAction('cm');
@@ -3838,16 +3870,26 @@ async function netConnect(role, code, fac){
   getStart(data=>{ if (net.role==='guest' && !game) startGuestGame(data); });
   getPause(data=>{ onPauseMsg(data); });
   netRoom.onPeerJoin(id=>{
+    if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
     net.peer = true; net.peerId = id;
     if (role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac}); }
     else netStatus('Adversaire connecté !');
   });
   netRoom.onPeerLeave(()=>{ net.peer=false; onPeerLeft(); });
+  // sans pair au bout de ~30 s, on guide le joueur plutôt que de le laisser attendre dans le vide
+  net.findTimer = setTimeout(()=>{
+    if (net && !net.peer) netStatus(role==='host'
+      ? 'Toujours en attente… l\'adversaire doit saisir EXACTEMENT le code « '+code+' ». Sinon, recréez un salon.'
+      : 'Aucun hôte pour « '+code+' ». Vérifiez le code (ou demandez à l\'hôte de recréer le salon), puis réessayez.');
+  }, 30000);
   netStatus(role==='host'
     ? 'Salon « '+code+' » créé. En attente d\'un adversaire…'
     : 'Recherche du salon « '+code+' »…');
 }
-function netDisconnect(){ try { if (netRoom) netRoom.leave(); } catch(e){} netRoom=null; net=null; }
+function netDisconnect(){
+  if (net && net.findTimer){ clearTimeout(net.findTimer); }
+  try { if (netRoom) netRoom.leave(); } catch(e){} netRoom=null; net=null;
+}
 
 /* ================= MENU (DOM) ================= */
 const $ = id => document.getElementById(id);
