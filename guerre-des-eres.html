@@ -118,6 +118,10 @@
            border-top:1px solid #3a2e28; padding-top:12px; margin-top:4px; width:100%;">
         <div data-i18n="online_hint" style="color:#8d84a8; font-size:clamp(11px,1.6vw,13px); text-align:center;">
           Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.</div>
+        <input id="hostCode" placeholder="CODE PRIVÉ (optionnel)" data-i18n-ph="hostcode_ph" maxlength="5" autocomplete="off"
+          style="text-transform:uppercase; width:200px; text-align:center; letter-spacing:.25em;
+                 font-family:inherit; font-size:15px; padding:8px; background:#1a1210;
+                 border:1px solid #4a3a32; color:#e8e0d2;">
         <button class="go" id="hostBtn" data-i18n="host_btn" style="font-size:clamp(14px,2.2vw,18px); padding:11px 36px;">CRÉER UNE PARTIE</button>
         <div data-i18n="or" style="color:#6a665e; letter-spacing:.2em; font-size:12px;">— OU —</div>
         <div class="row" style="gap:6px;">
@@ -309,7 +313,7 @@ const I18N = {
     fac_hum:"HUMANITÉ", diff_0:"Facile", diff_1:"Normal", diff_2:"Difficile", diff_3:"Brutal",
     tuto_chk:"Tutoriel guidé au lancement", start:"COMMENCER (vs IA)", online_btn:"🌐 JOUER EN LIGNE (1v1)",
     online_hint:"Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.",
-    host_btn:"CRÉER UNE PARTIE", or:"— OU —", code_ph:"CODE", join_btn:"REJOINDRE", cancel:"Annuler",
+    host_btn:"CRÉER UNE PARTIE", or:"— OU —", code_ph:"CODE", hostcode_ph:"CODE PRIVÉ (optionnel)", join_btn:"REJOINDRE", cancel:"Annuler",
     set_lang:"Langue", set_music:"Musique", set_sfx:"Effets sonores", set_vol:"Volume", set_shake:"Secousses d'écran",
     set_keys:"TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche", replay:"REJOUER",
     lore0:["2025. Le travail s'est éteint, et les ressources avec lui.","Une mégacorporation possède le monde — et en confie la gestion à l'intelligence qu'elle a forgée."],
@@ -328,7 +332,7 @@ const I18N = {
     fac_hum:"HUMANITY", diff_0:"Easy", diff_1:"Normal", diff_2:"Hard", diff_3:"Brutal",
     tuto_chk:"Guided tutorial on launch", start:"START (vs AI)", online_btn:"🌐 PLAY ONLINE (1v1)",
     online_hint:"Pick your side above first. The match is peer-to-peer, no server.",
-    host_btn:"CREATE A GAME", or:"— OR —", code_ph:"CODE", join_btn:"JOIN", cancel:"Cancel",
+    host_btn:"CREATE A GAME", or:"— OR —", code_ph:"CODE", hostcode_ph:"PRIVATE CODE (optional)", join_btn:"JOIN", cancel:"Cancel",
     set_lang:"Language", set_music:"Music", set_sfx:"Sound effects", set_vol:"Volume", set_shake:"Screen shake",
     set_keys:"KEYBOARD KEYS — click then press the new key", replay:"PLAY AGAIN",
     lore0:["2025. Labor has gone dark — and the resources with it.","A megacorporation owns the world, and hands its rule to the mind it forged."],
@@ -670,11 +674,11 @@ const EVOLVE_XP = [0, 360, 980, 2150, 4200]; // paliers d'ère allongés : parti
 const TRANS_XP = 13000; // transcendance : 5× le coût d'origine (2600) pour un endgame qui se mérite
 // ---- cataclysmes naturels : rares, et de moins en moins rares à mesure que le monde se meurt ----
 const CATAS = {
-  acid:  {name:'PLUIE D’ACIDE',   col:'#9be24a', dur:14, icon:'🌧'},
-  heat:  {name:'CANICULE',             col:'#ff9d2e', dur:16, icon:'🔥'},
-  flood: {name:'INONDATION',           col:'#3fa0e8', dur:14, icon:'🌊'},
-  sand:  {name:'TEMPÊTE DE SABLE', col:'#d9b46a', dur:15, icon:'🌪'},
-  nuke:  {name:'FRAPPE NUCLÉAIRE', col:'#fff0a0', dur:7,  icon:'☢'},
+  acid:  {name:'PLUIE D’ACIDE',     col:'#9be24a', dur:13, icon:'🌧'}, // DoT lourd unités + bâtiments
+  heat:  {name:'CANICULE',          col:'#ff9d2e', dur:14, icon:'🔥'}, // DoT lourd + ralentit
+  flood: {name:'INONDATION',        col:'#3fa0e8', dur:9,  icon:'🌊'}, // détruit le sol (sauf garnisons)
+  sand:  {name:'TEMPÊTE DE SABLE',  col:'#d9b46a', dur:11, icon:'🌪'}, // détruit le ciel + visibilité nulle
+  nuke:  {name:'BOMBE ATOMIQUE',    col:'#fff0a0', dur:6,  icon:'☢'},  // rase TOUT sauf les bases
 };
 const CATA_KEYS = ['acid','heat','flood','sand','nuke'];
 const ROLES = [
@@ -686,6 +690,11 @@ const ROLES = [
   {key:'support',label:'Soutien', hp:130, dmg:0,  spd:50, range:130, rate:1.6,  cost:{f:50,m:60,w:25},  xp:32},
 ];
 const GREMLIN = {hp:34, dmg:7, spd:78, range:14, rate:0.7, xp:3};
+// unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
+const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
+const HERO_CD = 600;
+const HERO_COST = {f:700, m:700, w:200};
+const HERO_NAME = {HUM:'CHE GUEVARA', IA:'SINGULARITÉ'};
 const FACTIONS = {
   HUM: {
     name:"HUMANITÉ", accent:"#ff9d45", dark:"#b85f1e",
@@ -756,6 +765,12 @@ const GAR_MAX = 2;
 // structures pouvant accueillir une garnison : tourelles ET murailles (créneaux)
 const canGar = b => !!b && (b.type==='turret' || b.type==='wall');
 const ROLE_FR = {melee:'Mêlée', tank:'Tank', ranged:'Tireur', siege:'Artilleur', air:'Aviation', support:'Soutien'};
+// nom d'unité PROPRE À LA FACTION (et à l'ère) — pour que l'UI GPT n'affiche jamais
+// des termes humains (« tireur »/« artilleur ») dans les menus de garnison.
+function rname(side, key){
+  const n = side && side.fac && side.fac.names && side.fac.names[key];
+  return (n && n[side.era]) || ROLE_FR[key] || key;
+}
 // hauteur visuelle d'un bâtiment (grandit avec le niveau)
 function bldH(b){
   const l = (b.lvl||1)-1;
@@ -770,8 +785,8 @@ let game = null, paused = false;
 let netPause = null;        // négociation de pause en ligne (voir module pause en ligne)
 let onlineVoteRects = null; // boutons Oui/Non du vote de prolongation
 let net = null, GX = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
-const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6};
-const CODE_ROLES = ['melee','tank','ranged','siege','air','support','gremlin'];
+const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6,hero:7};
+const CODE_ROLES = ['melee','tank','ranged','siege','air','support','gremlin','hero'];
 const isGuest = side => game && game.net==='guest' && side===game.p;
 function guestCmd(c){ if (net && net.sendCmd) net.sendCmd(c); }
 function slotRef(side, slot){
@@ -813,6 +828,9 @@ function mkSide(side, facKey, x){
     cap:30, capUp:false,
     formation:false, autoRepair:false, fortLvl:1, mode:'build', reach:260,
     upg:{melee:0,tank:0,ranged:0,siege:0,air:0,support:0},
+    queue:[],                 // file d'attente de production (max 10)
+    heroCd:0, heroDone:false,  // unité héroïque légendaire (1 / 10 min)
+    phase:1, combatBuff:0,     // seconde base (phase 2) + bonus de comeback
     slots:[0,1,2].map(i=>({ x: x + side*(95+i*64), b:null, owner:null })),
   };
 }
@@ -833,6 +851,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
     sel: new Set(),
     weather:null, wClock:20,            // cycle météo (démarre au calme)
     cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
+    winter:false,                                       // hiver nucléaire (2e phase de base)
     aiThink:2, msg:null, msgT:0,
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
@@ -857,10 +876,15 @@ function sideBuildSlots(side){
   return out;
 }
 function unitTotal(side){
-  let n = side.units.length + (side.gar? side.gar.length:0);
+  // les drones « micro » (essaim GPT) ne pèsent PAS dans le cap global de la carte
+  let n = (side.gar? side.gar.length:0);
+  for (const u of side.units) if (u.role!=='gremlin') n++;
   for (const s of sideBuildSlots(side)) if (s.b && s.b.gar) n += s.b.gar.length;
   return n;
 }
+// nombre de drones « micro » actuellement déployés (limité à part du cap)
+function droneCount(side){ let n=0; for (const u of side.units) if (u.role==='gremlin') n++; return n; }
+function droneCap(side){ return 5 + side.era*2 + (side.upg.support||0)*2; }
 // garde du château : envoie l'unité à distance la plus proche, ou en recrute une
 function dispatchBaseGarrison(side, role){
   if (isGuest(side)){ guestCmd({c:'bgar', role}); return true; }
@@ -874,7 +898,7 @@ function dispatchBaseGarrison(side, role){
   }
   if (best){
     best.task = {kind:'gbase'};
-    if (side===game.p){ sfx('sel'); announce('🛡 '+ROLE_FR[role]+' rappelé au château', '#e8d8a0'); }
+    if (side===game.p){ sfx('sel'); announce('🛡 '+rname(side,role)+' rappelé au château', '#e8d8a0'); }
     return true;
   }
   const ri = ROLES.findIndex(r=>r.key===role), cost = unitCost(side, ri);
@@ -906,8 +930,8 @@ function calcRates(side){
     rw += (n.center? 3.5:2.2)*dwindle;
     if (n.center){ rf += 2*dwindle; rm += 2*dwindle; }
   }
-  const pm = side.prodMul||1;
-  return {f:rf*pm, m:rm*pm, w:rw*pm};
+  const pm = side.prodMul||1, wM = game.winter?0.5:1;
+  return {f:rf*pm*wM, m:rm*pm*wM, w:rw*pm};
 }
 
 /* ================= ACTIONS ================= */
@@ -927,21 +951,38 @@ function tryBuy(side, ri){
   if (isGuest(side)){ guestCmd({c:'buy',ri}); sfx('buy',ri); return true; }
   const role = ROLES[ri];
   if (role.minEra && side.era < role.minEra) return false;
-  // quota strict de médics : 1 de base, +1 par niveau d'amélioration du Soutien (max 3)
-  if (role.key==='support' && FACTIONS[side.facKey].supportKind==='medic'){
-    const maxMed = 1 + Math.min(2, side.upg.support||0);
-    const nMed = side.units.filter(u=>u.role==='support').length;
-    if (nMed>=maxMed){
-      if (side===game.p) announce('🚑 Quota de médics atteint ('+maxMed+') — améliorez le Soutien ⬆', '#d88');
+  // quota strict de SOUTIEN (médic humain ET ruche GPT) : 1, +1 par niveau d'amélioration (max 3)
+  if (role.key==='support'){
+    const maxS = 1 + Math.min(2, side.upg.support||0);
+    const nS = side.units.filter(u=>u.role==='support').length
+             + side.queue.filter(q=>ROLES[q].key==='support').length;
+    if (nS>=maxS){
+      if (side===game.p) announce('🚑 Quota de soutien atteint ('+maxS+') — améliorez le Soutien ⬆', '#d88');
       return false;
     }
   }
   const cost = unitCost(side, ri);
-  if (unitTotal(side) >= side.cap || side.cd[ri]>0 || !canPay(side,cost)) return false;
+  if (side.cd[ri]>0 || !canPay(side,cost)) return false;
+  // cap atteint → FILE D'ATTENTE (max 10) : production auto dès qu'une place se libère
+  if (unitTotal(side) + side.queue.length >= side.cap){
+    if (side.queue.length>=10){
+      if (side===game.p) announce('⏳ File d\'attente pleine (10)', '#d88');
+      return false;
+    }
+    pay(side,cost); side.cd[ri] = 0.5 + ri*0.45; side.queue.push(ri);
+    if (side===game.p){ sfx('buy', ri); announce('⏳ '+rname(side,role.key)+' en file ('+side.queue.length+'/10)', '#9dc88a'); }
+    return true;
+  }
   pay(side,cost); side.cd[ri] = 0.5 + ri*0.45;
   spawnUnit(side, ri);
   if (side===game.p) sfx('buy', ri);
   return true;
+}
+// vide la file d'attente dès qu'il y a de la place sur la carte
+function processQueue(side){
+  while (side.queue.length && unitTotal(side) < side.cap){
+    spawnUnit(side, side.queue.shift());
+  }
 }
 function spawnUnit(side, ri, gremlin=false, atX=null){
   const m = statMul(side.era);
@@ -1095,7 +1136,7 @@ function dispatchGarrison(side, slot, role){
   }
   if (best){
     best.task = {kind:'garrison', slot};
-    if (side===game.p){ sfx('sel'); announce('🚪 '+ROLE_FR[best.role]+' en route vers le bâtiment', '#e8d8a0'); }
+    if (side===game.p){ sfx('sel'); announce('🚪 '+rname(side,best.role)+' en route vers le bâtiment', '#e8d8a0'); }
     return true;
   }
   // sinon : recrute directement le rôle demandé (tireur par défaut)
@@ -1223,6 +1264,32 @@ function tryCapUp(side){
   if (side===game.p) { sfx('cap'); announce("📈 CAPACITÉ : 40 UNITÉS", "#e8d8a0"); }
   return true;
 }
+// ---- invocation du héros légendaire ----
+function tryHero(side){
+  if (isGuest(side)){ guestCmd({c:'hero'}); return true; }
+  if (side.units.some(u=>u.role==='hero')){
+    if (side===game.p) announce('🦸 Votre héros est déjà sur le terrain', '#d88'); return false; }
+  if (side.heroCd>0){
+    if (side===game.p) announce('🦸 Héros en recharge ('+Math.ceil(side.heroCd)+'s)', '#d88'); return false; }
+  if (!canPay(side, HERO_COST)){
+    if (side===game.p) announce('🦸 Coût : '+costStr(side,HERO_COST), '#d88'); return false; }
+  pay(side, HERO_COST); side.heroCd = HERO_CD;
+  spawnHero(side);
+  if (side===game.p){ sfx('trans'); game.flash=0.6; game.shake=10; }
+  announce('🦸 '+HERO_NAME[side.facKey]+' ENTRE EN JEU — ×3 dégâts, ×2 vitesse !', side.fac.accent);
+  return true;
+}
+function spawnHero(side){
+  const mm = statMul(side.era);
+  const u = { role:'hero', hp:HERO.hp*mm, maxhp:HERO.hp*mm, dmg:HERO.dmg*mm, spd:HERO.spd,
+    range:HERO.range, rate:HERO.rate, fly:false, xpv:Math.round(140*(1+side.era*0.7)) };
+  u.x = side.x + side.side*60;
+  u.side=side.side; u.era=side.era; u.fac=side.facKey; u.trans=side.trans;
+  u.atkT=0; u.bob=Math.random()*6.28; u.flash=0; u.supT=2;
+  u.ord=null; u.holdX=null; u.task=null; u.heat=0; u.tiredT=0;
+  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
+  side.units.push(u);
+}
 function setStance(side, st){
   if (isGuest(side)){
     guestCmd({c:'stance', st, ids: game.sel.size? [...game.sel].map(u=>u.id) : []});
@@ -1267,16 +1334,24 @@ function aiUpdate(dt){
   // évolution dès que possible
   if (e.era<4 && e.xp >= EVOLVE_XP[e.era+1]*(1+d.eraLag)) tryEvolve(e);
   if (e.era>=1) e.formation = true;
+  // en TRANSCENDANCE, l'argent/les données sont illimités : l'IA rase ses marchés/serveurs
+  // (farmM) devenus inutiles pour libérer la place et reconstruire de l'utile.
+  if (e.trans){
+    for (const s of sideBuildSlots(e))
+      if (s.b && s.b.type==='farmM'){ demolish(s); break; }
+  }
   // économie : slots de base puis spots neutres
   const empty = e.slots.find(s=>!s.b);
   if (empty){
-    const order = ['farmM','turret','farmF'];
+    const order = e.trans? ['turret','farmF','well'] : ['farmM','turret','farmF'];
     tryBuild(e, empty, order[e.slots.indexOf(empty)] || 'well');
   } else {
     for (const n of game.neut) if (!n.b && Math.random()<0.6){
       // macro : capitalise d'abord (fermes), tour seulement si menacé
       const threatened = game.p.units.some(u=>Math.abs(u.x-n.x)<400);
-      tryBuild(e, n, threatened? 'turret' : (game.dev>0.4? 'well' : Math.random()<0.5?'farmM':'farmF')); break;
+      const eco = e.trans? (Math.random()<0.5?'farmF':'well')
+                         : (game.dev>0.4? 'well' : Math.random()<0.5?'farmM':'farmF');
+      tryBuild(e, n, threatened? 'turret' : eco); break;
     }
   }
   // améliore ses fermes et tours quand la caisse le permet
@@ -1306,6 +1381,9 @@ function aiUpdate(dt){
   // ultime : nettoie dès que le joueur masse des troupes ou pousse vers la base
   const pPushing = p.units.some(u=>Math.abs(u.x-e.x)<900);
   if (e.specialCd<=0 && (p.units.length>=5 || pPushing)) trySpecial(e);
+  // héros légendaire : dès qu'il est prêt et qu'une bataille se prépare
+  if (e.heroCd<=0 && !e.units.some(u=>u.role==='hero') && canPay(e,HERO_COST)
+      && (e.mode==='push' || pPushing || e.trans)) tryHero(e);
   // ----- vagues : accumule en défense, puis pousse en masse -----
   const wave = 7 + game.diff*3 + e.era*2;
   const myN = e.units.filter(u=>u.role!=='support').length;
@@ -1353,7 +1431,7 @@ function dealDmg(target, dmg, attacker){
   }
   else {
     out /= homeBuff(target);
-    if (target.fac==='HUM' && game.weather==='strike') out *= 0.85; // grève générale : +15 % d'armure
+    out /= (1 + 0.15*(((target.side===1?game.p:game.e).combatBuff)||0)); // comeback : le perdant encaisse mieux
     target.hp -= out; target.flash = 0.15;
     if (attacker && attacker.role) target.lastHit = attacker;        // pour la vétérance
   }
@@ -1363,6 +1441,8 @@ function updateUnits(side, foe, dt){
   const m = statMul(side.era);
   const garMoves = [];
   const medClaims = new Set(); // un blessé soigné par un médic ne sera pas ciblé par les autres ce tick
+  // unité héroïque vivante : ×3 dégâts et ×2 vitesse pour TOUT le camp
+  side.heroAlive = side.units.some(u=>u.role==='hero');
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
     if (u.tiredT>0) u.tiredT -= dt;                       // fatigue / surchauffe
@@ -1386,80 +1466,68 @@ function updateUnits(side, foe, dt){
       }
       continue;
     }
-    // ---- soutien : médic libre / ruche ----
+    // ---- soutien : médic humain / ruche GPT (soignent tous deux, ciblage réparti) ----
     if (u.role==='support'){
       const kind = FACTIONS[u.fac].supportKind;
+      const isHive = kind==='hive';
       const lvl = side.upg.support||0;
-      if (kind==='medic'){
-        const hr = u.range + 40*lvl;             // portée de soin par amélioration
-        // ciblage réparti : on choisit le blessé au meilleur score (gravité + proximité),
-        // en évitant ceux déjà pris en charge par un autre médic ce tick — fini la nuée
-        // de médics qui traversent la carte pour la même unité.
-        let best=null, bestScore=1e9;
-        const pick = (allowClaimed)=>{
-          for (const a of side.units){
-            if (a===u || a.hp>=a.maxhp) continue;
-            if (!allowClaimed && medClaims.has(a)) continue;
-            const f = a.hp/a.maxhp;
-            // priorité aux plus blessés ; pénalité de distance pour rester sur son front
-            const score = f + Math.abs(a.x-u.x)/1500;
-            if (score<bestScore){ bestScore=score; best=a; }
-          }
-        };
-        pick(false);
-        if (!best){ bestScore=1e9; pick(true); } // tous réclamés : on partage le plus critique proche
-        if (best) medClaims.add(best);
-        if (best){
-          // avance librement vers le blessé, même en première ligne
-          if (Math.abs(best.x-u.x) > hr*0.7) moveToward(u, best.x - side.side*14, dt, 1.1);
-          if (u.supT<=0 && Math.abs(best.x-u.x)<=hr){
-            u.supT = Math.max(0.5, 1.3 - 0.2*lvl);
-            const heal = (45+10*lvl)*m;
-            best.hp = Math.min(best.maxhp, best.hp+heal);
-            addFloater(best.x, gY(best.x)-52, "+❤", "#6dff8a");
-            burst(best.x, gY(best.x)-36, '#6dff8a', 4, 0.5);
-            if (lvl>=2){ // médic de combat : soigne un 2e blessé à portée (non déjà réclamé)
-              let b2=null, w2=0.999;
-              for (const a of side.units) if (a!==u && a!==best && a.hp<a.maxhp
-                  && !medClaims.has(a) && Math.abs(a.x-u.x)<=hr){
-                const f=a.hp/a.maxhp; if (f<w2){w2=f; b2=a;} }
-              if (b2){ medClaims.add(b2); b2.hp = Math.min(b2.maxhp, b2.hp+heal*0.6);
-                addFloater(b2.x, gY(b2.x)-52, "+❤", "#6dff8a"); }
-            }
-          }
-        } else if (st==='retreat'){
-          const homeX = side.x + side.side*150;
-          if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
-        } else {
-          let frontAlly = side.x;
-          for (const a of side.units) if (a!==u && (a.x-frontAlly)*side.side>0) frontAlly=a.x;
-          if (((frontAlly - side.side*70)-u.x)*side.side>4) tryMove(u, side, dt);
+      const hr = u.range + 40*lvl;             // portée de soin par amélioration
+      const hcol = isHive? '#5ad0ff' : '#6dff8a';
+      const hicon = isHive? '+🔧' : '+❤';
+      // ciblage réparti : meilleur score (gravité + proximité), en évitant les blessés
+      // déjà pris en charge par un autre soutien ce tick — pas de nuée sur la même unité.
+      let best=null, bestScore=1e9;
+      const pick = (allowClaimed)=>{
+        for (const a of side.units){
+          if (a===u || a.hp>=a.maxhp) continue;
+          if (!allowClaimed && medClaims.has(a)) continue;
+          const f = a.hp/a.maxhp;
+          const score = f + Math.abs(a.x-u.x)/1500;
+          if (score<bestScore){ bestScore=score; best=a; }
         }
-      } else { // ruche
-        let frontAlly = side.x;
-        for (const a of side.units) if (a!==u && (a.x-frontAlly)*side.side>0) frontAlly=a.x;
-        const wantX = frontAlly - side.side*70;
-        if (st==='retreat'){
-          const homeX = side.x + side.side*150;
-          if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
-        } else if ((wantX-u.x)*side.side>4) tryMove(u, side, dt);
-        if (u.supT<=0){
-          u.supT = Math.max(2.2, 4.2 - 0.5*lvl);
-          // l'essaim RÉPARE aussi le châssis allié le plus abîmé (l'IA soigne à toutes les ères)
-          let dmgd=null, worst2=0.999;
-          for (const a of side.units) if (a!==u && Math.abs(a.x-u.x)<u.range){
-            const f2=a.hp/a.maxhp; if (f2<worst2){ worst2=f2; dmgd=a; } }
-          if (dmgd){
-            dmgd.hp = Math.min(dmgd.maxhp, dmgd.hp + (32+8*lvl)*m);
-            addFloater(dmgd.x, gY(dmgd.x)-52, "+🔧", "#5ad0ff");
-            burst(dmgd.x, gY(dmgd.x)-36, '#5ad0ff', 3, 0.4);
-          }
-          if (unitTotal(side) < side.cap){
+      };
+      pick(false);
+      if (!best){ bestScore=1e9; pick(true); }
+      if (best) medClaims.add(best);
+      // la ruche GPT spawn des drones (hors cap global) sur un timer séparé et plus lent
+      if (isHive){
+        if (u.droneT===undefined) u.droneT = 2;
+        u.droneT -= dt;
+        if (u.droneT<=0){
+          u.droneT = Math.max(2.6, 4.5 - 0.5*lvl);
+          if (droneCount(side) < droneCap(side)){
             spawnUnit(side, 0, true, u.x + side.side*14);
-            addFloater(u.x, gY(u.x)-56, "✿ agent !", "#5ad0ff");
+            addFloater(u.x, gY(u.x)-56, "✿ drone", "#5ad0ff");
             burst(u.x, gY(u.x)-36, '#5ad0ff', 5, 0.5);
           }
         }
+      }
+      if (best){
+        if (Math.abs(best.x-u.x) > hr*0.7) moveToward(u, best.x - side.side*14, dt, 1.1);
+        if (u.supT<=0 && Math.abs(best.x-u.x)<=hr){
+          // la ruche soigne un peu plus lentement que le médic (elle produit aussi des drones)
+          const base = Math.max(0.5, 1.3 - 0.2*lvl);
+          u.supT = isHive? base*1.35 : base;
+          const heal = (isHive? 40+9*lvl : 45+10*lvl)*m;
+          best.hp = Math.min(best.maxhp, best.hp+heal);
+          addFloater(best.x, gY(best.x)-52, hicon, hcol);
+          burst(best.x, gY(best.x)-36, hcol, 4, 0.5);
+          if (lvl>=2){ // soutien avancé : un 2e blessé à portée (non déjà réclamé)
+            let b2=null, w2=0.999;
+            for (const a of side.units) if (a!==u && a!==best && a.hp<a.maxhp
+                && !medClaims.has(a) && Math.abs(a.x-u.x)<=hr){
+              const f=a.hp/a.maxhp; if (f<w2){w2=f; b2=a;} }
+            if (b2){ medClaims.add(b2); b2.hp = Math.min(b2.maxhp, b2.hp+heal*0.6);
+              addFloater(b2.x, gY(b2.x)-52, hicon, hcol); }
+          }
+        }
+      } else if (st==='retreat'){
+        const homeX = side.x + side.side*150;
+        if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
+      } else {
+        let frontAlly = side.x;
+        for (const a of side.units) if (a!==u && (a.x-frontAlly)*side.side>0) frontAlly=a.x;
+        if (((frontAlly - side.side*70)-u.x)*side.side>4) tryMove(u, side, dt);
       }
       continue;
     }
@@ -1471,12 +1539,14 @@ function updateUnits(side, foe, dt){
       if (u.ord==='retreat'){ u.ord='hold'; u.holdX = u.x; }
       noMove = true;
     }
-    // ---- ciblage (mêlée au sol ≠ volants ; tempête EM : portée IA −25 %) ----
+    // ---- malus social/système : la faction « figée » refuse d'attaquer et se contente de tenir ----
+    const muzzled = (u.fac==='HUM' && game.weather==='strike') || (u.fac==='IA' && game.weather==='patch');
+    if (muzzled) noMove = true;
+    // ---- ciblage (mêlée au sol ≠ volants ; tempête de sable : visée longue brouillée) ----
     const meleeGround = u.range<=24 && !u.fly;
-    const eRange = u.range * (game.weather==='em' && u.fac==='IA'? 0.75 : 1)
-                          * (game.cata==='sand' && u.range>60? 0.78 : 1); // sable : visée longue brouillée
+    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1);
     let target=null, best=1e9;
-    for (const f of targets){
+    if (!muzzled) for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
       if (f.fly && meleeGround) continue;
       const dx = (f.x-u.x)*u.side;
@@ -1486,7 +1556,8 @@ function updateUnits(side, foe, dt){
       if (u.atkT<=0){
         const tired = u.tiredT>0;
         u.atkT = u.rate * (tired? 1.5 : 1);            // épuisé : frappe plus lentement...
-        const dmgOut = u.dmg * (tired? 0.7 : 1);       // ...et moins fort
+        // ×3 si héros allié vivant, + bonus offensif de comeback ; −30 % si épuisé
+        const dmgOut = u.dmg * (tired? 0.7 : 1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0));
         // jauge d'effort : le combat continu mène à la fatigue / surchauffe
         u.heat = (u.heat||0) + 0.06;
         if (u.heat>=1){
@@ -1587,11 +1658,11 @@ function tryMove(u, side, dt){
     }
     if (ahead >= stackMax(side, u)) return;
   }
-  u.x += u.spd*side.side*dt;
+  u.x += u.spd*(side.heroAlive?2:1)*side.side*dt;   // ×2 vitesse sous l'aura d'un héros
   u.x = clamp(u.x, 30, WORLD-30);
 }
 function moveBack(u, side, dt){
-  u.x -= u.spd*1.2*side.side*dt;
+  u.x -= u.spd*1.2*(side.heroAlive?2:1)*side.side*dt;
   u.x = clamp(u.x, 30, WORLD-30);
 }
 // déplacement libre dans les deux sens (tâches, médic) ; renvoie true à l'arrivée
@@ -1617,7 +1688,7 @@ function updateBuildings(side, foe, dt){
     if (b.type==='turret'){
       b.atkT -= dt;
       if (b.atkT<=0){
-        const tRange = BUILDS.turret.range * (game.weather==='em' && side.facKey==='IA'? 0.75 : 1) * (game.cata==='sand'?0.78:1);
+        const tRange = BUILDS.turret.range * (game.cata==='sand'?0.78:1);
         let target=null, best=1e9;
         for (const f of foe.units){ const d=Math.abs(f.x-s.x); if (d<tRange && d<best){best=d;target=f;} }
         if (target){ b.atkT = BUILDS.turret.rate;
@@ -1626,8 +1697,8 @@ function updateBuildings(side, foe, dt){
           if (side===game.p) sfx('shoot', 2);
         }
       }
-    } else if (b.type==='farmF') side.f += BUILDS.farmF.rate*lvlF(b)*(side.prodMul||1)*dt;
-    else if (b.type==='farmM') side.m += BUILDS.farmM.rate*lvlF(b)*(side.prodMul||1)*dt;
+    } else if (b.type==='farmF') side.f += BUILDS.farmF.rate*lvlF(b)*(side.prodMul||1)*(game.winter?0.5:1)*dt;
+    else if (b.type==='farmM') side.m += BUILDS.farmM.rate*lvlF(b)*(side.prodMul||1)*(game.winter?0.5:1)*dt;
     else if (b.type==='well') side.w += BUILDS.well.rate*lvlF(b)*(side.prodMul||1)*dt*(1-0.5*game.dev);
     // garnison : chaque rôle défend à sa façon
     if (b.gar) for (let gi=0; gi<b.gar.length; gi++){
@@ -1703,19 +1774,23 @@ function update(dt){
   if (!game || game.over || paused || tutoStep>=0) return;
   game.t += dt;
   const p=game.p, e=game.e, d=game.d;
-  // comeback : celui qui perd la carte produit plus et recharge son ultime plus vite
+  // comeback RENFORCÉ : le camp qui perd produit nettement plus, recharge son ultime plus
+  // vite, frappe plus fort (combatBuff) et encaisse un peu mieux.
   const lp = losing01(p), le = losing01(e);
-  p.prodMul = 1 + 0.55*lp;
-  e.prodMul = (1 + 0.55*le) * (d.cheat||1);   // triche cachée de l'IA selon la difficulté
-  p.f += 4*p.prodMul*dt; p.m += 2.5*p.prodMul*dt; p.w += 0.6*p.prodMul*dt;
-  e.f += 4*d.inc*e.prodMul*dt; e.m += 2.5*d.inc*e.prodMul*dt; e.w += 0.6*d.inc*e.prodMul*dt;
+  p.combatBuff = lp; e.combatBuff = le;
+  const wM = game.winter? 0.5 : 1;             // hiver nucléaire : nourriture/énergie ÷2 pour tous
+  p.prodMul = 1 + 0.9*lp;
+  e.prodMul = (1 + 0.9*le) * (d.cheat||1);     // triche cachée de l'IA selon la difficulté
+  p.f += 4*p.prodMul*wM*dt; p.m += 2.5*p.prodMul*wM*dt; p.w += 0.6*p.prodMul*dt;
+  e.f += 4*d.inc*e.prodMul*wM*dt; e.m += 2.5*d.inc*e.prodMul*wM*dt; e.w += 0.6*d.inc*e.prodMul*dt;
   p.xp += 2.2*dt; e.xp += 2.2*dt;
   for (let i=0;i<6;i++){ if(p.cd[i]>0)p.cd[i]-=dt; if(e.cd[i]>0)e.cd[i]-=dt; }
+  if (p.heroCd>0) p.heroCd -= dt; if (e.heroCd>0) e.heroCd -= dt;
   // nano-réparation passive de la base
   if (p.autoRepair && p.hp<p.maxhp) p.hp = Math.min(p.maxhp, p.hp+8*dt);
   if (e.autoRepair && e.hp<e.maxhp) e.hp = Math.min(e.maxhp, e.hp+8*dt);
-  if (p.specialCd>0) p.specialCd -= dt*(1+1.2*lp);
-  if (e.specialCd>0) e.specialCd -= dt*(1+1.2*le);
+  if (p.specialCd>0) p.specialCd -= dt*(1+1.8*lp);
+  if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le);
   // la santé du monde use les vivants : le camp qui DOMINE s'use plus vite (catch-up)
   if (game.dev>0.12){
     const wearP = game.dev*(0.15+0.85*(1-lp))*dt;
@@ -1731,13 +1806,15 @@ function update(dt){
   p.adv = p.x; for (const u of p.units) if (!u.fly && u.x>p.adv) p.adv = u.x;
   e.adv = e.x; for (const u of e.units) if (!u.fly && u.x<e.adv) e.adv = u.x;
 
-  // ---- météo tactique : Tempête EM (IA) ↔ Grève générale (humains), en cycle ----
+  // ---- événements sociaux/système : deux malus SYMÉTRIQUES de 15 s, un par faction ----
+  // Grève générale (humains figés) ↔ Mise à jour forcée (machines figées).
   game.wClock = (game.wClock + dt) % 150;
-  const newW = game.wClock<20? 'em' : (game.wClock>=75 && game.wClock<95)? 'strike' : null;
+  const newW = (game.wClock>=30 && game.wClock<45)? 'strike'
+             : (game.wClock>=90 && game.wClock<105)? 'patch' : null;
   if (newW !== game.weather){
     game.weather = newW;
-    if (newW==='em') announce('🌩 TEMPÊTE EM — portée des machines réduite de 25 %', '#9ad1d4');
-    else if (newW==='strike') announce('✊ GRÈVE GÉNÉRALE — les humains encaissent 15 % de mieux', '#ff9d45');
+    if (newW==='strike') announce('✊ GRÈVE GÉNÉRALE — les humains cessent d\'attaquer (15 s)', '#ff9d45');
+    else if (newW==='patch') announce('🔧 MISE À JOUR FORCÉE — les machines figent leurs protocoles (15 s)', '#5ad0ff');
   }
   // ---- siège final : sous 20 % de PV, le pouvoir désespéré se débloque ----
   if (!p.lastSeen && p.hp < p.maxhp*0.2){ p.lastSeen=true; p.lastReady=true;
@@ -1746,6 +1823,7 @@ function update(dt){
 
   if (game.net==='host'){ let c; while((c=net.cmdQ.shift())) applyCmd(c); } // commandes de l'invité
   else if (!game.net) aiUpdate(dt);                                          // IA en solo seulement
+  processQueue(p); processQueue(e);                                          // file d'attente de production
   updateUnits(p,e,dt); updateUnits(e,p,dt);
   updateBuildings(p,e,dt); updateBuildings(e,p,dt);
   updateBaseGarrison(p,e,dt); updateBaseGarrison(e,p,dt);
@@ -1790,12 +1868,32 @@ function update(dt){
   camClamp();
 
   if (p.hp<=0 || e.hp<=0){
-    game.over=true; game.win = e.hp<=0;
-    game.shake=20;
-    burst((game.win?e:p).x, gY((game.win?e:p).x)-60, '#fff', 44, 1.6);
-    sfx(game.win?'evolve':'boom');
-    setTimeout(showEnd, 1100);
+    const faller = p.hp<=0? p : e;
+    // SECONDE CHANCE : la 1re base à tomber renaît plus solide ; la Bombe H rase la carte
+    // et plonge le monde en Hiver nucléaire. Il faut alors la détruire une 2e fois.
+    if (!game.winter && (faller.phase||1)<2){
+      faller.phase = 2;
+      faller.maxhp = Math.round(faller.maxhp*2.2);
+      faller.hp = faller.maxhp;
+      triggerNuclearWinter();
+    } else {
+      game.over=true; game.win = e.hp<=0;
+      game.shake=20;
+      burst((game.win?e:p).x, gY((game.win?e:p).x)-60, '#fff', 44, 1.6);
+      sfx(game.win?'evolve':'boom');
+      setTimeout(showEnd, 1100);
+    }
   }
+}
+// Bombe H : rase tout (sauf bases), santé du monde à 0, bascule en Hiver nucléaire
+function triggerNuclearWinter(){
+  const g=game;
+  g.winter = true; g.dev = 1;
+  g.flash = 1.6; g.shake = Math.max(g.shake,34);
+  razeMap();
+  announce('☢ BOMBE H — HIVER NUCLÉAIRE ☢', '#bfe6ff');
+  addFloater(WORLD/2, gY(WORLD/2)-150, 'Production ÷2 — détruisez la base renée pour vaincre', '#bfe6ff', 14);
+  sfx('boom');
 }
 /* ---------- CATACLYSMES NATURELS ---------- */
 function updateCata(dt){
@@ -1827,33 +1925,46 @@ function startCata(key){
   g.cataX = WORLD*(0.3+Math.random()*0.4);
   announce(c.icon+'  '+cataName(key)+'  '+c.icon, c.col);
   sfx('boom');
-  if (key==='nuke') nukeBlast(g.cataX);
+  // effets INSTANTANÉS et radicaux au déclenchement
+  if (key==='nuke'){
+    g.flash=1.4; g.shake=Math.max(g.shake,30);
+    burst(g.cataX, gY(g.cataX)-60, '#fff0a0', 60, 2.6); burst(g.cataX, gY(g.cataX)-130, '#ffd34a', 44, 2);
+    razeMap();                                   // rase TOUT sauf les bases
+  } else if (key==='flood'){
+    g.shake=Math.max(g.shake,10);
+    // détruit toutes les unités AU SOL ; celles en garnison (tours/château) sont à l'abri
+    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.hp=0; burst(u.x, gY(u.x)-16, '#3fa0e8', 6); }
+  } else if (key==='sand'){
+    g.shake=Math.max(g.shake,8);
+    for (const s of [g.p,g.e]) for (const u of s.units) if (u.fly){ u.hp=0; burst(u.x, gY(u.x)-30, '#d9b46a', 6); }
+  }
 }
 function cataName(key){ const k='cata_'+key; const s=(typeof t==='function')? t(k):null; return (s&&s!==k)? s : CATAS[key].name; }
 function applyCataEffects(dt){
   const g=game, k=g.cata;
   const each=fn=>{ for (const u of g.p.units) fn(u); for (const u of g.e.units) fn(u); };
-  if (k==='acid'){
-    each(u=>{ u.hp -= (u.fac==='IA'?7:5)*dt; });          // corrode davantage les machines
-    for (const side of [g.p,g.e]) for (const s of side.slots) if (s.b && s.b.type!=='site') s.b.hp -= 5*dt;
-  } else if (k==='heat'){
-    each(u=>{ u.heat=(u.heat||0)+0.05*dt*(u.fac==='IA'?1.4:1); if (u.fac==='IA') u.hp -= 3*dt; }); // surchauffe IA
-  } else if (k==='flood'){
-    each(u=>{ if (!u.fly) u.hp -= 4*dt; });               // les troupes au sol pataugent
-  } else if (k==='sand'){
-    each(u=>{ if (u.fly) u.hp -= 4*dt; });                // les volants pris dans la tempête (+ portée réduite)
-  } else if (k==='nuke'){
-    each(u=>{ if (Math.abs(u.x-g.cataX)<200) u.hp -= 10*dt; }); // retombées radioactives
+  if (k==='acid'){                                          // DoT lourd : unités + bâtiments
+    each(u=>{ u.hp -= (u.fac==='IA'?22:18)*dt; });
+    for (const side of [g.p,g.e]) for (const s of sideBuildSlots(side)) if (s.b && s.b.type!=='site') s.b.hp -= 24*dt;
+  } else if (k==='heat'){                                   // DoT lourd + surchauffe + ralentit
+    each(u=>{ u.hp -= (u.fac==='IA'?20:16)*dt; u.heat=(u.heat||0)+0.12*dt; if (u.heat>=1){u.heat=0;u.tiredT=3;} });
+  } else if (k==='flood'){                                  // la crue continue de noyer les nouveaux arrivants
+    each(u=>{ if (!u.fly) u.hp -= 26*dt; });
+  } else if (k==='sand'){                                   // la tempête continue d'arracher tout volant
+    each(u=>{ if (u.fly) u.hp -= 30*dt; });
   }
 }
-function nukeBlast(x){
-  const g=game, R=260;
-  game.flash=1.2; game.shake=Math.max(game.shake,28);
-  burst(x, gY(x)-40, '#fff0a0', 50, 2.2); burst(x, gY(x)-95, '#ffd34a', 38, 1.8);
-  const hit=u=>{ const d=Math.abs(u.x-x); if (d<R){ u.hp -= (520+g.p.era*40)*(1-d/R); u.flash=0.3; } };
-  for (const u of g.p.units) hit(u); for (const u of g.e.units) hit(u);
-  for (const side of [g.p,g.e]) for (const s of side.slots)
-    if (s.b && s.b.type!=='site' && Math.abs(s.x-x)<R) s.b.hp -= 600*(1-Math.abs(s.x-x)/R);
+// rase TOUTES les unités et constructions de la carte — JAMAIS les bases (ni leur garnison).
+function razeMap(){
+  const g=game;
+  for (const side of [g.p,g.e]){
+    for (const u of side.units) burst(u.x, gY(u.x)-16, '#fff0a0', 4);
+    side.units.length = 0; side.queue.length = 0;
+    for (const s of side.slots) s.b = null;
+  }
+  for (const n of g.neut){ n.b=null; n.owner=null; }
+  // les bases (et leur garde) survivent ; tirs/obus en vol sont effacés
+  shots.length = 0; projectiles.length = 0;
 }
 function drawCata(){
   if (!game || !game.cata) return;
@@ -1874,14 +1985,37 @@ function drawCata(){
     ctx.fillStyle='rgba(120,200,255,0.10)'; ctx.fillRect(0,0,W,H);
     ctx.fillStyle='rgba(40,120,200,0.24)'; ctx.fillRect(0,lv,W,H-lv);
   } else if (k==='sand'){
-    ctx.fillStyle='rgba(200,160,90,0.18)'; ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='rgba(230,200,140,'+(0.5*fade)+')';
-    for (let i=0;i<90;i++){ const x=((i*97+tt*900)%(W+40))-20, y=(i*61)%H; ctx.fillRect(x,y,8,1.4); }
+    // visibilité quasi nulle : voile de sable dense + rafales
+    ctx.fillStyle='rgba(190,150,80,'+(0.62*fade)+')'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(220,185,120,'+(0.85*fade)+')';
+    for (let i=0;i<220;i++){ const x=((i*53+tt*1300)%(W+40))-20, y=(i*47)%H; ctx.fillRect(x,y,14,1.6); }
   } else if (k==='nuke'){
     ctx.fillStyle='rgba(255,240,160,'+(0.18*fade)+')'; ctx.fillRect(0,0,W,H);
   }
   ctx.globalAlpha=fade; ctx.font='700 16px Arial'; ctx.textAlign='center';
   ctx.fillStyle=c.col; ctx.fillText(c.icon+'  '+cataName(k)+'  '+c.icon, W/2, 92);
+  ctx.restore();
+}
+// hiver nucléaire : monde sombre et enneigé, visibilité réduite (brouillard / vignette)
+let snow = null;
+function drawWinter(){
+  if (!game || !game.winter) return;
+  const t = game.t;
+  if (!snow){ snow=[]; for (let i=0;i<140;i++) snow.push({x:Math.random()*W, y:Math.random()*H, s:0.5+Math.random()*1.6, d:10+Math.random()*30}); }
+  ctx.save();
+  ctx.fillStyle='rgba(14,22,40,0.45)'; ctx.fillRect(0,0,W,H);          // teinte froide et sombre
+  // brouillard : on ne voit bien qu'autour du centre de l'écran
+  const fog = ctx.createRadialGradient(W/2,H/2,90, W/2,H/2,W*0.62);
+  fog.addColorStop(0,'rgba(20,28,44,0)'); fog.addColorStop(1,'rgba(10,16,30,0.92)');
+  ctx.fillStyle=fog; ctx.fillRect(0,0,W,H);
+  // neige
+  ctx.fillStyle='rgba(230,238,255,0.85)';
+  for (const f of snow){
+    const y=(f.y + t*f.d)%H, x=(f.x + Math.sin(t*0.6+f.y)*12);
+    ctx.beginPath(); ctx.arc(x, y, f.s, 0, 6.28); ctx.fill();
+  }
+  ctx.font='700 12px Arial'; ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
+  ctx.fillText('❄ HIVER NUCLÉAIRE — production ÷2', W/2, 78);
   ctx.restore();
 }
 
@@ -2506,6 +2640,27 @@ function drawAir(u, x, gy){
   for (let i=0;i<era;i++) ctx.fillRect(-12-i*3, 2, 2, 4);
   ctx.restore();
 }
+function drawHero(u, x, gy){
+  const t=game.t, col = u.fac==='HUM'? '#e8c84a':'#ff4ad0';
+  ctx.save();
+  // aura pulsante
+  ctx.globalAlpha = 0.45+0.3*Math.sin(t*4);
+  ctx.strokeStyle = col; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.arc(x, gy-30, 26+Math.sin(t*3)*3, 0, 6.28); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // corps imposant
+  ctx.fillStyle = u.fac==='HUM'? '#3a2e22':'#1c2a3c';
+  rr(x-10, gy-48, 20, 48, 4); ctx.fill();
+  ctx.fillStyle = u.fac==='HUM'? '#caa46a':'#5ad0ff';
+  ctx.beginPath(); ctx.arc(x, gy-56, 10, 0, 6.28); ctx.fill();      // tête
+  drawStar(x, gy-56, 4, col);                                        // emblème (étoile rouge / Ω)
+  // arme brandie
+  ctx.strokeStyle = col; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x+7, gy-34); ctx.lineTo(x+7+u.side*18, gy-52); ctx.stroke();
+  ctx.restore();
+  ctx.font='700 9px Arial'; ctx.textAlign='center'; ctx.fillStyle=col;
+  ctx.fillText(HERO_NAME[u.fac], x, gy-72);
+}
 function drawUnit(u){
   const x = u.x-camX;
   if (x<-40 || x>VW()+40) return;
@@ -2517,7 +2672,8 @@ function drawUnit(u){
     ctx.fillStyle='#ffd34a';
     ctx.beginPath(); ctx.moveTo(x-4,gy-52-fh); ctx.lineTo(x+4,gy-52-fh); ctx.lineTo(x,gy-46-fh); ctx.closePath(); ctx.fill();
   }
-  if (u.role==='air') drawAir(u,x,gy);
+  if (u.role==='hero') drawHero(u,x,gy);
+  else if (u.role==='air') drawAir(u,x,gy);
   else if (u.fac==='HUM') drawHuman(u,x,gy);
   else drawBot(u,x,gy);
   // galons d'amélioration de classe
@@ -2827,6 +2983,7 @@ function layoutHUD(){
   HUD.btns.push({type:'stance', st:'retreat',x:164, y:sy, w:80, h:26, label:'↩ Replier'});
   HUD.btns.push({type:'lasso',  x:248, y:sy, w:72, h:26, label:'⬚ Lasso'});
   HUD.btns.push({type:'formation', x:324, y:sy, w:96, h:26, label:'⚏ Formation'});
+  HUD.btns.push({type:'hero', x:424, y:sy, w:128, h:26});
   HUD.btns.push({type:'cam', go:'base',  x:W-294, y:sy, w:62, h:26, label:'⌂ Base'});
   HUD.btns.push({type:'cam', go:'front', x:W-228, y:sy, w:62, h:26, label:'⚔ Front'});
   HUD.btns.push({type:'cam', go:'follow',x:W-162, y:sy, w:70, h:26, label:'🎥 Auto'});
@@ -2876,7 +3033,8 @@ function drawHUD(){
   // droite : effectif + ennemi
   ctx.textAlign='right'; ctx.font='700 13px Arial';
   ctx.fillStyle = unitTotal(p)>=p.cap? '#ff5a4a':'#d8d0c4';
-  ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap, W-130, 13);
+  const qn = (p.queue && p.queue.length) ? p.queue.length : (p.queueLen||0);
+  ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), W-130, 13);
   ctx.font='700 11px Arial'; ctx.fillStyle=game.e.fac.accent;
   ctx.fillText(game.e.fac.name+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), W-130, 28);
   ctx.fillStyle='#988e80'; ctx.font='10px Arial';
@@ -2902,8 +3060,9 @@ function drawHUD(){
   // ---- météo en cours ----
   if (game.weather){
     ctx.font='700 10px Arial'; ctx.textAlign='center';
-    ctx.fillStyle = game.weather==='em'? '#9ad1d4':'#ff9d45';
-    ctx.fillText(game.weather==='em'? '🌩 TEMPÊTE EM (portée IA −25%)':'✊ GRÈVE GÉNÉRALE (armure humaine +15%)', W/2, 66);
+    ctx.fillStyle = game.weather==='strike'? '#ff9d45':'#5ad0ff';
+    ctx.fillText(game.weather==='strike'? '✊ GRÈVE GÉNÉRALE — humains à l\'arrêt'
+                                         : '🔧 MISE À JOUR FORCÉE — machines figées', W/2, 66);
   }
   // ---- annonce (y=100) ----
   if (game.msgT>0 && game.msg){
@@ -3002,6 +3161,13 @@ function drawBtn(b){
     label=b.label; ok=true; col='#8a867e';
   } else if (b.type==='pause'){
     label='⚙'; ok=true; col='#b8b4ac';
+  } else if (b.type==='hero'){
+    const alive = p.units.some(u=>u.role==='hero');
+    col = p.facKey==='HUM'? '#e8c84a':'#ff4ad0';
+    ok = !alive && p.heroCd<=0 && canPay(p,HERO_COST);
+    b.label = alive? '🦸 '+HERO_NAME[p.facKey]+' actif'
+            : p.heroCd>0? '🦸 '+Math.ceil(p.heroCd)+'s'
+            : '🦸 '+HERO_NAME[p.facKey];
   }
   ctx.globalAlpha = small? 0.95 : ok?1:0.5;
   ctx.fillStyle='rgba(20,16,14,0.92)'; rr(b.x,b.y,b.w,b.h,6); ctx.fill();
@@ -3073,7 +3239,7 @@ function buildOptions(side, slot){
       for (const rk of ['ranged','siege']){
         const n = pool[rk]||0;
         const ri = ROLES.findIndex(r=>r.key===rk);
-        opts.push({key:'gar_'+rk, label:'🚪 + '+ROLE_FR[rk]+(n? ' ('+n+' dispo)':' — recruter'),
+        opts.push({key:'gar_'+rk, label:'🚪 + '+rname(side,rk)+(n? ' ('+n+' dispo)':' — recruter'),
           cost: n? {} : unitCost(side, ri)});
       }
     }
@@ -3105,8 +3271,8 @@ function drawBuildMenu(){
       opts.push({key:'repairAll', label:'🔧 TOUT réparer (château + bâtiments)', cost:repairAllCost(p)});
     // garde du château (3 max, unités à distance)
     if (p.gar.length<3){
-      opts.push({key:'bgar_ranged', label:'🛡 + '+ROLE_FR.ranged+' à la garde ('+p.gar.length+'/3)', cost:{}});
-      opts.push({key:'bgar_siege', label:'🛡 + '+ROLE_FR.siege+' à la garde', cost:{}});
+      opts.push({key:'bgar_ranged', label:'🛡 + '+rname(p,'ranged')+' à la garde ('+p.gar.length+'/3)', cost:{}});
+      opts.push({key:'bgar_siege', label:'🛡 + '+rname(p,'siege')+' à la garde', cost:{}});
     }
     if (p.gar.length)
       opts.push({key:'bungar', label:'🛡 Renvoyer la garde au front ('+p.gar.length+')', cost:{}});
@@ -3239,6 +3405,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
+  drawWinter();
   drawCata();
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   drawHUD();
@@ -3296,6 +3463,7 @@ function serSide(s){
     w:Math.round(s.w), xp:Math.round(s.xp), era:s.era, tr:s.trans?1:0, cap:s.cap, st:s.stance,
     fl:s.fortLvl||1, ar:s.autoRepair?1:0, scd:Math.round(s.specialCd*10)/10, lr:s.lastReady?1:0,
     lu:s.lastUsed?1:0, fm:s.formation?1:0, pm:Math.round((s.prodMul||1)*100)/100,
+    hcd:Math.round(s.heroCd||0), q:s.queue?s.queue.length:0,
     upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)) };
 }
 function serialize(){
@@ -3305,6 +3473,7 @@ function serialize(){
   return {
     t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
+    wi:game.winter?1:0,
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
     pu:game.p.units.map(u2), eu:game.e.units.map(u2),
@@ -3342,6 +3511,7 @@ function applyCmd(cmd){
   try {
     switch(cmd.c){
       case 'buy':    tryBuy(e, cmd.ri); break;
+      case 'hero':   tryHero(e); break;
       case 'evo':    tryEvolve(e); break;
       case 'ult':    trySpecial(e); break;
       case 'cap':    tryCapUp(e); break;
@@ -3383,12 +3553,14 @@ function applySnapshot(snap){
   const ck = (snap.ca>=0)? CATA_KEYS[snap.ca] : null;
   g.cata = ck; g.cataT = snap.cat||0; g.cataDur = ck? CATAS[ck].dur : 0;
   g.cataX = WORLD - (snap.cax||0);
+  g.winter = !!snap.wi;
   // l'armée de l'invité = canonical 'e' → devient le local p (à gauche) ; mirroir des x
   const fillSide = (loc, ser, foeWon)=>{
     loc.hp=ser.hp; loc.maxhp=ser.mh; loc.f=ser.f; loc.m=ser.m; loc.w=ser.w; loc.xp=ser.xp;
     loc.era=ser.era; loc.trans=!!ser.tr; loc.cap=ser.cap; loc.stance=ser.st; loc.fortLvl=ser.fl;
     loc.autoRepair=!!ser.ar; loc.specialCd=ser.scd; loc.lastReady=!!ser.lr; loc.lastUsed=!!ser.lu;
     loc.formation=!!ser.fm; loc.prodMul=ser.pm; loc.upg=ser.upg;
+    loc.heroCd=ser.hcd||0; loc.queueLen=ser.q||0;
     loc.gar = new Array(ser.gn).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
     for (let i=0;i<loc.slots.length;i++){ loc.slots[i].b = deBld(ser.slots[i], loc);
       loc.slots[i].owner = loc.slots[i].b? loc : null; }
@@ -3598,18 +3770,29 @@ function togglePauseAction(){
 /* ---- transport WebRTC (Trystero, signaling P2P sans serveur) ---- */
 let netRoom = null;
 async function netConnect(role, code, fac){
-  netStatus('Connexion au réseau P2P…');
+  netStatus('Chargement du réseau P2P…');
   let joinRoom;
   const sources = [
     'https://esm.sh/trystero/torrent',
-    'https://esm.sh/trystero/nostr',
     'https://cdn.jsdelivr.net/npm/trystero/+esm',
+    'https://esm.sh/trystero/nostr',
+    'https://cdn.jsdelivr.net/npm/trystero@0.21.4/+esm',
+    'https://unpkg.com/trystero/+esm',
   ];
+  // import borné dans le temps : sans cela, un CDN lent gèle l'écran sur « Connexion… »
+  const withTimeout = (pr, ms) => Promise.race([pr,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
   for (const src of sources){
-    try { const mod = await import(src); joinRoom = mod.joinRoom; if (joinRoom) break; }
-    catch(err){ /* essaie la source suivante */ }
+    try {
+      const mod = await withTimeout(import(src), 8000);
+      joinRoom = mod.joinRoom || (mod.default && mod.default.joinRoom);
+      if (joinRoom) break;
+    } catch(err){ /* CDN injoignable ou trop lent : on tente le suivant */ }
   }
-  if (!joinRoom){ netStatus('⚠ Réseau P2P indisponible (hors-ligne ?). Réessayez.'); return; }
+  if (!joinRoom){
+    netStatus('⚠ Réseau P2P inaccessible (connexion ? pare-feu ?). Réessayez dans un instant.');
+    return;
+  }
   try {
     netRoom = joinRoom({appId:'agi-lane-war-v1'}, code);
   } catch(err){ netStatus('⚠ Impossible de créer le salon.'); return; }
@@ -3709,7 +3892,9 @@ $('onlineBtn').addEventListener('click', ()=>{
 });
 $('hostBtn').addEventListener('click', ()=>{
   audioInit();
-  const code = randCode();
+  // lobby privé : code personnalisé si fourni (≥3 car.), sinon code aléatoire
+  const custom = ($('hostCode').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const code = custom.length>=3? custom : randCode();
   netConnect('host', code, menuFac);
 });
 $('joinBtn').addEventListener('click', ()=>{
@@ -4006,6 +4191,7 @@ function handleTap(sx, sy, shift){
   // boutons HUD
   for (const b of HUD.btns) if (inRect(sx,sy,b)){
     if (b.type==='unit') tryBuy(p, b.i);
+    else if (b.type==='hero') tryHero(p);
     else if (b.type==='special') trySpecial(p);
     else if (b.type==='evolve') tryEvolve(p);
     else if (b.type==='cap') tryCapUp(p);
