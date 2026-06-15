@@ -71,6 +71,42 @@ Modifiez `guerre-des-eres.html` → `npm run build` → republiez. Sur mobile, l
 correctifs de contenu (JS/HTML) peuvent partir en **OTA** (sans repasser par les
 stores) via le plugin Capgo préconfiguré. Voir PACKAGING.md § « Mises à jour ».
 
+## Mode en ligne — configuration (TURN dédié + liste de salons)
+
+Le 1v1 fonctionne **sans rien configurer** (signalisation PeerJS gratuite + TURN
+public de secours). Pour le rendre fiable partout (4G↔4G) et activer la **liste
+des parties publiques**, renseigne le bloc `NET_CONFIG` en haut de la section
+réseau de `guerre-des-eres.html` :
+
+```js
+const NET_CONFIG = {
+  firebaseDb:  "https://TON-PROJET-default-rtdb.firebaseio.com", // liste des salons
+  cfTurnKeyId: "…",   // Cloudflare TURN — Key ID
+  cfTurnToken: "…",   // Cloudflare TURN — API token
+};
+```
+
+**Cloudflare TURN (relais dédié, gratuit & généreux)**
+1. Dashboard Cloudflare → *Realtime* → *TURN* → crée une clé.
+2. Copie le **Key ID** et le **API token** dans `cfTurnKeyId` / `cfTurnToken`.
+   Les identifiants ICE sont générés à la volée (TTL 24 h, mis en cache). Sans
+   ça, repli automatique sur le TURN public OpenRelay.
+
+**Firebase Realtime Database (liste des salons publics)**
+1. Crée un projet sur console.firebase.google.com → *Realtime Database* → copie
+   l'URL (`firebaseDb`).
+2. Règles (lecture/écriture publiques, suffisant pour une liste de salons
+   éphémères ; les entrées expirent côté client après 60 s) :
+   ```json
+   { "rules": { "lobbies": { ".read": true, ".write": true } } }
+   ```
+   Sans `firebaseDb`, le navigateur de salons affiche « indisponible » et seul le
+   jeu par **code (+ mot de passe)** reste actif.
+
+Après modification : `npm run build` puis republie. **Important :** TURN et
+`apiKey` Firebase sont par nature exposés côté client (c'est normal pour du
+WebRTC/Realtime) ; la sécurité repose sur les règles, pas sur le secret.
+
 ## Confidentialité & anti-triche
 
 Le jeu **ne collecte aucune donnée** (voir [PRIVACY.md](PRIVACY.md)). Le build
