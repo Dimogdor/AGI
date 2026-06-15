@@ -4052,9 +4052,9 @@ const NET_PROTO = 2;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CH
    ╚══════════════════════════════════════════════════════════════════════════╝ */
 const NET_CONFIG = {
   firebaseDb:   "https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app",   // liste des salons publics
-  cfTurnProxy:  "",   // URL d'un Worker Cloudflare (proxy) — RECOMMANDÉ : garde le token secret. Si renseigné, prioritaire.
-  cfTurnKeyId:  "3c7a68575d4581f4f7576fd7ee597b0a",   // Cloudflare TURN — Key ID (utilisé seulement si pas de proxy)
-  cfTurnToken:  "a4f43ec088b978c6c196570df63e812759ea62f183c5fa17e85954853ea4bc8d",   // Cloudflare TURN — API token (exposé : préférer le proxy)
+  cfTurnProxy:  "https://turn-proxy.dimdevche.workers.dev",   // Worker proxy : garde le token TURN secret côté serveur
+  cfTurnKeyId:  "",   // (vide) — le proxy gère l'authentification ; aucun secret dans la page
+  cfTurnToken:  "",   // (vide) — le token reste dans les secrets du Worker, jamais exposé
 };
 let peerObj = null;
 function loadScriptOnce(src, ms){
