@@ -116,6 +116,13 @@
         <button class="pick diffBtn" data-diff="2" data-i18n="diff_2">Difficile</button>
         <button class="pick diffBtn" data-diff="3" data-i18n="diff_3">Brutal</button>
       </div>
+      <div style="font-size:clamp(11px,1.6vw,13px);color:#b7ad9c;margin-top:2px;" data-i18n="speed_lbl">Vitesse de jeu</div>
+      <div class="row" id="speedRow">
+        <button class="pick spdBtn" data-spd="0.75">×0.75</button>
+        <button class="pick spdBtn sel" data-spd="1">×1</button>
+        <button class="pick spdBtn" data-spd="2">×2</button>
+        <button class="pick spdBtn" data-spd="3">×3</button>
+      </div>
       <label class="chk"><input type="checkbox" id="tutoChk"> <span data-i18n="tuto_chk">Tutoriel guidé au lancement</span></label>
       <button class="go" id="startBtn" data-i18n="start">COMMENCER (vs IA)</button>
       <button class="pick" id="onlineBtn" data-i18n="online_btn" style="margin-top:4px; border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
@@ -275,9 +282,13 @@ const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Uni
   evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
   formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
   capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
+// vitesses de jeu disponibles (×0.75 ralenti, ×1 normal, ×2, ×3)
+const SPEEDS = [0.75, 1, 2, 3];
+function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }
+SETTINGS.speed = clampSpeed(SETTINGS.speed);
 function saveSettings(){ localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); applyVol(); }
 function applyVol(){ if (master) master.gain.value = SETTINGS.vol; }
 
@@ -345,6 +356,11 @@ const I18N = {
     cata_acid:"PLUIE D'ACIDE", cata_heat:"CANICULE", cata_flood:"INONDATION", cata_sand:"TEMPÊTE DE SABLE", cata_nuke:"FRAPPE NUCLÉAIRE",
     on:"activé", off:"coupé", p_title:"PAUSE", p_resume:"▶  Reprendre", p_music:"Musique", p_sfx:"Effets", p_shake:"Secousses",
     p_follow:"Caméra auto", p_quit:"✖  Abandonner la partie", yes:"Oui", no:"Non",
+    speed_lbl:"Vitesse de jeu", spd_now:"Vitesse", spd_pick:"Choisir la vitesse",
+    spd_pick_online:"Proposer une vitesse (vote de l'adversaire)", spd_proposed:"Proposé",
+    spd_waiting:"en attente de l'adversaire", spd_incoming:"L'adversaire propose la vitesse :",
+    spd_rejected:"Changement de vitesse refusé", spd_wait:"Une proposition est déjà en cours…",
+    spd_toomany:"Trop de propositions — réessaie dans quelques minutes",
     np_paused_you:"⏸ Vous avez mis en pause — l'adversaire patiente", np_paused_foe:"⏸ L'adversaire a mis le jeu en pause",
     np_wait:"En attente de l'accord de l'adversaire…", np_ask:"Prolonger la pause de l'adversaire ?", np_resumed:"▶ Reprise de la partie",
     end_win:"VICTOIRE", end_lose:"DÉFAITE", end_duration:"Durée", end_kills:"Ennemis éliminés", end_losses:"Pertes",
@@ -365,6 +381,11 @@ const I18N = {
     cata_acid:"ACID RAIN", cata_heat:"HEATWAVE", cata_flood:"FLOOD", cata_sand:"SANDSTORM", cata_nuke:"NUCLEAR STRIKE",
     on:"on", off:"off", p_title:"PAUSE", p_resume:"▶  Resume", p_music:"Music", p_sfx:"Effects", p_shake:"Shake",
     p_follow:"Auto camera", p_quit:"✖  Forfeit the match", yes:"Yes", no:"No",
+    speed_lbl:"Game speed", spd_now:"Speed", spd_pick:"Choose speed",
+    spd_pick_online:"Propose a speed (opponent votes)", spd_proposed:"Proposed",
+    spd_waiting:"waiting for opponent", spd_incoming:"Opponent proposes speed:",
+    spd_rejected:"Speed change declined", spd_wait:"A proposal is already pending…",
+    spd_toomany:"Too many requests — try again in a few minutes",
     np_paused_you:"⏸ You paused — your opponent is waiting", np_paused_foe:"⏸ Your opponent paused the game",
     np_wait:"Waiting for the opponent's consent…", np_ask:"Extend the opponent's pause?", np_resumed:"▶ Match resumed",
     end_win:"VICTORY", end_lose:"DEFEAT", end_duration:"Duration", end_kills:"Enemies killed", end_losses:"Losses",
@@ -805,6 +826,10 @@ function bldH(b){
 /* ================= ÉTAT ================= */
 let game = null, paused = false;
 let netPause = null;        // négociation de pause en ligne (voir module pause en ligne)
+let speedPanel = null;      // sélecteur de vitesse ouvert (chooser local)
+let speedVote = null;       // proposition de vitesse reçue de l'adversaire (modal Oui/Non)
+let speedPending = null;    // ma proposition en attente de réponse
+let speedProps = [];        // horodatage de mes propositions (anti-spam : 2 max / 7 min)
 let onlineVoteRects = null; // boutons Oui/Non du vote de prolongation
 let net = null, GX = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
 const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6,hero:7};
@@ -875,9 +900,11 @@ function newGame(facKey, diff, withTuto, eFacOverride){
     cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
     winter:false,                                       // hiver nucléaire (2e phase de base)
     aiThink:2, msg:null, msgT:0,
+    speed: clampSpeed(SETTINGS.speed),   // vitesse de simulation (offline : préférence ; online : décidée en lobby)
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
   particles=[]; floaters=[]; shots=[]; projectiles=[];
+  speedPanel=null; speedVote=null; speedPending=null; speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false;
   selMode = false; selBox = null;
   tutoStep = withTuto? 0 : -1;
@@ -3057,6 +3084,7 @@ function layoutHUD(){
   HUD.btns.push({type:'cam', go:'follow',x:W-162, y:sy, w:70, h:26, label:'🎥 Auto'});
   HUD.btns.push({type:'zoom', d:-1, x:W-88, y:sy, w:40, h:26, label:'🔍−'});
   HUD.btns.push({type:'zoom', d:1,  x:W-44, y:sy, w:38, h:26, label:'🔍+'});
+  HUD.btns.push({type:'speed', x:W-78, y:5, w:34, h:26});
   HUD.btns.push({type:'pause', x:W-40, y:5, w:34, h:26, label:'⚙'});
 }
 layoutHUD();
@@ -3227,6 +3255,8 @@ function drawBtn(b){
     col = ok? '#9dc88a':'#8a867e';
   } else if (b.type==='zoom'){
     label=b.label; ok=true; col='#8a867e';
+  } else if (b.type==='speed'){
+    label='×'+(game.speed||1); ok=(game.speed||1)!==1; col='#7ec8ff';
   } else if (b.type==='pause'){
     label='⚙'; ok=true; col='#b8b4ac';
   } else if (b.type==='hero'){
@@ -3477,15 +3507,62 @@ function render(dt){
   drawCata();
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   drawHUD();
+  drawSpeedOverlays();
   ctx.restore();
+}
+// sélecteur de vitesse (chooser local) + modal de vote reçu — dessinés par-dessus le HUD
+function drawSpeedOverlays(){
+  if (speedPending){                                   // ma proposition en attente
+    ctx.textAlign='center'; ctx.font='700 13px Arial';
+    ctx.fillStyle='rgba(16,13,12,0.9)'; rr(W/2-150,44,300,24,6); ctx.fill();
+    ctx.fillStyle='#e8d8a0'; ctx.fillText(t('spd_proposed')+' ×'+speedPending.speed+' — '+t('spd_waiting'), W/2, 56);
+  }
+  if (speedVote){                                      // proposition reçue : Oui / Non
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
+    const bw=360, bh=132, bx=W/2-bw/2, by=H/2-bh/2;
+    ctx.fillStyle='rgba(20,16,15,0.97)'; rr(bx,by,bw,bh,10); ctx.fill();
+    ctx.strokeStyle='#7ec8ff'; ctx.lineWidth=1.5; rr(bx,by,bw,bh,10); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillStyle='#e8e0d2'; ctx.font='700 16px Arial';
+    ctx.fillText(t('spd_incoming'), W/2, by+34);
+    ctx.fillStyle='#7ec8ff'; ctx.font='800 26px Arial'; ctx.fillText('×'+speedVote.speed, W/2, by+66);
+    const yes={x:bx+30,y:by+86,w:140,h:32,ok:true}, no={x:bx+bw-170,y:by+86,w:140,h:32,ok:false};
+    for (const r of [yes,no]){
+      ctx.fillStyle = r.ok? 'rgba(60,140,80,0.9)':'rgba(140,60,50,0.9)'; rr(r.x,r.y,r.w,r.h,7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='700 14px Arial'; ctx.fillText(r.ok? '✓ '+t('yes'):'✗ '+t('no'), r.x+r.w/2, r.y+r.h/2);
+    }
+    speedVote.rects=[yes,no];
+  }
+  if (speedPanel){                                     // sélecteur des 4 vitesses
+    const opts=SPEEDS, n=opts.length, bw=84, gap=10, totw=n*bw+(n-1)*gap;
+    const bx=W/2-totw/2, by=H/2-70, bh=46;
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center'; ctx.fillStyle='#e8e0d2'; ctx.font='700 15px Arial';
+    ctx.fillText(isOnline()? t('spd_pick_online') : t('spd_pick'), W/2, by-18);
+    const rects=[];
+    for (let i=0;i<n;i++){
+      const x=bx+i*(bw+gap), cur=(game.speed||1)===opts[i];
+      ctx.fillStyle = cur? 'rgba(126,200,255,0.92)':'rgba(30,26,24,0.95)';
+      rr(x,by,bw,bh,8); ctx.fill();
+      ctx.strokeStyle = cur? '#fff':'#5a544c'; ctx.lineWidth=1.4; rr(x,by,bw,bh,8); ctx.stroke();
+      ctx.fillStyle = cur? '#06121c':'#e8e0d2'; ctx.font='800 20px Arial';
+      ctx.fillText('×'+opts[i], x+bw/2, by+bh/2);
+      rects.push({x,y:by,w:bw,h:bh,spd:opts[i]});
+    }
+    speedPanel.rects=rects;
+  }
 }
 let last = performance.now();
 function loop(now){
   const dt = Math.min((now-last)/1000, 0.05); last=now;
-  if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne même gelé
-  if (game && game.net==='guest') netGuestTick(dt);   // l'invité ne simule pas : il affiche
-  else update(dt);
-  // l'hôte diffuse l'état ~12 fois/seconde
+  if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
+  const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
+  if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
+  else if (game && !game.over && !paused && tutoStep<0){
+    // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
+    let rem = dt * sp;
+    while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; }
+  } else update(dt);                                    // menu / intro / pause / fin : logique inchangée
+  // l'hôte diffuse l'état ~12 fois/seconde (cadence en temps réel, indépendante de la vitesse de jeu)
   if (game && game.net==='host' && net && net.peer && !paused && !game.over){
     net.acc += dt;
     if (net.acc >= 0.08){ net.acc = 0; net.sendState({s:serialize(), ev:net.ev}); net.ev = []; }
@@ -3711,7 +3788,9 @@ function startHostGame(){
   game.d = netNeutralDiff();
   game.e.hp = game.e.maxhp = 1500;
   game.net = 'host';
-  net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO});
+  game.speed = clampSpeed(net.speed);                 // vitesse décidée dans le lobby
+  resetSpeedNet();
+  net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO, speed:game.speed});
   $('menu').style.display='none'; closeNetUI();
   announce('🌐 PARTIE EN LIGNE — '+FACTIONS[net.myFac].name+' vs '+FACTIONS[net.foeFac].name, '#9dc88a');
 }
@@ -3723,6 +3802,9 @@ function startGuestGame(data){
   newGame(data.guestFac, 1, false, data.hostFac);
   game.d = netNeutralDiff();
   game.net = 'guest';
+  game.speed = clampSpeed(data.speed);                 // vitesse décidée par l'hôte (lobby)
+  if (net) net.speed = game.speed;
+  resetSpeedNet();
   // les lacs/spots de la VUE invité sont en miroir des positions canoniques (indices alignés)
   game.nodes = [ {x:WORLD*0.75,owner:null,prog:0,center:false},
                  {x:WORLD*0.50,owner:null,prog:0,center:true},
@@ -3739,6 +3821,58 @@ function onPeerLeft(){
   announce('🔌 Adversaire déconnecté', '#ff5a4a');
   if (!game.over){ game.over=true; game.win = game.net==='host'; setTimeout(showEnd, 600); }
 }
+
+/* =====================================================================
+   VITESSE DE JEU — ×0.75 / ×1 / ×2 / ×3
+   Offline : changement immédiat. En ligne : la vitesse est décidée par le
+   lobby puis modifiable en cours de partie par un VOTE (l'adversaire accepte).
+   Anti-spam : chaque joueur ne peut proposer un changement que 2 fois / 7 min.
+   ===================================================================== */
+const SPEED_PROP_WINDOW = 420, SPEED_PROP_MAX = 2; // 7 min, 2 propositions
+function speedAnnounce(s){ announce('⏩ '+t('spd_now')+' ×'+s, '#7ec8ff'); }
+function setGameSpeed(s){ if (game) game.speed = clampSpeed(s); }
+function openSpeedPanel(){ speedPanel = speedPanel ? null : { rects:null }; }
+function canProposeSpeed(){
+  const now = performance.now()/1000;
+  speedProps = speedProps.filter(ts => now - ts < SPEED_PROP_WINDOW);
+  return speedProps.length < SPEED_PROP_MAX;
+}
+// choix d'une vitesse dans le sélecteur (offline = applique ; online = propose un vote)
+function pickSpeed(s){
+  s = clampSpeed(s); speedPanel = null;
+  if (!isOnline()){
+    setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); refreshSpeedBtns(); speedAnnounce(s);
+    return;
+  }
+  if ((game.speed||1) === s) return;                       // déjà à cette vitesse
+  if (speedPending){ announce(t('spd_wait'), '#e8d8a0'); return; }
+  if (!canProposeSpeed()){ announce(t('spd_toomany'), '#ff9d45'); return; }
+  speedProps.push(performance.now()/1000);
+  speedPending = { speed:s };
+  net.sendSpeed({ act:'propose', speed:s });
+  announce(t('spd_proposed')+' ×'+s+'…', '#e8d8a0');
+}
+// réception d'un message de vitesse (en ligne)
+function onSpeedMsg(d){
+  if (!d || !game) return;
+  if (d.act === 'propose'){
+    if (speedPending){ net.sendSpeed({ act:'reject', speed:d.speed }); return; } // collision : on refuse poliment
+    speedVote = { speed: clampSpeed(d.speed), rects:null };
+  } else if (d.act === 'accept'){
+    if (speedPending){ setGameSpeed(speedPending.speed); speedAnnounce(speedPending.speed); speedPending = null; }
+  } else if (d.act === 'reject'){
+    if (speedPending){ announce(t('spd_rejected'), '#ff9d45'); speedPending = null; }
+  }
+}
+// l'adversaire vote sur ma proposition reçue
+function castSpeedVote(ok){
+  if (!speedVote) return;
+  const s = speedVote.speed;
+  if (ok){ setGameSpeed(s); net.sendSpeed({ act:'accept', speed:s }); speedAnnounce(s); }
+  else   { net.sendSpeed({ act:'reject', speed:s }); announce(t('spd_rejected'), '#ff9d45'); }
+  speedVote = null;
+}
+function resetSpeedNet(){ speedPanel=null; speedVote=null; speedPending=null; speedProps=[]; }
 
 /* =====================================================================
    PAUSE EN LIGNE — pause négociée (pas de gel automatique imposé)
@@ -3897,6 +4031,7 @@ function nrecv(msg){
   }
   else if (t==='ko'){ versionFail(); }                  // l'autre côté a refusé pour cause de version
   else if (t==='pz'){ onPauseMsg(d); }
+  else if (t==='sp'){ onSpeedMsg(d); }                  // vote de changement de vitesse
 }
 function bindConn(conn){
   net.conn = conn;
@@ -3917,10 +4052,11 @@ async function netConnect(role, code, fac){
   netDisconnect();                                        // repart propre si une tentative précédente traîne
   const hostId = 'agi-' + code;
   const myId   = role==='host' ? hostId : (hostId + '-g' + Math.random().toString(36).slice(2,8));
-  net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'),
+  net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'), speed:clampSpeed(menuSpeed),
           peer:false, cmdQ:[], ev:[], acc:0, conn:null, tries:0,
           sendState:o=>nsend('st',o), sendCmd:o=>nsend('cm',o),
-          sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o) };
+          sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o),
+          sendSpeed:o=>nsend('sp',o) };
   try { peerObj = new Peer(myId, { config: PEER_RTC, debug: 1 }); }
   catch(err){ netStatus('⚠ Impossible d\'initialiser le réseau.'); return; }
   const tryConnect = ()=>{
@@ -3970,7 +4106,7 @@ function netDisconnect(){
 
 /* ================= MENU (DOM) ================= */
 const $ = id => document.getElementById(id);
-let menuFac = 'HUM', menuDiff = 1;
+let menuFac = 'HUM', menuDiff = 1, menuSpeed = clampSpeed(SETTINGS.speed);
 function netStatus(t){ const el=$('netStatus'); if (el) el.textContent = t; }
 function closeNetUI(){ const el=$('onlinePanel'); if (el) el.style.display='none'; }
 function randCode(){ const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s='';
@@ -3994,6 +4130,19 @@ document.querySelectorAll('.diffBtn').forEach(b=>{
     b.classList.add('sel'); menuDiff = +b.dataset.diff;
   });
 });
+// sélecteur de vitesse du menu : préférence offline + valeur par défaut du lobby en ligne
+function refreshSpeedBtns(){
+  document.querySelectorAll('.spdBtn').forEach(x=>x.classList.toggle('sel', +x.dataset.spd===menuSpeed));
+}
+document.querySelectorAll('.spdBtn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    menuSpeed = clampSpeed(+b.dataset.spd);
+    SETTINGS.speed = menuSpeed; saveSettings();
+    if (game && !game.net && !game.over) game.speed = menuSpeed;  // offline : applique immédiatement à la partie en cours
+    refreshSpeedBtns();
+  });
+});
+refreshSpeedBtns();
 /* ---- plein écran : demande robuste + bascule manuelle (utile sur mobile après une sortie) ----
    iOS (iPhone surtout) n'IMPLÉMENTE PAS l'API Fullscreen : requestFullscreen y est sans effet.
    Le seul vrai plein écran sur iOS est « Ajouter à l'écran d'accueil » (mode standalone PWA).
@@ -4280,6 +4429,16 @@ function finishLasso(){
 function handleTap(sx, sy, shift){
   if (!game) return;
   if (game.over) return;
+  // proposition de vitesse reçue (en ligne) : modal Oui/Non prioritaire
+  if (speedVote){
+    if (speedVote.rects) for (const r of speedVote.rects) if (inRect(sx,sy,r)){ castSpeedVote(r.ok); sfx('sel'); return; }
+    return;
+  }
+  // sélecteur de vitesse ouvert : choisir une vitesse, ou taper à côté pour fermer
+  if (speedPanel){
+    if (speedPanel.rects) for (const r of speedPanel.rects) if (inRect(sx,sy,r)){ pickSpeed(r.spd); sfx('sel'); return; }
+    speedPanel=null; return;
+  }
   // tuto : avancer
   if (tutoStep>=0){
     tutoStep = tutoStep<TUTO_STEPS.length-1? tutoStep+1 : -1;
@@ -4397,6 +4556,7 @@ function handleTap(sx, sy, shift){
     }
     else if (b.type==='zoom') setZoom(zoom + b.d*0.15, s2wX(W/2));
     else if (b.type==='pause') togglePauseAction();
+    else if (b.type==='speed') openSpeedPanel();
     return;
   }
   if (sy<=38) return; // bandeau de ressources
