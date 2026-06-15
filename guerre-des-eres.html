@@ -116,26 +116,75 @@
         <button class="pick diffBtn" data-diff="2" data-i18n="diff_2">Difficile</button>
         <button class="pick diffBtn" data-diff="3" data-i18n="diff_3">Brutal</button>
       </div>
+      <div style="font-size:clamp(11px,1.6vw,13px);color:#b7ad9c;margin-top:2px;" data-i18n="speed_lbl">Vitesse de jeu</div>
+      <div class="row" id="speedRow">
+        <button class="pick spdBtn" data-spd="0.75">×0.75</button>
+        <button class="pick spdBtn sel" data-spd="1">×1</button>
+        <button class="pick spdBtn" data-spd="2">×2</button>
+        <button class="pick spdBtn" data-spd="3">×3</button>
+      </div>
       <label class="chk"><input type="checkbox" id="tutoChk"> <span data-i18n="tuto_chk">Tutoriel guidé au lancement</span></label>
       <button class="go" id="startBtn" data-i18n="start">COMMENCER (vs IA)</button>
       <button class="pick" id="onlineBtn" data-i18n="online_btn" style="margin-top:4px; border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
       <div id="onlinePanel" style="display:none; flex-direction:column; gap:10px; align-items:center;
            border-top:1px solid #3a2e28; padding-top:12px; margin-top:4px; width:100%;">
         <div data-i18n="online_hint" style="color:#8d84a8; font-size:clamp(11px,1.6vw,13px); text-align:center;">
-          Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.</div>
-        <input id="hostCode" placeholder="CODE PRIVÉ (optionnel)" data-i18n-ph="hostcode_ph" maxlength="5" autocomplete="off"
-          style="text-transform:uppercase; width:200px; text-align:center; letter-spacing:.25em;
-                 font-family:inherit; font-size:15px; padding:8px; background:#1a1210;
-                 border:1px solid #4a3a32; color:#e8e0d2;">
-        <button class="go" id="hostBtn" data-i18n="host_btn" style="font-size:clamp(14px,2.2vw,18px); padding:11px 36px;">CRÉER UNE PARTIE</button>
-        <div data-i18n="or" style="color:#6a665e; letter-spacing:.2em; font-size:12px;">— OU —</div>
-        <div class="row" style="gap:6px;">
-          <input id="joinCode" placeholder="CODE" data-i18n-ph="code_ph" maxlength="5" autocomplete="off"
-            style="text-transform:uppercase; width:120px; text-align:center; letter-spacing:.3em;
-                   font-family:inherit; font-size:18px; padding:9px; background:#1a1210;
-                   border:1px solid #4a3a32; color:#e8e0d2;">
-          <button class="pick" id="joinBtn" data-i18n="join_btn" style="border-color:#3e8cb8; color:#bfe6ff;">REJOINDRE</button>
+          Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair.</div>
+
+        <!-- ACCUEIL EN LIGNE : créer / rejoindre + parties publiques -->
+        <div id="netHome" style="display:flex; flex-direction:column; gap:10px; align-items:center; width:100%;">
+          <div class="row" style="gap:8px;">
+            <button class="go" id="goCreate" data-i18n="net_create" style="font-size:15px; padding:10px 22px;">CRÉER UNE PARTIE</button>
+            <button class="pick" id="goJoin" data-i18n="net_joincode" style="border-color:#3e8cb8; color:#bfe6ff;">REJOINDRE PAR CODE</button>
+          </div>
+          <div style="width:min(420px,90%);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span data-i18n="net_publics" style="color:#b7ad9c; font-size:13px;">Parties publiques</span>
+              <button class="pick" id="lobbyRefresh" style="font-size:12px; padding:3px 10px;">⟳</button>
+            </div>
+            <div id="lobbyList" style="max-height:148px; overflow-y:auto; width:100%; margin-top:6px;
+                 display:flex; flex-direction:column; gap:5px;"></div>
+          </div>
         </div>
+
+        <!-- CRÉATION DE SALON -->
+        <div id="netCreate" style="display:none; flex-direction:column; gap:8px; align-items:center; width:min(420px,92%);">
+          <input id="lobbyName" data-i18n-ph="net_name_ph" placeholder="Nom du salon (optionnel)" maxlength="22" autocomplete="off"
+            style="width:100%; text-align:center; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <input id="hostCode" data-i18n-ph="hostcode_ph" placeholder="CODE PERSONNALISÉ (optionnel)" maxlength="5" autocomplete="off"
+            style="width:100%; text-transform:uppercase; text-align:center; letter-spacing:.25em; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <input id="hostPw" data-i18n-ph="net_pw_ph" placeholder="Mot de passe (optionnel)" maxlength="16" autocomplete="off"
+            style="width:100%; text-align:center; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <label class="chk"><input type="checkbox" id="lobbyPublic" checked> <span data-i18n="net_public_chk">Visible dans la liste publique</span></label>
+          <div style="font-size:12px; color:#b7ad9c;" data-i18n="speed_lbl">Vitesse de jeu</div>
+          <div class="row" id="lobbySpeedRow">
+            <button class="pick lobSpd" data-spd="0.75">×0.75</button>
+            <button class="pick lobSpd sel" data-spd="1">×1</button>
+            <button class="pick lobSpd" data-spd="2">×2</button>
+            <button class="pick lobSpd" data-spd="3">×3</button>
+          </div>
+          <button class="go" id="hostBtn" data-i18n="net_createbtn" style="font-size:16px; padding:10px 30px;">CRÉER LE SALON</button>
+          <button class="pick" id="createBack" data-i18n="net_back" style="font-size:12px; color:#988e80;">← Retour</button>
+        </div>
+
+        <!-- REJOINDRE PAR CODE -->
+        <div id="netJoin" style="display:none; flex-direction:column; gap:8px; align-items:center; width:min(420px,92%);">
+          <input id="joinCode" data-i18n-ph="code_ph" placeholder="CODE" maxlength="5" autocomplete="off"
+            style="width:160px; text-transform:uppercase; text-align:center; letter-spacing:.3em; font-family:inherit; font-size:20px; padding:9px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <input id="joinPw" data-i18n-ph="net_pwjoin_ph" placeholder="Mot de passe (si demandé)" maxlength="16" autocomplete="off"
+            style="width:100%; text-align:center; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <button class="go" id="joinBtn" data-i18n="join_btn" style="font-size:16px; padding:10px 30px;">REJOINDRE</button>
+          <button class="pick" id="joinBack" data-i18n="net_back" style="font-size:12px; color:#988e80;">← Retour</button>
+        </div>
+
+        <!-- SALON CRÉÉ : code à partager bien en évidence -->
+        <div id="netHosting" style="display:none; flex-direction:column; gap:8px; align-items:center; width:min(420px,92%);">
+          <div data-i18n="net_share" style="color:#b7ad9c; font-size:13px;">Donne ce code à ton ami :</div>
+          <div id="hostCodeBig" style="font-size:36px; font-weight:800; letter-spacing:.28em; color:#bfe6ff; background:#10171c; border:1px solid #3e8cb8; border-radius:8px; padding:8px 22px;">-----</div>
+          <button class="pick" id="copyCode" data-i18n="net_copy" style="font-size:13px;">📋 Copier le code</button>
+          <div id="hostingInfo" style="color:#9dc88a; font-size:12px; text-align:center;"></div>
+        </div>
+
         <div id="netStatus" style="color:#9dc88a; font-size:clamp(11px,1.6vw,13px); text-align:center; min-height:16px;"></div>
         <div style="color:#7a7286; font-size:11px; text-align:center;" data-i18n="online_samever">Les deux joueurs doivent avoir la MÊME version.</div>
         <button class="pick" id="netCancel" data-i18n="cancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
@@ -275,9 +324,13 @@ const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Uni
   evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
   formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
   capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
+// vitesses de jeu disponibles (×0.75 ralenti, ×1 normal, ×2, ×3)
+const SPEEDS = [0.75, 1, 2, 3];
+function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }
+SETTINGS.speed = clampSpeed(SETTINGS.speed);
 function saveSettings(){ localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); applyVol(); }
 function applyVol(){ if (master) master.gain.value = SETTINGS.vol; }
 
@@ -345,6 +398,19 @@ const I18N = {
     cata_acid:"PLUIE D'ACIDE", cata_heat:"CANICULE", cata_flood:"INONDATION", cata_sand:"TEMPÊTE DE SABLE", cata_nuke:"FRAPPE NUCLÉAIRE",
     on:"activé", off:"coupé", p_title:"PAUSE", p_resume:"▶  Reprendre", p_music:"Musique", p_sfx:"Effets", p_shake:"Secousses",
     p_follow:"Caméra auto", p_quit:"✖  Abandonner la partie", yes:"Oui", no:"Non",
+    speed_lbl:"Vitesse de jeu", spd_now:"Vitesse", spd_pick:"Choisir la vitesse",
+    spd_pick_online:"Proposer une vitesse (vote de l'adversaire)", spd_proposed:"Proposé",
+    spd_waiting:"en attente de l'adversaire", spd_incoming:"L'adversaire propose la vitesse :",
+    spd_rejected:"Changement de vitesse refusé", spd_wait:"Une proposition est déjà en cours…",
+    spd_toomany:"Trop de propositions — réessaie dans quelques minutes",
+    net_create:"CRÉER UNE PARTIE", net_joincode:"REJOINDRE PAR CODE", net_publics:"Parties publiques",
+    net_name_ph:"Nom du salon (optionnel)", net_pw_ph:"Mot de passe (optionnel)",
+    net_public_chk:"Visible dans la liste publique", net_createbtn:"CRÉER LE SALON", net_back:"← Retour",
+    net_pwjoin_ph:"Mot de passe (si demandé)", net_share:"Donne ce code à ton ami :", net_copy:"📋 Copier le code",
+    net_copied:"Copié", net_listed:"Salon visible dans la liste publique.", net_private:"Salon privé — partage le code.",
+    net_nolist:"Liste publique indisponible (non configurée).", net_empty:"Aucune partie publique pour l'instant.",
+    net_askpw:"Mot de passe du salon :", net_entercode:"Entrez le code de votre adversaire.", net_cancelled:"Annulé.",
+    net_waiting:"Salon créé. En attente d'un adversaire…", net_loading:"Chargement du réseau P2P…", net_badpw:"Mot de passe incorrect.",
     np_paused_you:"⏸ Vous avez mis en pause — l'adversaire patiente", np_paused_foe:"⏸ L'adversaire a mis le jeu en pause",
     np_wait:"En attente de l'accord de l'adversaire…", np_ask:"Prolonger la pause de l'adversaire ?", np_resumed:"▶ Reprise de la partie",
     end_win:"VICTOIRE", end_lose:"DÉFAITE", end_duration:"Durée", end_kills:"Ennemis éliminés", end_losses:"Pertes",
@@ -365,11 +431,24 @@ const I18N = {
     cata_acid:"ACID RAIN", cata_heat:"HEATWAVE", cata_flood:"FLOOD", cata_sand:"SANDSTORM", cata_nuke:"NUCLEAR STRIKE",
     on:"on", off:"off", p_title:"PAUSE", p_resume:"▶  Resume", p_music:"Music", p_sfx:"Effects", p_shake:"Shake",
     p_follow:"Auto camera", p_quit:"✖  Forfeit the match", yes:"Yes", no:"No",
+    speed_lbl:"Game speed", spd_now:"Speed", spd_pick:"Choose speed",
+    spd_pick_online:"Propose a speed (opponent votes)", spd_proposed:"Proposed",
+    spd_waiting:"waiting for opponent", spd_incoming:"Opponent proposes speed:",
+    spd_rejected:"Speed change declined", spd_wait:"A proposal is already pending…",
+    spd_toomany:"Too many requests — try again in a few minutes",
+    net_create:"CREATE A GAME", net_joincode:"JOIN BY CODE", net_publics:"Public games",
+    net_name_ph:"Room name (optional)", net_pw_ph:"Password (optional)",
+    net_public_chk:"Listed in the public browser", net_createbtn:"CREATE ROOM", net_back:"← Back",
+    net_pwjoin_ph:"Password (if required)", net_share:"Give this code to your friend:", net_copy:"📋 Copy code",
+    net_copied:"Copied", net_listed:"Room is listed publicly.", net_private:"Private room — share the code.",
+    net_nolist:"Public list unavailable (not configured).", net_empty:"No public games right now.",
+    net_askpw:"Room password:", net_entercode:"Enter your opponent's code.", net_cancelled:"Cancelled.",
+    net_waiting:"Room created. Waiting for an opponent…", net_loading:"Loading P2P network…", net_badpw:"Wrong password.",
     np_paused_you:"⏸ You paused — your opponent is waiting", np_paused_foe:"⏸ Your opponent paused the game",
     np_wait:"Waiting for the opponent's consent…", np_ask:"Extend the opponent's pause?", np_resumed:"▶ Match resumed",
     end_win:"VICTORY", end_lose:"DEFEAT", end_duration:"Duration", end_kills:"Enemies killed", end_losses:"Losses",
     end_era:"Era reached", end_powers:"Powers used", end_world:"World health", tuto_body:TUTO_EN },
-  es:{ tagline:"el capital contra la humanidad · 2025", tab_play:"JUGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
+  es:{ speed_lbl:"Velocidad de juego", spd_now:"Velocidad", spd_pick:"Elegir velocidad", spd_pick_online:"Proponer velocidad (el rival vota)", spd_proposed:"Propuesta", spd_waiting:"esperando al rival", spd_incoming:"El rival propone velocidad:", spd_rejected:"Cambio de velocidad rechazado", spd_wait:"Ya hay una propuesta pendiente…", spd_toomany:"Demasiadas solicitudes — inténtalo en unos minutos", net_create:"CREAR PARTIDA", net_joincode:"UNIRSE POR CÓDIGO", net_publics:"Partidas públicas", net_name_ph:"Nombre de sala (opcional)", net_pw_ph:"Contraseña (opcional)", net_public_chk:"Visible en el navegador público", net_createbtn:"CREAR SALA", net_back:"← Volver", net_pwjoin_ph:"Contraseña (si es necesaria)", net_share:"Da este código a tu amigo:", net_copy:"📋 Copiar código", net_copied:"Copiado", net_listed:"La sala es pública.", net_private:"Sala privada — comparte el código.", net_nolist:"Lista pública no disponible (no configurada).", net_empty:"No hay partidas públicas ahora.", net_askpw:"Contraseña de sala:", net_entercode:"Ingresa el código de tu rival.", net_cancelled:"Cancelado.", net_waiting:"Sala creada. Esperando rival…", net_loading:"Cargando red P2P…", net_badpw:"Contraseña incorrecta.", online_samever:"Ambos jugadores deben usar la MISMA versión (ver el número al pie del menú).", tagline:"el capital contra la humanidad · 2025", tab_play:"JUGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
     fac_hum:"HUMANIDAD", diff_0:"Fácil", diff_1:"Normal", diff_2:"Difícil", diff_3:"Brutal",
     tuto_chk:"Tutorial guiado al iniciar", start:"EMPEZAR (vs IA)", online_btn:"🌐 JUGAR EN LÍNEA (1v1)",
     online_hint:"Elige primero tu bando arriba. La partida es entre pares, sin servidor.",
@@ -388,7 +467,7 @@ const I18N = {
     np_wait:"Esperando el consentimiento del rival…", np_ask:"¿Prolongar la pausa del rival?", np_resumed:"▶ Partida reanudada",
     end_win:"VICTORIA", end_lose:"DERROTA", end_duration:"Duración", end_kills:"Enemigos eliminados", end_losses:"Bajas",
     end_era:"Era alcanzada", end_powers:"Poderes usados", end_world:"Salud del mundo" },
-  de:{ tagline:"das Kapital gegen die Menschheit · 2025", tab_play:"SPIELEN", tab_tuto:"ANLEITUNG", tab_opts:"EINSTELLUNGEN",
+  de:{ speed_lbl:"Spielgeschwindigkeit", spd_now:"Geschwindigkeit", spd_pick:"Geschwindigkeit wählen", spd_pick_online:"Geschwindigkeit vorschlagen (Gegner stimmt ab)", spd_proposed:"Vorgeschlagen", spd_waiting:"warte auf Gegner", spd_incoming:"Gegner schlägt Geschwindigkeit vor:", spd_rejected:"Geschwindigkeitsänderung abgelehnt", spd_wait:"Ein Vorschlag ist bereits ausstehend…", spd_toomany:"Zu viele Anfragen — versuche es in ein paar Minuten erneut", net_create:"SPIEL ERSTELLEN", net_joincode:"PER CODE BEITRETEN", net_publics:"Öffentliche Spiele", net_name_ph:"Raumname (optional)", net_pw_ph:"Passwort (optional)", net_public_chk:"In der öffentlichen Liste angezeigt", net_createbtn:"RAUM ERSTELLEN", net_back:"← Zurück", net_pwjoin_ph:"Passwort (falls erforderlich)", net_share:"Gib diesen Code deinem Freund:", net_copy:"📋 Code kopieren", net_copied:"Kopiert", net_listed:"Raum ist öffentlich gelistet.", net_private:"Privater Raum — Code teilen.", net_nolist:"Öffentliche Liste nicht verfügbar (nicht konfiguriert).", net_empty:"Derzeit keine öffentlichen Spiele.", net_askpw:"Raumpasswort:", net_entercode:"Code des Gegners eingeben.", net_cancelled:"Abgebrochen.", net_waiting:"Raum erstellt. Warte auf Gegner…", net_loading:"P2P-Netzwerk wird geladen…", net_badpw:"Falsches Passwort.", online_samever:"Beide Spieler müssen die GLEICHE Version verwenden (Nummer unten im Menü).", tagline:"das Kapital gegen die Menschheit · 2025", tab_play:"SPIELEN", tab_tuto:"ANLEITUNG", tab_opts:"EINSTELLUNGEN",
     fac_hum:"MENSCHHEIT", diff_0:"Leicht", diff_1:"Normal", diff_2:"Schwer", diff_3:"Brutal",
     tuto_chk:"Geführtes Tutorial beim Start", start:"STARTEN (gg. KI)", online_btn:"🌐 ONLINE SPIELEN (1v1)",
     online_hint:"Wähle zuerst oben deine Seite. Das Match läuft Peer-to-Peer, ohne Server.",
@@ -407,7 +486,7 @@ const I18N = {
     np_wait:"Warte auf Zustimmung des Gegners…", np_ask:"Pause des Gegners verlängern?", np_resumed:"▶ Match fortgesetzt",
     end_win:"SIEG", end_lose:"NIEDERLAGE", end_duration:"Dauer", end_kills:"Feinde besiegt", end_losses:"Verluste",
     end_era:"Erreichte Ära", end_powers:"Kräfte genutzt", end_world:"Weltgesundheit" },
-  it:{ tagline:"il capitale contro l'umanità · 2025", tab_play:"GIOCA", tab_tuto:"TUTORIAL", tab_opts:"IMPOSTAZIONI",
+  it:{ speed_lbl:"Velocità di gioco", spd_now:"Velocità", spd_pick:"Scegli velocità", spd_pick_online:"Proponi una velocità (l'avversario vota)", spd_proposed:"Proposta", spd_waiting:"in attesa dell'avversario", spd_incoming:"L'avversario propone una velocità:", spd_rejected:"Cambio velocità rifiutato", spd_wait:"C'è già una proposta in attesa…", spd_toomany:"Troppe richieste — riprova tra qualche minuto", net_create:"CREA PARTITA", net_joincode:"UNISCITI CON CODICE", net_publics:"Partite pubbliche", net_name_ph:"Nome stanza (opzionale)", net_pw_ph:"Password (opzionale)", net_public_chk:"Visibile nel browser pubblico", net_createbtn:"CREA STANZA", net_back:"← Indietro", net_pwjoin_ph:"Password (se richiesta)", net_share:"Dai questo codice al tuo amico:", net_copy:"📋 Copia codice", net_copied:"Copiato", net_listed:"La stanza è pubblica.", net_private:"Stanza privata — condividi il codice.", net_nolist:"Lista pubblica non disponibile (non configurata).", net_empty:"Nessuna partita pubblica al momento.", net_askpw:"Password stanza:", net_entercode:"Inserisci il codice dell'avversario.", net_cancelled:"Annullato.", net_waiting:"Stanza creata. In attesa di un avversario…", net_loading:"Caricamento rete P2P…", net_badpw:"Password errata.", online_samever:"Entrambi i giocatori devono usare la STESSA versione (vedi il numero in fondo al menu).", tagline:"il capitale contro l'umanità · 2025", tab_play:"GIOCA", tab_tuto:"TUTORIAL", tab_opts:"IMPOSTAZIONI",
     fac_hum:"UMANITÀ", diff_0:"Facile", diff_1:"Normale", diff_2:"Difficile", diff_3:"Brutale",
     tuto_chk:"Tutorial guidato all'avvio", start:"INIZIA (vs IA)", online_btn:"🌐 GIOCA ONLINE (1v1)",
     online_hint:"Scegli prima la tua fazione sopra. La partita è peer-to-peer, senza server.",
@@ -426,7 +505,7 @@ const I18N = {
     np_wait:"In attesa del consenso dell'avversario…", np_ask:"Prolungare la pausa dell'avversario?", np_resumed:"▶ Partita ripresa",
     end_win:"VITTORIA", end_lose:"SCONFITTA", end_duration:"Durata", end_kills:"Nemici eliminati", end_losses:"Perdite",
     end_era:"Era raggiunta", end_powers:"Poteri usati", end_world:"Salute del mondo" },
-  pt:{ tagline:"o capital contra a humanidade · 2025", tab_play:"JOGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
+  pt:{ speed_lbl:"Velocidade do jogo", spd_now:"Velocidade", spd_pick:"Escolher velocidade", spd_pick_online:"Propor uma velocidade (o adversário vota)", spd_proposed:"Proposta", spd_waiting:"aguardando adversário", spd_incoming:"Adversário propõe velocidade:", spd_rejected:"Mudança de velocidade recusada", spd_wait:"Já há uma proposta pendente…", spd_toomany:"Muitas solicitações — tente novamente em alguns minutos", net_create:"CRIAR PARTIDA", net_joincode:"ENTRAR POR CÓDIGO", net_publics:"Partidas públicas", net_name_ph:"Nome da sala (opcional)", net_pw_ph:"Senha (opcional)", net_public_chk:"Listado no navegador público", net_createbtn:"CRIAR SALA", net_back:"← Voltar", net_pwjoin_ph:"Senha (se necessária)", net_share:"Dê este código ao seu amigo:", net_copy:"📋 Copiar código", net_copied:"Copiado", net_listed:"A sala está listada publicamente.", net_private:"Sala privada — compartilhe o código.", net_nolist:"Lista pública indisponível (não configurada).", net_empty:"Nenhuma partida pública no momento.", net_askpw:"Senha da sala:", net_entercode:"Digite o código do seu adversário.", net_cancelled:"Cancelado.", net_waiting:"Sala criada. Aguardando adversário…", net_loading:"Carregando rede P2P…", net_badpw:"Senha incorreta.", online_samever:"Ambos os jogadores devem usar a MESMA versão (veja o número no rodapé do menu).", tagline:"o capital contra a humanidade · 2025", tab_play:"JOGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
     fac_hum:"HUMANIDADE", diff_0:"Fácil", diff_1:"Normal", diff_2:"Difícil", diff_3:"Brutal",
     tuto_chk:"Tutorial guiado ao iniciar", start:"COMEÇAR (vs IA)", online_btn:"🌐 JOGAR ONLINE (1v1)",
     online_hint:"Escolha primeiro o seu lado acima. A partida é ponto a ponto, sem servidor.",
@@ -445,7 +524,7 @@ const I18N = {
     np_wait:"Aguardando o consentimento do adversário…", np_ask:"Prolongar a pausa do adversário?", np_resumed:"▶ Partida retomada",
     end_win:"VITÓRIA", end_lose:"DERROTA", end_duration:"Duração", end_kills:"Inimigos eliminados", end_losses:"Perdas",
     end_era:"Era alcançada", end_powers:"Poderes usados", end_world:"Saúde do mundo" },
-  ru:{ tagline:"капитал против человечества · 2025", tab_play:"ИГРАТЬ", tab_tuto:"ОБУЧЕНИЕ", tab_opts:"НАСТРОЙКИ",
+  ru:{ speed_lbl:"Скорость игры", spd_now:"Скорость", spd_pick:"Выбрать скорость", spd_pick_online:"Предложить скорость (противник голосует)", spd_proposed:"Предложено", spd_waiting:"ожидание противника", spd_incoming:"Противник предлагает скорость:", spd_rejected:"Изменение скорости отклонено", spd_wait:"Предложение уже на рассмотрении…", spd_toomany:"Слишком много запросов — попробуйте через несколько минут", net_create:"СОЗДАТЬ ИГРУ", net_joincode:"ВОЙТИ ПО КОДУ", net_publics:"Публичные игры", net_name_ph:"Название комнаты (необязательно)", net_pw_ph:"Пароль (необязательно)", net_public_chk:"Отображается в публичном списке", net_createbtn:"СОЗДАТЬ КОМНАТУ", net_back:"← Назад", net_pwjoin_ph:"Пароль (если требуется)", net_share:"Дайте этот код другу:", net_copy:"📋 Скопировать код", net_copied:"Скопировано", net_listed:"Комната в публичном списке.", net_private:"Приватная комната — поделитесь кодом.", net_nolist:"Публичный список недоступен (не настроен).", net_empty:"Публичных игр пока нет.", net_askpw:"Пароль комнаты:", net_entercode:"Введите код противника.", net_cancelled:"Отменено.", net_waiting:"Комната создана. Ожидание противника…", net_loading:"Загрузка P2P-сети…", net_badpw:"Неверный пароль.", online_samever:"Оба игрока должны использовать ОДИНАКОВУЮ версию (см. номер внизу меню).", tagline:"капитал против человечества · 2025", tab_play:"ИГРАТЬ", tab_tuto:"ОБУЧЕНИЕ", tab_opts:"НАСТРОЙКИ",
     fac_hum:"ЧЕЛОВЕЧЕСТВО", diff_0:"Легко", diff_1:"Норма", diff_2:"Сложно", diff_3:"Жестоко",
     tuto_chk:"Обучение при запуске", start:"НАЧАТЬ (против ИИ)", online_btn:"🌐 ИГРА ОНЛАЙН (1×1)",
     online_hint:"Сначала выберите сторону выше. Матч идёт напрямую, без сервера.",
@@ -464,7 +543,7 @@ const I18N = {
     np_wait:"Ожидание согласия соперника…", np_ask:"Продлить паузу соперника?", np_resumed:"▶ Матч продолжен",
     end_win:"ПОБЕДА", end_lose:"ПОРАЖЕНИЕ", end_duration:"Длительность", end_kills:"Врагов уничтожено", end_losses:"Потери",
     end_era:"Достигнутая эра", end_powers:"Способностей применено", end_world:"Здоровье мира" },
-  zh:{ tagline:"资本对抗人类 · 2025", tab_play:"开始", tab_tuto:"教程", tab_opts:"设置",
+  zh:{ speed_lbl:"游戏速度", spd_now:"速度", spd_pick:"选择速度", spd_pick_online:"提议速度（对手投票）", spd_proposed:"已提议", spd_waiting:"等待对手", spd_incoming:"对手提议速度：", spd_rejected:"速度更改被拒绝", spd_wait:"已有一个待处理的提议…", spd_toomany:"请求过多 — 请几分钟后再试", net_create:"创建游戏", net_joincode:"凭代码加入", net_publics:"公开游戏", net_name_ph:"房间名称（可选）", net_pw_ph:"密码（可选）", net_public_chk:"显示在公开列表中", net_createbtn:"创建房间", net_back:"← 返回", net_pwjoin_ph:"密码（如需要）", net_share:"将此代码发给你的朋友：", net_copy:"📋 复制代码", net_copied:"已复制", net_listed:"房间已公开列出。", net_private:"私人房间 — 请分享代码。", net_nolist:"公开列表不可用（未配置）。", net_empty:"当前没有公开游戏。", net_askpw:"房间密码：", net_entercode:"输入对手的代码。", net_cancelled:"已取消。", net_waiting:"房间已创建。等待对手…", net_loading:"正在加载P2P网络…", net_badpw:"密码错误。", online_samever:"双方玩家必须运行相同版本（见菜单底部的版本号）。", tagline:"资本对抗人类 · 2025", tab_play:"开始", tab_tuto:"教程", tab_opts:"设置",
     fac_hum:"人类", diff_0:"简单", diff_1:"普通", diff_2:"困难", diff_3:"残酷",
     tuto_chk:"启动时显示引导教程", start:"开始 (对战 AI)", online_btn:"🌐 在线对战 (1v1)",
     online_hint:"请先在上方选择阵营。对战为点对点连接，无需服务器。",
@@ -483,7 +562,7 @@ const I18N = {
     np_wait:"等待对手同意…", np_ask:"延长对手的暂停吗？", np_resumed:"▶ 对局继续",
     end_win:"胜利", end_lose:"失败", end_duration:"时长", end_kills:"消灭敌人", end_losses:"损失",
     end_era:"达到时代", end_powers:"使用技能", end_world:"世界健康度" },
-  ar:{ tagline:"رأس المال ضد الإنسانية · 2025", tab_play:"العب", tab_tuto:"الدليل", tab_opts:"الإعدادات",
+  ar:{ speed_lbl:"سرعة اللعبة", spd_now:"السرعة", spd_pick:"اختر السرعة", spd_pick_online:"اقترح سرعة (الخصم يصوّت)", spd_proposed:"مقترح", spd_waiting:"في انتظار الخصم", spd_incoming:"الخصم يقترح سرعة:", spd_rejected:"تم رفض تغيير السرعة", spd_wait:"يوجد اقتراح معلّق بالفعل…", spd_toomany:"طلبات كثيرة جداً — حاول مجدداً بعد دقائق", net_create:"إنشاء لعبة", net_joincode:"الانضمام برمز", net_publics:"الألعاب العامة", net_name_ph:"اسم الغرفة (اختياري)", net_pw_ph:"كلمة المرور (اختيارية)", net_public_chk:"مدرج في القائمة العامة", net_createbtn:"إنشاء الغرفة", net_back:"← رجوع", net_pwjoin_ph:"كلمة المرور (إن لزم)", net_share:"أعطِ هذا الرمز لصديقك:", net_copy:"📋 نسخ الرمز", net_copied:"تم النسخ", net_listed:"الغرفة مدرجة علناً.", net_private:"غرفة خاصة — شارك الرمز.", net_nolist:"القائمة العامة غير متاحة (غير مُهيَّأة).", net_empty:"لا توجد ألعاب عامة الآن.", net_askpw:"كلمة مرور الغرفة:", net_entercode:"أدخل رمز خصمك.", net_cancelled:"تم الإلغاء.", net_waiting:"تم إنشاء الغرفة. في انتظار خصم…", net_loading:"جارٍ تحميل شبكة P2P…", net_badpw:"كلمة المرور خاطئة.", online_samever:"يجب أن يشغّل كلا اللاعبَين الإصدار نفسه (انظر الرقم أسفل القائمة).", tagline:"رأس المال ضد الإنسانية · 2025", tab_play:"العب", tab_tuto:"الدليل", tab_opts:"الإعدادات",
     fac_hum:"البشرية", diff_0:"سهل", diff_1:"عادي", diff_2:"صعب", diff_3:"وحشي",
     tuto_chk:"دليل إرشادي عند البدء", start:"ابدأ (ضد الذكاء الاصطناعي)", online_btn:"🌐 العب عبر الإنترنت (1v1)",
     online_hint:"اختر فصيلك أولاً في الأعلى. المباراة بين الأقران، بلا خادم.",
@@ -805,6 +884,10 @@ function bldH(b){
 /* ================= ÉTAT ================= */
 let game = null, paused = false;
 let netPause = null;        // négociation de pause en ligne (voir module pause en ligne)
+let speedPanel = null;      // sélecteur de vitesse ouvert (chooser local)
+let speedVote = null;       // proposition de vitesse reçue de l'adversaire (modal Oui/Non)
+let speedPending = null;    // ma proposition en attente de réponse
+let speedProps = [];        // horodatage de mes propositions (anti-spam : 2 max / 7 min)
 let onlineVoteRects = null; // boutons Oui/Non du vote de prolongation
 let net = null, GX = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
 const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6,hero:7};
@@ -875,9 +958,11 @@ function newGame(facKey, diff, withTuto, eFacOverride){
     cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
     winter:false,                                       // hiver nucléaire (2e phase de base)
     aiThink:2, msg:null, msgT:0,
+    speed: clampSpeed(SETTINGS.speed),   // vitesse de simulation (offline : préférence ; online : décidée en lobby)
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
   particles=[]; floaters=[]; shots=[]; projectiles=[];
+  speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false;
   selMode = false; selBox = null;
   tutoStep = withTuto? 0 : -1;
@@ -3057,6 +3142,7 @@ function layoutHUD(){
   HUD.btns.push({type:'cam', go:'follow',x:W-162, y:sy, w:70, h:26, label:'🎥 Auto'});
   HUD.btns.push({type:'zoom', d:-1, x:W-88, y:sy, w:40, h:26, label:'🔍−'});
   HUD.btns.push({type:'zoom', d:1,  x:W-44, y:sy, w:38, h:26, label:'🔍+'});
+  HUD.btns.push({type:'speed', x:W-78, y:5, w:34, h:26});
   HUD.btns.push({type:'pause', x:W-40, y:5, w:34, h:26, label:'⚙'});
 }
 layoutHUD();
@@ -3227,6 +3313,8 @@ function drawBtn(b){
     col = ok? '#9dc88a':'#8a867e';
   } else if (b.type==='zoom'){
     label=b.label; ok=true; col='#8a867e';
+  } else if (b.type==='speed'){
+    label='×'+(game.speed||1); ok=(game.speed||1)!==1; col='#7ec8ff';
   } else if (b.type==='pause'){
     label='⚙'; ok=true; col='#b8b4ac';
   } else if (b.type==='hero'){
@@ -3477,15 +3565,62 @@ function render(dt){
   drawCata();
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   drawHUD();
+  drawSpeedOverlays();
   ctx.restore();
+}
+// sélecteur de vitesse (chooser local) + modal de vote reçu — dessinés par-dessus le HUD
+function drawSpeedOverlays(){
+  if (speedPending){                                   // ma proposition en attente
+    ctx.textAlign='center'; ctx.font='700 13px Arial';
+    ctx.fillStyle='rgba(16,13,12,0.9)'; rr(W/2-150,44,300,24,6); ctx.fill();
+    ctx.fillStyle='#e8d8a0'; ctx.fillText(t('spd_proposed')+' ×'+speedPending.speed+' — '+t('spd_waiting'), W/2, 56);
+  }
+  if (speedVote){                                      // proposition reçue : Oui / Non
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
+    const bw=360, bh=132, bx=W/2-bw/2, by=H/2-bh/2;
+    ctx.fillStyle='rgba(20,16,15,0.97)'; rr(bx,by,bw,bh,10); ctx.fill();
+    ctx.strokeStyle='#7ec8ff'; ctx.lineWidth=1.5; rr(bx,by,bw,bh,10); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillStyle='#e8e0d2'; ctx.font='700 16px Arial';
+    ctx.fillText(t('spd_incoming'), W/2, by+34);
+    ctx.fillStyle='#7ec8ff'; ctx.font='800 26px Arial'; ctx.fillText('×'+speedVote.speed, W/2, by+66);
+    const yes={x:bx+30,y:by+86,w:140,h:32,ok:true}, no={x:bx+bw-170,y:by+86,w:140,h:32,ok:false};
+    for (const r of [yes,no]){
+      ctx.fillStyle = r.ok? 'rgba(60,140,80,0.9)':'rgba(140,60,50,0.9)'; rr(r.x,r.y,r.w,r.h,7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='700 14px Arial'; ctx.fillText(r.ok? '✓ '+t('yes'):'✗ '+t('no'), r.x+r.w/2, r.y+r.h/2);
+    }
+    speedVote.rects=[yes,no];
+  }
+  if (speedPanel){                                     // sélecteur des 4 vitesses
+    const opts=SPEEDS, n=opts.length, bw=84, gap=10, totw=n*bw+(n-1)*gap;
+    const bx=W/2-totw/2, by=H/2-70, bh=46;
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center'; ctx.fillStyle='#e8e0d2'; ctx.font='700 15px Arial';
+    ctx.fillText(isOnline()? t('spd_pick_online') : t('spd_pick'), W/2, by-18);
+    const rects=[];
+    for (let i=0;i<n;i++){
+      const x=bx+i*(bw+gap), cur=(game.speed||1)===opts[i];
+      ctx.fillStyle = cur? 'rgba(126,200,255,0.92)':'rgba(30,26,24,0.95)';
+      rr(x,by,bw,bh,8); ctx.fill();
+      ctx.strokeStyle = cur? '#fff':'#5a544c'; ctx.lineWidth=1.4; rr(x,by,bw,bh,8); ctx.stroke();
+      ctx.fillStyle = cur? '#06121c':'#e8e0d2'; ctx.font='800 20px Arial';
+      ctx.fillText('×'+opts[i], x+bw/2, by+bh/2);
+      rects.push({x,y:by,w:bw,h:bh,spd:opts[i]});
+    }
+    speedPanel.rects=rects;
+  }
 }
 let last = performance.now();
 function loop(now){
   const dt = Math.min((now-last)/1000, 0.05); last=now;
-  if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne même gelé
-  if (game && game.net==='guest') netGuestTick(dt);   // l'invité ne simule pas : il affiche
-  else update(dt);
-  // l'hôte diffuse l'état ~12 fois/seconde
+  if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
+  const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
+  if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
+  else if (game && !game.over && !paused && tutoStep<0){
+    // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
+    let rem = dt * sp;
+    while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; }
+  } else update(dt);                                    // menu / intro / pause / fin : logique inchangée
+  // l'hôte diffuse l'état ~12 fois/seconde (cadence en temps réel, indépendante de la vitesse de jeu)
   if (game && game.net==='host' && net && net.peer && !paused && !game.over){
     net.acc += dt;
     if (net.acc >= 0.08){ net.acc = 0; net.sendState({s:serialize(), ev:net.ev}); net.ev = []; }
@@ -3711,7 +3846,11 @@ function startHostGame(){
   game.d = netNeutralDiff();
   game.e.hp = game.e.maxhp = 1500;
   game.net = 'host';
-  net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO});
+  game.speed = clampSpeed(net.speed);                 // vitesse décidée dans le lobby
+  if (net.hbTimer){ clearInterval(net.hbTimer); net.hbTimer=null; }
+  if (net.pub) lobbyRemove(net.code);                 // salon plein : on le retire de la liste
+  resetSpeedNet();
+  net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO, speed:game.speed});
   $('menu').style.display='none'; closeNetUI();
   announce('🌐 PARTIE EN LIGNE — '+FACTIONS[net.myFac].name+' vs '+FACTIONS[net.foeFac].name, '#9dc88a');
 }
@@ -3723,6 +3862,9 @@ function startGuestGame(data){
   newGame(data.guestFac, 1, false, data.hostFac);
   game.d = netNeutralDiff();
   game.net = 'guest';
+  game.speed = clampSpeed(data.speed);                 // vitesse décidée par l'hôte (lobby)
+  if (net) net.speed = game.speed;
+  resetSpeedNet();
   // les lacs/spots de la VUE invité sont en miroir des positions canoniques (indices alignés)
   game.nodes = [ {x:WORLD*0.75,owner:null,prog:0,center:false},
                  {x:WORLD*0.50,owner:null,prog:0,center:true},
@@ -3739,6 +3881,62 @@ function onPeerLeft(){
   announce('🔌 Adversaire déconnecté', '#ff5a4a');
   if (!game.over){ game.over=true; game.win = game.net==='host'; setTimeout(showEnd, 600); }
 }
+
+/* =====================================================================
+   VITESSE DE JEU — ×0.75 / ×1 / ×2 / ×3
+   Offline : changement immédiat. En ligne : la vitesse est décidée par le
+   lobby puis modifiable en cours de partie par un VOTE (l'adversaire accepte).
+   Anti-spam : chaque joueur ne peut proposer un changement que 2 fois / 7 min.
+   ===================================================================== */
+const SPEED_PROP_WINDOW = 420, SPEED_PROP_MAX = 2; // 7 min, 2 propositions
+function speedAnnounce(s){ announce('⏩ '+t('spd_now')+' ×'+s, '#7ec8ff'); }
+function setGameSpeed(s){ if (game) game.speed = clampSpeed(s); }
+function openSpeedPanel(){ speedPanel = speedPanel ? null : { rects:null }; }
+function canProposeSpeed(){
+  const now = performance.now()/1000;
+  speedProps = speedProps.filter(ts => now - ts < SPEED_PROP_WINDOW);
+  return speedProps.length < SPEED_PROP_MAX;
+}
+// choix d'une vitesse dans le sélecteur (offline = applique ; online = propose un vote)
+function pickSpeed(s){
+  s = clampSpeed(s); speedPanel = null;
+  if (!isOnline()){
+    setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); refreshSpeedBtns(); speedAnnounce(s);
+    return;
+  }
+  if (!net) return;                                        // sécurité : déconnecté entre-temps
+  if ((game.speed||1) === s) return;                       // déjà à cette vitesse
+  if (speedPending){ announce(t('spd_wait'), '#e8d8a0'); return; }
+  if (!canProposeSpeed()){ announce(t('spd_toomany'), '#ff9d45'); return; }
+  speedProps.push(performance.now()/1000);
+  // si l'adversaire ne répond pas (15 s), on libère la proposition pour ne pas rester bloqué
+  speedPending = { speed:s, timer:setTimeout(()=>{ if (speedPending){ speedPending=null; if (game) announce(t('spd_rejected'), '#ff9d45'); } }, 15000) };
+  net.sendSpeed({ act:'propose', speed:s });
+  announce(t('spd_proposed')+' ×'+s+'…', '#e8d8a0');
+}
+function clearSpeedPending(){ if (speedPending && speedPending.timer) clearTimeout(speedPending.timer); speedPending = null; }
+// réception d'un message de vitesse (en ligne)
+function onSpeedMsg(d){
+  if (!d || !game) return;
+  if (d.act === 'propose'){
+    if (speedPending){ net.sendSpeed({ act:'reject', speed:d.speed }); return; } // collision : on refuse poliment
+    speedVote = { speed: clampSpeed(d.speed), rects:null };
+  } else if (d.act === 'accept'){
+    if (speedPending){ setGameSpeed(speedPending.speed); speedAnnounce(speedPending.speed); clearSpeedPending(); }
+  } else if (d.act === 'reject'){
+    if (speedPending){ announce(t('spd_rejected'), '#ff9d45'); clearSpeedPending(); }
+  }
+}
+// l'adversaire vote sur ma proposition reçue
+function castSpeedVote(ok){
+  if (!speedVote) return;
+  if (!net){ speedVote=null; return; }                     // sécurité : déconnecté entre-temps
+  const s = speedVote.speed;
+  if (ok){ setGameSpeed(s); net.sendSpeed({ act:'accept', speed:s }); speedAnnounce(s); }
+  else   { net.sendSpeed({ act:'reject', speed:s }); announce(t('spd_rejected'), '#ff9d45'); }
+  speedVote = null;
+}
+function resetSpeedNet(){ speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[]; }
 
 /* =====================================================================
    PAUSE EN LIGNE — pause négociée (pas de gel automatique imposé)
@@ -3840,8 +4038,23 @@ function togglePauseAction(){
    PeerJS ; l'invité s'y connecte directement par cet identifiant — le code EST l'adresse,
    rien à échanger. Aucun serveur à gérer. Un seul canal de données fiable transporte tous
    les messages typés {t, d}. STUN+TURN permettent la traversée des NAT (4G/5G inclus). */
-const NET_PROTO = 1;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CHAQUE changement
+const NET_PROTO = 2;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CHAQUE changement
                        // incompatible (sérialisation, messages…). Bloque les versions mêlées.
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║  CONFIG RÉSEAU — À RENSEIGNER (sinon repli automatique, le jeu marche      ║
+   ║  quand même : TURN public + pas de liste de salons publics).              ║
+   ║                                                                            ║
+   ║  • Firebase Realtime DB (liste des salons publics) : colle l'URL de ta    ║
+   ║    base, ex. "https://mon-projet-default-rtdb.firebaseio.com". Mets les    ║
+   ║    règles en lecture/écriture publiques (voir README).                     ║
+   ║  • Cloudflare TURN (relais dédié, fiable en 4G↔4G) : Key ID + API token   ║
+   ║    depuis le dashboard Cloudflare (Realtime / TURN).                       ║
+   ╚══════════════════════════════════════════════════════════════════════════╝ */
+const NET_CONFIG = {
+  firebaseDb:   "",   // ex. "https://xxxx-default-rtdb.firebaseio.com"  (vide = pas de liste publique)
+  cfTurnKeyId:  "",   // ex. "a1b2c3..."   (vide = repli TURN public OpenRelay)
+  cfTurnToken:  "",   // jeton API Cloudflare TURN
+};
 let peerObj = null;
 function loadScriptOnce(src, ms){
   return new Promise((res, rej)=>{
@@ -3864,14 +4077,37 @@ async function loadPeerLib(){
   }
   return null;
 }
-const PEER_RTC = { iceServers: [
+const STUN = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  // TURN public gratuit : indispensable derrière un NAT symétrique / CGNAT (4G/5G)
+];
+// repli TURN public gratuit (peut saturer) — utilisé si Cloudflare n'est pas configuré
+const OPENRELAY = [
   { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
-] };
+];
+let cfIceCache = null;  // {servers, exp} — crédentiels Cloudflare mis en cache jusqu'à expiration
+// renvoie la config ICE : STUN + (Cloudflare TURN dédié si configuré, sinon OpenRelay public)
+async function getIceServers(){
+  if (NET_CONFIG.cfTurnKeyId && NET_CONFIG.cfTurnToken){
+    try {
+      if (cfIceCache && cfIceCache.exp > Date.now()) return { iceServers: cfIceCache.servers };
+      const url = 'https://rtc.live.cloudflare.com/v1/turn/keys/'+encodeURIComponent(NET_CONFIG.cfTurnKeyId)+'/credentials/generate';
+      const r = await fetch(url, { method:'POST',
+        headers:{ 'Authorization':'Bearer '+NET_CONFIG.cfTurnToken, 'Content-Type':'application/json' },
+        body: JSON.stringify({ ttl: 86400 }) });
+      if (r.ok){
+        const j = await r.json();
+        const turn = (j.iceServers ? (Array.isArray(j.iceServers)? j.iceServers : [j.iceServers]) : []);
+        const servers = STUN.concat(turn);
+        cfIceCache = { servers, exp: Date.now() + 80000*1000 };  // ~22 h
+        return { iceServers: servers };
+      }
+    } catch(e){ /* échec Cloudflare → repli public ci-dessous */ }
+  }
+  return { iceServers: STUN.concat(OPENRELAY) };
+}
 function nsend(t, d){ try { if (net && net.conn && net.conn.open) net.conn.send({t, d}); } catch(e){} }
 function versionFail(){
   netStatus('⚠ Versions différentes : METTEZ À JOUR le jeu des deux côtés (rechargez la page), puis réessayez.');
@@ -3883,9 +4119,10 @@ function nrecv(msg){
   const t = msg.t, d = msg.d;
   if (t==='st'){ if (net.role==='guest') onSnapshot(d); }
   else if (t==='cm'){ if (net.role==='host') net.cmdQ.push(d); }
-  else if (t==='hi'){                                   // l'hôte reçoit le bonjour de l'invité (avec sa version)
+  else if (t==='hi'){                                   // l'hôte reçoit le bonjour de l'invité (version + mot de passe)
     if (net.role==='host' && !game){
       if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); versionFail(); return; }
+      if (net.pw && (d.pw||'') !== net.pw){ nsend('pwko', {}); netStatus('Tentative avec un mot de passe incorrect — toujours en attente.'); return; }
       net.foeFac = d.fac; startHostGame();
     }
   }
@@ -3896,32 +4133,39 @@ function nrecv(msg){
     }
   }
   else if (t==='ko'){ versionFail(); }                  // l'autre côté a refusé pour cause de version
+  else if (t==='pwko'){ netBadPw(); }                   // mot de passe refusé par l'hôte
   else if (t==='pz'){ onPauseMsg(d); }
+  else if (t==='sp'){ onSpeedMsg(d); }                  // vote de changement de vitesse
 }
+function netBadPw(){ netStatus(t('net_badpw')); setTimeout(netDisconnect, 50); }
 function bindConn(conn){
   net.conn = conn;
   conn.on('open', ()=>{
     if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
     net.peer = true; net.peerId = conn.peer;
-    if (net.role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac:net.myFac, v:NET_PROTO}); }
+    if (net.role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac:net.myFac, v:NET_PROTO, pw:net.pw||''}); }
     else netStatus('Adversaire connecté !');
   });
   conn.on('data', nrecv);
   conn.on('close', ()=>{ if (net){ net.peer=false; } onPeerLeft(); });
   conn.on('error', ()=>{});
 }
-async function netConnect(role, code, fac){
-  netStatus('Chargement du réseau P2P…');
+async function netConnect(role, code, fac, opts){
+  opts = opts || {};
+  netStatus(t('net_loading'));
   const Peer = await loadPeerLib();
   if (!Peer){ netStatus('⚠ Réseau P2P inaccessible (connexion ? pare-feu ?). Réessayez.'); return; }
   netDisconnect();                                        // repart propre si une tentative précédente traîne
+  const RTC = await getIceServers();                      // STUN + TURN (Cloudflare dédié ou repli public)
   const hostId = 'agi-' + code;
   const myId   = role==='host' ? hostId : (hostId + '-g' + Math.random().toString(36).slice(2,8));
-  net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'),
+  net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'), speed:clampSpeed(opts.speed||menuSpeed),
+          pw:(opts.pw||''), name:(opts.name||''), pub:!!opts.pub,
           peer:false, cmdQ:[], ev:[], acc:0, conn:null, tries:0,
           sendState:o=>nsend('st',o), sendCmd:o=>nsend('cm',o),
-          sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o) };
-  try { peerObj = new Peer(myId, { config: PEER_RTC, debug: 1 }); }
+          sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o),
+          sendSpeed:o=>nsend('sp',o) };
+  try { peerObj = new Peer(myId, { config: RTC, debug: 1 }); }
   catch(err){ netStatus('⚠ Impossible d\'initialiser le réseau.'); return; }
   const tryConnect = ()=>{
     if (!peerObj || peerObj.destroyed) return;
@@ -3929,8 +4173,11 @@ async function netConnect(role, code, fac){
     if (conn) bindConn(conn);
   };
   peerObj.on('open', ()=>{
-    if (role==='host'){ netStatus('Salon « '+code+' » créé. En attente d\'un adversaire…'); }
-    else { netStatus('Recherche du salon « '+code+' »…'); tryConnect(); }
+    if (role==='host'){
+      showHostingCode(code);                              // affiche le code à partager
+      netStatus(t('net_waiting'));
+      if (net && net.pub){ lobbyPublish(); net.hbTimer = setInterval(lobbyPublish, 20000); } // heartbeat liste publique
+    } else { netStatus('Recherche du salon « '+code+' »…'); tryConnect(); }
   });
   peerObj.on('connection', conn=>{ if (role==='host') bindConn(conn); });   // invité entrant côté hôte
   peerObj.on('error', err=>{
@@ -3962,17 +4209,47 @@ async function netConnect(role, code, fac){
   }, 35000);
 }
 function netDisconnect(){
-  if (net && net.findTimer){ clearTimeout(net.findTimer); }
+  speedVote = null; speedPanel = null; clearSpeedPending();  // annule tout vote/minuteur de vitesse en cours
+  if (net){
+    if (net.findTimer) clearTimeout(net.findTimer);
+    if (net.hbTimer) clearInterval(net.hbTimer);
+    if (net.pub && net.code) lobbyRemove(net.code);     // retire le salon de la liste publique
+  }
   try { if (net && net.conn) net.conn.close(); } catch(e){}
   try { if (peerObj) peerObj.destroy(); } catch(e){}
   peerObj = null; net = null;
 }
 
+/* ---- liste des salons publics via Firebase Realtime DB (API REST, sans SDK) ---- */
+function fbUrl(path){ return NET_CONFIG.firebaseDb.replace(/\/+$/,'') + path + '.json'; }
+function lobbyPublish(){
+  if (!NET_CONFIG.firebaseDb || !net || !net.pub) return;
+  const body = JSON.stringify({ code:net.code, name:(net.name||('Salon '+net.code)), fac:net.myFac,
+                                speed:net.speed, hasPw:!!net.pw, ts:Date.now() });
+  fetch(fbUrl('/lobbies/'+net.code), { method:'PUT', body }).catch(()=>{});
+}
+function lobbyRemove(code){
+  if (!NET_CONFIG.firebaseDb || !code) return;
+  fetch(fbUrl('/lobbies/'+code), { method:'DELETE' }).catch(()=>{});
+}
+async function lobbyList(){
+  if (!NET_CONFIG.firebaseDb) return [];
+  try {
+    const r = await fetch(fbUrl('/lobbies'), { cache:'no-store' });
+    if (!r.ok) return [];
+    const j = (await r.json()) || {};
+    const now = Date.now();
+    return Object.values(j).filter(l => l && l.code && (now - (l.ts||0) < 60000))   // ignore les périmés (>60 s)
+                           .sort((a,b)=> (b.ts||0)-(a.ts||0));
+  } catch(e){ return []; }
+}
+
 /* ================= MENU (DOM) ================= */
 const $ = id => document.getElementById(id);
-let menuFac = 'HUM', menuDiff = 1;
+let menuFac = 'HUM', menuDiff = 1, menuSpeed = clampSpeed(SETTINGS.speed);
 function netStatus(t){ const el=$('netStatus'); if (el) el.textContent = t; }
-function closeNetUI(){ const el=$('onlinePanel'); if (el) el.style.display='none'; }
+function closeNetUI(){ const el=$('onlinePanel'); if (el) el.style.display='none';
+  if (typeof lobbyTimer!=='undefined' && lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; } }
 function randCode(){ const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s='';
   for (let i=0;i<5;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
 
@@ -3994,6 +4271,19 @@ document.querySelectorAll('.diffBtn').forEach(b=>{
     b.classList.add('sel'); menuDiff = +b.dataset.diff;
   });
 });
+// sélecteur de vitesse du menu : préférence offline + valeur par défaut du lobby en ligne
+function refreshSpeedBtns(){
+  document.querySelectorAll('.spdBtn').forEach(x=>x.classList.toggle('sel', +x.dataset.spd===menuSpeed));
+}
+document.querySelectorAll('.spdBtn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    menuSpeed = clampSpeed(+b.dataset.spd);
+    SETTINGS.speed = menuSpeed; saveSettings();
+    if (game && !game.net && !game.over) game.speed = menuSpeed;  // offline : applique immédiatement à la partie en cours
+    refreshSpeedBtns();
+  });
+});
+refreshSpeedBtns();
 /* ---- plein écran : demande robuste + bascule manuelle (utile sur mobile après une sortie) ----
    iOS (iPhone surtout) n'IMPLÉMENTE PAS l'API Fullscreen : requestFullscreen y est sans effet.
    Le seul vrai plein écran sur iOS est « Ajouter à l'écran d'accueil » (mode standalone PWA).
@@ -4063,26 +4353,87 @@ $('replayBtn').addEventListener('click', ()=>{
   netDisconnect();
   game = null; paused = false; netPause = null; buildMenu = null; selMode = false; selBox = null; tutoStep = -1; intro = -1; pendingStart = null;
 });
-/* ---- boutons en ligne ---- */
+/* ---- mode en ligne : navigation entre les vues ---- */
+let lobbyTimer = null;
+function showNetView(v){
+  for (const id of ['netHome','netCreate','netJoin','netHosting']){
+    const el=$(id); if (el) el.style.display = (id==='net'+v.charAt(0).toUpperCase()+v.slice(1))? 'flex':'none';
+  }
+  // le rappel « même version » et Annuler ne servent qu'en phase active
+  if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; }
+  if (v==='home'){ refreshLobbies(); lobbyTimer = setInterval(refreshLobbies, 5000); }
+}
+function showHostingCode(code){
+  const big=$('hostCodeBig'); if (big) big.textContent = code;
+  const info=$('hostingInfo');
+  if (info) info.textContent = (net && net.pub) ? t('net_listed') : t('net_private');
+  showNetView('hosting');
+}
+async function refreshLobbies(){
+  const box=$('lobbyList'); if (!box) return;
+  if (!NET_CONFIG.firebaseDb){ box.innerHTML = '<div style="color:#7a7286;font-size:12px;text-align:center;padding:6px;">'+t('net_nolist')+'</div>'; return; }
+  const list = await lobbyList();
+  if (!list.length){ box.innerHTML = '<div style="color:#7a7286;font-size:12px;text-align:center;padding:6px;">'+t('net_empty')+'</div>'; return; }
+  box.innerHTML = '';
+  for (const l of list){
+    const row=document.createElement('button'); row.className='pick';
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;font-size:13px;padding:7px 10px;';
+    const nm = (l.name||('Salon '+l.code)).slice(0,22);
+    row.innerHTML = '<span>'+(l.hasPw?'🔒 ':'')+escapeHtml(nm)+'</span>'+
+                    '<span style="color:#9dc88a;">×'+(l.speed||1)+' · '+escapeHtml(l.code)+' →</span>';
+    row.addEventListener('click', ()=> joinLobby(l));
+    box.appendChild(row);
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function joinLobby(l){
+  audioInit();
+  let pw = '';
+  if (l.hasPw){ pw = (prompt(t('net_askpw'))||'').trim(); if (!pw) return; }
+  showNetView('join'); $('joinCode').value = l.code; $('joinPw').value = pw;
+  netConnect('guest', l.code, menuFac, { pw });
+}
 $('onlineBtn').addEventListener('click', ()=>{
   const pan = $('onlinePanel');
-  pan.style.display = pan.style.display==='none'? 'flex':'none';
+  const opening = pan.style.display==='none';
+  pan.style.display = opening? 'flex':'none';
   netStatus('');
+  if (opening) showNetView('home'); else if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; }
+});
+$('goCreate').addEventListener('click', ()=>{ netStatus(''); refreshLobSpeed(); showNetView('create'); });
+$('goJoin').addEventListener('click',  ()=>{ netStatus(''); showNetView('join'); });
+$('createBack').addEventListener('click', ()=>{ netDisconnect(); netStatus(''); showNetView('home'); });
+$('joinBack').addEventListener('click',   ()=>{ netDisconnect(); netStatus(''); showNetView('home'); });
+$('lobbyRefresh').addEventListener('click', refreshLobbies);
+// sélecteur de vitesse du lobby (partage menuSpeed avec l'onglet Jouer)
+function refreshLobSpeed(){ document.querySelectorAll('.lobSpd').forEach(x=>x.classList.toggle('sel', +x.dataset.spd===menuSpeed)); }
+document.querySelectorAll('.lobSpd').forEach(b=>{
+  b.addEventListener('click', ()=>{ menuSpeed = clampSpeed(+b.dataset.spd); SETTINGS.speed=menuSpeed; saveSettings();
+    refreshLobSpeed(); refreshSpeedBtns(); });
 });
 $('hostBtn').addEventListener('click', ()=>{
   audioInit();
-  // lobby privé : code personnalisé si fourni (≥3 car.), sinon code aléatoire
   const custom = ($('hostCode').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   const code = custom.length>=3? custom : randCode();
-  netConnect('host', code, menuFac);
+  const name = ($('lobbyName').value||'').trim();
+  const pw   = ($('hostPw').value||'').trim();
+  const pub  = $('lobbyPublic').checked;
+  netConnect('host', code, menuFac, { name, pw, pub, speed:menuSpeed });
 });
 $('joinBtn').addEventListener('click', ()=>{
   audioInit();
   const code = ($('joinCode').value||'').trim().toUpperCase();
-  if (code.length<4){ netStatus('Entrez le code de votre adversaire.'); return; }
-  netConnect('guest', code, menuFac);
+  if (code.length<3){ netStatus(t('net_entercode')); return; }
+  const pw = ($('joinPw').value||'').trim();
+  netConnect('guest', code, menuFac, { pw });
 });
-$('netCancel').addEventListener('click', ()=>{ netDisconnect(); netStatus('Annulé.'); });
+$('copyCode').addEventListener('click', ()=>{
+  const code = $('hostCodeBig').textContent||'';
+  const done = ()=>{ const b=$('copyCode'); if(b){ const o=b.textContent; b.textContent='✓ '+t('net_copied'); setTimeout(()=>b.textContent=o,1500);} };
+  if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(done).catch(done); }
+  else done();
+});
+$('netCancel').addEventListener('click', ()=>{ netDisconnect(); netStatus(t('net_cancelled')); showNetView('home'); });
 
 /* ---------- Paramètres ---------- */
 function refreshOpts(){
@@ -4280,6 +4631,16 @@ function finishLasso(){
 function handleTap(sx, sy, shift){
   if (!game) return;
   if (game.over) return;
+  // proposition de vitesse reçue (en ligne) : modal Oui/Non prioritaire
+  if (speedVote){
+    if (speedVote.rects) for (const r of speedVote.rects) if (inRect(sx,sy,r)){ castSpeedVote(r.ok); sfx('sel'); return; }
+    return;
+  }
+  // sélecteur de vitesse ouvert : choisir une vitesse, ou taper à côté pour fermer
+  if (speedPanel){
+    if (speedPanel.rects) for (const r of speedPanel.rects) if (inRect(sx,sy,r)){ pickSpeed(r.spd); sfx('sel'); return; }
+    speedPanel=null; return;
+  }
   // tuto : avancer
   if (tutoStep>=0){
     tutoStep = tutoStep<TUTO_STEPS.length-1? tutoStep+1 : -1;
@@ -4397,6 +4758,7 @@ function handleTap(sx, sy, shift){
     }
     else if (b.type==='zoom') setZoom(zoom + b.d*0.15, s2wX(W/2));
     else if (b.type==='pause') togglePauseAction();
+    else if (b.type==='speed') openSpeedPanel();
     return;
   }
   if (sy<=38) return; // bandeau de ressources
