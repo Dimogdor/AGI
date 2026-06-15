@@ -3910,7 +3910,7 @@ function pickSpeed(s){
   if (!canProposeSpeed()){ announce(t('spd_toomany'), '#ff9d45'); return; }
   speedProps.push(performance.now()/1000);
   // si l'adversaire ne répond pas (15 s), on libère la proposition pour ne pas rester bloqué
-  speedPending = { speed:s, timer:setTimeout(()=>{ if (speedPending){ speedPending=null; announce(t('spd_rejected'), '#ff9d45'); } }, 15000) };
+  speedPending = { speed:s, timer:setTimeout(()=>{ if (speedPending){ speedPending=null; if (game) announce(t('spd_rejected'), '#ff9d45'); } }, 15000) };
   net.sendSpeed({ act:'propose', speed:s });
   announce(t('spd_proposed')+' ×'+s+'…', '#e8d8a0');
 }
@@ -4209,6 +4209,7 @@ async function netConnect(role, code, fac, opts){
   }, 35000);
 }
 function netDisconnect(){
+  speedVote = null; speedPanel = null; clearSpeedPending();  // annule tout vote/minuteur de vitesse en cours
   if (net){
     if (net.findTimer) clearTimeout(net.findTimer);
     if (net.hbTimer) clearInterval(net.hbTimer);
