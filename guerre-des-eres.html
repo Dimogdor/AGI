@@ -3904,6 +3904,7 @@ function pickSpeed(s){
     setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); refreshSpeedBtns(); speedAnnounce(s);
     return;
   }
+  if (!net) return;                                        // sécurité : déconnecté entre-temps
   if ((game.speed||1) === s) return;                       // déjà à cette vitesse
   if (speedPending){ announce(t('spd_wait'), '#e8d8a0'); return; }
   if (!canProposeSpeed()){ announce(t('spd_toomany'), '#ff9d45'); return; }
@@ -3929,6 +3930,7 @@ function onSpeedMsg(d){
 // l'adversaire vote sur ma proposition reçue
 function castSpeedVote(ok){
   if (!speedVote) return;
+  if (!net){ speedVote=null; return; }                     // sécurité : déconnecté entre-temps
   const s = speedVote.speed;
   if (ok){ setGameSpeed(s); net.sendSpeed({ act:'accept', speed:s }); speedAnnounce(s); }
   else   { net.sendSpeed({ act:'reject', speed:s }); announce(t('spd_rejected'), '#ff9d45'); }
