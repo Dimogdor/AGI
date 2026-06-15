@@ -4052,8 +4052,8 @@ const NET_PROTO = 2;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CH
    ╚══════════════════════════════════════════════════════════════════════════╝ */
 const NET_CONFIG = {
   firebaseDb:   "https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app",   // liste des salons publics
-  cfTurnKeyId:  "",   // ex. "a1b2c3..."   (vide = repli TURN public OpenRelay)
-  cfTurnToken:  "",   // jeton API Cloudflare TURN
+  cfTurnKeyId:  "3c7a68575d4581f4f7576fd7ee597b0a",   // Cloudflare TURN — Key ID
+  cfTurnToken:  "a4f43ec088b978c6c196570df63e812759ea62f183c5fa17e85954853ea4bc8d",   // Cloudflare TURN — API token
 };
 let peerObj = null;
 function loadScriptOnce(src, ms){
@@ -4093,7 +4093,7 @@ async function getIceServers(){
   if (NET_CONFIG.cfTurnKeyId && NET_CONFIG.cfTurnToken){
     try {
       if (cfIceCache && cfIceCache.exp > Date.now()) return { iceServers: cfIceCache.servers };
-      const url = 'https://rtc.live.cloudflare.com/v1/turn/keys/'+encodeURIComponent(NET_CONFIG.cfTurnKeyId)+'/credentials/generate';
+      const url = 'https://rtc.live.cloudflare.com/v1/turn/keys/'+encodeURIComponent(NET_CONFIG.cfTurnKeyId)+'/credentials/generate-ice-servers';
       const r = await fetch(url, { method:'POST',
         headers:{ 'Authorization':'Bearer '+NET_CONFIG.cfTurnToken, 'Content-Type':'application/json' },
         body: JSON.stringify({ ttl: 86400 }) });
