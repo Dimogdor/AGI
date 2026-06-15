@@ -73,6 +73,8 @@ const swReg = `if('serviceWorker'in navigator&&location.protocol.startsWith('htt
 // ne soient pas interprétés comme motifs de remplacement par String.replace.
 let outHtml = html.replace(/<script>[\s\S]*?<\/script>/,
   () => `<script>${obf}</script>\n<script>${nativeBoot}${swReg}</script>`);
+// numéro de version affiché dans le menu (jeton remplacé au build)
+outHtml = outHtml.split('__VERSION__').join(VERSION);
 // liens PWA dans le <head>
 outHtml = outHtml.replace('</head>', () =>
   `  <meta name="theme-color" content="#0d0a0a">\n` +

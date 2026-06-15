@@ -39,6 +39,9 @@ jobs:
 
   deploy:
     needs: build
+    # GitHub Pages n'autorise le déploiement que depuis main : sur une branche de
+    # travail on se contente du build (vérification), sans tenter — et échouer — le déploiement.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

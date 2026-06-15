@@ -16,8 +16,11 @@
   #menu *, #endscreen * { touch-action:pan-y; }
   #menu button, #menu input, #menu .tab, #menu .pick, #menu .go, #menu .tog,
   #endscreen button { touch-action:manipulation; }
+  /* iOS : on respecte l'encoche / l'indicateur d'accueil pour ne rien rogner en paysage */
+  #menu, #endscreen { padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
   /* bouton plein écran flottant (mobile surtout) */
-  #fsBtn { position:fixed; top:8px; right:8px; z-index:40; display:none;
+  #fsBtn { position:fixed; top:calc(8px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); z-index:40; display:none;
     pointer-events:auto; cursor:pointer; font-family:inherit; font-size:18px; line-height:1;
     width:40px; height:40px; color:#e8e0d2; background:rgba(16,13,12,0.78);
     border:1px solid #4a3a32; border-radius:6px; }
@@ -134,6 +137,7 @@
           <button class="pick" id="joinBtn" data-i18n="join_btn" style="border-color:#3e8cb8; color:#bfe6ff;">REJOINDRE</button>
         </div>
         <div id="netStatus" style="color:#9dc88a; font-size:clamp(11px,1.6vw,13px); text-align:center; min-height:16px;"></div>
+        <div style="color:#7a7286; font-size:11px; text-align:center;" data-i18n="online_samever">Les deux joueurs doivent avoir la MÊME version.</div>
         <button class="pick" id="netCancel" data-i18n="cancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
       </div>
     </div>
@@ -187,6 +191,7 @@
       <div id="keysTitle" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
       <div id="keysBox" style="width:min(440px,86vw)"></div>
     </div>
+    <div id="verTag" style="margin-top:10px;color:#6c6478;font-size:11px;text-align:center;letter-spacing:.5px;">AGI v__VERSION__</div>
   </div>
   <div id="endscreen" class="panel">
     <div id="endtitle"></div>
@@ -328,6 +333,7 @@ const I18N = {
     fac_hum:"HUMANITÉ", diff_0:"Facile", diff_1:"Normal", diff_2:"Difficile", diff_3:"Brutal",
     tuto_chk:"Tutoriel guidé au lancement", start:"COMMENCER (vs IA)", online_btn:"🌐 JOUER EN LIGNE (1v1)",
     online_hint:"Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.",
+    online_samever:"Les deux joueurs doivent avoir la MÊME version (voir le n° en bas du menu).",
     host_btn:"CRÉER UNE PARTIE", or:"— OU —", code_ph:"CODE", hostcode_ph:"CODE PRIVÉ (optionnel)", join_btn:"REJOINDRE", cancel:"Annuler",
     set_lang:"Langue", set_music:"Musique", set_sfx:"Effets sonores", set_vol:"Volume", set_shake:"Secousses d'écran",
     set_keys:"TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche", replay:"REJOUER",
@@ -347,6 +353,7 @@ const I18N = {
     fac_hum:"HUMANITY", diff_0:"Easy", diff_1:"Normal", diff_2:"Hard", diff_3:"Brutal",
     tuto_chk:"Guided tutorial on launch", start:"START (vs AI)", online_btn:"🌐 PLAY ONLINE (1v1)",
     online_hint:"Pick your side above first. The match is peer-to-peer, no server.",
+    online_samever:"Both players must run the SAME version (see the number at the bottom of the menu).",
     host_btn:"CREATE A GAME", or:"— OR —", code_ph:"CODE", hostcode_ph:"PRIVATE CODE (optional)", join_btn:"JOIN", cancel:"Cancel",
     set_lang:"Language", set_music:"Music", set_sfx:"Sound effects", set_vol:"Volume", set_shake:"Screen shake",
     set_keys:"KEYBOARD KEYS — click then press the new key", replay:"PLAY AGAIN",
