@@ -784,6 +784,8 @@ const ROLES = [
   {key:'support',label:'Soutien', hp:130, dmg:0,  spd:50, range:130, rate:1.6,  cost:{f:50,m:60,w:25},  xp:32},
 ];
 const GREMLIN = {hp:34, dmg:7, spd:78, range:14, rate:0.7, xp:3};
+// pictogrammes par vocation (file d'attente, repères visuels)
+const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'✚', gremlin:'•', hero:'★' };
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
@@ -1110,7 +1112,21 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
           arc:r.arc, aoe:r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
     if (r.fly) u.flyH = 44 + (side.units.length%3)*10 + (side.facKey==='IA'?8:0);
   }
-  u.x = atX!==null? atX : side.x + side.side*60;
+  // ESPACEMENT AU SPAWN : on échelonne les unités le long de la voie de sortie pour
+  // qu'elles ne s'empilent pas exactement au même point (sinon l'anti-empilement les
+  // fige quelques secondes au début de partie). Chaque nouvelle unité se place derrière
+  // les précédentes de même type encore proches de la base.
+  if (atX!==null) u.x = atX;
+  else {
+    const baseX = side.x + side.side*54;
+    let n=0;
+    for (const a of side.units){
+      if (!!a.fly !== !!u.fly) continue;
+      const d=(a.x-baseX)*side.side;
+      if (d>=-12 && d<170) n++;
+    }
+    u.x = baseX + side.side*Math.min(n,7)*22;
+  }
   u.side = side.side; u.era = side.era; u.fac = side.facKey; u.trans = side.trans;
   u.atkT = Math.random()*0.3; u.bob = Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord = null; u.holdX = null; u.task = null;
@@ -1652,6 +1668,8 @@ function updateUnits(side, foe, dt){
       } else if (st==='retreat'){
         const homeX = side.x + side.side*150;
         if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
+      } else if (side.formation){
+        moveToFormation(u, side, dt);             // soutien : tenu tout à l'arrière de la colonne
       } else {
         let frontAlly = side.x;
         for (const a of side.units) if (a!==u && (a.x-frontAlly)*side.side>0) frontAlly=a.x;
@@ -1716,15 +1734,9 @@ function updateUnits(side, foe, dt){
       const hx = u.ord==='hold'? u.holdX : side.holdX;
       if (hx!==null && (u.x-hx)*side.side>=0){ /* tient */ }
       else tryMove(u, side, dt);
-    } else if (side.formation && !u.fly && (u.role==='ranged'||u.role==='siege')){
-      // formation : tanks/mêlée devant, tireurs derrière, artillerie encore plus loin
-      let anchor = side.x + side.side*240;
-      for (const a of side.units)
-        if ((a.role==='melee'||a.role==='tank') && (a.x-anchor)*side.side>0) anchor = a.x;
-      const off = u.role==='ranged'? (side.facKey==='HUM'?60:42) : (side.facKey==='HUM'?130:105);
-      const want = anchor - side.side*off;
-      if ((u.x-want)*side.side > 6) moveBack(u, side, dt);
-      else if ((want-u.x)*side.side > 8) tryMove(u, side, dt);
+    } else if (side.formation && moveToFormation(u, side, dt)){
+      // formation : volants en pointe, mêlée/tank devant, tireurs, artillerie puis soutien à l'arrière
+      // (moveToFormation gère le placement ; renvoie false pour la ligne de front qui avance)
     } else {
       tryMove(u, side, dt);
     }
@@ -1773,6 +1785,32 @@ function updateUnits(side, foe, dt){
 // nombre d'unités pouvant se masser sur la même position (croît avec ère + amélioration)
 function stackMax(side, u){
   return (u.fly?3:2) + Math.floor(side.era/2) + ((side.upg[u.role]||0)>=2? 1:0);
+}
+// FORMATION : position voulue d'une unité dans la colonne ordonnée (toutes vocations incluses).
+// Renvoie null pour les unités de front (mêlée/tank) qui avancent librement et SERVENT d'ancre.
+function formationWant(side, u){
+  let anchor = side.x + side.side*220;                       // défaut si aucune unité de front
+  for (const a of side.units)
+    if (!a.fly && (a.role==='melee'||a.role==='tank') && (a.x-anchor)*side.side>0) anchor = a.x;
+  const hum = side.facKey==='HUM';
+  let off;
+  switch (u.role){
+    case 'melee': case 'tank': return null;                 // ligne de front : avancent
+    case 'air':    off = hum? -34 : -28; break;             // volants : légèrement en pointe
+    case 'ranged': off = hum?  60 :  42; break;             // tireurs : juste derrière
+    case 'siege':  off = hum? 130 : 105; break;             // artillerie : au fond
+    case 'support':off = hum? 185 : 165; break;             // soutien : tout à l'arrière, protégé
+    default: return null;
+  }
+  return anchor - side.side*off;
+}
+// rapproche/recule l'unité vers sa position de formation ; renvoie true si elle a (presque) sa place
+function moveToFormation(u, side, dt){
+  const want = formationWant(side, u);
+  if (want===null) return false;
+  if ((u.x-want)*side.side > 6) moveBack(u, side, dt);
+  else if ((want-u.x)*side.side > 8) tryMove(u, side, dt);
+  return true;
 }
 function tryMove(u, side, dt){
   if (u.fly){
@@ -2035,7 +2073,10 @@ function updateCata(dt){
   if (g.cata){
     g.cataT += dt;
     applyCataEffects(dt);
-    if (g.cataT>=g.cataDur) g.cata=null;
+    if (g.cataT>=g.cataDur){
+      if (g.cata==='flood'){ for (const s of [g.p,g.e]) for (const u of s.units) u.drownT=0; } // survivants : on annule la noyade
+      g.cata=null;
+    }
     return;
   }
   g.cataCd -= dt;
@@ -2071,9 +2112,10 @@ function startCata(key){
     burst(g.cataX, gY(g.cataX)-60, '#fff0a0', 46, 2.4); burst(g.cataX, gY(g.cataX)-130, '#ffd34a', 34, 1.8);
     nukeBlast(g.cataX, 260);                      // cratère localisé — ne rase PLUS toute la carte
   } else if (key==='flood'){
-    g.shake=Math.max(g.shake,8);
-    // la crue submerge les unités au sol mais ne les anéantit plus : gros dégâts, pas un balayage total
-    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.hp -= u.maxhp*0.4; burst(u.x, gY(u.x)-16, '#3fa0e8', 5); }
+    g.shake=Math.max(g.shake,10);
+    // LA CRUE NOIE TOUT CE QUI N'EST PAS VOLANT : les unités au sol commencent à couler
+    // (la noyade s'achève en ~1,8 s, voir applyCataEffects). Les volants sont au-dessus de l'eau.
+    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.drownT = 0.001; burst(u.x, gY(u.x)-8, '#9fd8ff', 7, 1.3); }
   } else if (key==='sand'){
     g.shake=Math.max(g.shake,8);
     for (const s of [g.p,g.e]) for (const u of s.units) if (u.fly){ u.hp=0; burst(u.x, gY(u.x)-30, '#d9b46a', 6); }
@@ -2088,8 +2130,16 @@ function applyCataEffects(dt){
     for (const side of [g.p,g.e]) for (const s of sideBuildSlots(side)) if (s.b && s.b.type!=='site') s.b.hp -= 24*dt;
   } else if (k==='heat'){                                   // DoT lourd + surchauffe + ralentit
     each(u=>{ u.hp -= (u.fac==='IA'?20:16)*dt; u.heat=(u.heat||0)+0.12*dt; if (u.heat>=1){u.heat=0;u.tiredT=3;} });
-  } else if (k==='flood'){                                  // la crue continue de gêner les unités au sol (dégâts modérés)
-    each(u=>{ if (!u.fly) u.hp -= 11*dt; });
+  } else if (k==='flood'){                                  // noyade : tout ce qui n'est pas volant coule et meurt
+    each(u=>{ if (!u.fly){
+      u.drownT = (u.drownT||0) + dt;
+      u.hp -= u.maxhp * dt / 1.8;                           // mort garantie en ~1,8 s
+      if (Math.random() < dt*7){                            // bulles qui remontent
+        particles.push({x:u.x+(Math.random()-0.5)*12, y:gY(u.x)-6-Math.random()*16,
+          vx:(Math.random()-0.5)*8, vy:-34-Math.random()*22, life:0.5+Math.random()*0.4, t:0,
+          color:'rgba(190,228,255,0.9)', r:1+Math.random()*1.8});
+      }
+    }});
   } else if (k==='sand'){                                   // la tempête continue d'arracher tout volant
     each(u=>{ if (u.fly) u.hp -= 30*dt; });
   }
@@ -2132,9 +2182,18 @@ function drawCata(){
     g2.addColorStop(0,'rgba(255,120,20,0.16)'); g2.addColorStop(1,'rgba(255,180,40,0.04)');
     ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
   } else if (k==='flood'){
-    const lv=H - Math.min(H*0.45, tt/game.cataDur*H*0.45);
+    // la nappe monte vite puis se stabilise SOUS l'altitude des volants (qui restent au sec).
+    const rise = clamp(tt/game.cataDur*1.7, 0, 1);
+    const surfW = lerp(GROUND, 388, rise);                 // surface en coordonnées MONDE (sous les volants ~370)
+    const ly = Math.max(0, w2sY(surfW));                   // → position écran (suit le zoom)
     ctx.fillStyle='rgba(120,200,255,0.10)'; ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='rgba(40,120,200,0.24)'; ctx.fillRect(0,lv,W,H-lv);
+    const grad=ctx.createLinearGradient(0,ly,0,H);
+    grad.addColorStop(0,'rgba(80,160,225,0.36)'); grad.addColorStop(1,'rgba(20,80,150,0.55)');
+    ctx.fillStyle=grad; ctx.fillRect(0,ly,W,H-ly);
+    // surface ondulante + reflets
+    ctx.strokeStyle='rgba(190,228,255,'+(0.55*fade)+')'; ctx.lineWidth=2; ctx.beginPath();
+    for (let x=0;x<=W;x+=12){ const yy=ly+Math.sin(x*0.045+tt*4)*2.6; (x===0)? ctx.moveTo(x,yy):ctx.lineTo(x,yy); }
+    ctx.stroke();
   } else if (k==='sand'){
     // visibilité quasi nulle : voile de sable dense + rafales
     ctx.fillStyle='rgba(190,150,80,'+(0.62*fade)+')'; ctx.fillRect(0,0,W,H);
@@ -2817,6 +2876,9 @@ function drawUnit(u){
   if (x<-40 || x>VW()+40) return;
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;
+  // NOYADE (inondation) : l'unité s'enfonce sous la nappe, puis disparaît.
+  const drowning = (!u.fly && u.drownT>0);
+  if (drowning){ ctx.save(); ctx.translate(0, Math.min(u.drownT*22, 30)); ctx.globalAlpha = Math.max(0.3, 1 - u.drownT*0.4); }
   if (game.sel.has(u)){
     ctx.strokeStyle='#ffd34a'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(x, gy+3, 13, 4.5, 0,0,6.28); ctx.stroke();
@@ -2858,6 +2920,7 @@ function drawUnit(u){
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }
+  if (drowning) ctx.restore();
 }
 /* ---------- bases & bâtiments ---------- */
 function drawBase(side){
@@ -3140,9 +3203,10 @@ function layoutHUD(){
   HUD.btns.push({type:'cam', go:'follow',x:W-162, y:sy, w:70, h:26, label:'🎥 Auto'});
   HUD.btns.push({type:'zoom', d:-1, x:W-88, y:sy, w:40, h:26, label:'🔍−'});
   HUD.btns.push({type:'zoom', d:1,  x:W-44, y:sy, w:38, h:26, label:'🔍+'});
-  HUD.btns.push({type:'speed', x:W-116, y:5, w:34, h:26});
-  HUD.btns.push({type:'softpause', x:W-78, y:5, w:34, h:26});
-  HUD.btns.push({type:'pause', x:W-40, y:5, w:34, h:26, label:'⚙'});
+  // cluster de contrôles épuré, coin haut-droite (vitesse · pause · réglages)
+  HUD.btns.push({type:'speed',     x:W-102, y:6, w:30, h:24});
+  HUD.btns.push({type:'softpause', x:W-69,  y:6, w:30, h:24});
+  HUD.btns.push({type:'pause',     x:W-36,  y:6, w:30, h:24, label:'⚙'});
 }
 layoutHUD();
 function setZoom(nz, cxAnchor){
@@ -3154,6 +3218,23 @@ function setZoom(nz, cxAnchor){
 }
 function fmtRate(r){ return '+'+(Math.round(r*10)/10); }
 function fmtTime(s){ const m=Math.floor(s/60), ss=('0'+Math.floor(s%60)).slice(-2); return m+':'+ss; }
+// file d'attente : petits pictogrammes des unités en attente d'une place sur la carte (en haut à gauche)
+function drawQueue(){
+  const p=game.p, q=p.queue;
+  if (!q || !q.length) return;
+  const sz=20, gap=4, bx=10, by=43, n=Math.min(q.length,10);
+  const bw=n*(sz+gap)+6;
+  ctx.fillStyle='rgba(16,13,12,0.82)'; rr(bx-5,by-3,bw,sz+8,5); ctx.fill();
+  ctx.strokeStyle='rgba(255,211,74,0.30)'; ctx.lineWidth=1; rr(bx-5,by-3,bw,sz+8,5); ctx.stroke();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for (let i=0;i<n;i++){
+    const x=bx+i*(sz+gap), next=(i===0);
+    ctx.fillStyle = next? 'rgba(255,211,74,0.18)':'rgba(255,255,255,0.06)'; rr(x,by,sz,sz,4); ctx.fill();
+    ctx.strokeStyle = next? '#ffd34a':'#4a443c'; ctx.lineWidth=1; rr(x,by,sz,sz,4); ctx.stroke();
+    ctx.font='13px Arial'; ctx.fillStyle='#e8e0d2';
+    ctx.fillText(ROLE_ICON[ROLES[q[i]].key]||'?', x+sz/2, by+sz/2+1);
+  }
+}
 function drawHUD(){
   const p = game.p, fac = p.fac;
   const rates = calcRates(p);
@@ -3184,15 +3265,19 @@ function drawHUD(){
   ctx.fillRect(W/2-80, 26, 160*game.dev, 4);
   ctx.font='8.5px Arial'; ctx.fillStyle='rgba(255,255,255,0.45)';
   ctx.fillText('SANTÉ DU MONDE', W/2, 20);
-  // droite : effectif + ennemi
+  // droite : effectif + ennemi (calés À GAUCHE du cluster de contrôles → plus de chevauchement)
+  const RX = W-112;
   ctx.textAlign='right'; ctx.font='700 13px Arial';
   ctx.fillStyle = unitTotal(p)>=p.cap? '#ff5a4a':'#d8d0c4';
   const qn = (p.queue && p.queue.length) ? p.queue.length : (p.queueLen||0);
-  ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), W-130, 13);
+  ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), RX, 13);
+  // ligne 2 : ennemi (couleur faction) puis difficulté (gris), tous deux calés à droite
+  ctx.font='10px Arial'; ctx.fillStyle='#988e80';
+  const diffTxt = DIFFS[game.diff].name;
+  ctx.fillText(diffTxt, RX, 29);
+  const dw = ctx.measureText(diffTxt).width;
   ctx.font='700 11px Arial'; ctx.fillStyle=game.e.fac.accent;
-  ctx.fillText(game.e.fac.name+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), W-130, 28);
-  ctx.fillStyle='#988e80'; ctx.font='10px Arial';
-  ctx.fillText(DIFFS[game.diff].name, W-50, 28);
+  ctx.fillText(game.e.fac.name+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 29);
   // ---- minimap (y=42) ----
   const mw=200, mh=13, mx=W/2-mw/2, my=42;
   ctx.fillStyle='rgba(0,0,0,0.5)'; rr(mx-2,my-2,mw+4,mh+4,4); ctx.fill();
@@ -3215,6 +3300,7 @@ function drawHUD(){
   ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.font='700 12px Arial'; ctx.fillStyle='#cdbf9a';
   ctx.fillText('⏱ '+fmtTime(game.t)+((game.speed&&game.speed!==1)? '  ×'+game.speed : ''), mx+mw+10, my+mh/2);
+  drawQueue();
   // ---- météo en cours ----
   if (game.weather){
     ctx.font='700 10px Arial'; ctx.textAlign='center';
@@ -3285,9 +3371,36 @@ function drawHeroBtn(b, p){
   ctx.fillText('✦', b.x+b.w/2, b.y+b.h/2+1);    // glyphe énigmatique : on ne révèle pas ce que c'est
   ctx.restore();
 }
+// contrôles épurés (vitesse / pause / réglages) : icônes vectorielles propres
+function drawCtrl(b){
+  const r=6, cx=b.x+b.w/2, cy=b.y+b.h/2;
+  let col='#cfcabf', active=false;
+  if (b.type==='speed'){ const s=game.speed||1; active=(s!==1); col=active?'#7ec8ff':'#9a958c'; }
+  else if (b.type==='softpause'){ active=(paused&&!settingsOpen); col=active?'#7dd84a':'#cfcabf'; }
+  ctx.save();
+  ctx.fillStyle='rgba(16,13,12,0.9)'; rr(b.x,b.y,b.w,b.h,r); ctx.fill();
+  ctx.strokeStyle=col; ctx.globalAlpha=active?0.9:0.4; ctx.lineWidth=1.2; rr(b.x,b.y,b.w,b.h,r); ctx.stroke();
+  ctx.globalAlpha=1; ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=1.8; ctx.lineCap='round'; ctx.lineJoin='round';
+  if (b.type==='speed'){
+    const s=game.speed||1;
+    if (s<1){ ctx.beginPath(); ctx.arc(cx,cy,4.5,0,6.28); ctx.stroke(); }     // ralenti : petit rond
+    else { const n=(s>=3?3:s>=2?2:1), gap=4.5, x0=cx-(n-1)*gap/2-1;            // ×1/×2/×3 : chevrons d'avance
+      for (let i=0;i<n;i++){ const ox=x0+i*gap; ctx.beginPath();
+        ctx.moveTo(ox-2.6,cy-4.5); ctx.lineTo(ox+2.6,cy); ctx.lineTo(ox-2.6,cy+4.5); ctx.stroke(); } }
+  } else if (b.type==='softpause'){
+    if (active){ ctx.beginPath(); ctx.moveTo(cx-4,cy-5.5); ctx.lineTo(cx+6,cy); ctx.lineTo(cx-4,cy+5.5); ctx.closePath(); ctx.fill(); } // ▶ reprendre
+    else { ctx.fillRect(cx-4.5,cy-5.5,3,11); ctx.fillRect(cx+1.5,cy-5.5,3,11); }   // ⏸ deux barres
+  } else { // réglages : roue dentée stylisée
+    ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(cx,cy,3.1,0,6.28); ctx.stroke();
+    for (let i=0;i<6;i++){ const a=i*Math.PI/3;
+      ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*5, cy+Math.sin(a)*5); ctx.lineTo(cx+Math.cos(a)*7.4, cy+Math.sin(a)*7.4); ctx.stroke(); }
+  }
+  ctx.restore();
+}
 function drawBtn(b){
   const p=game.p, fac=p.fac;
   if (b.type==='hero'){ drawHeroBtn(b, p); return; }
+  if (b.type==='speed'||b.type==='softpause'||b.type==='pause'){ drawCtrl(b); return; }
   let label='', sub='', ok=false, col=fac.accent, prog=1, small=b.h<40;
   if (b.type==='unit'){
     const role=ROLES[b.i];
@@ -3339,13 +3452,6 @@ function drawBtn(b){
     col = ok? '#9dc88a':'#8a867e';
   } else if (b.type==='zoom'){
     label=b.label; ok=true; col='#8a867e';
-  } else if (b.type==='speed'){
-    label='×'+(game.speed||1); ok=(game.speed||1)!==1; col='#7ec8ff';
-  } else if (b.type==='softpause'){
-    const soft = paused && !settingsOpen;
-    label = soft? '▶' : '⏸'; ok = soft; col = soft? '#7dd84a' : '#b8b4ac';
-  } else if (b.type==='pause'){
-    label='⚙'; ok=true; col='#b8b4ac';
   }
   ctx.globalAlpha = small? 0.95 : ok?1:0.5;
   ctx.fillStyle='rgba(20,16,14,0.92)'; rr(b.x,b.y,b.w,b.h,6); ctx.fill();
