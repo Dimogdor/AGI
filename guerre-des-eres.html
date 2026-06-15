@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AGI">
 <meta name="mobile-web-app-capable" content="yes">
 <title>AGI</title>
 <style>
@@ -215,16 +217,29 @@ let SCALE = 1, zoom = 1;
 const ZMIN = 0.55, ZMAX = 1.25;
 
 function resize() {
-  const ww = window.innerWidth, wh = window.innerHeight, ratio = 16/9;
+  // iOS : window.innerHeight inclut la zone derrière la barre d'outils dynamique et
+  // l'indicateur d'accueil → le canvas débordait sous l'écran. visualViewport donne la
+  // hauteur RÉELLEMENT visible, ce qui supprime la coupure du bas.
+  const vv = window.visualViewport;
+  const ww = Math.round(vv ? vv.width  : window.innerWidth);
+  const wh = Math.round(vv ? vv.height : window.innerHeight);
+  const ratio = 16/9;
   let cw = ww, ch = ww/ratio;
   if (ch > wh) { ch = wh; cw = wh*ratio; }
+  // le conteneur épouse la zone visible : le canvas centré reste toujours entièrement à l'écran
+  const wrap = document.getElementById('wrap');
+  if (wrap){ wrap.style.height = wh+'px'; wrap.style.width = ww+'px'; }
   cv.style.width = cw+'px'; cv.style.height = ch+'px';
   const dpr = Math.min(window.devicePixelRatio||1, 2);
   cv.width = Math.round(cw*dpr); cv.height = Math.round(ch*dpr);
   SCALE = cv.width / W;
   ctx.setTransform(SCALE,0,0,SCALE,0,0);
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize);
+// iOS rapporte des dimensions périmées juste après une rotation → on repasse après coup
+window.addEventListener('orientationchange', ()=>{ resize(); setTimeout(resize, 250); setTimeout(resize, 600); });
+if (window.visualViewport){ window.visualViewport.addEventListener('resize', resize); window.visualViewport.addEventListener('scroll', resize); }
+resize();
 
 const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t;
 function lerpCol(c1,c2,t){ return 'rgb('+Math.round(lerp(c1[0],c2[0],t))+','+Math.round(lerp(c1[1],c2[1],t))+','+Math.round(lerp(c1[2],c2[2],t))+')'; }
@@ -3494,7 +3509,7 @@ function showEnd(){
    ================= MULTIJOUEUR — serveur-chez-l'hôte (WebRTC) =========
    L'hôte fait tourner la simulation autoritaire et diffuse l'état ;
    l'invité envoie ses commandes et affiche une vue MIROIR (toujours à
-   gauche), interpolée. Mise en relation P2P via Trystero (zéro backend).
+   gauche), interpolée. Mise en relation P2P via PeerJS (broker public gratuit).
    ===================================================================== */
 function bcode(b){ return b? ({wall:1,turret:2,farmF:3,farmM:4,well:5,site:6}[b.type]||0) : 0; }
 const BCODE_TYPE = [null,'wall','turret','farmF','farmM','well','site'];
@@ -3689,7 +3704,7 @@ function startHostGame(){
   game.d = netNeutralDiff();
   game.e.hp = game.e.maxhp = 1500;
   game.net = 'host';
-  net.sendStart({hostFac:net.myFac, guestFac:net.foeFac});
+  net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO});
   $('menu').style.display='none'; closeNetUI();
   announce('🌐 PARTIE EN LIGNE — '+FACTIONS[net.myFac].name+' vs '+FACTIONS[net.foeFac].name, '#9dc88a');
 }
@@ -3813,82 +3828,137 @@ function togglePauseAction(){
     paused = !paused;
   }
 }
-/* ---- transport WebRTC (Trystero, signaling P2P sans serveur) ---- */
-let netRoom = null;
-async function netConnect(role, code, fac){
-  netStatus('Chargement du réseau P2P…');
-  let joinRoom;
-  // CRUCIAL : les deux joueurs doivent partager EXACTEMENT la même stratégie de
-  // signalisation, sinon ils n'atterrissent jamais sur le même réseau de mise en
-  // relation. On fige donc « nostr » (relais publics fiables) partout ; les CDN ne
-  // servent qu'à charger le module — pas à changer de stratégie en cours de route.
+/* ---- transport en ligne (PeerJS : broker cloud gratuit + WebRTC, TURN inclus) ----
+   Architecture : l'hôte enregistre l'identifiant « agi-<CODE> » auprès du broker public
+   PeerJS ; l'invité s'y connecte directement par cet identifiant — le code EST l'adresse,
+   rien à échanger. Aucun serveur à gérer. Un seul canal de données fiable transporte tous
+   les messages typés {t, d}. STUN+TURN permettent la traversée des NAT (4G/5G inclus). */
+const NET_PROTO = 1;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CHAQUE changement
+                       // incompatible (sérialisation, messages…). Bloque les versions mêlées.
+let peerObj = null;
+function loadScriptOnce(src, ms){
+  return new Promise((res, rej)=>{
+    const s = document.createElement('script'); s.src = src; s.async = true;
+    const to = setTimeout(()=>{ s.onload=s.onerror=null; rej(new Error('timeout')); }, ms);
+    s.onload  = ()=>{ clearTimeout(to); res(); };
+    s.onerror = ()=>{ clearTimeout(to); s.remove(); rej(new Error('load error')); };
+    document.head.appendChild(s);
+  });
+}
+async function loadPeerLib(){
+  if (window.Peer) return window.Peer;
   const sources = [
-    './trystero-nostr.js',                                    // auto-hébergé (même origine) : fiable, hors-ligne, instantané
-    'https://cdn.jsdelivr.net/npm/trystero@0.21.4/nostr/+esm',// repli CDN : bundle autonome (1 seule sous-dépendance)
-    'https://esm.sh/trystero@0.21.4/nostr',                   // dernier repli
+    './peerjs.min.js',                                              // auto-hébergé (même origine) : fiable, instantané
+    'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js', // replis CDN
+    'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
   ];
-  // import borné dans le temps : sans cela, un CDN lent gèle l'écran sur « Connexion… »
-  const withTimeout = (pr, ms) => Promise.race([pr,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
   for (const src of sources){
-    try {
-      const mod = await withTimeout(import(src), 8000);
-      joinRoom = mod.joinRoom || (mod.default && mod.default.joinRoom);
-      if (joinRoom) break;
-    } catch(err){ /* CDN injoignable ou trop lent : on tente le suivant */ }
+    try { await loadScriptOnce(src, 9000); if (window.Peer) return window.Peer; } catch(e){}
   }
-  if (!joinRoom){
-    netStatus('⚠ Réseau P2P inaccessible (connexion ? pare-feu ?). Réessayez dans un instant.');
-    return;
+  return null;
+}
+const PEER_RTC = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  // TURN public gratuit : indispensable derrière un NAT symétrique / CGNAT (4G/5G)
+  { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+] };
+function nsend(t, d){ try { if (net && net.conn && net.conn.open) net.conn.send({t, d}); } catch(e){} }
+function versionFail(){
+  netStatus('⚠ Versions différentes : METTEZ À JOUR le jeu des deux côtés (rechargez la page), puis réessayez.');
+  try { iosHint('Versions différentes — rechargez le jeu des deux côtés.'); } catch(e){}
+  setTimeout(netDisconnect, 50);
+}
+function nrecv(msg){
+  if (!msg || !net) return;
+  const t = msg.t, d = msg.d;
+  if (t==='st'){ if (net.role==='guest') onSnapshot(d); }
+  else if (t==='cm'){ if (net.role==='host') net.cmdQ.push(d); }
+  else if (t==='hi'){                                   // l'hôte reçoit le bonjour de l'invité (avec sa version)
+    if (net.role==='host' && !game){
+      if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); versionFail(); return; }
+      net.foeFac = d.fac; startHostGame();
+    }
   }
-  // STUN pour traverser les NAT classiques ; TURN (relais public gratuit) indispensable
-  // derrière un NAT symétrique / CGNAT — typique en 4G/5G — sinon le flux n'aboutit jamais.
-  const RTC = { iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
-    { urls: 'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
-    { urls: 'turns:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
-  ] };
-  // relais nostr publics et redondants : la découverte tient même si certains sont saturés.
-  const RELAYS = ['wss://relay.damus.io','wss://nos.lol','wss://relay.nostr.band',
-                  'wss://relay.snort.social','wss://nostr.wine'];
-  try {
-    netRoom = joinRoom({appId:'agi-lane-war-v1', rtcConfig:RTC, relayUrls:RELAYS, relayRedundancy:4}, code);
-  } catch(err){ netStatus('⚠ Impossible de créer le salon.'); return; }
-  const [sendState, getState] = netRoom.makeAction('st');
-  const [sendCmd,   getCmd]   = netRoom.makeAction('cm');
-  const [sendHello, getHello] = netRoom.makeAction('hi');
-  const [sendStart, getStart] = netRoom.makeAction('go');
-  const [sendPause, getPause] = netRoom.makeAction('pz');
-  net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'),
-          sendState, sendCmd, sendHello, sendStart, sendPause, peer:false, cmdQ:[], ev:[], acc:0 };
-  getState(data=>{ if (net.role==='guest') onSnapshot(data); });
-  getCmd(data=>{ if (net.role==='host') net.cmdQ.push(data); });
-  getHello(data=>{ if (net.role==='host' && !game){ net.foeFac=data.fac; startHostGame(); } });
-  getStart(data=>{ if (net.role==='guest' && !game) startGuestGame(data); });
-  getPause(data=>{ onPauseMsg(data); });
-  netRoom.onPeerJoin(id=>{
+  else if (t==='go'){                                   // l'invité reçoit le départ de l'hôte (avec sa version)
+    if (net.role==='guest' && !game){
+      if (d.v !== NET_PROTO){ versionFail(); return; }
+      startGuestGame(d);
+    }
+  }
+  else if (t==='ko'){ versionFail(); }                  // l'autre côté a refusé pour cause de version
+  else if (t==='pz'){ onPauseMsg(d); }
+}
+function bindConn(conn){
+  net.conn = conn;
+  conn.on('open', ()=>{
     if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
-    net.peer = true; net.peerId = id;
-    if (role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac}); }
+    net.peer = true; net.peerId = conn.peer;
+    if (net.role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac:net.myFac, v:NET_PROTO}); }
     else netStatus('Adversaire connecté !');
   });
-  netRoom.onPeerLeave(()=>{ net.peer=false; onPeerLeft(); });
-  // sans pair au bout de ~30 s, on guide le joueur plutôt que de le laisser attendre dans le vide
+  conn.on('data', nrecv);
+  conn.on('close', ()=>{ if (net){ net.peer=false; } onPeerLeft(); });
+  conn.on('error', ()=>{});
+}
+async function netConnect(role, code, fac){
+  netStatus('Chargement du réseau P2P…');
+  const Peer = await loadPeerLib();
+  if (!Peer){ netStatus('⚠ Réseau P2P inaccessible (connexion ? pare-feu ?). Réessayez.'); return; }
+  netDisconnect();                                        // repart propre si une tentative précédente traîne
+  const hostId = 'agi-' + code;
+  const myId   = role==='host' ? hostId : (hostId + '-g' + Math.random().toString(36).slice(2,8));
+  net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'),
+          peer:false, cmdQ:[], ev:[], acc:0, conn:null, tries:0,
+          sendState:o=>nsend('st',o), sendCmd:o=>nsend('cm',o),
+          sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o) };
+  try { peerObj = new Peer(myId, { config: PEER_RTC, debug: 1 }); }
+  catch(err){ netStatus('⚠ Impossible d\'initialiser le réseau.'); return; }
+  const tryConnect = ()=>{
+    if (!peerObj || peerObj.destroyed) return;
+    const conn = peerObj.connect(hostId, { reliable:true });
+    if (conn) bindConn(conn);
+  };
+  peerObj.on('open', ()=>{
+    if (role==='host'){ netStatus('Salon « '+code+' » créé. En attente d\'un adversaire…'); }
+    else { netStatus('Recherche du salon « '+code+' »…'); tryConnect(); }
+  });
+  peerObj.on('connection', conn=>{ if (role==='host') bindConn(conn); });   // invité entrant côté hôte
+  peerObj.on('error', err=>{
+    const ty = err && err.type;
+    if (ty==='unavailable-id'){
+      netStatus('⚠ Ce code est déjà pris. Choisissez-en un autre pour créer le salon.');
+    } else if (ty==='peer-unavailable'){
+      // course possible : l'invité arrive avant que l'hôte soit enregistré → on retente
+      if (role==='guest' && net && (net.tries = (net.tries||0)+1) <= 6 && !net.peer){
+        netStatus('Salon pas encore prêt… nouvelle tentative ('+net.tries+'/6)…');
+        setTimeout(()=>{ if (net && !net.peer) tryConnect(); }, 2500);
+      } else {
+        netStatus('Aucun hôte pour « '+code+' ». Vérifiez le code (l\'hôte doit avoir créé le salon), puis réessayez.');
+      }
+    } else if (ty==='network' || ty==='server-error' || ty==='socket-error' || ty==='socket-closed'){
+      netStatus('⚠ Serveur de mise en relation momentanément injoignable. Réessayez dans un instant.');
+    } else if (ty==='browser-incompatible'){
+      netStatus('⚠ Ce navigateur ne supporte pas le P2P (WebRTC).');
+    } else {
+      netStatus('⚠ Erreur réseau'+(ty?' ('+ty+')':'')+'. Réessayez.');
+    }
+  });
+  peerObj.on('disconnected', ()=>{ try { peerObj.reconnect(); } catch(e){} });
+  // sans adversaire au bout de ~35 s, on guide plutôt que de laisser attendre dans le vide
   net.findTimer = setTimeout(()=>{
     if (net && !net.peer) netStatus(role==='host'
-      ? 'Toujours en attente… l\'adversaire doit saisir EXACTEMENT le code « '+code+' ». Sinon, recréez un salon.'
-      : 'Aucun hôte pour « '+code+' ». Vérifiez le code (ou demandez à l\'hôte de recréer le salon), puis réessayez.');
-  }, 30000);
-  netStatus(role==='host'
-    ? 'Salon « '+code+' » créé. En attente d\'un adversaire…'
-    : 'Recherche du salon « '+code+' »…');
+      ? 'Toujours en attente… l\'adversaire doit saisir EXACTEMENT le code « '+code+' ».'
+      : 'Aucun hôte pour « '+code+' ». Vérifiez le code, ou demandez à l\'hôte de recréer le salon.');
+  }, 35000);
 }
 function netDisconnect(){
   if (net && net.findTimer){ clearTimeout(net.findTimer); }
-  try { if (netRoom) netRoom.leave(); } catch(e){} netRoom=null; net=null;
+  try { if (net && net.conn) net.conn.close(); } catch(e){}
+  try { if (peerObj) peerObj.destroy(); } catch(e){}
+  peerObj = null; net = null;
 }
 
 /* ================= MENU (DOM) ================= */
@@ -3917,8 +3987,33 @@ document.querySelectorAll('.diffBtn').forEach(b=>{
     b.classList.add('sel'); menuDiff = +b.dataset.diff;
   });
 });
-/* ---- plein écran : demande robuste + bascule manuelle (utile sur mobile après une sortie) ---- */
+/* ---- plein écran : demande robuste + bascule manuelle (utile sur mobile après une sortie) ----
+   iOS (iPhone surtout) n'IMPLÉMENTE PAS l'API Fullscreen : requestFullscreen y est sans effet.
+   Le seul vrai plein écran sur iOS est « Ajouter à l'écran d'accueil » (mode standalone PWA).
+   On détecte donc iOS pour ne pas proposer un bouton mort, mais guider l'utilisateur. */
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.platform)
+  || /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.userAgent.includes('Mac') && (navigator.maxTouchPoints||0) > 1); // iPad iPadOS
+const IS_STANDALONE = (navigator.standalone === true)
+  || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+  || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+let iosHintEl = null;
+function iosHint(msg){
+  if (!iosHintEl){
+    iosHintEl = document.createElement('div');
+    iosHintEl.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:60;'+
+      'max-width:88vw;padding:10px 14px;border-radius:8px;background:rgba(16,13,12,0.95);'+
+      'border:1px solid #4a3a32;color:#f0e6d6;font:600 13px/1.4 Arial;text-align:center;'+
+      'box-shadow:0 4px 18px rgba(0,0,0,.5);pointer-events:none;';
+    document.body.appendChild(iosHintEl);
+  }
+  iosHintEl.textContent = msg;
+  iosHintEl.style.display = 'block';
+  clearTimeout(iosHintEl._t);
+  iosHintEl._t = setTimeout(()=>{ if (iosHintEl) iosHintEl.style.display='none'; }, 5200);
+}
 function goFullscreen(){
+  if (IS_IOS) return;                  // API absente sur iOS : on ne tente rien (évite un échec muet)
   try {
     const el = document.documentElement;
     const fs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
@@ -3934,11 +4029,17 @@ function exitFullscreen(){ try { (document.exitFullscreen||document.webkitExitFu
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
 function refreshFsBtn(){
   const b = $('fsBtn'); if (!b) return;
-  b.textContent = isFullscreen()? '✕' : '⛶';
+  // sur iOS déjà installé en appli, pas besoin de bouton ; sinon on garde le ⛶ comme aide
+  if (IS_IOS && IS_STANDALONE){ b.style.display='none'; return; }
+  b.textContent = (IS_IOS ? '⤢' : (isFullscreen()? '✕' : '⛶'));
   b.style.display = IS_TOUCH? 'block' : (isFullscreen()? 'none':'block');
   if (isFullscreen() && !IS_TOUCH) b.style.display='none';
 }
-$('fsBtn').addEventListener('click', ()=>{ if (isFullscreen()) exitFullscreen(); else goFullscreen(); setTimeout(refreshFsBtn, 60); });
+$('fsBtn').addEventListener('click', ()=>{
+  if (IS_IOS){ iosHint('iOS : pour le plein écran, touchez Partager ⬆️ puis « Sur l\'écran d\'accueil », et lancez le jeu depuis l\'icône.'); return; }
+  if (isFullscreen()) exitFullscreen(); else goFullscreen();
+  setTimeout(refreshFsBtn, 60);
+});
 document.addEventListener('fullscreenchange', ()=>{ resize(); refreshFsBtn(); });
 document.addEventListener('webkitfullscreenchange', ()=>{ resize(); refreshFsBtn(); });
 refreshFsBtn();
