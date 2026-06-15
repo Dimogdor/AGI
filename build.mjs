@@ -96,8 +96,30 @@ const manifest = {
 };
 await writeFile(new URL('./manifest.webmanifest', OUT), JSON.stringify(manifest, null, 2));
 
+// --- Trystero (nostr) AUTO-HÉBERGÉ : on récupère le bundle au build et on le sert
+//     depuis notre propre origine. Sinon l'import CDN au runtime (esm.sh = façade qui
+//     enchaîne des dizaines de sous-modules) peut rester bloqué sur « Chargement… ».
+//     Deux fichiers suffisent : le bundle nostr + sa seule dépendance (@noble/secp256k1).
+async function vendorTrystero(){
+  const NOBLE = 'https://cdn.jsdelivr.net/npm/@noble/secp256k1@1.7.2/+esm';
+  const NOSTR = 'https://cdn.jsdelivr.net/npm/trystero@0.21.4/nostr/+esm';
+  const [nb, ts] = await Promise.all([
+    fetch(NOBLE).then(r=>r.ok?r.text():Promise.reject(new Error('noble '+r.status))),
+    fetch(NOSTR).then(r=>r.ok?r.text():Promise.reject(new Error('nostr '+r.status))),
+  ]);
+  if (!/joinRoom/.test(ts) || nb.length < 1000) throw new Error('contenu Trystero inattendu');
+  // remplace l'import absolu CDN de la dépendance par un chemin local même-origine
+  const tsFixed = ts.replace(/["']\/npm\/@noble\/secp256k1@[^"']*["']/g, '"./noble-secp256k1.js"');
+  if (tsFixed === ts) throw new Error('import @noble introuvable (format CDN modifié ?)');
+  await writeFile(new URL('./noble-secp256k1.js', OUT), nb);
+  await writeFile(new URL('./trystero-nostr.js', OUT), tsFixed);
+  console.log(`  réseau  : Trystero nostr auto-hébergé (${(ts.length/1024)|0}+${(nb.length/1024)|0} Ko)`);
+}
+try { await vendorTrystero(); }
+catch(e){ console.warn('  ⚠ Trystero non auto-hébergé ('+e.message+') — repli sur CDN au runtime'); }
+
 // --- service worker : cache versionné (mise à jour = bump de VERSION) ---
-const sw = `const C='agi-v${VERSION}';const A=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png'];
+const sw = `const C='agi-v${VERSION}';const A=['./','index.html','manifest.webmanifest','trystero-nostr.js','noble-secp256k1.js','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(e.request,cp).catch(()=>{}));return res;}).catch(()=>caches.match('index.html'))))});`;

@@ -3823,9 +3823,9 @@ async function netConnect(role, code, fac){
   // relation. On fige donc « nostr » (relais publics fiables) partout ; les CDN ne
   // servent qu'à charger le module — pas à changer de stratégie en cours de route.
   const sources = [
-    'https://esm.sh/trystero@0.21.4/nostr',
-    'https://cdn.jsdelivr.net/npm/trystero@0.21.4/nostr/+esm',
-    'https://unpkg.com/trystero@0.21.4/nostr/+esm',
+    './trystero-nostr.js',                                    // auto-hébergé (même origine) : fiable, hors-ligne, instantané
+    'https://cdn.jsdelivr.net/npm/trystero@0.21.4/nostr/+esm',// repli CDN : bundle autonome (1 seule sous-dépendance)
+    'https://esm.sh/trystero@0.21.4/nostr',                   // dernier repli
   ];
   // import borné dans le temps : sans cela, un CDN lent gèle l'écran sur « Connexion… »
   const withTimeout = (pr, ms) => Promise.race([pr,
