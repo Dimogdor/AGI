@@ -19,6 +19,9 @@ const SRC  = new URL('./guerre-des-eres.html', import.meta.url);
 const OUT  = new URL('./www/', import.meta.url);
 const pkg  = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'));
 const VERSION = pkg.version;
+// identifiant de build UNIQUE à chaque compilation : garantit qu'un nouveau sw.js est servi
+// à chaque déploiement → le service worker se met à jour et purge l'ancien cache.
+const BUILD_ID = VERSION + '-' + Date.now().toString(36);
 
 const exists = async p => { try { await access(p, constants.F_OK); return true; } catch { return false; } };
 
@@ -66,7 +69,12 @@ console.log(`  script : ${(rawJs.length/1024)|0} Ko → ${(obf.length/1024)|0} K
 const nativeBoot = `window.addEventListener('load',function(){try{var u=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CapacitorUpdater;if(u&&u.notifyAppReady)u.notifyAppReady();}catch(e){}});`;
 
 // --- enregistrement du service worker (PWA web uniquement, http/https) ---
-const swReg = `if('serviceWorker'in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}`;
+// + rechargement AUTOMATIQUE quand une nouvelle version prend la main : plus jamais
+//   d'ancienne version coincée en cache chez un joueur de retour.
+const swReg = `if('serviceWorker'in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',function(){`+
+  `var reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded)return;reloaded=true;location.reload();});`+
+  `navigator.serviceWorker.register('sw.js').then(function(reg){reg.update();setInterval(function(){reg.update();},60000);}).catch(function(){});`+
+  `});}`;
 
 // --- réassemblage du HTML ---
 // NB : remplaçants passés en FONCTION pour que les `$`/`$'` du code obfusqué
@@ -111,11 +119,23 @@ async function vendorPeerJS(){
 try { await vendorPeerJS(); }
 catch(e){ console.warn('  ⚠ PeerJS non auto-hébergé ('+e.message+') — repli sur CDN au runtime'); }
 
-// --- service worker : cache versionné (mise à jour = bump de VERSION) ---
-const sw = `const C='agi-v${VERSION}';const A=['./','index.html','manifest.webmanifest','peerjs.min.js','icons/icon-192.png','icons/icon-512.png'];
+// --- service worker : RÉSEAU D'ABORD pour le HTML (toujours la dernière version en ligne),
+//     cache d'abord pour les ressources statiques (offline). Cache unique par build → mise
+//     à jour et purge automatiques à chaque déploiement. ---
+const sw = `const C='agi-${BUILD_ID}';const A=['./','index.html','manifest.webmanifest','peerjs.min.js','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(e.request,cp).catch(()=>{}));return res;}).catch(()=>caches.match('index.html'))))});`;
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  const req=e.request,u=new URL(req.url);
+  const isDoc=req.mode==='navigate'||u.pathname==='/'||u.pathname.endsWith('/')||u.pathname.endsWith('index.html');
+  if(isDoc){ // réseau d'abord : la page la plus récente quand on est connecté
+    e.respondWith(fetch(req).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
+    return;
+  }
+  // ressources statiques : cache d'abord + rafraîchissement en arrière-plan
+  e.respondWith(caches.match(req).then(r=>{const net=fetch(req).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(req,cp).catch(()=>{}));return res;}).catch(()=>r);return r||net;}));
+});`;
 await writeFile(new URL('./sw.js', OUT), sw);
 
 // --- icônes : copie depuis resources/ si présentes, sinon génère des placeholders PNG ---

@@ -35,8 +35,8 @@
   /* ---------- MENU : dystopie capitaliste, fond animé sur le canvas ---------- */
   #menu {
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
-    background:transparent; z-index:10; overflow:auto; padding:3vh 16px 18px;
-    color:#d8d0c4; pointer-events:none;
+    background:transparent; z-index:10; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:3vh 16px 18px;
+    color:#d8d0c4; pointer-events:auto;
   }
   #menu > * { pointer-events:auto; }
   #menu .title {
@@ -176,6 +176,28 @@
           <div id="hostCodeBig" style="font-size:36px; font-weight:800; letter-spacing:.28em; color:#bfe6ff; background:#10171c; border:1px solid #3e8cb8; border-radius:8px; padding:8px 22px;">-----</div>
           <button class="pick" id="copyCode" data-i18n="net_copy" style="font-size:13px;">📋 Copier le code</button>
           <div id="hostingInfo" style="color:#9dc88a; font-size:12px; text-align:center;"></div>
+        </div>
+
+        <!-- LOBBY : les DEUX joueurs sont connectés → chacun choisit son camp ici -->
+        <div id="netLobby" style="display:none; flex-direction:column; gap:12px; align-items:center; width:min(480px,96%);">
+          <div style="color:#bfe6ff; font-size:15px; letter-spacing:.12em;" data-i18n="lob_room">SALON</div>
+          <div id="lobCode" style="font-size:26px; font-weight:800; letter-spacing:.26em; color:#bfe6ff;">-----</div>
+          <div style="display:flex; gap:12px; width:100%; justify-content:center; align-items:stretch;">
+            <div style="flex:1; border:1px solid #3a2e28; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center;">
+              <div style="color:#9dc88a; font-size:12px; letter-spacing:.1em;" data-i18n="lob_you">VOUS</div>
+              <button class="pick lobMe" data-fac="HUM" data-i18n="fac_hum">HUMANITÉ</button>
+              <button class="pick lobMe" data-fac="IA">G·P·T</button>
+            </div>
+            <div style="flex:1; border:1px solid #3a2e28; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center;">
+              <div style="color:#9dc88a; font-size:12px; letter-spacing:.1em;" data-i18n="lob_foe">ADVERSAIRE</div>
+              <div id="lobFoe" style="font-size:18px; font-weight:700; color:#888;">…</div>
+              <div id="lobFoeState" style="font-size:11px; color:#8d84a8;" data-i18n="lob_waiting">en attente…</div>
+            </div>
+          </div>
+          <div style="font-size:11px; color:#8d84a8; text-align:center;" data-i18n="lob_hint">Conseillé : Humanité vs G·P·T — mais les miroirs (mêmes camps) sont permis.</div>
+          <button class="go" id="lobStart" style="font-size:16px; padding:10px 30px;" data-i18n="lob_start">LANCER LA PARTIE</button>
+          <div id="lobWait" style="color:#9dc88a; font-size:13px; text-align:center;" data-i18n="lob_hostwait">En attente que l'hôte lance la partie…</div>
+          <button class="pick" id="lobLeave" style="font-size:12px; color:#988e80;" data-i18n="lob_leave">← Quitter le salon</button>
         </div>
 
         <div id="netStatus" style="color:#9dc88a; font-size:clamp(11px,1.6vw,13px); text-align:center; min-height:16px;"></div>
@@ -378,7 +400,7 @@ const I18N = {
   fr:{ tagline:"le capital contre l'humanité · 2025", tab_play:"JOUER", tab_tuto:"TUTORIEL", tab_opts:"PARAMÈTRES",
     fac_hum:"HUMANITÉ", diff_0:"Facile", diff_1:"Normal", diff_2:"Difficile", diff_3:"Brutal",
     tuto_chk:"Tutoriel guidé au lancement", start:"COMMENCER (vs IA)", online_btn:"🌐 JOUER EN LIGNE (1v1)",
-    online_hint:"Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair, sans serveur.",
+    online_hint:"Créez ou rejoignez un salon. Vous choisirez votre camp une fois réunis dans le lobby. La partie se joue en pair-à-pair, sans serveur.",
     online_samever:"Les deux joueurs doivent avoir la MÊME version (voir le n° en bas du menu).",
     host_btn:"CRÉER UNE PARTIE", or:"— OU —", code_ph:"CODE", hostcode_ph:"CODE PRIVÉ (optionnel)", join_btn:"REJOINDRE", cancel:"Annuler",
     set_lang:"Langue", set_music:"Musique", set_sfx:"Effets sonores", set_vol:"Volume", set_shake:"Secousses d'écran",
@@ -404,6 +426,10 @@ const I18N = {
     net_nolist:"Liste publique indisponible (non configurée).", net_empty:"Aucune partie publique pour l'instant.",
     net_askpw:"Mot de passe du salon :", net_entercode:"Entrez le code de votre adversaire.", net_cancelled:"Annulé.",
     net_waiting:"Salon créé. En attente d'un adversaire…", net_loading:"Chargement du réseau P2P…", net_badpw:"Mot de passe incorrect.",
+    lob_room:"SALON", lob_you:"VOUS", lob_foe:"ADVERSAIRE", lob_waiting:"en attente…", lob_ready:"prêt", lob_mirror:"miroir",
+    lob_hint:"Conseillé : Humanité vs G·P·T — mais les miroirs (mêmes camps) sont permis.",
+    lob_start:"LANCER LA PARTIE", lob_hostwait:"En attente que l'hôte lance la partie…", lob_leave:"← Quitter le salon",
+    lob_foe_left:"L'adversaire a quitté le salon — en attente d'un nouveau joueur…", lob_host_left:"L'hôte a quitté le salon.",
     np_paused_you:"⏸ Vous avez mis en pause — l'adversaire patiente", np_paused_foe:"⏸ L'adversaire a mis le jeu en pause",
     np_wait:"En attente de l'accord de l'adversaire…", np_ask:"Prolonger la pause de l'adversaire ?", np_resumed:"▶ Reprise de la partie",
     end_win:"VICTOIRE", end_lose:"DÉFAITE", end_duration:"Durée", end_kills:"Ennemis éliminés", end_losses:"Pertes",
@@ -411,7 +437,7 @@ const I18N = {
   en:{ tagline:"capital against humanity · 2025", tab_play:"PLAY", tab_tuto:"TUTORIAL", tab_opts:"SETTINGS",
     fac_hum:"HUMANITY", diff_0:"Easy", diff_1:"Normal", diff_2:"Hard", diff_3:"Brutal",
     tuto_chk:"Guided tutorial on launch", start:"START (vs AI)", online_btn:"🌐 PLAY ONLINE (1v1)",
-    online_hint:"Pick your side above first. The match is peer-to-peer, no server.",
+    online_hint:"Create or join a room. You'll choose your side once you're together in the lobby. The match is peer-to-peer, no server.",
     online_samever:"Both players must run the SAME version (see the number at the bottom of the menu).",
     host_btn:"CREATE A GAME", or:"— OR —", code_ph:"CODE", hostcode_ph:"PRIVATE CODE (optional)", join_btn:"JOIN", cancel:"Cancel",
     set_lang:"Language", set_music:"Music", set_sfx:"Sound effects", set_vol:"Volume", set_shake:"Screen shake",
@@ -437,6 +463,10 @@ const I18N = {
     net_nolist:"Public list unavailable (not configured).", net_empty:"No public games right now.",
     net_askpw:"Room password:", net_entercode:"Enter your opponent's code.", net_cancelled:"Cancelled.",
     net_waiting:"Room created. Waiting for an opponent…", net_loading:"Loading P2P network…", net_badpw:"Wrong password.",
+    lob_room:"ROOM", lob_you:"YOU", lob_foe:"OPPONENT", lob_waiting:"waiting…", lob_ready:"ready", lob_mirror:"mirror",
+    lob_hint:"Recommended: Humanity vs G·P·T — but mirror matchups (same side) are allowed.",
+    lob_start:"START THE MATCH", lob_hostwait:"Waiting for the host to start…", lob_leave:"← Leave room",
+    lob_foe_left:"Opponent left the room — waiting for a new player…", lob_host_left:"The host left the room.",
     np_paused_you:"⏸ You paused — your opponent is waiting", np_paused_foe:"⏸ Your opponent paused the game",
     np_wait:"Waiting for the opponent's consent…", np_ask:"Extend the opponent's pause?", np_resumed:"▶ Match resumed",
     end_win:"VICTORY", end_lose:"DEFEAT", end_duration:"Duration", end_kills:"Enemies killed", end_losses:"Losses",
@@ -4021,7 +4051,21 @@ function startGuestGame(data){
   announce('🌐 CONNECTÉ — vous jouez '+FACTIONS[data.guestFac].name, '#9dc88a');
 }
 function onPeerLeft(){
-  if (!game) return;
+  if (!game){
+    // déconnexion AVANT le début (dans le lobby) : on ne termine pas une partie inexistante
+    if (net){
+      net.foeFac = null;
+      if (net.role==='host'){                 // l'hôte ré-attend un nouvel invité
+        netStatus(t('lob_foe_left'));
+        showHostingCode(net.code);
+        if (net.pub) lobbyPublish();
+      } else {                                  // l'invité : l'hôte est parti → retour à l'accueil
+        netStatus(t('lob_host_left'));
+        showNetView('home');
+      }
+    }
+    return;
+  }
   paused = false; netPause = null;
   announce('🔌 Adversaire déconnecté', '#ff5a4a');
   if (!game.over){ game.over=true; game.win = game.net==='host'; setTimeout(showEnd, 600); }
@@ -4289,8 +4333,21 @@ function nrecv(msg){
     if (net.role==='host' && !game){
       if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); versionFail(); return; }
       if (net.pw && (d.pw||'') !== net.pw){ nsend('pwko', {}); netStatus('Tentative avec un mot de passe incorrect — toujours en attente.'); return; }
-      net.foeFac = d.fac; startHostGame();
+      net.foeFac = d.fac;                                // faction initiale de l'invité
+      net.sendLok({ v:NET_PROTO, hostFac:net.myFac, speed:net.speed });  // confirme + partage la faction de l'hôte
+      enterLobby();                                      // → écran de lobby commun (choix des camps)
     }
+  }
+  else if (t==='lok'){                                  // l'invité reçoit la confirmation de l'hôte → lobby
+    if (net.role==='guest' && !game){
+      if (d.v !== NET_PROTO){ versionFail(); return; }
+      net.foeFac = d.hostFac;
+      if (d.speed) net.speed = clampSpeed(d.speed);
+      enterLobby();
+    }
+  }
+  else if (t==='lf'){                                   // l'autre joueur a changé de camp dans le lobby
+    if (net && !game){ net.foeFac = d.fac; refreshLobbyView(); }
   }
   else if (t==='go'){                                   // l'invité reçoit le départ de l'hôte (avec sa version)
     if (net.role==='guest' && !game){
@@ -4330,7 +4387,7 @@ async function netConnect(role, code, fac, opts){
           peer:false, cmdQ:[], ev:[], acc:0, conn:null, tries:0,
           sendState:o=>nsend('st',o), sendCmd:o=>nsend('cm',o),
           sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o),
-          sendSpeed:o=>nsend('sp',o) };
+          sendSpeed:o=>nsend('sp',o), sendLok:o=>nsend('lok',o), sendLF:o=>nsend('lf',o) };
   try { peerObj = new Peer(myId, { config: RTC, debug: 1 }); }
   catch(err){ netStatus('⚠ Impossible d\'initialiser le réseau.'); return; }
   const tryConnect = ()=>{
@@ -4522,12 +4579,45 @@ $('replayBtn').addEventListener('click', ()=>{
 /* ---- mode en ligne : navigation entre les vues ---- */
 let lobbyTimer = null;
 function showNetView(v){
-  for (const id of ['netHome','netCreate','netJoin','netHosting']){
+  for (const id of ['netHome','netCreate','netJoin','netHosting','netLobby']){
     const el=$(id); if (el) el.style.display = (id==='net'+v.charAt(0).toUpperCase()+v.slice(1))? 'flex':'none';
   }
   // le rappel « même version » et Annuler ne servent qu'en phase active
   if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; }
   if (v==='home'){ refreshLobbies(); lobbyTimer = setInterval(refreshLobbies, 5000); }
+}
+// LOBBY : les deux joueurs sont connectés ; chacun choisit son camp (miroirs permis), l'hôte lance.
+function enterLobby(){
+  if (!net) return;
+  showNetView('lobby');
+  const code = $('lobCode'); if (code) code.textContent = net.code || '-----';
+  const isHost = net.role==='host';
+  const sb=$('lobStart'); if (sb) sb.style.display = isHost? 'inline-block':'none';
+  const lw=$('lobWait');  if (lw) lw.style.display = isHost? 'none':'block';
+  netStatus('');
+  refreshLobbyView();
+}
+function refreshLobbyView(){
+  if (!net) return;
+  document.querySelectorAll('.lobMe').forEach(b=>{
+    const on = b.dataset.fac===net.myFac;
+    b.classList.toggle('sel', on);
+    b.classList.toggle('hum', b.dataset.fac==='HUM');
+    b.classList.toggle('ia',  b.dataset.fac==='IA');
+  });
+  const foe=$('lobFoe');
+  if (foe){
+    if (net.foeFac){ foe.textContent = FACTIONS[net.foeFac].name; foe.style.color = FACTIONS[net.foeFac].accent; }
+    else { foe.textContent = '…'; foe.style.color = '#888'; }
+  }
+  const st=$('lobFoeState');
+  if (st){
+    const mirror = net.myFac && net.foeFac && net.myFac===net.foeFac;
+    st.textContent = !net.foeFac? t('lob_waiting')
+                   : mirror? '⚔ '+t('lob_mirror')
+                   : t('lob_ready');
+    st.style.color = mirror? '#e8a06a' : '#9dc88a';
+  }
 }
 function showHostingCode(code){
   const big=$('hostCodeBig'); if (big) big.textContent = code;
@@ -4570,6 +4660,18 @@ $('goCreate').addEventListener('click', ()=>{ netStatus(''); refreshLobSpeed(); 
 $('goJoin').addEventListener('click',  ()=>{ netStatus(''); showNetView('join'); });
 $('createBack').addEventListener('click', ()=>{ netDisconnect(); netStatus(''); showNetView('home'); });
 $('joinBack').addEventListener('click',   ()=>{ netDisconnect(); netStatus(''); showNetView('home'); });
+// lobby : choix de camp (envoie le changement à l'adversaire), lancement (hôte), départ
+document.querySelectorAll('.lobMe').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if (!net || game) return;
+    net.myFac = b.dataset.fac;
+    refreshLobbyView();
+    if (net.conn && net.conn.open) net.sendLF({ fac: net.myFac });
+  });
+});
+$('lobStart').addEventListener('click', ()=>{ if (net && net.role==='host' && net.peer && !game) startHostGame(); });
+$('lobLeave').addEventListener('click', ()=>{ netDisconnect(); netStatus(''); showNetView('home'); });
+$('netCancel').addEventListener('click', ()=>{ netDisconnect(); netStatus(''); showNetView('home'); });
 $('lobbyRefresh').addEventListener('click', refreshLobbies);
 // sélecteur de vitesse du lobby (partage menuSpeed avec l'onglet Jouer)
 function refreshLobSpeed(){ document.querySelectorAll('.lobSpd').forEach(x=>x.classList.toggle('sel', +x.dataset.spd===menuSpeed)); }
