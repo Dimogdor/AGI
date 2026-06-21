@@ -1,12 +1,15 @@
 name: Déployer le jeu sur GitHub Pages
 
 # Construit le bundle obfusqué (www/) et le publie sur GitHub Pages.
-# Déclencheurs : push sur main OU sur la branche de travail, et bouton manuel.
+# Déclencheurs : push sur main (build + déploiement), PR vers main (build de
+# vérification, sans déploiement), et bouton manuel.
 on:
   push:
     branches:
       - main
-      - claude/age-of-war-online-balance-xn6ump
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
