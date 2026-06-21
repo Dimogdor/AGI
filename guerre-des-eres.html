@@ -3396,11 +3396,13 @@ function drawBtn(b){
   } else if (b.type==='zoom'){
     label=b.label; ok=true; col='#8a867e';
   }
-  ctx.globalAlpha = small? 0.95 : ok?1:0.5;
-  ctx.fillStyle='rgba(20,16,14,0.92)'; rr(b.x,b.y,b.w,b.h,6); ctx.fill();
-  ctx.strokeStyle=col; ctx.lineWidth = ok?1.8:1; rr(b.x,b.y,b.w,b.h,6); ctx.stroke();
-  if (!small && prog<1){ ctx.fillStyle=col+'33'; ctx.save(); rr(b.x,b.y,b.w,b.h,6); ctx.clip();
+  ctx.globalAlpha = small? 0.96 : ok?1:0.5;
+  const bg=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h); bg.addColorStop(0,'rgba(36,30,34,0.95)'); bg.addColorStop(1,'rgba(15,12,16,0.95)');
+  ctx.fillStyle=bg; rr(b.x,b.y,b.w,b.h,7); ctx.fill();
+  if (!small && prog<1){ ctx.fillStyle=rgbaC(col,0.22); ctx.save(); rr(b.x,b.y,b.w,b.h,7); ctx.clip();
     ctx.fillRect(b.x,b.y,b.w*prog,b.h); ctx.restore(); }
+  if (ok && !small){ ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=8; ctx.strokeStyle=rgbaC(col,0.95); ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); ctx.restore(); }
+  else { ctx.strokeStyle=ok?col:rgbaC(col,0.55); ctx.lineWidth=ok?1.8:1; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
   ctx.textAlign='center';
   if (small){
     ctx.font='700 12px Arial'; ctx.fillStyle = col;
