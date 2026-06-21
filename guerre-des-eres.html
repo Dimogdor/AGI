@@ -3946,51 +3946,65 @@ function drawTut(){
   if (!TUT) return;
   const step = TUT.steps[TUT.i];
   const focus = (!TUT.confirmSkip && step.focus) ? step.focus() : null;
-  // voile + découpe (spotlight) autour de la zone enseignée
-  ctx.fillStyle = 'rgba(8,6,6,0.46)';
+  const acc = (game&&game.p&&game.p.fac)? game.p.fac.accent : '#ffd34a';
+  const pulse = 0.5 + 0.5*Math.sin(TUT.t*4.5);
+  // voile léger + découpe (spotlight) — laisse voir le champ de bataille
+  ctx.fillStyle = 'rgba(8,6,10,0.42)';
+  let fpad=12, fx=0, fy=0, fw=0, fh=0;
   if (focus){
-    const pad=10, fx=focus.x-pad, fy=focus.y-pad, fw=focus.w+pad*2, fh=focus.h+pad*2;
+    fx=focus.x-fpad; fy=focus.y-fpad; fw=focus.w+fpad*2; fh=focus.h+fpad*2;
     ctx.fillRect(0,0,W,Math.max(0,fy));
     ctx.fillRect(0,fy+fh,W,Math.max(0,H-(fy+fh)));
     ctx.fillRect(0,Math.max(0,fy),Math.max(0,fx),fh);
     ctx.fillRect(fx+fw,Math.max(0,fy),Math.max(0,W-(fx+fw)),fh);
-    const pulse = 0.5 + 0.5*Math.sin(TUT.t*4.5);
-    ctx.strokeStyle = 'rgba(255,211,74,'+(0.55+0.45*pulse)+')'; ctx.lineWidth=2.6;
-    rr(fx,fy,fw,fh,9); ctx.stroke();
-    if (fy > H*0.45) tutArrow(fx+fw/2, fy, true, pulse);     // focus bas → flèche au-dessus, vers le bas
-    else             tutArrow(fx+fw/2, fy+fh, false, pulse); // focus haut → flèche en dessous, vers le haut
+    // halo lumineux autour de la cible (additif)
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(acc,0.55+0.4*pulse);
+    ctx.lineWidth=3; ctx.shadowColor=acc; ctx.shadowBlur=16; rr(fx,fy,fw,fh,12); ctx.stroke(); ctx.restore();
   } else {
     ctx.fillRect(0,0,W,H);
   }
-  // panneau d'instruction
+  // ---- carte d'instruction compacte, placée à l'écart de la cible ET du HUD bas ----
   const isText = !!step.tap;
-  const bw = Math.min(560, W-40), pad = 16, titleH = 18, lineH = 20, btnH = 30;
+  const bw = Math.min(430, W-32), pad = 15, titleH = 16, lineH = 19, btnH = 32;
   const lines = tutWrap(tutText(step.text), bw-pad*2, '14px Arial');
   const objLine = step.obj ? tutText(step.obj) : null;
-  let bh = pad + titleH + 10 + lines.length*lineH + 12 + btnH + pad + (objLine?22:0);
-  let by = (focus && focus.y < H*0.5) ? (H - bh - 86) : 50;
-  by = clamp(by, 44, H - bh - 8);
-  const bx = (W-bw)/2;
+  const bh = pad + titleH + 12 + lines.length*lineH + 10 + btnH + pad + (objLine?22:0);
+  const bx = clamp((W-bw)/2, 12, W-bw-12);
+  // emplacements candidats : haut, ou bas (toujours au-dessus des rangées d'action du HUD)
+  const topBy = 46, botBy = (H-118) - bh;
+  const inter = (by)=> focus && by < fy+fh && by+bh > fy;     // chevauche la cible ?
+  let by = (focus && focus.y < H*0.5) ? botBy : topBy;        // cible en haut → carte en bas, et inversement
+  if (inter(by)) by = (by===topBy? botBy : topBy);
+  by = clamp(by, 12, H-bh-12);
+  // flèche de la carte vers la cible
+  if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
+    tutArrow(clamp(cxF,bx+20,bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
   TUT.uiRects = [];
-  ctx.fillStyle='rgba(16,13,12,0.96)'; rr(bx,by,bw,bh,10); ctx.fill();
-  ctx.strokeStyle='#a8281e'; ctx.lineWidth=2; rr(bx,by,bw,bh,10); ctx.stroke();
+  // fond carte + ombre portée + liseré néon de faction
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=20; ctx.shadowOffsetY=6;
+  const pg=ctx.createLinearGradient(bx,by,bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.97)'); pg.addColorStop(1,'rgba(14,12,18,0.97)');
+  ctx.fillStyle=pg; rr(bx,by,bw,bh,12); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.strokeStyle=rgbaC(acc,0.9); ctx.lineWidth=2; ctx.shadowColor=acc; ctx.shadowBlur=8; rr(bx,by,bw,bh,12); ctx.stroke(); ctx.restore();
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
-  ctx.font='700 12px Arial'; ctx.fillStyle='#e8a06a';
-  ctx.fillText('✦ '+tutText({fr:'TUTORIEL',en:'TUTORIAL'})+'  ·  '+(TUT.i+1)+' / '+TUT.steps.length, bx+pad, by+pad+8);
-  ctx.font='14px Arial'; ctx.fillStyle='#e8e0d2';
-  let ty = by+pad+titleH+14;
+  // en-tête + points de progression
+  ctx.font='700 11px Arial'; ctx.fillStyle=acc;
+  ctx.fillText('✦ '+tutText({fr:'TUTORIEL',en:'TUTORIAL'}), bx+pad, by+pad+8);
+  const dotN=TUT.steps.length, dr=2.4, dgap=7, dtot=dotN*dgap;
+  for(let i=0;i<dotN;i++){ ctx.beginPath(); ctx.arc(bx+bw-pad-dtot+i*dgap, by+pad+5, dr, 0,6.283);
+    ctx.fillStyle = i===TUT.i? acc : 'rgba(255,255,255,0.22)'; ctx.fill(); }
+  ctx.font='14px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+16;
   for (const ln of lines){ ctx.fillText(ln, bx+pad, ty); ty += lineH; }
-  if (objLine){ ctx.font='700 13px Arial'; ctx.fillStyle='#9dc88a'; ctx.fillText('▸ '+objLine, bx+pad, ty+4); ty += 22; }
-  const byB = by + bh - pad - btnH;
-  const skipW = 150;
-  ctx.fillStyle='rgba(255,255,255,0.08)'; rr(bx+pad, byB, skipW, btnH, 6); ctx.fill();
+  if (objLine){ ctx.font='700 13px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, bx+pad, ty+4); ty += 22; }
+  // boutons (cibles tactiles ≥32)
+  const byB = by + bh - pad - btnH, skipW = 150;
+  ctx.fillStyle='rgba(255,255,255,0.08)'; rr(bx+pad, byB, skipW, btnH, 7); ctx.fill();
   ctx.font='700 12px Arial'; ctx.fillStyle='#d8a0a0'; ctx.textAlign='center';
-  ctx.fillText(tutText({fr:'Passer le tuto ✕',en:'Skip tutorial ✕'}), bx+pad+skipW/2, byB+btnH/2+4);
+  ctx.fillText(tutText({fr:'Passer ✕',en:'Skip ✕'}), bx+pad+skipW/2, byB+btnH/2+4);
   TUT.uiRects.push({key:'skip', x:bx+pad, y:byB, w:skipW, h:btnH});
   if (isText){
-    const contW = 160;
-    ctx.fillStyle='rgba(168,40,30,0.92)'; rr(bx+bw-pad-contW, byB, contW, btnH, 6); ctx.fill();
-    ctx.fillStyle='#fff'; ctx.fillText(tutText({fr:'Continuer ▸',en:'Continue ▸'}), bx+bw-pad-contW/2, byB+btnH/2+4);
+    const contW = 170;
+    ctx.save(); ctx.fillStyle=rgbaC(acc,0.95); ctx.shadowColor=acc; ctx.shadowBlur=10; rr(bx+bw-pad-contW, byB, contW, btnH, 7); ctx.fill(); ctx.restore();
+    ctx.fillStyle='#14110f'; ctx.font='700 13px Arial'; ctx.fillText(tutText({fr:'Continuer ▸',en:'Continue ▸'}), bx+bw-pad-contW/2, byB+btnH/2+4);
     TUT.uiRects.push({key:'cont', x:bx+bw-pad-contW, y:byB, w:contW, h:btnH});
   }
   ctx.textAlign='left';
