@@ -19,12 +19,13 @@ canvas.getBoundingClientRect = () => ({ left:0, top:0, width:W, height:Hh });
 function elStub(){return{style:{},classList:{add:noop,remove:noop,toggle:noop,contains:()=>false},addEventListener:noop,appendChild:noop,remove:noop,setAttribute:noop,getAttribute:()=>null,querySelectorAll:()=>[],getContext:()=>canvas.getContext('2d'),dataset:{},textContent:'',innerHTML:'',value:'80',width:W,height:Hh,checked:false,getBoundingClientRect:()=>({left:0,top:0,width:W,height:Hh})};}
 const elements={};
 const document={getElementById:id=> id==='cv'?canvas:(elements[id]||(elements[id]=elStub())),querySelectorAll:()=>[],querySelector:()=>null,createElement:()=>elStub(),addEventListener:noop,documentElement:elStub(),body:elStub(),fullscreenElement:null,exitFullscreen:noop};
-const win={addEventListener:noop,innerWidth:W,innerHeight:Hh,devicePixelRatio:1,requestAnimationFrame:noop,location:{protocol:'file:'}};
+const win={addEventListener:noop,innerWidth:W,innerHeight:Hh,devicePixelRatio:1,requestAnimationFrame:noop,location:{protocol:'file:'},
+  get AudioContext(){return AudioContext;}, get webkitAudioContext(){return AudioContext;}};
 const navigator={maxTouchPoints:0,userAgent:'node'};
 const screen={orientation:{lock:()=>Promise.resolve()}};
 const performance={now:()=>0};
 const localStorage={_d:{},getItem(k){return this._d[k]||null;},setItem(k,v){this._d[k]=v;}};
-const AudioContext=function(){return{createGain:()=>({gain:{value:1},connect:noop}),currentTime:0,destination:{},state:'running',resume:noop};};
+const AudioContext=function(){const param=()=>({value:0,setValueAtTime:noop,setTargetAtTime:noop,linearRampToValueAtTime:noop,exponentialRampToValueAtTime:noop});return{createGain:()=>({gain:param(),connect:noop}),createOscillator:()=>({connect:noop,start:noop,stop:noop,type:'',frequency:param(),detune:param()}),createBiquadFilter:()=>({connect:noop,frequency:param(),Q:param(),gain:param(),type:''}),createBuffer:()=>({getChannelData:()=>new Float32Array(8)}),createBufferSource:()=>({connect:noop,start:noop,stop:noop,buffer:null}),createWaveShaper:()=>({connect:noop,curve:null,oversample:''}),createDynamicsCompressor:()=>({connect:noop,threshold:param(),knee:param(),ratio:param(),attack:param(),release:param()}),createStereoPanner:()=>({connect:noop,pan:param()}),createConvolver:()=>({connect:noop,buffer:null}),createDelay:()=>({connect:noop,delayTime:param()}),currentTime:0,destination:{},state:'running',resume:noop,sampleRate:44100};};
 
 const exp = `;module.exports={get game(){return game;},set game(v){game=v;},set intro(v){intro=v;},set camX(v){camX=v;},set zoom(v){zoom=v;},newGame,update,render,resize,spawnUnit,tryBuild};`;
 const mod={exports:{}};
