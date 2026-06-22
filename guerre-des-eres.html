@@ -124,13 +124,6 @@
         <button class="pick diffBtn" data-diff="2" data-i18n="diff_2">Difficile</button>
         <button class="pick diffBtn" data-diff="3" data-i18n="diff_3">Brutal</button>
       </div>
-      <div style="font-size:clamp(11px,1.6vw,13px);color:#b7ad9c;margin-top:2px;" data-i18n="speed_lbl">Vitesse de jeu</div>
-      <div class="row" id="speedRow">
-        <button class="pick spdBtn" data-spd="0.75">×0.75</button>
-        <button class="pick spdBtn sel" data-spd="1">×1</button>
-        <button class="pick spdBtn" data-spd="2">×2</button>
-        <button class="pick spdBtn" data-spd="3">×3</button>
-      </div>
       <button class="go" id="startBtn" data-i18n="start">COMMENCER (vs IA)</button>
       <button class="pick" id="onlineBtn" data-i18n="online_btn" style="margin-top:4px; border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
       <div id="onlinePanel" style="display:none; flex-direction:column; gap:10px; align-items:center;
@@ -339,13 +332,14 @@ const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Uni
   evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
   formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
   capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, bright:1, keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
 // vitesses de jeu disponibles (×0.75 ralenti, ×1 normal, ×2, ×3)
 const SPEEDS = [0.75, 1, 2, 3];
 function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }
 SETTINGS.speed = clampSpeed(SETTINGS.speed);
+SETTINGS.bright = clamp(+SETTINGS.bright||1, 0.7, 1.8);   // luminosité globale réglable
 function saveSettings(){ localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); applyVol(); }
 function applyVol(){ if (master) master.gain.value = SETTINGS.vol; }
 
@@ -975,7 +969,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
     sel: new Set(),
     weather:null, wClock:20,            // cycle météo (démarre au calme)
     cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
-    winter:false,                                       // hiver nucléaire (2e phase de base)
+    winter:false, winterT:0,                            // hiver nucléaire temporaire (2e phase de base)
     aiThink:2, msg:null, msgT:0,
     speed: clampSpeed(SETTINGS.speed),   // vitesse de simulation (offline : préférence ; online : décidée en lobby)
   };
@@ -1867,7 +1861,7 @@ function tryMove(u, side, dt){
     }
     if (ahead >= stackMax(side, u)) return;
   }
-  u.x += u.spd*(side.heroAlive?2:1)*side.side*dt;   // ×2 vitesse sous l'aura d'un héros
+  u.x += u.spd*(side.heroAlive?2:1)*(game.winter?0.82:1)*side.side*dt;   // ×2 sous l'aura d'un héros ; neige → léger ralentissement
   u.x = clamp(u.x, 30, WORLD-30);
 }
 function moveBack(u, side, dt){
@@ -1906,8 +1900,8 @@ function updateBuildings(side, foe, dt){
           if (side===game.p) sfx('shoot', 2);
         }
       }
-    } else if (b.type==='farmF') side.f += BUILDS.farmF.rate*lvlF(b)*(side.prodMul||1)*(game.winter?0.5:1)*dt;
-    else if (b.type==='farmM') side.m += BUILDS.farmM.rate*lvlF(b)*(side.prodMul||1)*(game.winter?0.5:1)*dt;
+    } else if (b.type==='farmF') side.f += BUILDS.farmF.rate*lvlF(b)*(side.prodMul||1)*winterMul()*dt;
+    else if (b.type==='farmM') side.m += BUILDS.farmM.rate*lvlF(b)*(side.prodMul||1)*winterMul()*dt;
     else if (b.type==='well') side.w += BUILDS.well.rate*lvlF(b)*(side.prodMul||1)*dt*(1-0.5*game.dev);
     // garnison : chaque rôle défend à sa façon
     if (b.gar) for (let gi=0; gi<b.gar.length; gi++){
@@ -1987,12 +1981,13 @@ function update(dt){
   // vite, frappe plus fort (combatBuff) et encaisse un peu mieux.
   const lp = losing01(p), le = losing01(e);
   p.combatBuff = lp; e.combatBuff = le;
-  const wM = game.winter? 0.5 : 1;             // hiver nucléaire : nourriture/énergie ÷2 pour tous
+  const wM = winterMul();                      // hiver nucléaire : malus nourriture/énergie dégressif (÷2 → ×1 en 6 min)
   p.prodMul = 1 + 0.9*lp;
   e.prodMul = (1 + 0.9*le) * (d.cheat||1);     // triche cachée de l'IA selon la difficulté
   p.f += 4*p.prodMul*wM*dt; p.m += 2.5*p.prodMul*wM*dt; p.w += 0.6*p.prodMul*dt;
   e.f += 4*d.inc*e.prodMul*wM*dt; e.m += 2.5*d.inc*e.prodMul*wM*dt; e.w += 0.6*d.inc*e.prodMul*dt;
-  p.xp += 2.2*dt; e.xp += 2.2*dt;
+  // XP passive de base + bonus par niveau de fortification de la base principale
+  p.xp += (2.2 + ((p.fortLvl||1)-1)*1.3)*dt; e.xp += (2.2 + ((e.fortLvl||1)-1)*1.3)*dt;
   for (let i=0;i<6;i++){ if(p.cd[i]>0)p.cd[i]-=dt; if(e.cd[i]>0)e.cd[i]-=dt; }
   if (p.heroCd>0) p.heroCd -= dt; if (e.heroCd>0) e.heroCd -= dt;
   // nano-réparation passive de la base
@@ -2088,13 +2083,16 @@ function update(dt){
   }
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;
-    // SECONDE CHANCE : la 1re base à tomber renaît plus solide ; la Bombe H rase la carte
-    // et plonge le monde en Hiver nucléaire. Il faut alors la détruire une 2e fois.
-    if (!game.winter && (faller.phase||1)<2){
+    // SECONDE CHANCE — INDÉPENDANTE PAR CAMP : la 1re fois qu'une base tombe, elle renaît
+    // plus solide (phase 2). Chaque base possède donc bien ses deux phases. L'Hiver
+    // nucléaire (Bombe H) ne se déclenche qu'UNE fois, à la 1re base abattue.
+    if ((faller.phase||1)<2){
       faller.phase = 2;
       faller.maxhp = Math.round(faller.maxhp*2.2);
       faller.hp = faller.maxhp;
-      triggerNuclearWinter();
+      if (!game.winter) triggerNuclearWinter();
+      else { game.flash=Math.max(game.flash||0,1.2); game.shake=Math.max(game.shake,20);
+        nukeBlast(faller.x, 220); announce('☢ Base renée — détruisez-la à nouveau pour vaincre', '#bfe6ff'); sfx('boom'); }
     } else {
       game.over=true; game.win = e.hp<=0;
       game.shake=20;
@@ -2105,18 +2103,24 @@ function update(dt){
   }
 }
 // Bombe H : rase tout (sauf bases), santé du monde à 0, bascule en Hiver nucléaire
+const WINTER_DUR = 360;   // l'hiver nucléaire dure 6 min puis le monde revient à la normale
 function triggerNuclearWinter(){
   const g=game;
-  g.winter = true; g.dev = 1;
+  g.winter = true; g.winterT = WINTER_DUR; g.dev = 1;
   g.flash = 1.6; g.shake = Math.max(g.shake,34);
   razeMap();
   announce('☢ BOMBE H — HIVER NUCLÉAIRE ☢', '#bfe6ff');
-  addFloater(WORLD/2, gY(WORLD/2)-150, 'Production ÷2 — détruisez la base renée pour vaincre', '#bfe6ff', 14);
+  addFloater(WORLD/2, gY(WORLD/2)-150, 'Neige + production réduite — se dissipe en 6 min', '#bfe6ff', 14);
   sfx('boom');
 }
+// malus d'hiver qui s'estompe : ÷2 au début → ×1 (normal) après 6 min
+function winterMul(){ return game.winter? clamp(0.5 + 0.5*(1-(game.winterT||0)/WINTER_DUR), 0.5, 1) : 1; }
 /* ---------- CATACLYSMES NATURELS ---------- */
 function updateCata(dt){
   const g=game;
+  // hiver nucléaire temporaire : se dissipe en 6 min (malus dégressif), puis retour à la normale
+  if (g.winter){ g.winterT = (g.winterT||0) - dt;
+    if (g.winterT<=0){ g.winter=false; g.winterT=0; announce("❄ L'hiver nucléaire se dissipe — production rétablie", '#bfe6ff'); } }
   if (g.cata){
     g.cataT += dt;
     applyCataEffects(dt);
@@ -2283,19 +2287,23 @@ function drawWinter(){
   const t = game.t;
   if (!snow){ snow=[]; for (let i=0;i<140;i++) snow.push({x:Math.random()*W, y:Math.random()*H, s:0.5+Math.random()*1.6, d:10+Math.random()*30}); }
   ctx.save();
-  ctx.fillStyle='rgba(14,22,40,0.45)'; ctx.fillRect(0,0,W,H);          // teinte froide et sombre
-  // brouillard : on ne voit bien qu'autour du centre de l'écran
-  const fog = ctx.createRadialGradient(W/2,H/2,90, W/2,H/2,W*0.62);
-  fog.addColorStop(0,'rgba(20,28,44,0)'); fog.addColorStop(1,'rgba(10,16,30,0.92)');
+  const wd = clamp((game.winterT||0)/WINTER_DUR, 0, 1);                 // 1 au déclenchement → 0 à la fin
+  // voile froid CLAIR (lisibilité préservée — plus de quasi-noir après la Bombe H)
+  ctx.fillStyle='rgba(150,180,220,0.10)'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(22,32,54,'+(0.12+0.14*wd)+')'; ctx.fillRect(0,0,W,H);
+  // léger halo périphérique (très allégé)
+  const fog = ctx.createRadialGradient(W/2,H/2,130, W/2,H/2,W*0.72);
+  fog.addColorStop(0,'rgba(18,28,46,0)'); fog.addColorStop(1,'rgba(16,24,42,'+(0.30+0.18*wd)+')');
   ctx.fillStyle=fog; ctx.fillRect(0,0,W,H);
-  // neige
-  ctx.fillStyle='rgba(230,238,255,0.85)';
+  // neige (additive, lumineuse)
+  ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(236,244,255,0.92)';
   for (const f of snow){
     const y=(f.y + t*f.d)%H, x=(f.x + Math.sin(t*0.6+f.y)*12);
     ctx.beginPath(); ctx.arc(x, y, f.s, 0, 6.28); ctx.fill();
   }
+  ctx.globalCompositeOperation='source-over';
   ctx.font='700 12px Arial'; ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
-  ctx.fillText('❄ HIVER NUCLÉAIRE — production ÷2', W/2, 78);
+  ctx.fillText('❄ HIVER NUCLÉAIRE — retour à la normale dans '+Math.ceil((game.winterT||0)/60)+' min', W/2, 78);
   ctx.restore();
 }
 
@@ -2741,9 +2749,9 @@ const USP = { W:80, H:84, cx:40, foot:68 };
 function drawUnitSprite(kind, fac, role, era, trans){
   const isBot = kind==='bot', acc = FACTIONS[fac].accent, body = FACTIONS[fac].eraCols[era];
   const pants = isBot? '#28323e' : shade(body,0.55), cx=USP.cx, F=USP.foot;
-  const tw = role==='tank'? 30 : role==='siege'? 24 : 22;
+  const tw = role==='tank'? 26 : role==='siege'? 20 : 17;   // silhouettes plus fines/élégantes
   // jambes
-  sculptT(cx-12, F-22, 10, 22, 4, pants); sculptT(cx+2, F-22, 10, 22, 4, pants);
+  sculptT(cx-9, F-22, 7, 22, 3, pants); sculptT(cx+2, F-22, 7, 22, 3, pants);   // jambes affinées
   // torse sculpté + liseré néon de faction
   sculptT(cx-tw/2, F-50, tw, 30, isBot?10:7, body, acc);
   bloomT(acc,8,()=>{ TC.fillStyle=acc; if(isBot){ TC.fillRect(cx-2,F-44,4,13);} else { rrectT(cx-tw/2+3,F-46,tw-6,3,1); TC.fill(); } });
@@ -2814,10 +2822,10 @@ function blitHumanoid(u, x, gy, kind){
   if (u.role==='gremlin'){ drawGremlin(u,x,gy); return; }
   const fac = kind==='hum'? 'HUM':'IA', key='S'+kind+u.role+u.era+(u.trans?'T':'');
   const spr = sprite(key, USP.W, USP.H, ()=>drawUnitSprite(kind,fac,u.role,u.era,u.trans));
-  const t=u.bob, dir=u.side, bob = Math.sin(t*1.7)>0? -1.5 : 0;
+  const t=u.bob, dir=u.side, sy = 1 + 0.03*Math.sin(t*2.6);   // léger tassement, PIEDS ANCRÉS au sol (plus de flottement)
   const atk = u.atkT > u.rate-0.14, lunge = atk? dir*3 : 0;
   projShadow(x, gy, 15);
-  ctx.save(); ctx.translate(x+lunge, gy+bob); ctx.scale(dir,1);
+  ctx.save(); ctx.translate(x+lunge, gy); ctx.scale(dir, sy);
   ctx.drawImage(spr, -USP.cx, -USP.foot);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr, -USP.cx, -USP.foot); }
   ctx.restore();
@@ -3518,6 +3526,7 @@ function drawBuildMenu(){
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);
   let by = clamp(w2sY(gY(anchorX))-110-bh, 44, H-bh-150);
+  buildMenu.box = {x:bx, y:by, w:bw, h:bh};        // exposé au tuto pour éviter tout recouvrement
   buildMenu.rects=[];
   ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
@@ -3561,6 +3570,7 @@ function drawPause(){
     {key:'music',  label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
     {key:'sfx',    label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
     {key:'vol',    label:''},                       // slider de volume
+    {key:'bright', label:''},                       // slider de luminosité
     {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
     {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
     {key:'quit',   label:t('p_quit')},
@@ -3588,6 +3598,17 @@ function drawPause(){
       ctx.fillText(Math.round(SETTINGS.vol*100)+'%', bx+bw-34, ry);
       ctx.font='14px Arial';
       pauseRects[pauseRects.length-1].slider = {x:rx+28, w:rw2};
+      continue;
+    }
+    if (items[i].key==='bright'){
+      const rx=bx+58, rw2=bw-150, ry=y+(ih-8)/2, nv=clamp((SETTINGS.bright-0.7)/1.1,0,1);
+      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left'; ctx.fillText(SETTINGS.lang==='en'?'☀ Bright.':'☀ Lumin.', bx+24, ry);
+      ctx.textAlign='center';
+      ctx.fillStyle='#3a2e28'; rr(rx+28, ry-3, rw2, 6, 3); ctx.fill();
+      ctx.fillStyle='#e8b84a'; rr(rx+28, ry-3, rw2*nv, 6, 3); ctx.fill();
+      ctx.fillStyle='#e8e0d2'; ctx.beginPath(); ctx.arc(rx+28+rw2*nv, ry, 6, 0, 6.28); ctx.fill();
+      ctx.fillStyle='#b8b0a4'; ctx.font='12px Arial'; ctx.fillText(Math.round(SETTINGS.bright*100)+'%', bx+bw-34, ry); ctx.font='14px Arial';
+      pauseRects[pauseRects.length-1].slider = {x:rx+28, w:rw2, bright:true};
       continue;
     }
     ctx.fillStyle = items[i].key==='quit'? '#c88':'#b8b0a4';
@@ -3640,6 +3661,10 @@ function render(dt){
   drawWinter();
   drawCata();
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
+  // luminosité globale réglable (>1 éclaircit, <1 assombrit) — appliquée à la scène, pas au HUD
+  const br=SETTINGS.bright||1;
+  if (br>1.01){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,250,240,'+clamp((br-1)*0.5,0,0.5)+')'; ctx.fillRect(0,0,W,H); ctx.restore(); }
+  else if (br<0.99){ ctx.fillStyle='rgba(0,0,0,'+clamp((1-br)*0.7,0,0.6)+')'; ctx.fillRect(0,0,W,H); }
   drawHUD();
   drawSpeedOverlays();
   ctx.restore();
@@ -3974,9 +3999,18 @@ function drawTut(){
   const bx = clamp((W-bw)/2, 12, W-bw-12);
   // emplacements candidats : haut, ou bas (toujours au-dessus des rangées d'action du HUD)
   const topBy = 46, botBy = (H-118) - bh;
-  const inter = (by)=> focus && by < fy+fh && by+bh > fy;     // chevauche la cible ?
-  let by = (focus && focus.y < H*0.5) ? botBy : topBy;        // cible en haut → carte en bas, et inversement
-  if (inter(by)) by = (by===topBy? botBy : topBy);
+  // obstacle à NE JAMAIS recouvrir : le menu de construction s'il est ouvert (c'est la vraie
+  // cible actionnable), sinon la zone surlignée. Corrige le blocage « le tuto cache le bouton ».
+  const obst = [];
+  if (buildMenu && buildMenu.box) obst.push(buildMenu.box);
+  else if (focus) obst.push({x:fx,y:fy,w:fw,h:fh});
+  const hits = (by)=> obst.some(r=> by < r.y+r.h && by+bh > r.y && bx < r.x+r.w && bx+bw > r.x);
+  let by = (focus && focus.y < H*0.5) ? botBy : topBy;
+  if (hits(by)) by = (by===topBy? botBy : topBy);            // bascule de l'autre côté
+  if (hits(by)){                                             // les deux côtés gênés : prends le plus dégagé
+    const oTop = obst.reduce((m,r)=>Math.max(m, topBy<r.y+r.h&&topBy+bh>r.y?1:0),0);
+    by = oTop? botBy : topBy;
+  }
   by = clamp(by, 12, H-bh-12);
   // flèche de la carte vers la cible
   if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
@@ -4113,7 +4147,7 @@ function serialize(){
   return {
     t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
-    wi:game.winter?1:0,
+    wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
     pu:game.p.units.map(u2), eu:game.e.units.map(u2),
@@ -4193,7 +4227,7 @@ function applySnapshot(snap){
   const ck = (snap.ca>=0)? CATA_KEYS[snap.ca] : null;
   g.cata = ck; g.cataT = snap.cat||0; g.cataDur = ck? CATAS[ck].dur : 0;
   g.cataX = WORLD - (snap.cax||0);
-  g.winter = !!snap.wi;
+  g.winter = !!snap.wi; g.winterT = snap.wt||0;
   // l'armée de l'invité = canonical 'e' → devient le local p (à gauche) ; mirroir des x
   const fillSide = (loc, ser, foeWon)=>{
     loc.hp=ser.hp; loc.maxhp=ser.mh; loc.f=ser.f; loc.m=ser.m; loc.w=ser.w; loc.xp=ser.xp;
@@ -5087,8 +5121,10 @@ function inRect(x,y,r){ return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h; }
 
 cv.addEventListener('contextmenu', e=>e.preventDefault());
 
+let _fsTried=false;
 cv.addEventListener('pointerdown', e=>{
   audioInit(); musicStart();
+  if (!_fsTried){ _fsTried=true; goFullscreen(); }   // plein écran auto dès la 1re interaction (PC + Android)
   cv.setPointerCapture(e.pointerId);
   const {sx,sy} = evXY(e);
   ptrs.set(e.pointerId, {sx,sy});
@@ -5205,6 +5241,10 @@ function handleTap(sx, sy, shift){
       else if (r.key==='sfx'){ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); }
       else if (r.key==='vol' && r.slider){
         SETTINGS.vol = clamp(Math.round(((sx-r.slider.x)/r.slider.w)*20)/20, 0, 1);
+        saveSettings(); refreshOpts();
+      }
+      else if (r.key==='bright' && r.slider){
+        SETTINGS.bright = clamp(Math.round((0.7+((sx-r.slider.x)/r.slider.w)*1.1)*20)/20, 0.7, 1.8);
         saveSettings(); refreshOpts();
       }
       else if (r.key==='shake'){ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); }
