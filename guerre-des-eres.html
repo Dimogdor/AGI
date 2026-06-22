@@ -2665,6 +2665,20 @@ function drawBG(){
   else { ctx.fillStyle='rgba(255,255,255,0.7)';
     for (let i=0;i<16;i++){ const sx=(i*257)%vw, sy=(i*113)%150; ctx.beginPath(); ctx.arc(sx,sy,1.2,0,6.283); ctx.fill(); } }
   ctx.restore();
+  // PARTICULES D'AMBIANCE selon la faction/ère du joueur (décor pur, additif). Les cendres
+  // (monde mourant) sont déjà gérées plus haut ; ici : pétales humains, étincelles GPT.
+  if (game && game.p && !game.tut && dev<0.45){
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    if (game.p.facKey==='HUM' && game.p.era===0){          // pétales portés par le vent
+      ctx.fillStyle='rgba(255,150,190,0.45)';
+      for (let i=0;i<14;i++){ const px=((i*211+t*26)%(vw+40))-20, py=((i*89+t*12*(1+i%3))%(GROUND-50))+10;
+        ctx.beginPath(); ctx.ellipse(px,py,2.4,1.1,t+i,0,6.283); ctx.fill(); }
+    } else if (game.p.facKey==='IA' && game.p.era>=3){      // étincelles électriques montantes
+      for (let i=0;i<16;i++){ const px=(i*167)%vw, py=GROUND-((t*60+i*73)%(GROUND-30));
+        ctx.fillStyle='rgba(120,210,255,'+(0.28+0.34*((i*7)%5)/5)+')'; ctx.fillRect(px,py,1.6,3.0); }
+    }
+    ctx.restore();
+  }
   // soleil + halo bloom
   const sunX=vw*0.5-(camX/(WORLD-vw||1)-0.5)*120, sunY=80+dev*46;
   const sunC = dev<0.5? lerpCol([255,244,210],[255,150,80],dev*2) : lerpCol([255,150,80],[150,80,80],(dev-0.5)*2);
@@ -2673,6 +2687,19 @@ function drawBG(){
   sg.addColorStop(0,rgbaC(sunC,0.9)); sg.addColorStop(0.18,rgbaC(sunC,0.5)); sg.addColorStop(1,rgbaC(sunC,0));
   ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sunX,sunY,130,0,6.283); ctx.fill();
   ctx.fillStyle=rgbaC(sunC,1); ctx.beginPath(); ctx.arc(sunX,sunY,26,0,6.283); ctx.fill();
+  // rayons divins : faisceaux doux descendant du soleil, animés lentement (s'estompent
+  // quand le monde agonise). Restent dans le bloc additif « lighter ».
+  const rayA = 0.085*(1-dev*0.55);
+  if (rayA>0.004) for (let i=0;i<6;i++){
+    const a = 0.9 + i*0.17 + Math.sin(t*0.1+i)*0.02;     // éventail orienté vers le bas
+    const len=420, w=20+i*5, ex=sunX+Math.cos(a)*len, ey=sunY+Math.sin(a)*len;
+    const px=Math.cos(a+1.5708), py=Math.sin(a+1.5708);
+    const rg=ctx.createLinearGradient(sunX,sunY,ex,ey);
+    rg.addColorStop(0,rgbaC(sunC,rayA)); rg.addColorStop(1,rgbaC(sunC,0));
+    ctx.fillStyle=rg; ctx.beginPath();
+    ctx.moveTo(sunX+px*5,sunY+py*5); ctx.lineTo(sunX-px*5,sunY-py*5);
+    ctx.lineTo(ex-px*w,ey-py*w); ctx.lineTo(ex+px*w,ey+py*w); ctx.closePath(); ctx.fill();
+  }
   ctx.restore();
   // nuages dérivants (parallaxe douce) — profondeur du ciel ; cendres si le monde agonise
   ctx.save(); ctx.globalCompositeOperation = dev>0.55? 'source-over':'lighter';
