@@ -53,7 +53,10 @@
   .tab.on { color:#fff; border-color:#a8281e; background:rgba(60,16,12,0.78); }
   .page { display:none; flex-direction:column; align-items:center; gap:16px; max-width:780px; width:100%;
     background:rgba(10,7,7,0.66); border:1px solid #3a2e28; padding:22px 18px; }
-  .page.on { display:flex; }
+  .page.on { display:flex; animation:pageIn .28s ease both; }
+  @keyframes pageIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  .tab { transition:color .18s, background .18s, border-color .18s; }
+  #briefscreen, #endscreen { animation:pageIn .3s ease both; }
   .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .pick {
     cursor:pointer; padding:12px 28px; font-size:clamp(14px,2.2vw,18px); font-family:inherit;
@@ -1092,7 +1095,7 @@ function slotRef(side, slot){
   i = game.neut.indexOf(slot);     if (i>=0) return {t:'neut',i};
   return null;
 }
-let particles=[], floaters=[], shots=[], projectiles=[], LIGHTS=[], VIGN=null;
+let particles=[], floaters=[], shots=[], projectiles=[], LIGHTS=[], VIGN=null, deaths=[];
 let camX = 0, camFollow = true;
 let buildMenu = null, pauseRects = null;
 let selMode = false, selBox = null;       // lasso
@@ -1154,7 +1157,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
     speed: clampSpeed(SETTINGS.speed),   // vitesse de simulation (offline : préférence ; online : décidée en lobby)
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
-  particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[];
+  particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[];
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;
   selMode = false; selBox = null;
@@ -2022,6 +2025,9 @@ function updateUnits(side, foe, dt){
         }
       }
       burst(u.x, gY(u.x)-22-(u.fly?u.flyH:0), FACTIONS[u.fac].eraCols[u.era], 12);
+      // RAGDOLL DE MORT (par rôle) : corps qui bascule / chute en vrille / châssis qui éclate.
+      if (qFx() && u.role!=='gremlin' && deaths.length<60)
+        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:0.75});
       // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
       if (game.killLog){ game.killLog.push({x:u.x, s:u.side}); if (game.killLog.length>140) game.killLog.shift(); }
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
@@ -2357,6 +2363,7 @@ function update(dt){
   }
   for (let i=particles.length-1;i>=0;i--){ const pt=particles[i]; pt.t+=dt;
     pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=220*dt; if(pt.t>pt.life) particles.splice(i,1); }
+  for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if(deaths[i].t>deaths[i].life) deaths.splice(i,1); }
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if(f.t>1.6) floaters.splice(i,1); }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if(shots[i].t>shots[i].dur) shots.splice(i,1); }
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
@@ -2839,16 +2846,23 @@ function finishIntro(){
   if (pendingStart){ newGame(pendingStart.fac, pendingStart.diff, false); pendingStart=null; }
 }
 
-let menuT = 0;
+let menuT = 0, menuFacMix = 0;
 function drawMenuScene(dt){
   menuT += dt;
   const t = menuT;
+  // SÉLECTION CINÉMATIQUE : la scène vire vers la couleur du camp choisi (rouge ↔ cyan).
+  const target = (typeof menuFac!=='undefined' && menuFac==='IA')? 1 : 0;
+  menuFacMix += (target - menuFacMix) * Math.min(1, dt*3);
+  const mx = menuFacMix;
+  const mix = (a,b)=>Math.round(a+(b-a)*mx);
   const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#1a0e0c'); g.addColorStop(0.55,'#3a1812'); g.addColorStop(1,'#0d0a0a');
+  g.addColorStop(0,'rgb('+mix(26,8)+','+mix(14,16)+','+mix(12,26)+')');
+  g.addColorStop(0.55,'rgb('+mix(58,12)+','+mix(24,30)+','+mix(18,52)+')');
+  g.addColorStop(1,'#0d0a0a');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // soleil rouge immense
-  ctx.fillStyle='#a8281e'; ctx.beginPath(); ctx.arc(W*0.62, 200, 110, 0, 6.28); ctx.fill();
-  ctx.fillStyle='#7a1a12'; ctx.beginPath(); ctx.arc(W*0.62, 200, 80, 0, 6.28); ctx.fill();
+  // soleil immense (rouge Commune ↔ halo cyan de la Singularité)
+  ctx.fillStyle='rgb('+mix(168,40)+','+mix(40,150)+','+mix(30,210)+')'; ctx.beginPath(); ctx.arc(W*0.62, 200, 110, 0, 6.28); ctx.fill();
+  ctx.fillStyle='rgb('+mix(122,24)+','+mix(26,96)+','+mix(18,150)+')'; ctx.beginPath(); ctx.arc(W*0.62, 200, 80, 0, 6.28); ctx.fill();
   // skyline 3 couches qui défilent lentement
   for (let layer=0; layer<3; layer++){
     const spd = 4+layer*5, base = 290+layer*55, alpha = 0.35+layer*0.3;
@@ -2980,6 +2994,20 @@ function drawBG(){
   ctx.fillStyle=gg; ctx.fill();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
+  // HERBE DYNAMIQUE : touffes qui ondulent au vent et se couchent au passage des unités lourdes.
+  if (qFx() && game && !game.tut){
+    const heavies=[];
+    for (const u of game.p.units) if(!u.fly && (u.role==='tank'||u.role==='siege'||u.role==='hero')) heavies.push(u.x);
+    for (const u of game.e.units) if(!u.fly && (u.role==='tank'||u.role==='siege'||u.role==='hero')) heavies.push(u.x);
+    ctx.strokeStyle=rgbaC(shade(grass,1.3),0.45); ctx.lineWidth=1.4;
+    const step = SETTINGS.quality==='ultra'?26 : SETTINGS.quality==='high'?34 : 48;
+    for (let sx=10; sx<=vw; sx+=step){
+      const wx=sx+camX, by=gY(wx);
+      let bend = Math.sin(wx*0.05+t*1.6)*2;
+      for (const hx of heavies){ const dlt=wx-hx; if (Math.abs(dlt)<34) bend += Math.sign(dlt||1)*(34-Math.abs(dlt))*0.45; }
+      ctx.beginPath(); ctx.moveTo(sx, by); ctx.quadraticCurveTo(sx+bend*0.5, by-7, sx+bend, by-11); ctx.stroke();
+    }
+  }
   // rochers sculptés
   // CRATÈRES PERSISTANTS : creux sombres laissés par les explosions lourdes, posés sur le sol.
   if (game.craters) for (const cr of game.craters){
@@ -3101,7 +3129,9 @@ function drawNode(n){
   wg.addColorStop(0,lerpCol([150,215,250],[110,130,130],dev)); wg.addColorStop(1,lerpCol([30,90,120],[40,60,60],dev));
   ctx.fillStyle=wg; ctx.fillRect(x-rw,y-rh,rw*2,rh*3.5);
   ctx.save(); ctx.globalCompositeOperation='lighter';
-  for(let i=0;i<3;i++){ ctx.fillStyle='rgba(220,245,255,'+(0.2-i*0.05)+')'; ctx.fillRect(x-rw, y+2+i*5+Math.sin(t*2+i)*1.5, rw*2, 1.6); }
+  // les reflets s'agitent quand une explosion proche secoue la scène (flash/secousse globaux)
+  const react = clamp((game.flash||0)*1.1 + (game.shake||0)*0.035, 0, 0.5);
+  for(let i=0;i<3;i++){ ctx.fillStyle='rgba(220,245,255,'+(0.2-i*0.05+react*0.5)+')'; ctx.fillRect(x-rw, y+2+i*5+Math.sin(t*2+i)*(1.5+react*9), rw*2, 1.6); }
   ctx.restore(); ctx.restore();
   // rim lumineux
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.shadowColor='#bfe6f2'; ctx.shadowBlur=6;
@@ -3679,6 +3709,29 @@ function drawQueue(){
     ctx.fillText(ROLE_ICON[ROLES[q[i]].key]||'?', x+sz/2, by+sz/2+1);
   }
 }
+// TOOLTIP DÉTAILLÉ (survol souris) : fiche stats d'une unité au-dessus de son bouton.
+function drawUnitTooltip(i){
+  const r = ROLES[i], p = game.p; if (!r) return;
+  let btn=null; for (const b of HUD.btns) if (b.type==='unit'&&b.i===i){ btn=b; break; }
+  if (!btn) return;
+  const name = lUnit(p.facKey, r.key, p.era);
+  const lines = [
+    '❤ '+r.hp+'    ⚔ '+(r.dmg||'—')+'    ⏱ '+r.rate+'s',
+    '🎯 '+r.range+'    👟 '+r.spd+(r.aoe?'    💥 '+r.aoe:''),
+    '💰 '+costStr(p, r.cost),
+  ];
+  ctx.font='11px Arial'; let tw=ctx.measureText(name).width;
+  for (const l of lines) tw=Math.max(tw, ctx.measureText(l).width);
+  const w=tw+20, h=22+lines.length*15, x=clamp(btn.x+btn.w/2-w/2, 4, W-w-4), y=btn.y-h-8;
+  ctx.fillStyle='rgba(14,11,10,0.96)'; rr(x,y,w,h,6); ctx.fill();
+  ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1; rr(x,y,w,h,6); ctx.stroke();
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=p.fac.accent; ctx.font='700 12px Arial';
+  ctx.fillText((ROLE_ICON[r.key]||'')+' '+name, x+10, y+16);
+  ctx.fillStyle='#cdc4b6'; ctx.font='11px Arial';
+  let yy=y+33; for (const l of lines){ ctx.fillText(l, x+10, yy); yy+=15; }
+  ctx.textAlign='center';
+}
 function drawHUD(){
   const p = game.p, fac = p.fac;
   const rates = calcRates(p);
@@ -3794,6 +3847,7 @@ function drawHUD(){
   // ---- boutons ----
   HUD.upgRects = [];
   for (const b of HUD.btns) drawBtn(b);
+  if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
   // ---- bannière de sélection (y=H-134, jamais sur les boutons) ----
   HUD.selRect = null;
   if (game.sel.size>0){
@@ -4178,6 +4232,17 @@ function render(dt){
     const px = lerp(pr.sx,pr.tx,k)-camX, py = gY(lerp(pr.sx,pr.tx,k))-26 - Math.sin(k*Math.PI)*90;
     ctx.fillStyle=FACTIONS[pr.fac].eraCols[pr.era];
     ctx.beginPath(); ctx.arc(px,py,4,0,6.28); ctx.fill();
+  }
+  // RAGDOLLS DE MORT (par rôle) : bascule au sol · chute en vrille (volants) · effondrement (tanks)
+  for (const d of deaths){
+    const x=d.x-camX; if (x<-30||x>VW()+30) continue;
+    const gy=gY(d.x), k=d.t/d.life; ctx.save(); ctx.globalAlpha=Math.max(0,1-k);
+    const col=FACTIONS[d.fac].eraCols[d.era];
+    if (d.fly){ ctx.translate(x, gy-d.flyH*(1-k)-6); ctx.rotate(k*9*d.side); ctx.fillStyle=col; ctx.fillRect(-7,-3,14,6); }
+    else if (d.role==='tank'){ ctx.translate(x, gy-3); ctx.scale(1, Math.max(0.2,1-k*1.1)); ctx.fillStyle=col; ctx.fillRect(-9,-13,18,13); }
+    else { ctx.translate(x, gy-2); ctx.rotate(k*1.5*d.side); ctx.fillStyle=col;
+      ctx.fillRect(-3,-17,6,17); ctx.beginPath(); ctx.arc(0,-20,4,0,6.28); ctx.fill(); }
+    ctx.restore(); ctx.globalAlpha=1;
   }
   for (const pt of particles){
     ctx.globalAlpha=1-pt.t/pt.life;
@@ -5806,6 +5871,15 @@ function evXY(e){
 function inRect(x,y,r){ return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h; }
 
 cv.addEventListener('contextmenu', e=>e.preventDefault());
+
+// SURVOL (souris uniquement) : tooltip détaillé sur les boutons d'unités.
+let hoverUnitBtn = -1;
+cv.addEventListener('pointermove', e=>{
+  if (e.pointerType==='touch'){ hoverUnitBtn=-1; return; }
+  if (!game || game.over || paused || buildMenu || tutoStep>=0){ hoverUnitBtn=-1; return; }
+  const {sx,sy} = evXY(e); hoverUnitBtn=-1;
+  for (const b of HUD.btns) if (b.type==='unit' && inRect(sx,sy,b)){ hoverUnitBtn=b.i; break; }
+});
 
 let _fsTried=false;
 cv.addEventListener('pointerdown', e=>{
