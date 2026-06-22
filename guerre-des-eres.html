@@ -2823,12 +2823,26 @@ function drawUnitSprite(kind, fac, role, era, trans){
     else { bloomT('#39ff6a',9,()=>{ TC.fillStyle='#39ff6a'; for(let i=0;i<3;i++) rrectT(cx-7+i*6,F-78,2,5,1), TC.fill(); }); }
   }
 }
-function attackFX(u, x, bodyY){
-  const dir=u.side, fx=x+dir*22, col=u.fac==='HUM'?'#ffd9a0':'#9fe8ff';
-  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.shadowColor=col; ctx.shadowBlur=12; ctx.fillStyle=col;
-  if (u.role==='ranged'||u.role==='air'){ ctx.beginPath(); ctx.arc(fx,bodyY,3.4,0,6.283); ctx.fill(); }
-  else if (u.role==='siege'){ ctx.beginPath(); ctx.arc(fx,bodyY,5,0,6.283); ctx.fill(); }
-  else { ctx.beginPath(); ctx.moveTo(x+dir*12,bodyY-7); ctx.quadraticCurveTo(x+dir*28,bodyY,x+dir*12,bodyY+7); ctx.fill(); }
+function attackFX(u, x, bodyY, imp){
+  imp = (imp==null)?1:imp; const dir=u.side, col=u.fac==='HUM'?'#ffd9a0':'#9fe8ff';
+  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.shadowColor=col; ctx.shadowBlur=14; ctx.lineCap='round';
+  if (u.role==='ranged'||u.role==='air'){
+    const fx=x+dir*26;
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,3+3*imp,0,6.283); ctx.fill();                 // bouche à feu
+    ctx.strokeStyle=rgbaC(col,0.65*imp); ctx.lineWidth=2; ctx.beginPath();                              // traceur nerveux
+    ctx.moveTo(fx,bodyY); ctx.lineTo(fx+dir*(46+u.range*0.12), bodyY-2); ctx.stroke();
+    ctx.fillStyle=rgbaC('#ffcf8a',0.8*imp); ctx.beginPath(); ctx.arc(x+dir*14, bodyY+3, 1.6, 0,6.283); ctx.fill(); // douille
+  } else if (u.role==='siege'){
+    const fx=x+dir*24, fy=bodyY-4;
+    ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.arc(fx,fy,5+7*imp,0,6.283); ctx.fill();
+    ctx.strokeStyle=rgbaC('#ff9d45',0.5*imp); ctx.lineWidth=3; ctx.beginPath(); ctx.arc(fx,fy,12+12*imp,0,6.283); ctx.stroke();
+  } else {
+    // mêlée : arc tranchant qui balaie devant l'unité
+    const cxs=x+dir*6, r=22, a0=dir>0?-1.0:Math.PI+1.0, a1=dir>0?1.0:Math.PI-1.0;
+    ctx.strokeStyle=rgbaC('#ffffff',0.2+0.8*imp); ctx.lineWidth=3.2;
+    ctx.beginPath(); ctx.arc(cxs,bodyY,r,a0,a1,dir<0); ctx.stroke();
+    ctx.strokeStyle=rgbaC(col,0.5*imp); ctx.lineWidth=6; ctx.beginPath(); ctx.arc(cxs,bodyY,r,a0,a1,dir<0); ctx.stroke();
+  }
   ctx.restore();
 }
 function drawGremlin(u, x, gy){
@@ -2843,14 +2857,18 @@ function blitHumanoid(u, x, gy, kind){
   if (u.role==='gremlin'){ drawGremlin(u,x,gy); return; }
   const fac = kind==='hum'? 'HUM':'IA', key='S'+kind+u.role+u.era+(u.trans?'T':'');
   const spr = sprite(key, USP.W, USP.H, ()=>drawUnitSprite(kind,fac,u.role,u.era,u.trans));
-  const t=u.bob, dir=u.side, sy = 1 + 0.03*Math.sin(t*2.6);   // léger tassement, PIEDS ANCRÉS au sol (plus de flottement)
-  const atk = u.atkT > u.rate-0.14, lunge = atk? dir*3 : 0;
+  const t=u.bob, dir=u.side, sy = 1 + 0.03*Math.sin(t*2.6);   // léger tassement, PIEDS ANCRÉS au sol
+  const atk = u.atkT > u.rate-0.16;
+  const imp = atk ? clamp((u.atkT-(u.rate-0.16))/0.16, 0, 1) : 0;   // 1 à l'impact → 0
+  const fwd = (u.role==='melee'||u.role==='tank');                  // mêlée : jab avant ; tir/siège : recul
+  const lunge = fwd ? dir*9*imp : (atk? -dir*5*imp : 0);
+  const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
   projShadow(x, gy, 15);
-  ctx.save(); ctx.translate(x+lunge, gy); ctx.scale(dir, sy);
+  ctx.save(); ctx.translate(x+lunge, gy); ctx.rotate(tilt); ctx.scale(dir, sy);
   ctx.drawImage(spr, -USP.cx, -USP.foot);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr, -USP.cx, -USP.foot); }
   ctx.restore();
-  if (atk) attackFX(u, x, gy-26);
+  if (atk) attackFX(u, x, gy-26, imp);
 }
 function drawHuman(u, x, gy){ blitHumanoid(u, x, gy, 'hum'); }
 function drawBot(u, x, gy){ blitHumanoid(u, x, gy, 'bot'); }
@@ -2887,27 +2905,52 @@ function drawAir(u, x, gy){
   if (u.atkT>u.rate-0.14) attackFX(u, x, y);
 }
 function heroSprite(fac){
-  const hum=fac==='HUM', acc=hum?'#ffcf5a':'#ff6ad6', body=hum?'#5a4632':'#22324a', skin=hum?'#e8c89a':'#8fe0ff', cx=32, F=92;
-  TC.fillStyle=lgrad(cx-17,F-58,cx-8,F-12,[[0,shade(acc,1.05)],[1,shade(acc,0.5)]]); rrectT(cx-17,F-58,8,46,4); TC.fill(); // cape
-  sculptT(cx-12,F-26,10,26,5,shade(body,0.9)); sculptT(cx+3,F-26,10,26,5,shade(body,0.9));
-  sculptT(cx-16,F-66,32,42,10,body,acc);
-  bloomT(acc,12,()=>drawStar(cx,F-46,7,acc));
-  TC.fillStyle=rgrad(cx-4,F-80,16,[[0,shade(skin,1.15)],[1,shade(skin,0.7)]]); TC.beginPath(); TC.arc(cx,F-76,13,0,6.283); TC.fill();
-  bloomT(acc,8,()=>{ TC.fillStyle=acc; rrectT(cx+12,F-66,4,36,2); TC.fill(); });
+  const hum=fac==='HUM', acc=hum?'#ffcf5a':'#ff6ad6', body=hum?'#3a5632':'#22324a', skin=hum?'#e8c89a':'#bdecff', cx=32, F=92;
+  TC.fillStyle=lgrad(cx-18,F-58,cx-8,F-10,[[0,shade(acc,1.0)],[1,shade(acc,0.45)]]); rrectT(cx-18,F-58,9,48,4); TC.fill(); // cape/manteau
+  sculptT(cx-12,F-26,10,26,5,shade(body,0.85)); sculptT(cx+3,F-26,10,26,5,shade(body,0.85));   // jambes
+  sculptT(cx-17,F-66,34,44,10,body,acc);                                                        // torse imposant
+  TC.fillStyle=rgrad(cx-4,F-82,16,[[0,shade(skin,1.12)],[1,shade(skin,0.7)]]); TC.beginPath(); TC.arc(cx,F-78,13,0,6.283); TC.fill();
+  if (hum){
+    // identité « Che » : ceinturon, étoile rouge, béret incliné, barbe, cigare, fusil en bandoulière
+    TC.fillStyle='#241a12'; rrectT(cx-17,F-40,34,5,2); TC.fill();
+    bloomT('#ff3a2a',10,()=>drawStar(cx,F-52,7,'#ff4a2a'));
+    TC.fillStyle='#243a22'; TC.beginPath(); TC.ellipse(cx-1,F-90,15,7,-0.18,0,6.283); TC.fill();
+    bloomT('#ff3a2a',6,()=>drawStar(cx-6,F-91,3.2,'#ff5a3a'));
+    TC.fillStyle=shade(skin,0.55); TC.fillRect(cx-7,F-72,14,4);                     // barbe
+    TC.fillStyle='#d8c0a0'; TC.fillRect(cx+12,F-74,8,2); bloomT('#ff7a3a',5,()=>{ TC.fillStyle='#ff7a3a'; TC.fillRect(cx+20,F-74,2,2); }); // cigare
+    TC.strokeStyle='#2a2018'; TC.lineWidth=3; TC.beginPath(); TC.moveTo(cx+11,F-60); TC.lineTo(cx+19,F-28); TC.stroke();   // fusil en bandoulière
+  } else {
+    // identité « Singularité » : couronne de lumière fractale + cœur de données + visière
+    bloomT(acc,12,()=>drawStar(cx,F-50,7,acc));
+    bloomT(acc,8,()=>{ TC.fillStyle=acc; TC.fillRect(cx-2,F-48,4,14); });
+    TC.fillStyle='#0a1420'; TC.fillRect(cx-7,F-80,14,5);
+    bloomT(acc,8,()=>{ TC.fillStyle=acc; TC.fillRect(cx-6,F-79,13,2); });
+    bloomT(acc,14,()=>{ TC.strokeStyle=rgbaC(acc,0.9); TC.lineWidth=2;
+      for(let i=0;i<6;i++){ const a=-Math.PI/2+i*Math.PI/3; TC.beginPath();
+        TC.moveTo(cx+Math.cos(a)*12,F-92+Math.sin(a)*8); TC.lineTo(cx+Math.cos(a)*18,F-92+Math.sin(a)*12); TC.stroke(); } });
+  }
 }
 function drawHero(u, x, gy){
-  const t=game.t, col=u.fac==='HUM'?'#ffcf5a':'#ff6ad6';
+  const t=game.t, col=u.fac==='HUM'?'#ffcf5a':'#ff6ad6', side=u.side===1?game.p:game.e;
+  // liens d'empowerment vers les alliés proches (montre l'impact du héros sur les troupes)
   ctx.save(); ctx.globalCompositeOperation='lighter';
-  const g=ctx.createRadialGradient(x,gy-40,4,x,gy-40,48+Math.sin(t*3)*5);
-  g.addColorStop(0,rgbaC(col,0.20)); g.addColorStop(1,rgbaC(col,0));
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,gy-40,50,0,6.283); ctx.fill(); ctx.restore();
+  for (const a of side.units){ if (a===u||a.role==='hero') continue; const d=Math.abs(a.x-u.x);
+    if (d<210){ const ax=a.x-camX, ay=gY(a.x)-18, al=(1-d/210)*0.22*(0.6+0.4*Math.sin(t*5+a.x));
+      ctx.strokeStyle=rgbaC(col,al); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x,gy-32); ctx.lineTo(ax,ay); ctx.stroke(); } }
+  // aura au sol + halo
+  ctx.strokeStyle=rgbaC(col,0.3+0.2*Math.sin(t*3)); ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(x,gy,42,13,0,0,6.283); ctx.stroke();
+  const g=ctx.createRadialGradient(x,gy-44,4,x,gy-44,54+Math.sin(t*3)*6);
+  g.addColorStop(0,rgbaC(col,0.22)); g.addColorStop(1,rgbaC(col,0));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,gy-44,56,0,6.283); ctx.fill(); ctx.restore();
   projShadow(x, gy, 18);
   const spr = sprite('HERO'+u.fac, 64, 100, ()=>heroSprite(u.fac));
-  ctx.save(); ctx.translate(x,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -32, -92);
+  const atk = u.atkT > u.rate-0.18, imp = atk? clamp((u.atkT-(u.rate-0.18))/0.18,0,1):0, lunge=u.side*9*imp;
+  ctx.save(); ctx.translate(x+lunge,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -32, -92);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-92); }
   ctx.restore();
+  if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
   ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=6;
-  ctx.fillText(HERO_NAME[u.fac], x, gy-98); ctx.shadowBlur=0;
+  ctx.fillText(HERO_NAME[u.fac], x, gy-100); ctx.shadowBlur=0;
 }
 function drawUnit(u){
   const x = u.x-camX;
