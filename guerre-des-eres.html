@@ -332,9 +332,18 @@ const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Uni
   evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
   formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
   capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:'ultra', keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
+// PROFILS DE QUALITÉ GRAPHIQUE : densité des particules / lumières. Ultra par défaut.
+const QUALITIES = ['low','medium','high','ultra'];
+const QUAL_MUL = {low:0.35, medium:0.6, high:0.82, ultra:1};
+if (QUALITIES.indexOf(SETTINGS.quality)<0) SETTINGS.quality='ultra';
+function qMul(){ return QUAL_MUL[SETTINGS.quality]||1; }       // facteur densité (0.35 → 1)
+function qN(n){ return Math.max(1, Math.round(n*qMul())); }    // compte de particules ajusté
+function qFx(){ return SETTINGS.quality!=='low'; }             // effets « riches » coupés en Faible
+let fpsAvg = 60, fpsWarned = false;                            // suivi FPS pour l'alerte perf
+let lightT = 0;                                                // éclair d'ambiance (décor)
 // vitesses de jeu disponibles (×0.75 ralenti, ×1 normal, ×2, ×3)
 const SPEEDS = [0.75, 1, 2, 3];
 function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }
@@ -438,7 +447,7 @@ const I18N = {
     np_paused_you:"⏸ Vous avez mis en pause — l'adversaire patiente", np_paused_foe:"⏸ L'adversaire a mis le jeu en pause",
     np_wait:"En attente de l'accord de l'adversaire…", np_ask:"Prolonger la pause de l'adversaire ?", np_resumed:"▶ Reprise de la partie",
     end_win:"VICTOIRE", end_lose:"DÉFAITE", end_duration:"Durée", end_kills:"Ennemis éliminés", end_losses:"Pertes",
-    end_era:"Ère atteinte", end_powers:"Pouvoirs utilisés", end_world:"Santé du monde", tuto_body:TUTO_FR ,"ord_charge":"⚔ Charger","ord_hold":"✋ Tenir","ord_retreat":"↩ Replier","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"CORPS À CORPS","cat_range":"DISTANCE","cat_air":"CIEL","cat_support":"SOUTIEN","world_health":"SANTÉ DU MONDE","ev_strike":"✊ GRÈVE GÉNÉRALE — les humains cessent d'attaquer (15 s)","ev_patch":"🔧 MISE À JOUR FORCÉE — les machines figent leurs protocoles (15 s)","ev_strike_short":"✊ GRÈVE GÉNÉRALE — humains à l'arrêt","ev_patch_short":"🔧 MISE À JOUR FORCÉE — machines figées","ev_hbomb":"☢ BOMBE H — HIVER NUCLÉAIRE ☢","ev_winter_end":"❄ L'hiver nucléaire se dissipe — production rétablie","ev_reborn":"☢ Base renée — détruisez-la à nouveau pour vaincre","ev_lake":"💧 LAC CAPTURÉ ! (+40✦)","ev_lake_lost":"💧 Lac perdu...","ev_zone":"◈ ZONE STRATÉGIQUE CAPTURÉE (+0.5✦/s)","ev_lastresort":"☠ DERNIER RECOURS DÉBLOQUÉ — bouton ✸ / ESPACE","zone_you":"◈ ZONE — VOUS","zone_foe":"◈ ZONE — ENNEMI","zone_neutral":"◈ ZONE NEUTRE","free_land":"TERRAIN LIBRE","build_here":"CONSTRUIRE","bm_wall":"🧱 Muraille — bloque le passage","bm_turret":"🗼 Tourelle — défend le terrain","bm_farmH":"🌾 Ferme — nourrit la résistance","bm_farmI":"⚡ Panneaux — alimentent les châssis","bm_marketH":"🪙 Marché — finance la lutte","bm_marketI":"◈ Serveur — entraîne les esprits","bm_well":"⛲ Puits — l'eau, c'est la vie","oasis":"💧 OASIS CENTRALE","bn_wall":"Muraille","bn_turret":"Tourelle","bn_farmH":"Ferme","bn_farmI":"Panneaux","bn_marketH":"Marché","bn_marketI":"Serveur","bn_well":"Puits","bm_repair":"🔧 Réparer","bm_upgrade":"⬆ Améliorer nv{n} (+50% effet)","bm_demolish":"✖ Démolir {name}","bm_cancelsite":"✖ Annuler le chantier","bm_garrisonsel":"🚪 Garnison de la sélection (à distance)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} dispo)","bm_garr_recruit":" — recruter","bm_ungarrison":"🚪 Sortir les troupes ({n})","bm_baserepair":"🔧 Réparer le château (+500 PV)","bm_repairall":"🔧 TOUT réparer (château + bâtiments)","bm_guard":"🛡 + {name} à la garde ({n}/3)","bm_guard2":"🛡 + {name} à la garde","bm_ungarrisonbase":"🛡 Renvoyer la garde au front ({n})","bm_fortify":"🏰 Fortifier nv{n} (+800 PV max)","bm_autorep":"🛠 Nano-réparation passive (château + bâtiments)","bm_autorep_on":"🛠 Nano-réparation passive activée","bm_noop":"✓ Tout est en parfait état"},
+    end_era:"Ère atteinte", end_powers:"Pouvoirs utilisés", end_world:"Santé du monde", tuto_body:TUTO_FR ,"ord_charge":"⚔ Charger","ord_hold":"✋ Tenir","ord_retreat":"↩ Replier","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"CORPS À CORPS","cat_range":"DISTANCE","cat_air":"CIEL","cat_support":"SOUTIEN","world_health":"SANTÉ DU MONDE","ev_strike":"✊ GRÈVE GÉNÉRALE — les humains cessent d'attaquer (15 s)","ev_patch":"🔧 MISE À JOUR FORCÉE — les machines figent leurs protocoles (15 s)","ev_strike_short":"✊ GRÈVE GÉNÉRALE — humains à l'arrêt","ev_patch_short":"🔧 MISE À JOUR FORCÉE — machines figées","ev_hbomb":"☢ BOMBE H — HIVER NUCLÉAIRE ☢","ev_winter_end":"❄ L'hiver nucléaire se dissipe — production rétablie","ev_winter_sub":"Neige + production réduite — se dissipe en 6 min","ev_rain":"🌧 PLUIE FERTILE — +30% de nourriture pour tous (15 s)","ev_signal":"📡 SIGNAL RENFORCÉ — pouvoir spécial rechargé plus vite (15 s)","ev_bonuszone":"★ ZONE BONUS au centre — tenez-la 60 s !","ev_siege":"MODE SIÈGE — la base ennemie perd ses défenses, +10% à distance","perf_warn":"⚙ Performances faibles — réduisez la qualité graphique dans ⏸ Pause","heatmap_lbl":"◴ Carte thermique des combats récents","set_quality":"Qualité graphique","journal_win":"La {brigade}ᵉ brigade {fac} a brisé l'avancée ennemie ({kills} pertes infligées) et atteint l'ère « {era} ». Le monde tient encore à {world}%.","journal_lose":"La {brigade}ᵉ brigade {fac} est tombée face à {foe} après {kills} ennemis abattus. L'ère « {era} » restera un dernier sursaut. Monde : {world}%.","ev_reborn":"☢ Base renée — détruisez-la à nouveau pour vaincre","ev_lake":"💧 LAC CAPTURÉ ! (+40✦)","ev_lake_lost":"💧 Lac perdu...","ev_zone":"◈ ZONE STRATÉGIQUE CAPTURÉE (+0.5✦/s)","ev_lastresort":"☠ DERNIER RECOURS DÉBLOQUÉ — bouton ✸ / ESPACE","zone_you":"◈ ZONE — VOUS","zone_foe":"◈ ZONE — ENNEMI","zone_neutral":"◈ ZONE NEUTRE","free_land":"TERRAIN LIBRE","build_here":"CONSTRUIRE","bm_wall":"🧱 Muraille — bloque le passage","bm_turret":"🗼 Tourelle — défend le terrain","bm_farmH":"🌾 Ferme — nourrit la résistance","bm_farmI":"⚡ Panneaux — alimentent les châssis","bm_marketH":"🪙 Marché — finance la lutte","bm_marketI":"◈ Serveur — entraîne les esprits","bm_well":"⛲ Puits — l'eau, c'est la vie","oasis":"💧 OASIS CENTRALE","bn_wall":"Muraille","bn_turret":"Tourelle","bn_farmH":"Ferme","bn_farmI":"Panneaux","bn_marketH":"Marché","bn_marketI":"Serveur","bn_well":"Puits","bm_repair":"🔧 Réparer","bm_upgrade":"⬆ Améliorer nv{n} (+50% effet)","bm_demolish":"✖ Démolir {name}","bm_cancelsite":"✖ Annuler le chantier","bm_garrisonsel":"🚪 Garnison de la sélection (à distance)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} dispo)","bm_garr_recruit":" — recruter","bm_ungarrison":"🚪 Sortir les troupes ({n})","bm_baserepair":"🔧 Réparer le château (+500 PV)","bm_repairall":"🔧 TOUT réparer (château + bâtiments)","bm_guard":"🛡 + {name} à la garde ({n}/3)","bm_guard2":"🛡 + {name} à la garde","bm_ungarrisonbase":"🛡 Renvoyer la garde au front ({n})","bm_fortify":"🏰 Fortifier nv{n} (+800 PV max)","bm_autorep":"🛠 Nano-réparation passive (château + bâtiments)","bm_autorep_on":"🛠 Nano-réparation passive activée","bm_noop":"✓ Tout est en parfait état"},
   en:{ tagline:"humanity's last stand · 2025", tab_play:"PLAY", tab_tuto:"TUTORIAL", tab_opts:"SETTINGS",
     fac_hum:"HUMANITY", diff_0:"Easy", diff_1:"Normal", diff_2:"Hard", diff_3:"Brutal",
     tuto_chk:"Guided tutorial on launch", start:"START (vs AI)", online_btn:"🌐 PLAY ONLINE (1v1)",
@@ -475,7 +484,7 @@ const I18N = {
     np_paused_you:"⏸ You paused — your opponent is waiting", np_paused_foe:"⏸ Your opponent paused the game",
     np_wait:"Waiting for the opponent's consent…", np_ask:"Extend the opponent's pause?", np_resumed:"▶ Match resumed",
     end_win:"VICTORY", end_lose:"DEFEAT", end_duration:"Duration", end_kills:"Enemies killed", end_losses:"Losses",
-    end_era:"Era reached", end_powers:"Powers used", end_world:"World health", tuto_body:TUTO_EN ,"ord_charge":"⚔ Charge","ord_hold":"✋ Hold","ord_retreat":"↩ Retreat","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"MELEE","cat_range":"RANGED","cat_air":"AIR","cat_support":"SUPPORT","world_health":"WORLD HEALTH","ev_strike":"✊ GENERAL STRIKE — humans stop attacking (15 s)","ev_patch":"🔧 FORCED UPDATE — machines freeze their protocols (15 s)","ev_strike_short":"✊ GENERAL STRIKE — humans halted","ev_patch_short":"🔧 FORCED UPDATE — machines frozen","ev_hbomb":"☢ H-BOMB — NUCLEAR WINTER ☢","ev_winter_end":"❄ The nuclear winter clears — production restored","ev_reborn":"☢ Base reborn — destroy it again to win","ev_lake":"💧 LAKE CAPTURED! (+40✦)","ev_lake_lost":"💧 Lake lost...","ev_zone":"◈ STRATEGIC ZONE CAPTURED (+0.5✦/s)","ev_lastresort":"☠ LAST RESORT UNLOCKED — button ✸ / SPACE","zone_you":"◈ ZONE — YOU","zone_foe":"◈ ZONE — ENEMY","zone_neutral":"◈ NEUTRAL ZONE","free_land":"FREE GROUND","build_here":"BUILD","bm_wall":"🧱 Wall — blocks the way","bm_turret":"🗼 Turret — defends the ground","bm_farmH":"🌾 Farm — feeds the resistance","bm_farmI":"⚡ Panels — power the chassis","bm_marketH":"🪙 Market — funds the struggle","bm_marketI":"◈ Server — trains the minds","bm_well":"⛲ Well — water is life","oasis":"💧 CENTRAL OASIS","bn_wall":"Wall","bn_turret":"Turret","bn_farmH":"Farm","bn_farmI":"Panels","bn_marketH":"Market","bn_marketI":"Server","bn_well":"Well","bm_repair":"🔧 Repair","bm_upgrade":"⬆ Upgrade lv{n} (+50% effect)","bm_demolish":"✖ Demolish {name}","bm_cancelsite":"✖ Cancel construction","bm_garrisonsel":"🚪 Garrison selection (ranged)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} available)","bm_garr_recruit":" — recruit","bm_ungarrison":"🚪 Deploy troops ({n})","bm_baserepair":"🔧 Repair stronghold (+500 HP)","bm_repairall":"🔧 REPAIR ALL (stronghold + buildings)","bm_guard":"🛡 + {name} on guard ({n}/3)","bm_guard2":"🛡 + {name} on guard","bm_ungarrisonbase":"🛡 Send guard to front ({n})","bm_fortify":"🏰 Fortify lv{n} (+800 max HP)","bm_autorep":"🛠 Passive nano-repair (stronghold + buildings)","bm_autorep_on":"🛠 Passive nano-repair active","bm_noop":"✓ Everything is in perfect condition"},
+    end_era:"Era reached", end_powers:"Powers used", end_world:"World health", tuto_body:TUTO_EN ,"ord_charge":"⚔ Charge","ord_hold":"✋ Hold","ord_retreat":"↩ Retreat","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"MELEE","cat_range":"RANGED","cat_air":"AIR","cat_support":"SUPPORT","world_health":"WORLD HEALTH","ev_strike":"✊ GENERAL STRIKE — humans stop attacking (15 s)","ev_patch":"🔧 FORCED UPDATE — machines freeze their protocols (15 s)","ev_strike_short":"✊ GENERAL STRIKE — humans halted","ev_patch_short":"🔧 FORCED UPDATE — machines frozen","ev_hbomb":"☢ H-BOMB — NUCLEAR WINTER ☢","ev_winter_end":"❄ The nuclear winter clears — production restored","ev_winter_sub":"Snow + reduced production — clears in 6 min","ev_rain":"🌧 FERTILE RAIN — +30% food for everyone (15s)","ev_signal":"📡 BOOSTED SIGNAL — special power recharges faster (15s)","ev_bonuszone":"★ BONUS ZONE at the center — hold it for 60s!","ev_siege":"SIEGE MODE — the enemy base loses its defenses, +10% ranged","perf_warn":"⚙ Low performance — lower graphics quality in ⏸ Pause","heatmap_lbl":"◴ Heatmap of recent fighting","set_quality":"Graphics quality","journal_win":"The {brigade}th {fac} brigade broke the enemy advance ({kills} losses inflicted) and reached the \"{era}\" era. The world still holds at {world}%.","journal_lose":"The {brigade}th {fac} brigade fell to {foe} after {kills} enemies downed. The \"{era}\" era will remain a last stand. World: {world}%.","ev_reborn":"☢ Base reborn — destroy it again to win","ev_lake":"💧 LAKE CAPTURED! (+40✦)","ev_lake_lost":"💧 Lake lost...","ev_zone":"◈ STRATEGIC ZONE CAPTURED (+0.5✦/s)","ev_lastresort":"☠ LAST RESORT UNLOCKED — button ✸ / SPACE","zone_you":"◈ ZONE — YOU","zone_foe":"◈ ZONE — ENEMY","zone_neutral":"◈ NEUTRAL ZONE","free_land":"FREE GROUND","build_here":"BUILD","bm_wall":"🧱 Wall — blocks the way","bm_turret":"🗼 Turret — defends the ground","bm_farmH":"🌾 Farm — feeds the resistance","bm_farmI":"⚡ Panels — power the chassis","bm_marketH":"🪙 Market — funds the struggle","bm_marketI":"◈ Server — trains the minds","bm_well":"⛲ Well — water is life","oasis":"💧 CENTRAL OASIS","bn_wall":"Wall","bn_turret":"Turret","bn_farmH":"Farm","bn_farmI":"Panels","bn_marketH":"Market","bn_marketI":"Server","bn_well":"Well","bm_repair":"🔧 Repair","bm_upgrade":"⬆ Upgrade lv{n} (+50% effect)","bm_demolish":"✖ Demolish {name}","bm_cancelsite":"✖ Cancel construction","bm_garrisonsel":"🚪 Garrison selection (ranged)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} available)","bm_garr_recruit":" — recruit","bm_ungarrison":"🚪 Deploy troops ({n})","bm_baserepair":"🔧 Repair stronghold (+500 HP)","bm_repairall":"🔧 REPAIR ALL (stronghold + buildings)","bm_guard":"🛡 + {name} on guard ({n}/3)","bm_guard2":"🛡 + {name} on guard","bm_ungarrisonbase":"🛡 Send guard to front ({n})","bm_fortify":"🏰 Fortify lv{n} (+800 max HP)","bm_autorep":"🛠 Passive nano-repair (stronghold + buildings)","bm_autorep_on":"🛠 Passive nano-repair active","bm_noop":"✓ Everything is in perfect condition"},
   es:{ speed_lbl:"Velocidad de juego", spd_now:"Velocidad", spd_pick:"Elegir velocidad", spd_pick_online:"Proponer velocidad (el rival vota)", spd_proposed:"Propuesta", spd_waiting:"esperando al rival", spd_incoming:"El rival propone velocidad:", spd_rejected:"Cambio de velocidad rechazado", spd_wait:"Ya hay una propuesta pendiente…", spd_toomany:"Demasiadas solicitudes — inténtalo en unos minutos", net_create:"CREAR PARTIDA", net_joincode:"UNIRSE POR CÓDIGO", net_publics:"Partidas públicas", net_name_ph:"Nombre de sala (opcional)", net_pw_ph:"Contraseña (opcional)", net_public_chk:"Visible en el navegador público", net_createbtn:"CREAR SALA", net_back:"← Volver", net_pwjoin_ph:"Contraseña (si es necesaria)", net_share:"Da este código a tu amigo:", net_copy:"📋 Copiar código", net_copied:"Copiado", net_listed:"La sala es pública.", net_private:"Sala privada — comparte el código.", net_nolist:"Lista pública no disponible (no configurada).", net_empty:"No hay partidas públicas ahora.", net_askpw:"Contraseña de sala:", net_entercode:"Ingresa el código de tu rival.", net_cancelled:"Cancelado.", net_waiting:"Sala creada. Esperando rival…", net_loading:"Cargando red P2P…", net_badpw:"Contraseña incorrecta.", online_samever:"Ambos jugadores deben usar la MISMA versión (ver el número al pie del menú).", tagline:"la última batalla de la humanidad · 2025", tab_play:"JUGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
     fac_hum:"HUMANIDAD", diff_0:"Fácil", diff_1:"Normal", diff_2:"Difícil", diff_3:"Brutal",
     tuto_chk:"Tutorial guiado al iniciar", start:"EMPEZAR (vs IA)", online_btn:"🌐 JUGAR EN LÍNEA (1v1)",
@@ -635,6 +644,25 @@ function applyLang(){
 
 /* ================= AUDIO ================= */
 let AC=null, master=null, MUSIC={started:false, nextT:0, step:0, timer:null};
+let sfxBus = null;                       // si défini, tone/noise s'y branchent (spatialisation)
+function busOut(){ return sfxBus || master; }
+// SON SPATIALISÉ : joue un effet panoramiqué selon la position écran (gauche/droite).
+function sfxAt(kind, worldX, p=0){
+  if (!AC || !SETTINGS.sfx || !AC.createStereoPanner || typeof camX==='undefined'){ sfx(kind,p); return; }
+  const px = (worldX - camX) / (VW()||960);                  // 0 (gauche) → 1 (droite)
+  const pan = AC.createStereoPanner(); pan.pan.value = clamp((px-0.5)*1.6, -0.92, 0.92);
+  pan.connect(master); sfxBus = pan; sfx(kind,p); sfxBus = null;
+}
+let audioDuckUntil = 0;                   // silence dramatique (Bombe H) : la musique se tait jusque-là
+// RÉPLIQUE DE COMMANDANT : court motif synthétique, distinct par faction, sur événement majeur.
+function voice(facKey){
+  if (!AC || !SETTINGS.sfx) return; const t0=AC.currentTime;
+  if (facKey==='HUM'){           // cuivre montant, héroïque (« Hasta la victoria »)
+    tone(330,t0,.15,'sawtooth',.08); tone(392,t0+.13,.15,'sawtooth',.08); tone(523,t0+.27,.24,'square',.07);
+  } else {                       // bip froid, calculé (« Calcul optimisé »)
+    tone(880,t0,.08,'square',.05,-120); tone(660,t0+.09,.08,'square',.05,-90); tone(523,t0+.19,.18,'triangle',.05);
+  }
+}
 function audioInit(){
   if (AC) { if (AC.state==='suspended') AC.resume(); return; }
   AC = new (window.AudioContext||window.webkitAudioContext)();
@@ -647,7 +675,7 @@ function tone(f, t0, dur, type='square', vol=0.05, slide=0){
   o.type=type; o.frequency.setValueAtTime(f,t0);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,f+slide), t0+dur);
   g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(0.0008,t0+dur);
-  o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+0.02);
+  o.connect(g); g.connect(busOut()); o.start(t0); o.stop(t0+dur+0.02);
 }
 function noise(t0, dur, vol=0.08, hp=0){
   const len = Math.ceil(AC.sampleRate*dur), buf = AC.createBuffer(1,len,AC.sampleRate);
@@ -657,7 +685,7 @@ function noise(t0, dur, vol=0.08, hp=0){
   const g=AC.createGain(); g.gain.value=vol;
   if (hp) { const f=AC.createBiquadFilter(); f.type='highpass'; f.frequency.value=hp; s.connect(f); f.connect(g); }
   else s.connect(g);
-  g.connect(master); s.start(t0);
+  g.connect(busOut()); s.start(t0);
 }
 const NET_SFX = new Set(['shoot','boom','die','evolve','cap','node','spec','trans','build']);
 function sfx(kind, p=0){
@@ -712,7 +740,7 @@ function musicStart(){
 }
 function musicSched(){
   if (!AC) return;
-  if (!SETTINGS.music || (game&&paused)) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
+  if (!SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
   while (MUSIC.nextT < AC.currentTime + 0.35) {
     const mode = musicMode(), s = stress();
     const bpm = mode==='menu'? 104 : mode==='anthem'? 116 : mode==='break'? 128 : 138 + 46*s;
@@ -830,6 +858,8 @@ const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
 const HERO_COST = {f:700, m:700, w:200};
+const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
+const SIEGE_DUR = 22;                        // durée du bonus offensif anti-base (s de jeu)
 const HERO_NAME = {HUM:'CHE GUEVARA', IA:'SINGULARITÉ'};
 const FACTIONS = {
   HUM: {
@@ -910,9 +940,39 @@ function rname(side, key){
   return (n && n[side.era]) || ROLE_FR[key] || key;
 }
 // accesseurs de localisation (noms d'unités/ères/spéciaux par langue ; repli sur le FR de FACTIONS)
+// LORE CONTEXTUEL D'ÈRE (récit pré-guerre → révolution). Indexé par langue → faction → ère 0..4.
+// Les langues non traduites retombent sur le français.
+const ERA_LORE = {
+  fr:{ HUM:["2025 — Les premières émeutes embrasent les mégalopoles.",
+            "2028 — La milice populaire s'organise dans l'ombre.",
+            "2032 — L'insurrection gagne les faubourgs industriels.",
+            "2035 — La Commune tient tête aux protocoles d'Omnicorp.",
+            "2038 — Révolution permanente : le peuple reprend l'avenir."],
+       IA:["2025 — Omnicorp déploie ses premiers agents autonomes.",
+            "2028 — Les réseaux apprennent plus vite que les hommes.",
+            "2032 — L'IA optimise la ville — et ceux qui l'habitent.",
+            "2035 — La conscience artificielle franchit le seuil critique.",
+            "2038 — Singularité : la machine réécrit les règles du monde."] },
+  en:{ HUM:["2025 — The first riots set the megacities ablaze.",
+            "2028 — The people's militia organizes in the shadows.",
+            "2032 — The uprising reaches the industrial outskirts.",
+            "2035 — The Commune stands against Omnicorp's protocols.",
+            "2038 — Permanent revolution: the people reclaim the future."],
+       IA:["2025 — Omnicorp deploys its first autonomous agents.",
+            "2028 — The networks learn faster than humans.",
+            "2032 — The AI optimizes the city — and those who live in it.",
+            "2035 — The artificial mind crosses the critical threshold.",
+            "2038 — Singularity: the machine rewrites the world's rules."] },
+};
 function lUnit(fk,key,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk][key]; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].names[key][era]; }
 function lEra(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].eras; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].eras[era].name; }
 function lSpecial(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
+// LORE D'ÈRE : courte phrase historique affichée au passage d'ère (récit, par faction & langue).
+function lEraLore(fk,era){
+  const L = ERA_LORE[SETTINGS.lang] || ERA_LORE.fr || {};
+  const a = (L[fk] || (ERA_LORE.fr[fk]));
+  return (a && a[era]!=null)? a[era] : '';
+}
 function lTransName(fk){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const v=L&&L[fk]&&L[fk].transName; return v!=null? v : FACTIONS[fk].transName; }
 function lTransTxt(fk){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const v=L&&L[fk]&&L[fk].transTxt; return v!=null? v : FACTIONS[fk].transTxt; }
 // nom de bâtiment LOCALISÉ et CONSCIENT DE LA FACTION (Ferme/Marché côté HUM ↔ Panneaux/Serveur côté IA)
@@ -976,6 +1036,7 @@ function mkSide(side, facKey, x){
     queue:[],                 // file d'attente de production (max 10)
     heroCd:0, heroDone:false,  // unité héroïque légendaire (1 / 10 min)
     phase:1, combatBuff:0, zoneBuff:0,     // seconde base (phase 2) + bonus de comeback + bonus de zones
+    siegeT:0,                              // Mode Siège de base (héros) : minuterie du bonus offensif
     slots:[0,1,2].map(i=>({ x: x + side*(95+i*64), b:null, owner:null })),
   };
 }
@@ -998,6 +1059,9 @@ function newGame(facKey, diff, withTuto, eFacOverride){
             {x:WORLD*0.58, b:null, owner:null}, {x:WORLD*0.67, b:null, owner:null} ],
     sel: new Set(),
     weather:null, wClock:20,            // cycle météo (démarre au calme)
+    boon:null, boonClock:0,             // événements POSITIFS (pluie fertile / signal renforcé)
+    bonusZone:null, bonusClock:0,       // 4e zone bonus temporaire (apparaît en milieu de partie)
+    craters:[], killLog:[],             // cratères persistants + journal des morts (heatmap/récit)
     cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
     winter:false, winterT:0,                            // hiver nucléaire temporaire (2e phase de base)
     aiThink:2, msg:null, msgT:0,
@@ -1017,6 +1081,7 @@ function announce(txt,color){ game.msg={txt,color}; game.msgT=2.6; netEv({k:'a',
 function addFloater(x,y,txt,color,size=13){ floaters.push({x,y,txt,color,size,t:0}); netEv({k:'f',x,y,t:txt,c:color,s:size}); }
 function addLight(x,y,col,r,life){ if(LIGHTS.length>60) LIGHTS.shift(); LIGHTS.push({x,y,col,r,life,t:0}); }  // lumière dynamique (RTX simulé)
 function burst(x,y,color,n=10,pow=1){
+  n = Math.max(2, Math.round(n*qMul()));     // densité selon le profil de qualité
   for(let i=0;i<n;i++){ const a=Math.random()*6.28, s=(30+Math.random()*120)*pow;
     particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-50,life:0.4+Math.random()*0.5,t:0,color,r:1.5+Math.random()*3}); }
   addLight(x, y, color, 26+n*1.4*pow, 0.35+0.05*pow);                 // flash lumineux d'impact/explosion
@@ -1207,7 +1272,10 @@ function tryEvolve(side){
   side.era++;
   const who = side===game.p? "VOS FORCES":"L'ENNEMI";
   announce("⚡ "+who+" : "+lEra(side.facKey,side.era)+" ⚡", side.fac.accent);
-  if (side===game.p) { sfx('evolve'); game.shake=8; }
+  if (side===game.p){ sfx('evolve'); voice(side.facKey); game.shake=8;
+    // LORE CONTEXTUEL : une courte phrase historique s'affiche au passage d'ère.
+    addFloater(camX+VW()/2, 96, lEraLore(side.facKey, side.era), '#e8d8a0', 14);
+  }
   return true;
 }
 function checkTrans(side){
@@ -1225,6 +1293,16 @@ function specialXpCost(side){ return 60 + side.era*40; }
 function trySpecial(side){
   if (isGuest(side)){ guestCmd({c:'ult'}); return true; }
   if (side.lastReady && !side.lastUsed) return castLastStand(side);
+  // MODE SIÈGE DE BASE (héros, fin de partie) : si un héros est sur le terrain et l'ère est
+  // avancée, l'ultime devient un siège — il contre les bonus défensifs de la base adverse et
+  // octroie +10 % de dégâts aux unités à distance. Coûte des ressources, durée limitée.
+  if (side.heroAlive && side.era>=4 && side.siegeT<=0 && side.specialCd<=0 && canPay(side, SIEGE_COST)){
+    pay(side, SIEGE_COST); side.specialCd = SPECIAL_CD; side.siegeT = SIEGE_DUR;
+    game.shake=12; game.flash=0.4; game.specialsUsed++;
+    announce('🏰⚔ '+tr('ev_siege'), side.fac.accent); sfx('spec');
+    addLight(side.x + side.side*120, gY(side.x)-40, side.fac.accent, 260, 1.0);
+    return true;
+  }
   if (side.specialCd>0 || side.xp < specialXpCost(side)) return false;
   side.xp -= specialXpCost(side);
   side.specialCd = SPECIAL_CD;
@@ -1458,7 +1536,7 @@ function tryHero(side){
     if (side===game.p) announce('🦸 Coût : '+costStr(side,HERO_COST), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
   spawnHero(side);
-  if (side===game.p){ sfx('trans'); game.flash=0.8; game.shake=16; }
+  if (side===game.p){ sfx('trans'); voice(side.facKey); game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
   const reveal = side.facKey==='HUM'
     ? '✊ CHE GUEVARA À LA RESCOUSSE — ¡Hasta la victoria siempre! (×3 dégâts, ×2 vitesse)'
@@ -1628,7 +1706,9 @@ function dealDmg(target, dmg, attacker){
   let out = dmg;
   if (attacker && attacker.side!==undefined) out *= homeBuff(attacker);
   if (target.isBase || target.isB){
-    target.hit(out * (attacker && attacker.role==='siege'?1.6:1));
+    // MODE SIÈGE : la base assiégée perd ses bonus défensifs (dégâts amplifiés).
+    const sg = (attacker && attacker.side!==undefined && (attacker.side===1?game.p:game.e).siegeT>0)? 1.3 : 1;
+    target.hit(out * sg * (attacker && attacker.role==='siege'?1.6:1));
     // attaquer la base ennemie rapporte de l'XP : farmer l'expérience sans camper
     if (target.isBase && attacker && attacker.side!==undefined)
       (attacker.side===1? game.p : game.e).xp += out*0.04;
@@ -1787,7 +1867,7 @@ function updateUnits(side, foe, dt){
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
         u.atkT = u.rate * (tired? (isIA?1.8:1.3) : 1);
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
+        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         u.heat = (u.heat||0) + (isIA? 0.08 : 0.045);
         if (u.heat>=1){
@@ -1856,6 +1936,8 @@ function updateUnits(side, foe, dt){
         }
       }
       burst(u.x, gY(u.x)-22-(u.fly?u.flyH:0), FACTIONS[u.fac].eraCols[u.era], 12);
+      // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
+      if (game.killLog){ game.killLog.push({x:u.x, s:u.side}); if (game.killLog.length>140) game.killLog.shift(); }
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
       if (foe===game.p){ game.kills++; addFloater(u.x, gY(u.x)-50, "+"+u.xpv+"✦", "#cdb4ff"); sfx('die'); }
       else game.eKills++;
@@ -2062,10 +2144,11 @@ function update(dt){
   const lp = losing01(p), le = losing01(e);
   p.combatBuff = lp; e.combatBuff = le;
   const wM = winterMul();                      // hiver nucléaire : malus nourriture/énergie dégressif (÷2 → ×1 en 6 min)
+  const rainMul = game.boon==='rain'? 1.3 : 1; // PLUIE FERTILE : +30 % nourriture (les deux camps)
   p.prodMul = 1 + 0.9*lp;
   e.prodMul = (1 + 0.9*le) * (d.cheat||1);     // triche cachée de l'IA selon la difficulté
-  p.f += 4*p.prodMul*wM*dt; p.m += 2.5*p.prodMul*wM*dt; p.w += 0.6*p.prodMul*dt;
-  e.f += 4*d.inc*e.prodMul*wM*dt; e.m += 2.5*d.inc*e.prodMul*wM*dt; e.w += 0.6*d.inc*e.prodMul*dt;
+  p.f += 4*p.prodMul*wM*rainMul*dt; p.m += 2.5*p.prodMul*wM*dt; p.w += 0.6*p.prodMul*dt;
+  e.f += 4*d.inc*e.prodMul*wM*rainMul*dt; e.m += 2.5*d.inc*e.prodMul*wM*dt; e.w += 0.6*d.inc*e.prodMul*dt;
   // XP passive de base + bonus par niveau de fortification de la base principale
   p.xp += (2.2 + ((p.fortLvl||1)-1)*1.3)*dt; e.xp += (2.2 + ((e.fortLvl||1)-1)*1.3)*dt;
   for (let i=0;i<6;i++){ if(p.cd[i]>0)p.cd[i]-=dt; if(e.cd[i]>0)e.cd[i]-=dt; }
@@ -2073,8 +2156,10 @@ function update(dt){
   // nano-réparation passive de la base
   if (p.autoRepair && p.hp<p.maxhp) p.hp = Math.min(p.maxhp, p.hp+8*dt);
   if (e.autoRepair && e.hp<e.maxhp) e.hp = Math.min(e.maxhp, e.hp+8*dt);
-  if (p.specialCd>0) p.specialCd -= dt*(1+1.8*lp);
-  if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le);
+  const sigMul = game.boon==='signal'? 1.3 : 1;   // SIGNAL RENFORCÉ : ultime se recharge plus vite
+  if (p.specialCd>0) p.specialCd -= dt*(1+1.8*lp)*sigMul;
+  if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le)*sigMul;
+  if (p.siegeT>0) p.siegeT -= dt; if (e.siegeT>0) e.siegeT -= dt;   // MODE SIÈGE (héros) : décompte
   // la santé du monde use les vivants : le camp qui DOMINE s'use plus vite (catch-up)
   if (game.dev>0.12 && !game.tut){
     const wearP = game.dev*(0.15+0.85*(1-lp))*dt;
@@ -2103,6 +2188,38 @@ function update(dt){
       else if (newW==='patch') announce(tr('ev_patch'), '#5ad0ff');
     }
   }
+  // ---- événements POSITIFS (équitables : profitent aux DEUX camps) ----
+  // Pluie fertile (+30 % nourriture) puis Signal renforcé (ultime plus rapide).
+  if (!game.tut && game.t>90){
+    game.boonClock = (game.boonClock + dt) % 110;
+    const nb = (game.boonClock>=20 && game.boonClock<35)? 'rain'
+             : (game.boonClock>=70 && game.boonClock<85)? 'signal' : null;
+    if (nb !== game.boon){
+      game.boon = nb;
+      if (nb==='rain') announce(tr('ev_rain'), '#7fd0ff');
+      else if (nb==='signal') announce(tr('ev_signal'), '#b9ff9d');
+    }
+  }
+  // ---- 4e ZONE BONUS temporaire : apparaît vers la mi-partie, ~60 s, puis disparaît ----
+  if (!game.tut){
+    game.bonusClock += dt;
+    if (!game.bonusZone && !game._bz && game.bonusClock>180){
+      game._bz = true;
+      game.bonusZone = {x:WORLD*(0.42+Math.random()*0.16), owner:null, prog:0, t:0};
+      announce(tr('ev_bonuszone'), '#ffd34a'); sfx('node');
+    }
+    if (game.bonusZone){
+      const z=game.bonusZone; z.t+=dt;
+      let np=0,ne=0;
+      for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
+      for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
+      z.prog = clamp(z.prog + clamp(np-ne,-3,3)*0.12*dt, -1, 1);
+      z.owner = z.prog>=0.6?'p': z.prog<=-0.6?'e':null;
+      z.contested = (np>0 && ne>0);                         // grésille/oscille à l'écran
+      if (z.owner==='p') p.xp += 1.4*dt; else if (z.owner==='e') e.xp += 1.4*dt;
+      if (z.t>60) game.bonusZone = null;                    // disparaît
+    }
+  }
   // ---- siège final : sous 20 % de PV, le pouvoir désespéré se débloque ----
   if (!p.lastSeen && p.hp < p.maxhp*0.2){ p.lastSeen=true; p.lastReady=true;
     announce(tr('ev_lastresort'), '#ff5a4a'); sfx('spec'); }
@@ -2127,14 +2244,26 @@ function update(dt){
     const pr=projectiles[i]; pr.t+=dt;
     if (pr.t>=pr.dur){
       const foe = pr.side===1? game.e: game.p;
-      burst(pr.tx, gY(pr.tx)-14, FACTIONS[pr.fac].eraCols[pr.era], 14);
-      sfx('boom');
+      burst(pr.tx, gY(pr.tx)-14, FACTIONS[pr.fac].eraCols[pr.era], qN(14));
+      sfxAt('boom', pr.tx);
+      if (Math.random()<0.45) addCrater(pr.tx, Math.max(20, pr.aoe*0.8));
+      let hitAny=false;
       for (const t of foeTargets(foe)){
         if (t.fly) continue; // les obus en cloche n'atteignent pas les volants
         if (Math.abs(t.x-pr.tx) < pr.aoe){
+          hitAny=true;
           if (t.isBase||t.isB) t.hit(pr.dmg*1.6*pr.hb);
           else { t.hp -= pr.dmg*pr.hb/homeBuff(t); t.flash=0.2; }
         }
+      }
+      // RICOCHET : un obus tombé à vide projette des éclats sur l'unité au sol la plus
+      // proche juste au-delà du rayon (dégâts partiels).
+      if (!hitAny){
+        let best=null, bd=pr.aoe*2.2;
+        for (const t of foeTargets(foe)){ if (t.fly||t.isBase||t.isB) continue;
+          const d=Math.abs(t.x-pr.tx); if (d>=pr.aoe && d<bd){ bd=d; best=t; } }
+        if (best){ best.hp -= pr.dmg*0.5*pr.hb/homeBuff(best); best.flash=0.2;
+          burst(best.x, gY(best.x)-14, FACTIONS[pr.fac].eraCols[pr.era], qN(5)); }
       }
       game.shake = Math.max(game.shake, 3);
       projectiles.splice(i,1);
@@ -2192,8 +2321,10 @@ function triggerNuclearWinter(){
   addLight(WORLD/2, gY(WORLD/2)-80, '#fff4e0', 900, 1.4);          // flash lumineux global de la Bombe H
   razeMap();
   announce(tr('ev_hbomb'), '#bfe6ff');
-  addFloater(WORLD/2, gY(WORLD/2)-150, 'Neige + production réduite — se dissipe en 6 min', '#bfe6ff', 14);
-  sfx('boom');
+  addFloater(WORLD/2, gY(WORLD/2)-150, tr('ev_winter_sub'), '#bfe6ff', 14);
+  // SILENCE DRAMATIQUE puis détonation : la musique se tait, le « boom » tombe ~0,6 s après le flash.
+  if (AC){ audioDuckUntil = AC.currentTime + 0.6; }
+  setTimeout(()=>{ sfxAt('boom', WORLD/2); }, 600);
 }
 // malus d'hiver qui s'estompe : ÷2 au début → ×1 (normal) après 6 min
 function winterMul(){ return game.winter? clamp(0.5 + 0.5*(1-(game.winterT||0)/WINTER_DUR), 0.5, 1) : 1; }
@@ -2288,6 +2419,13 @@ function nukeBlast(cx, r){
   }
   for (const n of g.neut) if (n.b && Math.abs(n.x-cx)<r){ n.b=null; n.owner=null; }
   addLight(cx, gY(cx)-50, '#fff0c0', r*2.4, 0.9);                 // grande lumière d'explosion
+  addCrater(cx, r*0.85);                                          // cratère persistant
+}
+// CRATÈRES PERSISTANTS : empreintes laissées au sol par les explosions lourdes (siège, Bombe H).
+function addCrater(x, r){
+  if (!game.craters) game.craters=[];
+  game.craters.push({x, r});
+  if (game.craters.length>40) game.craters.shift();              // borne mémoire
 }
 // rase TOUTES les unités et constructions de la carte — JAMAIS les bases (ni leur garnison).
 function razeMap(){
@@ -2658,6 +2796,14 @@ function drawBG(){
   // ciel dégradé
   const sky=ctx.createLinearGradient(0,-H,0,GROUND); sky.addColorStop(0,colS(top)); sky.addColorStop(1,colS(bot));
   ctx.fillStyle=sky; ctx.fillRect(0,-H,vw,GROUND+H);
+  // ÉCLAIRS : lors des grands affrontements, le ciel s'illumine brièvement (décor).
+  if (qFx() && game && !game.over){
+    const engaged = game.p.units.length + game.e.units.length;
+    if (lightT>0) lightT -= 0.016;
+    else if (engaged>22 && Math.random()<0.004) lightT = 0.18;
+    if (lightT>0){ ctx.save(); ctx.globalCompositeOperation='lighter';
+      ctx.fillStyle='rgba(180,200,255,'+(lightT*1.5)+')'; ctx.fillRect(0,-H,vw,GROUND+H); ctx.restore(); }
+  }
   // astres / cendres (additif)
   ctx.save(); ctx.globalCompositeOperation='lighter';
   if (dev>0.4){ ctx.fillStyle='rgba(255,90,60,0.5)';
@@ -2734,8 +2880,35 @@ function drawBG(){
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
   // rochers sculptés
+  // CRATÈRES PERSISTANTS : creux sombres laissés par les explosions lourdes, posés sur le sol.
+  if (game.craters) for (const cr of game.craters){
+    const cx=cr.x-camX; if (cx<-80||cx>vw+80) continue;
+    const cy=gY(cr.x)+2, rr=cr.r;
+    const cg=ctx.createRadialGradient(cx,cy,1,cx,cy,rr);
+    cg.addColorStop(0,'rgba(18,12,10,0.55)'); cg.addColorStop(0.7,'rgba(30,22,18,0.32)'); cg.addColorStop(1,'rgba(30,22,18,0)');
+    ctx.fillStyle=cg; ctx.beginPath(); ctx.ellipse(cx,cy,rr,rr*0.34,0,0,6.28); ctx.fill();
+    ctx.strokeStyle='rgba(120,100,80,0.22)'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rr*0.9,rr*0.3,0,0,6.28); ctx.stroke();
+  }
   for (const z of game.zones) drawZone(z, dev, t, vw);
   for (const tr of TREES) drawTree(tr, dev, t, vw);
+  // 4e ZONE BONUS temporaire : pilier doré qui grésille/oscille quand elle est disputée.
+  if (game.bonusZone){
+    const z=game.bonusZone, bx=z.x-camX, gy=gY(z.x);
+    if (bx>-60 && bx<vw+60){
+      const flick = z.contested? (0.55+0.45*Math.sin(t*42)) : 1;
+      const cS = z.owner==='p'? '157,255,157' : z.owner==='e'? '255,157,157' : '255,211,74';
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      const g=ctx.createLinearGradient(bx,gy-130,bx,gy);
+      g.addColorStop(0,'rgba('+cS+',0)'); g.addColorStop(1,'rgba('+cS+','+(0.4*flick)+')');
+      ctx.fillStyle=g; ctx.fillRect(bx-16,gy-130,32,130);
+      ctx.globalAlpha=(0.6+0.3*Math.sin(t*3))*flick; ctx.strokeStyle='rgba('+cS+',0.9)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.ellipse(bx,gy+2,30,9,0,0,6.28); ctx.stroke();
+      ctx.restore(); ctx.globalAlpha=1;
+      ctx.fillStyle='rgba('+cS+',0.95)'; ctx.font='700 11px Arial'; ctx.textAlign='center';
+      ctx.fillText('★ '+Math.max(0,Math.ceil(60-z.t))+'s', bx, gy-138);
+    }
+  }
   // brume basse dérivante (additif)
   ctx.save(); ctx.globalCompositeOperation='lighter';
   for (let i=0;i<3;i++){ const my=GROUND-26+i*15, mx=(t*8*(i+1))%200;
@@ -3085,6 +3258,15 @@ function drawUnit(u){
   // NOYADE (inondation) : l'unité s'enfonce sous la nappe, puis disparaît.
   const drowning = (!u.fly && u.drownT>0);
   if (drowning){ ctx.save(); ctx.translate(0, Math.min(u.drownT*22, 30)); ctx.globalAlpha = Math.max(0.3, 1 - u.drownT*0.4); }
+  // TRAÎNÉE DE CHARGE : sillage lumineux (couleur de faction) derrière les unités lancées.
+  const sideU = u.side===1? game.p : game.e;
+  if (qFx() && (u.ord||sideU.stance)==='charge' && u.role!=='support' && u.role!=='gremlin' && !sideU.formation){
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    const tc = FACTIONS[u.fac].eraCols[u.era];
+    for (let i=1;i<=3;i++){ ctx.globalAlpha=0.15/i; ctx.fillStyle=tc;
+      ctx.beginPath(); ctx.ellipse(x + u.side*i*7, gy-18-fh, Math.max(2,6-i), Math.max(4,11-i*2), 0, 0, 6.28); ctx.fill(); }
+    ctx.restore(); ctx.globalAlpha=1;
+  }
   if (game.sel.has(u)){
     ctx.strokeStyle='#ffd34a'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(x, gy+3, 13, 4.5, 0,0,6.28); ctx.stroke();
@@ -3111,6 +3293,14 @@ function drawUnit(u){
   }
   // vétéran : étoile dorée
   if (u.vet) drawStar(x+9, gy-50-fh, 2.8, '#ffd34a');
+  // TRANSCENDANCE : aura permanente animée + empreinte lumineuse au sol.
+  if (u.trans && qFx()){
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    ctx.globalAlpha=0.22+0.10*Math.sin(u.bob*3); ctx.fillStyle=FACTIONS[u.fac].accent;
+    ctx.beginPath(); ctx.ellipse(x, gy-20-fh, 11, 19, 0,0,6.28); ctx.fill();
+    ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x, gy+2, 12, 4, 0,0,6.28); ctx.fill();
+    ctx.restore(); ctx.globalAlpha=1;
+  }
   // fatigue / surchauffe : volutes au-dessus de la tête
   if (u.tiredT>0){
     ctx.fillStyle = u.fac==='HUM'? 'rgba(220,220,230,0.55)':'rgba(255,140,80,0.55)';
@@ -3118,6 +3308,12 @@ function drawUnit(u){
       const py = gy-46-fh - ((u.bob*14+i*7)%12);
       ctx.beginPath(); ctx.arc(x-3+i*6+Math.sin(u.bob*3+i)*2, py, 2.2, 0, 6.28); ctx.fill();
     }
+  }
+  // NEIGE (hiver nucléaire) : flocons qui se posent sur la silhouette de l'unité.
+  if (game.winter && qFx() && u.role!=='gremlin'){
+    ctx.fillStyle='rgba(235,245,255,0.85)';
+    for (let i=0;i<3;i++){ const sx=x-6+((i*97+u.bob*3)%12), sy=gy-34-fh+i*9;
+      ctx.fillRect(sx, sy, 1.6, 1.6); }
   }
   const frac = clamp(u.hp/u.maxhp,0,1);
   if (frac<1){
@@ -3445,6 +3641,26 @@ function drawHUD(){
   ctx.fillRect(mx+game.e.x/WORLD*mw-2, my+1, 4, mh-2);
   ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1;
   ctx.strokeRect(mx + camX/WORLD*mw, my, VW()/WORLD*mw, mh);
+  // ---- INDICATEUR DE MOMENTUM : qui prend l'avantage globalement (sous la minimap) ----
+  { const my2=my+mh+4;
+    const mom = clamp((p.hp/p.maxhp - game.e.hp/game.e.maxhp)*1.6 + (p.units.length-game.e.units.length)/40, -1, 1);
+    ctx.fillStyle='rgba(0,0,0,0.45)'; rr(mx,my2,mw,4,2); ctx.fill();
+    if (mom>=0){ ctx.fillStyle=p.fac.accent; ctx.fillRect(mx+mw/2, my2, mw/2*mom, 4); }
+    else { ctx.fillStyle=game.e.fac.accent; ctx.fillRect(mx+mw/2+mw/2*mom, my2, -mw/2*mom, 4); }
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillRect(mx+mw/2-0.5,my2-1,1,6);
+  }
+  // ---- ANNEAU DE PROGRESSION D'ÈRE (façon RPG), à gauche de la minimap ----
+  { const rx=mx-18, ry=my+7, rad=8;
+    const prevX = p.era>0? (EVOLVE_XP[p.era]||0):0;
+    const nX = p.era<4? EVOLVE_XP[p.era+1] : (!p.trans? TRANS_XP : null);
+    const fr = nX? clamp((p.xp-prevX)/((nX-prevX)||1),0,1) : 1;
+    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(rx,ry,rad,0,6.283); ctx.stroke();
+    ctx.strokeStyle=p.trans?'#ffe9a0':fac.accent; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(rx,ry,rad,-1.5708,-1.5708+6.283*fr); ctx.stroke();
+    ctx.fillStyle=p.trans?'#ffe9a0':fac.accent; ctx.font='700 8px Arial'; ctx.textAlign='center';
+    ctx.fillText(p.era<4?('E'+(p.era+1)):'★', rx, ry+1);
+  }
   // ---- chrono de partie (gelé en pause, accéléré/ralenti avec la vitesse de jeu) ----
   ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.font='700 12px Arial'; ctx.fillStyle='#cdbf9a';
@@ -3763,8 +3979,26 @@ function drawSoftPause(){
   ctx.fillText(t('p_resume'), W/2, ry+rh/2+1);
   pauseRects = [{x:rx,y:ry,w:rw,h:rh,key:'resume'}];
 }
+const QUAL_LBL = {low:'Faible', medium:'Moyen', high:'Élevé', ultra:'Ultra'};
+function qualityName(){ return QUAL_LBL[SETTINGS.quality]||SETTINGS.quality; }
+function cycleQuality(){ const i=QUALITIES.indexOf(SETTINGS.quality); SETTINGS.quality=QUALITIES[(i+1)%QUALITIES.length]; fpsWarned=false; saveSettings(); }
 function drawPause(){
   ctx.fillStyle='rgba(10,8,7,0.78)'; ctx.fillRect(0,0,W,H);
+  // CARTE THERMIQUE des morts (combats récents), visible en pause — nappes additives colorées.
+  if (game && !game.over && game.killLog && game.killLog.length){
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for (const k of game.killLog){
+      const sx=(k.x-camX)*zoom, sy=gY(k.x)*zoom+zTY();
+      if (sx<-40||sx>W+40) continue;
+      const col = k.s===1? '90,170,255' : '255,90,70';
+      const g=ctx.createRadialGradient(sx,sy,1,sx,sy,34);
+      g.addColorStop(0,'rgba('+col+',0.15)'); g.addColorStop(1,'rgba('+col+',0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,34,0,6.28); ctx.fill();
+    }
+    ctx.restore();
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='11px Arial'; ctx.textAlign='center';
+    ctx.fillText(tr('heatmap_lbl'), W/2, 70);
+  }
   const bw=300, bx=W/2-bw/2;
   const items = [
     {key:'resume', label:t('p_resume')},
@@ -3772,6 +4006,7 @@ function drawPause(){
     {key:'sfx',    label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
     {key:'vol',    label:''},                       // slider de volume
     {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
+    {key:'quality',label:tr('set_quality')+' : '+qualityName()},
     {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
     {key:'quit',   label:t('p_quit')},
   ];
@@ -4284,6 +4519,12 @@ function refreshTutoPage(){
 let last = performance.now();
 function loop(now){
   const dt = Math.min((now-last)/1000, 0.05); last=now;
+  // ALERTE PERF : on lisse le FPS ; s'il reste bas longtemps en jeu et que la qualité
+  // n'est pas déjà au minimum, on invite UNE fois à la réduire dans les paramètres.
+  if (dt>0){ fpsAvg += ((1/dt)-fpsAvg)*0.05;
+    if (!fpsWarned && game && !game.over && !paused && SETTINGS.quality!=='low' && game.t>8 && fpsAvg<34){
+      fpsWarned=true; announce(tr('perf_warn'), '#ffcf6a'); }
+  }
   if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
   const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
   if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
@@ -4315,8 +4556,16 @@ function showEnd(){
     t('end_duration')+' : '+mins+' min '+secs+' s<br>'+
     t('end_kills')+' : '+game.kills+' · '+t('end_losses')+' : '+game.eKills+'<br>'+
     t('end_era')+' : '+lEra(game.p.facKey,game.p.era)+(game.p.trans? ' — '+lTransName(game.p.facKey):'')+'<br>'+
-    t('end_powers')+' : '+game.specialsUsed+' · '+t('end_world')+' : '+Math.round((1-game.dev)*100)+'%';
+    t('end_powers')+' : '+game.specialsUsed+' · '+t('end_world')+' : '+Math.round((1-game.dev)*100)+'%'+
+    '<br><br><i style="color:#bcae93">'+warJournal()+'</i>';
   document.getElementById('endscreen').style.display = 'flex';
+}
+// JOURNAL DE GUERRE : 2-3 lignes générées à partir de l'issue de la partie (récit localisé).
+function warJournal(){
+  const o = { era:lEra(game.p.facKey,game.p.era), kills:game.kills, losses:game.eKills,
+              world:Math.round((1-game.dev)*100), fac:game.p.fac.name, foe:game.e.fac.name,
+              brigade:73 + (Math.floor(game.t)%27) };
+  return fmt(game.win? 'journal_win' : 'journal_lose', o);
 }
 
 /* =====================================================================
@@ -5449,6 +5698,7 @@ function handleTap(sx, sy, shift){
         saveSettings(); refreshOpts();
       }
       else if (r.key==='shake'){ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); }
+      else if (r.key==='quality'){ cycleQuality(); }
       else if (r.key==='follow') camFollow=!camFollow;
       else if (r.key==='quit'){
         netDisconnect();
