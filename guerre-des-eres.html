@@ -1156,8 +1156,15 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
     if (r.key!=='support' && r.key!=='siege'){
       if (side.facKey==='HUM'){ cdmg=0.82; crate=0.82; } else { cdmg=1.22; crate=1.22; }
     }
+    // ARCHÉTYPES DE MÊLÉE (valable à chaque ère) : le Tank (défensif — « CRS lourd » /
+    // « Châssis lourd ») devient un vrai mur — beaucoup de PV, peu de dégâts, plus lent ;
+    // la Mêlée (offensive) devient un assaillant tranchant mais fragile et rapide. En
+    // formation ils sont complémentaires : le Tank encaisse devant, la Mêlée frappe derrière.
+    let ahp=1, admg=1, aspd=1;
+    if (r.key==='tank'){ ahp=1.35; admg=0.74; aspd=0.92; }
+    else if (r.key==='melee'){ ahp=0.84; admg=1.34; aspd=1.12; }
     const rate = r.rate*Math.max(0.55, 1-0.05*side.era-0.04*lvl)*crate;
-    u = { role:r.key, hp:r.hp*m*up, maxhp:r.hp*m*up, dmg:r.dmg*m*up*cdmg, spd:r.spd, range, rate,
+    u = { role:r.key, hp:r.hp*m*up*ahp, maxhp:r.hp*m*up*ahp, dmg:r.dmg*m*up*cdmg*admg, spd:r.spd*aspd, range, rate,
           arc:r.arc, aoe:r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
     if (r.fly) u.flyH = 44 + (side.units.length%3)*10 + (side.facKey==='IA'?8:0);
   }
@@ -1180,6 +1187,7 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
   u.atkT = Math.random()*0.3; u.bob = Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord = null; u.holdX = null; u.task = null;
   u.heat = 0; u.tiredT = 0; u.kills = 0; u.vet = false; u.lastHit = null;
+  u.farFatigued = false; u.farT = 0;   // fatigue de traversée (déclenchée une fois, loin de la base)
   u.id = UID++;
   side.units.push(u);
 }
@@ -1643,6 +1651,13 @@ function updateUnits(side, foe, dt){
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
     if (u.tiredT>0) u.tiredT -= dt;                       // fatigue / surchauffe
+    // FATIGUE DE TRAVERSÉE : une troupe au sol qui a parcouru l'essentiel de la carte
+    // arrive éreintée — −10 % de dégâts pendant 8 s, une seule fois.
+    if (u.farT>0) u.farT -= dt;
+    else if (!u.farFatigued && !u.fly && u.role!=='support' && Math.abs(u.x-side.x) > WORLD*0.6){
+      u.farFatigued = true; u.farT = 8;
+      addFloater(u.x, gY(u.x)-58-(u.fly?u.flyH:0), '😮‍💨', '#d8a06a', 11);
+    }
     // récupération hors combat : les humains soufflent plus vite que les machines ne refroidissent
     if (u.heat>0) u.heat = Math.max(0, u.heat-(u.fac==='IA'?0.030:0.05)*dt);
     if (u.role==='support') u.supT -= dt;
@@ -1753,8 +1768,11 @@ function updateUnits(side, foe, dt){
     const muzzled = (u.fac==='HUM' && game.weather==='strike') || (u.fac==='IA' && game.weather==='patch');
     if (muzzled) noMove = true;
     // ---- ciblage (mêlée au sol ≠ volants ; tempête de sable : visée longue brouillée) ----
+    // BONUS DE RELIEF : tenir une hauteur (bosse de terrain) accroît légèrement portée et
+    // dégâts — récompense le contrôle des collines. elev : 0 en plaine → 1 au sommet.
+    const elev = u.fly? 0 : clamp((GROUND - gY(u.x))/26, 0, 1);
     const meleeGround = u.range<=24 && !u.fly;
-    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1);
+    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev);
     let target=null, best=1e9;
     if (!muzzled) for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
@@ -1769,7 +1787,7 @@ function updateUnits(side, foe, dt){
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
         u.atkT = u.rate * (tired? (isIA?1.8:1.3) : 1);
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
+        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         u.heat = (u.heat||0) + (isIA? 0.08 : 0.045);
         if (u.heat>=1){
@@ -1854,12 +1872,20 @@ function stackMax(side, u){
 // Renvoie null pour les unités de front (mêlée/tank) qui avancent librement et SERVENT d'ancre.
 function formationWant(side, u){
   let anchor = side.x + side.side*220;                       // défaut si aucune unité de front
-  for (const a of side.units)
-    if (!a.fly && (a.role==='melee'||a.role==='tank') && (a.x-anchor)*side.side>0) anchor = a.x;
+  let tankX = null;                                          // tête du mur de tanks (bouclier)
+  for (const a of side.units){
+    if (a.fly || a.hp<=0) continue;
+    if (a.role==='tank' && (tankX===null || (a.x-tankX)*side.side>0)) tankX = a.x;
+    if ((a.role==='melee'||a.role==='tank') && (a.x-anchor)*side.side>0) anchor = a.x;
+  }
+  const hasTank = tankX!==null;
   const hum = side.facKey==='HUM';
   let off;
   switch (u.role){
-    case 'melee': case 'tank': return null;                 // ligne de front : avancent
+    case 'tank': return null;                               // bouclier : tient le front, avance
+    // MÊLÉE OFFENSIVE : se cale juste DERRIÈRE le mur de tanks (le tank encaisse, elle frappe).
+    // Sans tank pour la couvrir, elle prend elle-même la ligne de front.
+    case 'melee':  return hasTank? tankX - side.side*(hum?26:22) : null;
     case 'air':    off = hum? -34 : -28; break;             // volants : légèrement en pointe
     case 'ranged': off = hum?  60 :  42; break;             // tireurs : juste derrière
     case 'siege':  off = hum? 130 : 105; break;             // artillerie : au fond
