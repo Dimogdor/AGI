@@ -332,14 +332,13 @@ const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Uni
   evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
   formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
   capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, bright:1, keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
 // vitesses de jeu disponibles (×0.75 ralenti, ×1 normal, ×2, ×3)
 const SPEEDS = [0.75, 1, 2, 3];
 function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }
 SETTINGS.speed = clampSpeed(SETTINGS.speed);
-SETTINGS.bright = clamp(+SETTINGS.bright||1, 0.7, 1.8);   // luminosité globale réglable
 function saveSettings(){ localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); applyVol(); }
 function applyVol(){ if (master) master.gain.value = SETTINGS.vol; }
 
@@ -948,7 +947,7 @@ function mkSide(side, facKey, x){
     upg:{melee:0,tank:0,ranged:0,siege:0,air:0,support:0},
     queue:[],                 // file d'attente de production (max 10)
     heroCd:0, heroDone:false,  // unité héroïque légendaire (1 / 10 min)
-    phase:1, combatBuff:0,     // seconde base (phase 2) + bonus de comeback
+    phase:1, combatBuff:0, zoneBuff:0,     // seconde base (phase 2) + bonus de comeback + bonus de zones
     slots:[0,1,2].map(i=>({ x: x + side*(95+i*64), b:null, owner:null })),
   };
 }
@@ -964,6 +963,9 @@ function newGame(facKey, diff, withTuto, eFacOverride){
       {x:WORLD*0.50, owner:null, prog:0, center:true},
       {x:WORLD*0.75, owner:null, prog:0, center:false},
     ],
+    // 3 ZONES stratégiques (anciens « ronds » décoratifs) : +0.5✦/s au contrôleur,
+    // et bonus de comeback pour le perdant sur chaque zone qu'il ne tient pas.
+    zones: [ {x:WORLD*0.30, owner:null, prog:0}, {x:WORLD*0.50, owner:null, prog:0}, {x:WORLD*0.70, owner:null, prog:0} ],
     neut: [ {x:WORLD*0.33, b:null, owner:null}, {x:WORLD*0.42, b:null, owner:null},
             {x:WORLD*0.58, b:null, owner:null}, {x:WORLD*0.67, b:null, owner:null} ],
     sel: new Set(),
@@ -1595,7 +1597,8 @@ function dealDmg(target, dmg, attacker){
   }
   else {
     out /= homeBuff(target);
-    out /= (1 + 0.15*(((target.side===1?game.p:game.e).combatBuff)||0)); // comeback : le perdant encaisse mieux
+    const dside = target.side===1?game.p:game.e;
+    out /= (1 + 0.15*(dside.combatBuff||0)) * (1 + (dside.zoneBuff||0)); // comeback + zones : le perdant encaisse mieux
     target.hp -= out; target.flash = 0.15;
     if (attacker && attacker.role) target.lastHit = attacker;        // pour la vétérance
   }
@@ -1736,7 +1739,7 @@ function updateUnits(side, foe, dt){
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
         u.atkT = u.rate * (tired? (isIA?1.8:1.3) : 1);
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0));
+        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (side.heroAlive?3:1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         u.heat = (u.heat||0) + (isIA? 0.08 : 0.045);
         if (u.heat>=1){
@@ -1973,6 +1976,27 @@ function updateNodes(dt){
     }
   }
 }
+function updateZones(dt){
+  const p=game.p, e=game.e;
+  for (const z of game.zones){
+    let np=0, ne=0;
+    for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
+    for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
+    const push = clamp(np-ne, -3, 3)*0.10*dt;
+    if (push!==0){
+      z.prog = clamp(z.prog+push, -1, 1);
+      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; if(!game.tut) announce('◈ ZONE STRATÉGIQUE CAPTURÉE (+0.5✦/s)', '#9dd88a'); }
+      if (z.prog<=-1 && z.owner!=='e'){ z.owner='e'; }
+    }
+    if (z.owner==='p') p.xp += 0.5*dt; else if (z.owner==='e') e.xp += 0.5*dt;
+  }
+  // catch-up : le perdant (base la plus basse) gagne +5% atk/déf par zone qu'il NE tient PAS (max +15%)
+  const pf=p.hp/p.maxhp, ef=e.hp/e.maxhp;
+  const loser = pf<ef-0.02? 'p' : ef<pf-0.02? 'e' : null;
+  const ownedBy = k => game.zones.reduce((n,z)=>n+(z.owner===k?1:0),0);
+  p.zoneBuff = loser==='p'? 0.05*(3-ownedBy('p')) : 0;
+  e.zoneBuff = loser==='e'? 0.05*(3-ownedBy('e')) : 0;
+}
 function update(dt){
   if (!game || game.over || paused || tutoStep>=0) return;
   game.t += dt;
@@ -2035,6 +2059,7 @@ function update(dt){
   updateBuildings(p,e,dt); updateBuildings(e,p,dt);
   updateBaseGarrison(p,e,dt); updateBaseGarrison(e,p,dt);
   updateNodes(dt);
+  updateZones(dt);
   checkTrans(p); checkTrans(e);
 
   // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
@@ -2613,7 +2638,7 @@ function drawBG(){
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
   // rochers sculptés
-  for (const r of ROCKS) drawGroundEmitter(r, dev, t, vw);
+  for (const z of game.zones) drawZone(z, dev, t, vw);
   for (const tr of TREES) drawTree(tr, dev, t, vw);
   // brume basse dérivante (additif)
   ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -2626,39 +2651,32 @@ function drawBG(){
 // émetteurs de sol dynamiques (remplacent les anciens rochers décoratifs) :
 // s'illuminent de la couleur de la faction qui domine la zone, réagissent au passage
 // des unités lourdes (onde), et grésillent (hologramme) en cas de combat/cataclysme.
-function drawGroundEmitter(r, dev, t, vw){
-  const x=r.x-camX; if (x<-50||x>vw+50) return; const y=gY(r.x);
-  let best=null, bd=150, pN=0, eN=0, heavy=0;
-  for (const u of game.p.units){ const d=Math.abs(u.x-r.x); if(d<150){ pN++; if(d<bd){bd=d;best='p';}
-    if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
-  for (const u of game.e.units){ const d=Math.abs(u.x-r.x); if(d<150){ eN++; if(d<bd){bd=d;best='e';}
-    if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
-  const combat = pN>0 && eN>0;
-  const acc = best? (best==='p'?game.p.fac.accent:game.e.fac.accent) : '#7a8a9a';
-  const intens = best? clamp(1-bd/150, 0.12, 1) : 0.10;
+function drawZone(z, dev, t, vw){
+  const x=z.x-camX; if (x<-70||x>vw+70) return; const y=gY(z.x);
+  const owner=z.owner, acc = owner? (owner==='p'?game.p.fac.accent:game.e.fac.accent) : '#9aa6b2';
+  let pN=0, eN=0, heavy=0;
+  for (const u of game.p.units){ const d=Math.abs(u.x-z.x); if(d<90){ pN++; if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
+  for (const u of game.e.units){ const d=Math.abs(u.x-z.x); if(d<90){ eN++; if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
+  const combat = pN>0 && eN>0, pulse=0.65+0.35*Math.sin(t*3+z.x), flick=(combat||game.cata)?(0.55+0.45*Math.sin(t*22+z.x)):1;
   ctx.save(); ctx.globalCompositeOperation='lighter';
   // halo + anneau au sol
-  const g=ctx.createRadialGradient(x,y,1,x,y,(16+10*intens)*r.s);
-  g.addColorStop(0,rgbaC(acc, 0.26*intens + (game.winter?0.05:0))); g.addColorStop(1,rgbaC(acc,0));
-  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y,(16+10*intens)*r.s,(6+4*intens)*r.s,0,0,6.283); ctx.fill();
-  ctx.strokeStyle=rgbaC(acc, 0.25+0.45*intens); ctx.lineWidth=1.6;
-  ctx.beginPath(); ctx.ellipse(x,y,11*r.s,4*r.s,0,0,6.283); ctx.stroke();
-  // colonne / glyphe holographique (seulement si une faction est proche)
-  if (best){
-    const flick = (combat||game.cata)? (0.55+0.45*Math.sin(t*22+r.x)) : (0.7+0.3*Math.sin(t*3+r.x));
-    const hh = (12+16*intens)*r.s*(combat?1.35:1);
-    ctx.globalAlpha = flick*(0.25+0.5*intens);
-    const cg=ctx.createLinearGradient(x,y,x,y-hh); cg.addColorStop(0,rgbaC(acc,0.85)); cg.addColorStop(1,rgbaC(acc,0));
-    ctx.fillStyle=cg; ctx.fillRect(x-1.6*r.s, y-hh, 3.2*r.s, hh);
-    ctx.save(); ctx.translate(x,y-hh); ctx.rotate(t*1.6); ctx.globalAlpha=flick*0.9; ctx.fillStyle=rgbaC(acc,0.95);
-    ctx.fillRect(-2.2*r.s,-2.2*r.s,4.4*r.s,4.4*r.s); ctx.restore();
-    ctx.globalAlpha=1;
-  }
-  // onde lors du passage d'une unité lourde
-  if (heavy>0.1){ const ph=(t*1.6)%1, rr2=(8+ph*28)*r.s;
-    ctx.strokeStyle=rgbaC(acc, 0.5*heavy*(1-ph)); ctx.lineWidth=2;
+  const g=ctx.createRadialGradient(x,y,2,x,y,42); g.addColorStop(0,rgbaC(acc,0.3*pulse)); g.addColorStop(1,rgbaC(acc,0));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y,42,15,0,0,6.283); ctx.fill();
+  ctx.strokeStyle=rgbaC(acc,0.6); ctx.lineWidth=2.5; ctx.beginPath(); ctx.ellipse(x,y,26,9,0,0,6.283); ctx.stroke();
+  // anneau de progression de capture
+  if (Math.abs(z.prog)>0.01 && Math.abs(z.prog)<1){ const pc=z.prog>0?game.p.fac.accent:game.e.fac.accent;
+    ctx.strokeStyle=rgbaC(pc,0.95); ctx.lineWidth=3.4; ctx.beginPath(); ctx.ellipse(x,y,26,9,0,-Math.PI/2,-Math.PI/2+6.283*Math.abs(z.prog)); ctx.stroke(); }
+  // colonne holographique + glyphe de contrôle
+  const hh=50; const cg=ctx.createLinearGradient(x,y,x,y-hh); cg.addColorStop(0,rgbaC(acc,0.55*flick)); cg.addColorStop(1,rgbaC(acc,0));
+  ctx.fillStyle=cg; ctx.fillRect(x-4,y-hh,8,hh);
+  ctx.save(); ctx.translate(x,y-hh-2); ctx.rotate(t*1.2); ctx.globalAlpha=flick; ctx.fillStyle=rgbaC(acc,0.95); ctx.fillRect(-5,-5,10,10); ctx.restore();
+  // onde au passage d'unités lourdes
+  if (heavy>0.1){ const ph=(t*1.5)%1, rr2=10+ph*36; ctx.strokeStyle=rgbaC(acc,0.5*heavy*(1-ph)); ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(x,y,rr2,rr2*0.36,0,0,6.283); ctx.stroke(); }
   ctx.restore();
+  // étiquette de contrôle
+  ctx.font='700 9px Arial'; ctx.textAlign='center'; ctx.fillStyle=rgbaC(acc,0.92);
+  ctx.fillText(owner? (owner==='p'?'◈ ZONE — VOUS':'◈ ZONE — ENNEMI') : '◈ ZONE NEUTRE', x, y-hh-9);
 }
 function hill(par, base, amp, col, vw){
   const off = camX*par;
@@ -2692,6 +2710,7 @@ function drawCity(dev){
 function drawTree(tr, dev, t, vw){
   const x=tr.x-camX; if (x<-50||x>vw+50) return;
   const y=gY(tr.x), s=tr.s, sway=Math.sin(t*0.8+tr.ph)*2*s*(1-dev), bark=mix([96,70,46],[50,42,38],dev);
+  if (dev<0.78) projShadow(x, y, 16*s);          // ombre portée de l'arbre
   // arbres nettement plus GRANDS que l'infanterie (cohérence d'échelle)
   ctx.strokeStyle=bark; ctx.lineWidth=6*s; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(x,y+2); ctx.quadraticCurveTo(x+sway*0.5,y-34*s,x+sway,y-62*s); ctx.stroke();
@@ -3008,6 +3027,7 @@ function drawBase(side){
   const x = side.x-camX; if (x<-160||x>VW()+160) return;
   const fac = side.fac, t = game.t, era = side.era;
   const col = fac.accent, gy = gY(side.x);
+  projShadow(x, gy, 52);                          // ombre portée de la base
   if (side.facKey==='HUM'){
     // forteresse modulaire sculptée
     sculptT(x-44, gy-58, 88, 58, 8, '#4a4252', col);
@@ -3100,6 +3120,7 @@ function drawSlot(slot, side, neutral){
     return;
   }
   const lvl = b.lvl||1, bh2 = bldH(b);
+  projShadow(x, gy, 15);                          // ombre portée du bâtiment
   if (b.type==='wall'){
     const wc = facKey==='HUM'? '#7a7080':'#2c4258';
     sculptT(x-14, gy-bh2, 28, bh2, 4, wc, fac.accent);
@@ -3276,7 +3297,7 @@ function drawHUD(){
   ctx.fillText(p.trans?'∞':fmtRate(rates.m)+'/s', 96, 29);
   ctx.fillText(fmtRate(rates.w)+'/s', 184, 29);
   ctx.fillStyle='#8a7aa8';
-  const xpr = 2.2 + ((p.fortLvl||1)-1)*1.3 + (game.nodes.some(n=>n.center&&n.owner==='p')?1.5:0);
+  const xpr = 2.2 + ((p.fortLvl||1)-1)*1.3 + (game.nodes.some(n=>n.center&&n.owner==='p')?1.5:0) + 0.5*game.zones.reduce((n,z)=>n+(z.owner==='p'?1:0),0);
   ctx.fillText(fmtRate(xpr)+'/s', 262, 29);
   // ère + santé du monde au centre
   ctx.textAlign='center'; ctx.font='700 14px Arial';
@@ -3644,7 +3665,6 @@ function drawPause(){
     {key:'music',  label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
     {key:'sfx',    label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
     {key:'vol',    label:''},                       // slider de volume
-    {key:'bright', label:''},                       // slider de luminosité
     {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
     {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
     {key:'quit',   label:t('p_quit')},
@@ -3672,17 +3692,6 @@ function drawPause(){
       ctx.fillText(Math.round(SETTINGS.vol*100)+'%', bx+bw-34, ry);
       ctx.font='14px Arial';
       pauseRects[pauseRects.length-1].slider = {x:rx+28, w:rw2};
-      continue;
-    }
-    if (items[i].key==='bright'){
-      const rx=bx+58, rw2=bw-150, ry=y+(ih-8)/2, nv=clamp((SETTINGS.bright-0.7)/1.1,0,1);
-      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left'; ctx.fillText(SETTINGS.lang==='en'?'☀ Bright.':'☀ Lumin.', bx+24, ry);
-      ctx.textAlign='center';
-      ctx.fillStyle='#3a2e28'; rr(rx+28, ry-3, rw2, 6, 3); ctx.fill();
-      ctx.fillStyle='#e8b84a'; rr(rx+28, ry-3, rw2*nv, 6, 3); ctx.fill();
-      ctx.fillStyle='#e8e0d2'; ctx.beginPath(); ctx.arc(rx+28+rw2*nv, ry, 6, 0, 6.28); ctx.fill();
-      ctx.fillStyle='#b8b0a4'; ctx.font='12px Arial'; ctx.fillText(Math.round(SETTINGS.bright*100)+'%', bx+bw-34, ry); ctx.font='14px Arial';
-      pauseRects[pauseRects.length-1].slider = {x:rx+28, w:rw2, bright:true};
       continue;
     }
     ctx.fillStyle = items[i].key==='quit'? '#c88':'#b8b0a4';
@@ -3735,10 +3744,6 @@ function render(dt){
   drawWinter();
   drawCata();
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
-  // luminosité globale réglable (>1 éclaircit, <1 assombrit) — appliquée à la scène, pas au HUD
-  const br=SETTINGS.bright||1;
-  if (br>1.01){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,250,240,'+clamp((br-1)*0.5,0,0.5)+')'; ctx.fillRect(0,0,W,H); ctx.restore(); }
-  else if (br<0.99){ ctx.fillStyle='rgba(0,0,0,'+clamp((1-br)*0.7,0,0.6)+')'; ctx.fillRect(0,0,W,H); }
   drawHUD();
   drawSpeedOverlays();
   ctx.restore();
@@ -4228,6 +4233,7 @@ function serialize(){
     pu:game.p.units.map(u2), eu:game.e.units.map(u2),
     neut:game.neut.map(n=>[n.owner===game.p?1:n.owner===game.e?-1:0, serBld(n.b)]),
     nodes:game.nodes.map(n=>[n.owner==='p'?1:n.owner==='e'?-1:0, Math.round(n.prog*100)/100]),
+    zones:game.zones.map(z=>[z.owner==='p'?1:z.owner==='e'?-1:0, Math.round(z.prog*100)/100]),
     shots:shots.map(s=>[Math.round(s.x),s.y,Math.round(s.tx),s.ty,s.t,s.dur,s.fac==='HUM'?0:1,s.era]),
     proj:projectiles.map(pr=>[Math.round(pr.sx),Math.round(pr.tx),pr.t,pr.dur,pr.fac==='HUM'?0:1,pr.era]),
   };
@@ -4341,6 +4347,8 @@ function applySnapshot(snap){
   for (let i=0;i<g.nodes.length;i++){ const nd=snap.nodes[i];
     g.nodes[i].owner = nd[0]===-1? 'p' : nd[0]===1? 'e' : null;
     g.nodes[i].prog = -nd[1]; }
+  if (snap.zones && g.zones) for (let i=0;i<g.zones.length;i++){ const zd=snap.zones[i]; if(!zd) continue;
+    g.zones[i].owner = zd[0]===-1? 'p' : zd[0]===1? 'e' : null; g.zones[i].prog = -zd[1]; }
   // tirs & obus (mirroir x)
   shots = snap.shots.map(s=>({x:WORLD-s[0], y:s[1], tx:WORLD-s[2], ty:s[3], t:s[4], dur:s[5], fac:s[6]?'IA':'HUM', era:s[7]}));
   projectiles = snap.proj.map(p=>({sx:WORLD-p[0], tx:WORLD-p[1], t:p[2], dur:p[3], fac:p[4]?'IA':'HUM', era:p[5], aoe:44}));
@@ -4415,6 +4423,7 @@ function startGuestGame(data){
   game.nodes = [ {x:WORLD*0.75,owner:null,prog:0,center:false},
                  {x:WORLD*0.50,owner:null,prog:0,center:true},
                  {x:WORLD*0.25,owner:null,prog:0,center:false} ];
+  game.zones = [ {x:WORLD*0.70,owner:null,prog:0}, {x:WORLD*0.50,owner:null,prog:0}, {x:WORLD*0.30,owner:null,prog:0} ];
   game.neut = [ {x:WORLD*0.67,b:null,owner:null}, {x:WORLD*0.58,b:null,owner:null},
                 {x:WORLD*0.42,b:null,owner:null}, {x:WORLD*0.33,b:null,owner:null} ];
   GX = {};
@@ -5316,10 +5325,6 @@ function handleTap(sx, sy, shift){
       else if (r.key==='sfx'){ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); }
       else if (r.key==='vol' && r.slider){
         SETTINGS.vol = clamp(Math.round(((sx-r.slider.x)/r.slider.w)*20)/20, 0, 1);
-        saveSettings(); refreshOpts();
-      }
-      else if (r.key==='bright' && r.slider){
-        SETTINGS.bright = clamp(Math.round((0.7+((sx-r.slider.x)/r.slider.w)*1.1)*20)/20, 0.7, 1.8);
         saveSettings(); refreshOpts();
       }
       else if (r.key==='shake'){ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); }
