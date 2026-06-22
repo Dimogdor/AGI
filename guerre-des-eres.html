@@ -2613,8 +2613,7 @@ function drawBG(){
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
   // rochers sculptés
-  for (const r of ROCKS){ const x=r.x-camX; if (x<-40||x>vw+40) continue; const y=gY(r.x), w=14*r.s;
-    sculptT(x-w, y-w*0.85, w*2, w*0.9, w*0.4, mix(dirt,[64,62,68],0.35)); }
+  for (const r of ROCKS) drawGroundEmitter(r, dev, t, vw);
   for (const tr of TREES) drawTree(tr, dev, t, vw);
   // brume basse dérivante (additif)
   ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -2622,6 +2621,43 @@ function drawBG(){
     const mg=ctx.createLinearGradient(0,my-13,0,my+13);
     mg.addColorStop(0,'rgba(216,228,238,0)'); mg.addColorStop(0.5,'rgba(216,228,238,'+(0.05+i*0.012)+')'); mg.addColorStop(1,'rgba(216,228,238,0)');
     ctx.fillStyle=mg; ctx.fillRect(-mx,my-13,vw+220,26); }
+  ctx.restore();
+}
+// émetteurs de sol dynamiques (remplacent les anciens rochers décoratifs) :
+// s'illuminent de la couleur de la faction qui domine la zone, réagissent au passage
+// des unités lourdes (onde), et grésillent (hologramme) en cas de combat/cataclysme.
+function drawGroundEmitter(r, dev, t, vw){
+  const x=r.x-camX; if (x<-50||x>vw+50) return; const y=gY(r.x);
+  let best=null, bd=150, pN=0, eN=0, heavy=0;
+  for (const u of game.p.units){ const d=Math.abs(u.x-r.x); if(d<150){ pN++; if(d<bd){bd=d;best='p';}
+    if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
+  for (const u of game.e.units){ const d=Math.abs(u.x-r.x); if(d<150){ eN++; if(d<bd){bd=d;best='e';}
+    if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
+  const combat = pN>0 && eN>0;
+  const acc = best? (best==='p'?game.p.fac.accent:game.e.fac.accent) : '#7a8a9a';
+  const intens = best? clamp(1-bd/150, 0.12, 1) : 0.10;
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  // halo + anneau au sol
+  const g=ctx.createRadialGradient(x,y,1,x,y,(16+10*intens)*r.s);
+  g.addColorStop(0,rgbaC(acc, 0.26*intens + (game.winter?0.05:0))); g.addColorStop(1,rgbaC(acc,0));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y,(16+10*intens)*r.s,(6+4*intens)*r.s,0,0,6.283); ctx.fill();
+  ctx.strokeStyle=rgbaC(acc, 0.25+0.45*intens); ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.ellipse(x,y,11*r.s,4*r.s,0,0,6.283); ctx.stroke();
+  // colonne / glyphe holographique (seulement si une faction est proche)
+  if (best){
+    const flick = (combat||game.cata)? (0.55+0.45*Math.sin(t*22+r.x)) : (0.7+0.3*Math.sin(t*3+r.x));
+    const hh = (12+16*intens)*r.s*(combat?1.35:1);
+    ctx.globalAlpha = flick*(0.25+0.5*intens);
+    const cg=ctx.createLinearGradient(x,y,x,y-hh); cg.addColorStop(0,rgbaC(acc,0.85)); cg.addColorStop(1,rgbaC(acc,0));
+    ctx.fillStyle=cg; ctx.fillRect(x-1.6*r.s, y-hh, 3.2*r.s, hh);
+    ctx.save(); ctx.translate(x,y-hh); ctx.rotate(t*1.6); ctx.globalAlpha=flick*0.9; ctx.fillStyle=rgbaC(acc,0.95);
+    ctx.fillRect(-2.2*r.s,-2.2*r.s,4.4*r.s,4.4*r.s); ctx.restore();
+    ctx.globalAlpha=1;
+  }
+  // onde lors du passage d'une unité lourde
+  if (heavy>0.1){ const ph=(t*1.6)%1, rr2=(8+ph*28)*r.s;
+    ctx.strokeStyle=rgbaC(acc, 0.5*heavy*(1-ph)); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(x,y,rr2,rr2*0.36,0,0,6.283); ctx.stroke(); }
   ctx.restore();
 }
 function hill(par, base, amp, col, vw){
@@ -2656,15 +2692,16 @@ function drawCity(dev){
 function drawTree(tr, dev, t, vw){
   const x=tr.x-camX; if (x<-50||x>vw+50) return;
   const y=gY(tr.x), s=tr.s, sway=Math.sin(t*0.8+tr.ph)*2*s*(1-dev), bark=mix([96,70,46],[50,42,38],dev);
-  ctx.strokeStyle=bark; ctx.lineWidth=4*s; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(x,y+2); ctx.quadraticCurveTo(x+sway*0.5,y-22*s,x+sway,y-40*s); ctx.stroke();
+  // arbres nettement plus GRANDS que l'infanterie (cohérence d'échelle)
+  ctx.strokeStyle=bark; ctx.lineWidth=6*s; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x,y+2); ctx.quadraticCurveTo(x+sway*0.5,y-34*s,x+sway,y-62*s); ctx.stroke();
   if (dev<0.78){
-    const leaf=lerpColArr(devLerp(GRASS),[120,90,50],dev*0.7), cx=x+sway, cy=y-46*s, r=16*s*(1-dev*0.6);
+    const leaf=lerpColArr(devLerp(GRASS),[120,90,50],dev*0.7), cx=x+sway, cy=y-70*s, r=25*s*(1-dev*0.55);
     const g=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,2,cx,cy,r*1.5);
     g.addColorStop(0,shade(leaf,1.3)); g.addColorStop(1,shade(leaf,0.65));
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.283); ctx.arc(cx-r*0.6,cy+r*0.3,r*0.7,0,6.283); ctx.arc(cx+r*0.6,cy+r*0.2,r*0.75,0,6.283); ctx.fill();
-  } else { ctx.lineWidth=2*s; ctx.beginPath(); ctx.moveTo(x+sway,y-40*s); ctx.lineTo(x+sway-9*s,y-50*s);
-    ctx.moveTo(x+sway,y-36*s); ctx.lineTo(x+sway+10*s,y-46*s); ctx.stroke(); }
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.283); ctx.arc(cx-r*0.62,cy+r*0.3,r*0.72,0,6.283); ctx.arc(cx+r*0.62,cy+r*0.22,r*0.78,0,6.283); ctx.arc(cx,cy-r*0.5,r*0.62,0,6.283); ctx.fill();
+  } else { ctx.lineWidth=3*s; ctx.beginPath(); ctx.moveTo(x+sway,y-62*s); ctx.lineTo(x+sway-13*s,y-76*s);
+    ctx.moveTo(x+sway,y-54*s); ctx.lineTo(x+sway+14*s,y-70*s); ctx.stroke(); }
 }
 function drawNode(n){
   const x=n.x-camX; if (x<-110||x>VW()+110) return;
@@ -2837,14 +2874,15 @@ function drawAir(u, x, gy){
   const fac=u.fac, era=u.era, t=u.bob, dir=u.side, acc=FACTIONS[fac].accent;
   const spr = sprite('AIR'+fac+era+(u.trans?'T':''), 64, 44, ()=>airSprite(fac,era,u.trans));
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
-  projShadow(x, gy, 12);
-  ctx.save(); ctx.translate(x,y); ctx.scale(dir,1); ctx.drawImage(spr, -32, -22);
+  const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
+  projShadow(x, gy, 16);
+  ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-22); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
-  ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2;
-  if (fac==='HUM'){ const r=Math.abs(Math.sin(t*9))*13; ctx.beginPath(); ctx.moveTo(x-r,y-11); ctx.lineTo(x+r,y-11); ctx.stroke(); }
-  else { for(const sx2 of[-10,10]){ const r=Math.abs(Math.sin(t*10+sx2))*6; ctx.beginPath(); ctx.moveTo(x+sx2-r,y-7); ctx.lineTo(x+sx2+r,y-7); ctx.stroke(); } }
+  ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2.5;
+  if (fac==='HUM'){ const r=Math.abs(Math.sin(t*9))*20; ctx.beginPath(); ctx.moveTo(x-r,y-16); ctx.lineTo(x+r,y-16); ctx.stroke(); }
+  else { for(const sx2 of[-15,15]){ const r=Math.abs(Math.sin(t*10+sx2))*9; ctx.beginPath(); ctx.moveTo(x+sx2-r,y-10); ctx.lineTo(x+sx2+r,y-10); ctx.stroke(); } }
   ctx.restore();
   if (u.atkT>u.rate-0.14) attackFX(u, x, y);
 }
@@ -4009,9 +4047,10 @@ function drawTut(){
   if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
     tutArrow(clamp(cxF,bx+20,bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
   TUT.uiRects = [];
-  // fond carte + ombre portée + liseré néon de faction
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=20; ctx.shadowOffsetY=6;
-  const pg=ctx.createLinearGradient(bx,by,bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.97)'); pg.addColorStop(1,'rgba(14,12,18,0.97)');
+  // fond carte LÉGÈREMENT TRANSPARENT (on voit le HUD derrière) + liseré néon de faction.
+  // Les clics qui ne touchent pas Passer/Continuer traversent la carte jusqu'au HUD (click-through).
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=18; ctx.shadowOffsetY=5;
+  const pg=ctx.createLinearGradient(bx,by,bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.80)'); pg.addColorStop(1,'rgba(14,12,18,0.80)');
   ctx.fillStyle=pg; rr(bx,by,bw,bh,12); ctx.fill(); ctx.restore();
   ctx.save(); ctx.strokeStyle=rgbaC(acc,0.9); ctx.lineWidth=2; ctx.shadowColor=acc; ctx.shadowBlur=8; rr(bx,by,bw,bh,12); ctx.stroke(); ctx.restore();
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
