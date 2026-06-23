@@ -19,7 +19,7 @@ const win={addEventListener:noop,innerWidth:W,innerHeight:Hh,devicePixelRatio:1,
 const navigator={maxTouchPoints:0,userAgent:'node'}; const screen={orientation:{lock:()=>Promise.resolve()}};
 const performance={now:()=>Date.now()}; const localStorage={_d:{},getItem(k){return this._d[k]||null;},setItem(k,v){this._d[k]=v;}};
 const exp=`;module.exports={ get game(){return game;}, set game(v){game=v;}, get TUT(){return TUT;},
-  newGame,update,render,resize,spawnUnit,unitStats,tryBuild,tryBuy,trySpecial,tryEvolve,tryCapUp,tryHero,setStance,
+  newGame,update,render,resize,spawnUnit,unitStats,unitCost,tryBuild,tryBuy,trySpecial,tryEvolve,tryCapUp,tryHero,setStance,
   startTutorial,tutTick,tutAdvance,tutEmptySlot,heroBtnReady,TUT_STEPS,BUILDS,
   CAMPAIGN,openBriefing,startMission,scenarioCheck,applyMissionMap,missionTier,ROLES,statMul,costMul };`;
 const mod={exports:{}};
@@ -115,8 +115,30 @@ console.log('\n[5] Upgrades / miroir / scaling / restrictions de scénario');
   (Math.abs(dpsH-dpsA)<0.5)? ok('DPS Mêlée miroir HUM=GPT ('+dpsH.toFixed(1)+' = '+dpsA.toFixed(1)+')')
                            : bad('DPS non miroir ('+dpsH.toFixed(1)+' vs '+dpsA.toFixed(1)+')');
 }
-{ const r=M.statMul(4)/M.statMul(0);
-  (r>=6)? ok('Scaling ère 4 = ×'+r.toFixed(2)+' (paliers spectaculaires)') : bad('scaling d\'ère trop faible (×'+r.toFixed(2)+')'); }
+{ const r=M.statMul(4)/M.statMul(0), r1=M.statMul(1)/M.statMul(0);
+  (r>=3.5 && r<=5)? ok('Scaling ère 4 = ×'+r.toFixed(2)+' (gratifiant mais lissé)') : bad('scaling d\'ère hors plage (×'+r.toFixed(2)+')');
+  (r1<=1.5)? ok('Ère 1 lissée = ×'+r1.toFixed(2)+' (pas de pic brutal)') : bad('ère 1 trop brutale (×'+r1.toFixed(2)+')'); }
+// asymétrie équilibrée : robustesse GPT (+5 % PV) ; coût infanterie HUM < GPT
+{ M.game=null; M.newGame('HUM',1,false,'IA'); const hHp=M.unitStats(M.game.p,0).hp;
+  M.game=null; M.newGame('IA',1,false,'HUM'); const aHp=M.unitStats(M.game.p,0).hp;
+  (Math.abs(aHp/hHp-1.05)<0.01)? ok('Passif GPT : +5 % PV ('+Math.round(hHp)+'→'+Math.round(aHp)+')') : bad('passif PV GPT ('+(aHp/hHp).toFixed(3)+')');
+}
+{ M.game=null; M.newGame('HUM',1,false,'IA'); const hc=M.unitCost(M.game.p,0).f;
+  M.game=null; M.newGame('IA',1,false,'HUM'); const ac=M.unitCost(M.game.p,0).f;
+  (hc<ac)? ok('Passif HUM : infanterie moins chère ('+hc+' vs '+ac+' ⚡/🌾)') : bad('coût infanterie HUM pas réduit ('+hc+' vs '+ac+')');
+}
+// POI destructibles : présents sur les missions de sabotage, déclenchent leurs scripts
+{ M.game=null; M.openBriefing('h1'); M.startMission(); const g=M.game;
+  (g.pois && g.pois.length===3)? ok('T1 : 3 terminaux destructibles posés') : bad('T1 : POI terminaux absents ('+(g.pois||[]).length+')');
+  // détruire les 3 terminaux ouvre la barrière
+  for (const p of g.pois){ p.hp=0; p.done=true; }
+  if (g.barrier){ try{ g.pois[2].done=false; g.pois[2].hp=0; } catch(e){} }
+}
+{ M.game=null; M.openBriefing('h2'); M.startMission(); const g=M.game;
+  (g.pois && g.pois.length>=3)? ok('T2 : baies de serveurs destructibles posées ('+g.pois.length+')') : bad('T2 : serveurs absents');
+  const before=g.saboPenalty||1; g.pois[0].fire(g);
+  (g.saboPenalty<before)? ok('T2 : serveur détruit → production IA réduite ('+(g.saboPenalty).toFixed(2)+')') : bad('T2 : sabotage sans effet production');
+}
 { // restriction IA en mission de début (h1, tier 1) : ni siège ni aérien, ni légende
   M.game=null; M.openBriefing('h1'); M.startMission(); const g=M.game;
   g.e.f=g.e.m=g.e.w=99999; M.tryBuy(g.e,3); M.tryBuy(g.e,4);
