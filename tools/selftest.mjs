@@ -21,7 +21,8 @@ const performance={now:()=>Date.now()}; const localStorage={_d:{},getItem(k){ret
 const exp=`;module.exports={ get game(){return game;}, set game(v){game=v;}, get TUT(){return TUT;},
   newGame,update,render,resize,spawnUnit,unitStats,unitCost,tryBuild,tryBuy,trySpecial,tryEvolve,tryCapUp,tryHero,setStance,
   startTutorial,tutTick,tutAdvance,tutEmptySlot,heroBtnReady,TUT_STEPS,BUILDS,
-  CAMPAIGN,openBriefing,startMission,scenarioCheck,applyMissionMap,missionTier,ROLES,statMul,costMul };`;
+  CAMPAIGN,openBriefing,startMission,scenarioCheck,applyMissionMap,missionTier,ROLES,statMul,costMul,
+  spawnHero,releaseLegend,genDecor,get DECOR(){return DECOR;}, HERO_CD };`;
 const mod={exports:{}};
 new Function('module','document','window','navigator','screen','performance','localStorage','requestAnimationFrame','addEventListener','AudioContext', js+exp)
   (mod,document,win,navigator,screen,performance,localStorage,noop,noop,AC);
@@ -154,6 +155,58 @@ console.log('\n[5] Upgrades / miroir / scaling / restrictions de scénario');
 { // barrière de scénario (brouillard infranchissable) en T3
   M.game=null; M.openBriefing('h3'); M.startMission();
   M.game.barrier? ok('T3 : barrière de scénario active (x='+Math.round(M.game.barrier.x)+')') : bad('T3 : barrière absente');
+}
+
+// 6) MISSION 4 (2035) — refonte : pas de héros à t=0, 3 cœurs de stase, libération scriptée affaiblie
+console.log('\n[6] Mission 4 — stase de la Singularité');
+{ M.game=null; M.openBriefing('h4'); M.startMission(); const g=M.game;
+  (!g.e.units.some(u=>u.role==='hero'))? ok('T4 : aucune légende à t=0 (correctif « ingagnable »)') : bad('T4 : la légende apparaît encore au démarrage');
+  const cores=(g.pois||[]).filter(p=>p.type==='core').length;
+  (cores===3)? ok('T4 : 3 cœurs de stase posés') : bad('T4 : cœurs de stase absents ('+cores+')');
+  (g.scenario.coresLeft===3)? ok('T4 : compteur de cœurs initialisé (3)') : bad('T4 : coresLeft='+g.scenario.coresLeft);
+  // détruire les 3 cœurs puis libérer → légende AFFAIBLIE (power 0.4) ; pleine = power 1
+  for (const p of g.pois) if (p.type==='core'){ p.hp=0; p.done=true; p.fire(g); }
+  (g.scenario.coresLeft===0)? ok('T4 : 3 cœurs sabotés → compteur à 0') : bad('T4 : compteur cœurs='+g.scenario.coresLeft);
+  M.releaseLegend(g); const hero=g.e.units.find(u=>u.role==='hero');
+  (hero && Math.abs((hero.heroPow||1)-0.4)<0.01)? ok('T4 : légende libérée AFFAIBLIE (power 0.4, cœurs désamorcés)') : bad('T4 : puissance de légende inattendue ('+(hero&&hero.heroPow)+')');
+}
+{ // libération à pleine puissance si aucun cœur saboté (cœurs = 3 → power 1.0)
+  M.game=null; M.openBriefing('h4'); M.startMission(); const g=M.game;
+  M.releaseLegend(g); const hero=g.e.units.find(u=>u.role==='hero');
+  (hero && Math.abs((hero.heroPow||0)-1)<0.01)? ok('T4 : sans sabotage → légende à PLEINE puissance (power 1.0)') : bad('T4 : pleine puissance attendue ('+(hero&&hero.heroPow)+')');
+  // l'aura affaiblie réduit bien le multiplicateur de dégâts d'équipe
+  M.update(0.05);
+  (g.e.heroPow===1)? ok('T4 : aura d\'équipe = pleine (heroPow=1)') : bad('T4 : heroPow='+g.e.heroPow);
+}
+
+// 6b) NOUVELLES STRUCTURES — foreuse, tour-relais brouilleuse (T3), dépôt de carburant (T4)
+console.log('\n[6b] Structures destructibles supplémentaires');
+{ M.game=null; M.openBriefing('h3'); M.startMission(); const g=M.game;
+  const types=(g.pois||[]).map(p=>p.type);
+  (types.includes('drill'))? ok('T3 : foreuse à ressources posée') : bad('T3 : foreuse absente ('+types+')');
+  (types.includes('jam'))? ok('T3 : tour-relais brouilleuse posée') : bad('T3 : brouilleuse absente');
+  M.update(0.05);
+  (g.jammed===true)? ok('T3 : minimap brouillée tant que le relais tient') : bad('T3 : jammed='+g.jammed);
+  const jam=g.pois.find(p=>p.type==='jam'); jam.done=true; M.update(0.05);
+  (g.jammed===false)? ok('T3 : relais détruit → brouillage levé') : bad('T3 : brouillage persistant');
+}
+{ M.game=null; M.openBriefing('h4'); M.startMission(); const g=M.game;
+  const fuel=g.pois.find(p=>p.type==='fuel');
+  if (!fuel){ bad('T4 : dépôt de carburant absent'); }
+  else { for(let i=0;i<4;i++) M.spawnUnit(g.e,0); for(const u of g.e.units) u.x=fuel.x;
+    const hp=g.e.units.map(u=>u.hp); fuel.fire(g);
+    (g.e.units.some((u,i)=>u.hp<hp[i]))? ok('T4 : dépôt → explosion en chaîne (AoE)') : bad('T4 : dépôt sans dégâts');
+    ((g.craters||[]).length>0)? ok('T4 : dépôt → cratère persistant') : bad('T4 : pas de cratère');
+  }
+}
+
+// 7) HABILLAGE — décor cosmétique généré et thématisé par terrain
+console.log('\n[7] Habillage des cartes (décor)');
+{ const pl=M.genDecor('plains'), wa=M.genDecor('waste');
+  (pl.length>10 && wa.length>10)? ok('décor généré ('+pl.length+' éléments)') : bad('décor trop pauvre');
+  (pl.some(d=>d.kind==='bush') && wa.some(d=>d.kind==='wreck'))? ok('thématisation par terrain (plaines→buissons, friche→épaves)') : bad('décor non thématisé');
+  M.game=null; M.openBriefing('h5'); M.startMission();
+  (M.DECOR && M.DECOR.length>0)? ok('décor appliqué en mission (T5='+M.DECOR.length+')') : bad('décor absent en mission');
 }
 
 console.log('\n'+(fails? '❌ '+fails+' échec(s)':'✅ tout est vert'));
