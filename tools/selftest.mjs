@@ -179,6 +179,27 @@ console.log('\n[6] Mission 4 — stase de la Singularité');
   (g.e.heroPow===1)? ok('T4 : aura d\'équipe = pleine (heroPow=1)') : bad('T4 : heroPow='+g.e.heroPow);
 }
 
+// 6b) NOUVELLES STRUCTURES — foreuse, tour-relais brouilleuse (T3), dépôt de carburant (T4)
+console.log('\n[6b] Structures destructibles supplémentaires');
+{ M.game=null; M.openBriefing('h3'); M.startMission(); const g=M.game;
+  const types=(g.pois||[]).map(p=>p.type);
+  (types.includes('drill'))? ok('T3 : foreuse à ressources posée') : bad('T3 : foreuse absente ('+types+')');
+  (types.includes('jam'))? ok('T3 : tour-relais brouilleuse posée') : bad('T3 : brouilleuse absente');
+  M.update(0.05);
+  (g.jammed===true)? ok('T3 : minimap brouillée tant que le relais tient') : bad('T3 : jammed='+g.jammed);
+  const jam=g.pois.find(p=>p.type==='jam'); jam.done=true; M.update(0.05);
+  (g.jammed===false)? ok('T3 : relais détruit → brouillage levé') : bad('T3 : brouillage persistant');
+}
+{ M.game=null; M.openBriefing('h4'); M.startMission(); const g=M.game;
+  const fuel=g.pois.find(p=>p.type==='fuel');
+  if (!fuel){ bad('T4 : dépôt de carburant absent'); }
+  else { for(let i=0;i<4;i++) M.spawnUnit(g.e,0); for(const u of g.e.units) u.x=fuel.x;
+    const hp=g.e.units.map(u=>u.hp); fuel.fire(g);
+    (g.e.units.some((u,i)=>u.hp<hp[i]))? ok('T4 : dépôt → explosion en chaîne (AoE)') : bad('T4 : dépôt sans dégâts');
+    ((g.craters||[]).length>0)? ok('T4 : dépôt → cratère persistant') : bad('T4 : pas de cratère');
+  }
+}
+
 // 7) HABILLAGE — décor cosmétique généré et thématisé par terrain
 console.log('\n[7] Habillage des cartes (décor)');
 { const pl=M.genDecor('plains'), wa=M.genDecor('waste');
