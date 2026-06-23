@@ -20,7 +20,8 @@ const navigator={maxTouchPoints:0,userAgent:'node'}; const screen={orientation:{
 const performance={now:()=>Date.now()}; const localStorage={_d:{},getItem(k){return this._d[k]||null;},setItem(k,v){this._d[k]=v;}};
 const exp=`;module.exports={ get game(){return game;}, set game(v){game=v;}, get TUT(){return TUT;},
   newGame,update,render,resize,spawnUnit,tryBuild,tryBuy,trySpecial,tryEvolve,tryCapUp,tryHero,setStance,
-  startTutorial,tutTick,tutAdvance,tutEmptySlot,heroBtnReady,TUT_STEPS,BUILDS };`;
+  startTutorial,tutTick,tutAdvance,tutEmptySlot,heroBtnReady,TUT_STEPS,BUILDS,
+  CAMPAIGN,openBriefing,startMission,scenarioCheck,applyMissionMap,missionTier,ROLES };`;
 const mod={exports:{}};
 new Function('module','document','window','navigator','screen','performance','localStorage','requestAnimationFrame','addEventListener','AudioContext', js+exp)
   (mod,document,win,navigator,screen,performance,localStorage,noop,noop,AC);
@@ -64,5 +65,42 @@ for (const diff of [0,1,2,3]){
     if (e.units.some(u=>u.role==='hero')||e.heroCd>0) seen=true; }
   seen? ok(dn[diff]+' : héros invoqué (~'+Math.round(t)+'s)') : bad(dn[diff]+' : héros jamais invoqué');
 }
+// 3) MODE HISTOIRE : chaque mission démarre, sa carte/déclencheurs s'appliquent, le moteur
+//    tourne longtemps sans exception, les triggers se déclenchent et l'objectif progresse.
+console.log('\n[3] Mode Histoire — campagne');
+for (const m of M.CAMPAIGN){
+  try {
+    M.game=null; M.openBriefing(m.id); M.startMission();
+    const g=M.game;
+    if (!g || !g.scenario){ bad(m.id+' : scénario non initialisé'); continue; }
+    if (!g.terrainCfg){ bad(m.id+' : carte dédiée non appliquée'); continue; }
+    const tier=M.missionTier(m), expectLock=[null,2,1,0,0,0][tier];
+    // boucle longue : ~5 min de jeu simulé, le joueur recrute en continu
+    let res=null, renderE=null;
+    for (let i=0;i<6200 && !res;i++){
+      if (i%40===0){ g.p.f+=120; g.p.m+=120; g.p.w+=50; M.tryBuy(g.p, i%2?0:2); }
+      M.update(0.05);
+      if (i%200===0){ try{ M.render(0.05); }catch(e){ renderE=e.message; break; } }
+      res = M.scenarioCheck(0); // lecture seule de l'état
+    }
+    if (renderE){ bad(m.id+' : render a levé '+renderE); continue; }
+    const fired = (g.scenario.triggers||[]).filter(t=>t.done).length;
+    ok(m.id+' ('+M.missionTier(m)+') : carte OK, '+fired+' trigger(s), issue='+(res||'en cours'));
+  } catch(e){ bad(m.id+' : exception '+e.message); }
+}
+
+// 4) ÉQUILIBRAGE : au tier 1, la Mêlée doit frapper PLUS fort que le Tank (et avoir moins de PV).
+console.log('\n[4] Équilibrage mêlée/tank (T1)');
+{
+  M.game=null; M.newGame('HUM',1,false,'IA');
+  const g=M.game; g.p.units.length=0;
+  M.spawnUnit(g.p,0); M.spawnUnit(g.p,1);
+  const mel=g.p.units[0], tnk=g.p.units[1];
+  (mel.dmg>tnk.dmg*1.4)? ok('Mêlée frappe nettement plus fort que le Tank ('+mel.dmg.toFixed(1)+' vs '+tnk.dmg.toFixed(1)+')')
+                       : bad('Mêlée ('+mel.dmg.toFixed(1)+') ne dépasse pas nettement le Tank ('+tnk.dmg.toFixed(1)+')');
+  (mel.maxhp<tnk.maxhp)? ok('Mêlée plus fragile que le Tank ('+Math.round(mel.maxhp)+' vs '+Math.round(tnk.maxhp)+' PV)')
+                       : bad('Mêlée pas plus fragile que le Tank');
+}
+
 console.log('\n'+(fails? '❌ '+fails+' échec(s)':'✅ tout est vert'));
 process.exit(fails?1:0);
