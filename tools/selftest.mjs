@@ -19,9 +19,9 @@ const win={addEventListener:noop,innerWidth:W,innerHeight:Hh,devicePixelRatio:1,
 const navigator={maxTouchPoints:0,userAgent:'node'}; const screen={orientation:{lock:()=>Promise.resolve()}};
 const performance={now:()=>Date.now()}; const localStorage={_d:{},getItem(k){return this._d[k]||null;},setItem(k,v){this._d[k]=v;}};
 const exp=`;module.exports={ get game(){return game;}, set game(v){game=v;}, get TUT(){return TUT;},
-  newGame,update,render,resize,spawnUnit,tryBuild,tryBuy,trySpecial,tryEvolve,tryCapUp,tryHero,setStance,
+  newGame,update,render,resize,spawnUnit,unitStats,tryBuild,tryBuy,trySpecial,tryEvolve,tryCapUp,tryHero,setStance,
   startTutorial,tutTick,tutAdvance,tutEmptySlot,heroBtnReady,TUT_STEPS,BUILDS,
-  CAMPAIGN,openBriefing,startMission,scenarioCheck,applyMissionMap,missionTier,ROLES };`;
+  CAMPAIGN,openBriefing,startMission,scenarioCheck,applyMissionMap,missionTier,ROLES,statMul,costMul };`;
 const mod={exports:{}};
 new Function('module','document','window','navigator','screen','performance','localStorage','requestAnimationFrame','addEventListener','AudioContext', js+exp)
   (mod,document,win,navigator,screen,performance,localStorage,noop,noop,AC);
@@ -100,6 +100,38 @@ console.log('\n[4] Équilibrage mêlée/tank (T1)');
                        : bad('Mêlée ('+mel.dmg.toFixed(1)+') ne dépasse pas nettement le Tank ('+tnk.dmg.toFixed(1)+')');
   (mel.maxhp<tnk.maxhp)? ok('Mêlée plus fragile que le Tank ('+Math.round(mel.maxhp)+' vs '+Math.round(tnk.maxhp)+' PV)')
                        : bad('Mêlée pas plus fragile que le Tank');
+}
+
+// 5) UPGRADES (+15 %/niveau effectifs), ÉQUILIBRAGE MIROIR, SCALING D'ÈRE, RESTRICTIONS DE CAMPAGNE
+console.log('\n[5] Upgrades / miroir / scaling / restrictions de scénario');
+{ M.game=null; M.newGame('HUM',1,false,'IA'); const g=M.game;
+  const base=M.unitStats(g.p,0).dmg; g.p.upg.melee=3; const up3=M.unitStats(g.p,0).dmg;
+  (Math.abs(up3/base-1.45)<0.01)? ok('Mêlée niv.3 = +45 % de dégâts ('+base.toFixed(1)+'→'+up3.toFixed(1)+')')
+                               : bad('amélioration ≠ +45 % (ratio '+(up3/base).toFixed(3)+')');
+}
+{ M.game=null; M.newGame('HUM',1,false,'IA'); const h=M.unitStats(M.game.p,0);
+  M.game=null; M.newGame('IA',1,false,'HUM'); const a=M.unitStats(M.game.p,0);
+  const dpsH=h.dmg/h.rate, dpsA=a.dmg/a.rate;
+  (Math.abs(dpsH-dpsA)<0.5)? ok('DPS Mêlée miroir HUM=GPT ('+dpsH.toFixed(1)+' = '+dpsA.toFixed(1)+')')
+                           : bad('DPS non miroir ('+dpsH.toFixed(1)+' vs '+dpsA.toFixed(1)+')');
+}
+{ const r=M.statMul(4)/M.statMul(0);
+  (r>=6)? ok('Scaling ère 4 = ×'+r.toFixed(2)+' (paliers spectaculaires)') : bad('scaling d\'ère trop faible (×'+r.toFixed(2)+')'); }
+{ // restriction IA en mission de début (h1, tier 1) : ni siège ni aérien, ni légende
+  M.game=null; M.openBriefing('h1'); M.startMission(); const g=M.game;
+  g.e.f=g.e.m=g.e.w=99999; M.tryBuy(g.e,3); M.tryBuy(g.e,4);
+  (g.e.units.every(u=>u.role!=='siege'&&!u.fly))? ok('IA T1 : siège/aérien bloqués (scénario)') : bad('IA T1 a déployé siège/aérien');
+  g.e.heroCd=0; g.e.era=2; const hres=M.tryHero(g.e);
+  (!hres && !g.e.units.some(u=>u.role==='hero'))? ok('IA T1 : Singularité bloquée (correctif gating)') : bad('IA T1 a invoqué sa légende');
+}
+{ // légende IA autorisée en finale (h5, tier 5)
+  M.game=null; M.openBriefing('h5'); M.startMission(); const g=M.game;
+  g.e.heroCd=0; g.e.era=2; g.e.f=g.e.m=g.e.w=99999;
+  M.tryHero(g.e)? ok('IA T5 : légende autorisée (scriptée)') : bad('IA T5 : légende refusée à tort');
+}
+{ // barrière de scénario (brouillard infranchissable) en T3
+  M.game=null; M.openBriefing('h3'); M.startMission();
+  M.game.barrier? ok('T3 : barrière de scénario active (x='+Math.round(M.game.barrier.x)+')') : bad('T3 : barrière absente');
 }
 
 console.log('\n'+(fails? '❌ '+fails+' échec(s)':'✅ tout est vert'));
