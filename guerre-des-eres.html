@@ -3405,7 +3405,7 @@ function drawNode(n){
   if (Math.abs(n.prog)<1 && n.prog!==0){
     ctx.fillStyle='#000a'; ctx.fillRect(x-22,y-58,44,5);
     ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(x-22,y-58,44*Math.abs(n.prog),5); }
-  if (n.center){ ctx.font='11px Arial'; ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillText(tr('oasis'), x, y-64); }
+  if (n.center){ ctx.font='11px Arial'; ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillText(tr('oasis'), x, y-82); }
 }
 
 /* ---------- personnages ---------- */
@@ -4813,7 +4813,7 @@ const TUT_STEPS = [
     obj:{fr:"Capturez un lac",en:"Capture a lake"},
     enter:()=>{ const n=game.nodes[0]; n.prog=0.85; game.p.stance='charge';
       for (const u of game.p.units) if(!u.fly){ u.x=Math.max(u.x, n.x-60); u.tx=u.x; }
-      tutCam(n.x); },
+      tutCam(n.x); TUT.frozen=false; },  // la capture nécessite que le monde tourne
     focus:()=>tutWorldRect(game.nodes[0].x),
     done:()=>game.nodes.some(n=>n.owner==='p'),
   },
@@ -4906,8 +4906,8 @@ const TUT_STEPS = [
           en:"Everything is set. Attack! Order the ⚔ CHARGE and lead your troops to destroy the enemy base. Recruit reinforcements if needed."},
     obj:{fr:"Détruisez la base ennemie",en:"Destroy the enemy base"},
     enter:()=>{ const e=game.e; e.hp=e.maxhp=600; e.stance='hold'; game.p.stance='charge'; tutGrant(800,800,300);
-      for (const u of game.p.units) if(!u.fly){ u.x=Math.max(u.x, e.x-1500); u.tx=u.x; } // rapproche du front
-      camFollow=true; },
+      for (const u of game.p.units) if(!u.fly){ u.x=Math.max(u.x, e.x-1500); u.tx=u.x; }
+      camFollow=true; TUT.frozen=false; },  // le combat nécessite que le monde tourne
     focus:()=>tutWorldRect(game.e.x),
     allow:a=>a.t==='stance'||a.t==='buy',
     done:()=>game.e.hp<=0,
@@ -4931,7 +4931,16 @@ function tutNudge(){
 function tutGate(a){
   if (!game || !game.tut || !TUT) return true;
   const step = TUT.steps[TUT.i];
-  if (step && step.allow && step.allow(a)) return true;
+  if (step && step.allow && step.allow(a)){
+    // Premier geste autorisé → dégeler le monde immédiatement : les cooldowns reprennent,
+    // le combat tourne, la capture de lac progresse. Le done() est détecté dans tutTick.
+    if (TUT.frozen) TUT.frozen = false;
+    return true;
+  }
+  if (!step || !step.allow){
+    if (TUT.frozen) TUT.frozen = false;   // pas de prédicat = tout est permis
+    return true;
+  }
   tutNudge();
   return false;
 }
@@ -6072,6 +6081,7 @@ function drawOnlinePauseInfo(){
 // ⚙ — ouvre le menu de réglages (gèle aussi la partie le temps qu'il est ouvert)
 function togglePauseAction(){
   if (tutoStep>=0) return;
+  if (game && game.tut) return;   // tutoriel : pas de pause manuelle — le gel est géré par TUT.frozen
   if (buildMenu){ buildMenu=null; return; }
   if (isOnline()){
     // ⚙ EN LIGNE : ouvre/ferme uniquement les RÉGLAGES, SANS imposer de pause au jeu.
@@ -6086,7 +6096,7 @@ function togglePauseAction(){
 }
 // ⏸ — pause simple : fige la partie SANS masquer le champ de bataille (pour observer la situation)
 function toggleSoftPause(){
-  if (tutoStep>=0 || !game || game.over) return;
+  if (tutoStep>=0 || !game || game.over || game.tut) return;
   if (buildMenu) buildMenu=null;
   if (isOnline()){                       // en ligne : pause négociée (le terrain reste visible des deux côtés)
     if (!paused) onlinePauseRequest();
