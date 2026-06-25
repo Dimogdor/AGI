@@ -24,7 +24,6 @@ let fpsAvg = 60, fpsWarned = false;                            // suivi FPS pour
 // surcharge le canvas (Dark Reader, bloqueurs lisant le Canvas…). Aucun coût si désactivé.
 const PERF = { on:(typeof location!=='undefined' && /[?&]perf\b/.test(location.search||'')),
                upd:0, rend:0, fps:60, t0:0 };
-let lightT = 0;                                                // éclair d'ambiance (décor)
 // vitesses de jeu disponibles (×0.75 ralenti, ×1 normal, ×2, ×3)
 const SPEEDS = [0.75, 1, 2, 3];
 function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }

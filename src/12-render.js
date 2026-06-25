@@ -30,15 +30,6 @@ function pb(x,y,w,h,col){ TC.fillStyle=col; TC.fillRect(qz(x),qz(y),Math.max(PX,
 function pbo(x,y,w,h,col,line){ x=qz(x); y=qz(y); w=Math.max(PX,qz(w)); h=Math.max(PX,qz(h));
   TC.fillStyle=line||shade(col,0.45); TC.fillRect(x-PX,y-PX,w+PX*2,h+PX*2);
   TC.fillStyle=col; TC.fillRect(x,y,w,h); }
-// disque en gros pixels (soleil, lacs, halos)
-function pdisc(cx,cy,r,col){ TC.fillStyle=col; const R=qz(r);
-  for(let yy=-R; yy<=R; yy+=PX){ const xx=Math.floor(Math.sqrt(Math.max(0,R*R-yy*yy))/PX)*PX;
-    TC.fillRect(qz(cx)-xx, qz(cy)+yy, xx*2+PX, PX); } }
-// anneau en gros pixels
-function pring(cx,cy,r,col,th){ TC.fillStyle=col; const R=qz(r), T=th||PX*1.5;
-  for(let a=0;a<6.283;a+=0.18){ TC.fillRect(qz(cx+Math.cos(a)*R), qz(cy+Math.sin(a)*R), T, T); } }
-// petite croix/étoile pixel
-function pstar4(cx,cy,r,col){ pb(cx-r,cy-PX/2,r*2,PX,col); pb(cx-PX/2,cy-r,PX,r*2,col); }
 // cache de sprites hors écran : key -> canvas. draw() utilise pb/pbo/… qui ciblent TC.
 const SPR = new Map();
 function sprite(key, w, h, draw){
@@ -504,15 +495,6 @@ function drawNode(n){
   if (n.center){ ctx.font='11px Arial'; ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillText(tr('oasis'), x, y-82); }
 }
 
-/* ---------- personnages ---------- */
-// styles humains par ère : silhouettes nettement différenciées
-const HSTYLE = [
-  {sc:0.92, body:'#8a9a5b', pants:'#4a5568', helm:'cap',    skin:'#edc39a'}, // 2025 milicien civil
-  {sc:1.02, body:'#5a6b3f', pants:'#3f4a3a', helm:'helmet', skin:'#e0b890', vest:true}, // 2030 soldat
-  {sc:1.1,  body:'#4a7b9a', pants:'#2f3a4a', helm:'visor',  skin:'#d8b088', exo:true},  // 2035 exo
-  {sc:1.18, body:'#7a5aa8', pants:'#332a44', helm:'power',  skin:'#d8b088', cape:'#caa8ff', power:true}, // 2040
-  {sc:1.26, body:'#e8c84a', pants:'#8a7a3a', helm:'halo',   skin:'#f0d0a8', cape:'#fff0c0', power:true}, // AGI
-];
 /* ====== ÉCLAIRAGE & MATIÈRE — relief 2.5D sculpté + accents néon ====== */
 const LIGHT = { x:-0.55, y:-0.83 };               // direction de la lumière (haut-gauche)
 const rgbaC = (col,a)=>{ const m=toRGB(col); return 'rgba('+(m[0]|0)+','+(m[1]|0)+','+(m[2]|0)+','+a+')'; };
@@ -535,7 +517,6 @@ function projShadow(x,gy,w){
   g.addColorStop(0,'rgba(6,5,9,0.36)'); g.addColorStop(0.6,'rgba(6,5,9,0.15)'); g.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,0,w*1.5,w*0.95,0,0,6.283); ctx.fill(); ctx.restore();
 }
-function drawShadow(x, w, y){ projShadow(x, y, w); }   // compat anciens appels
 function drawStar(cx,cy,r,col){ TC.fillStyle=col; TC.beginPath();
   for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr2=i%2?r*0.45:r;
     const px=cx+Math.cos(a)*rr2, py=cy+Math.sin(a)*rr2; i?TC.lineTo(px,py):TC.moveTo(px,py); }

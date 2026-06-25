@@ -1,11 +1,4 @@
 /* ================= DONNÉES ================= */
-const ERAS = [
-  {name:"2025 · AUBE DES LLM",      tag:"v4"},
-  {name:"2030 · AGENTS AUTONOMES",  tag:"v6"},
-  {name:"2035 · ESPRITS ÉMERGENTS", tag:"v8"},
-  {name:"2040 · PRÉ-AGI",           tag:"vX"},
-  {name:"SINGULARITÉ · AGI",        tag:"∞"},
-];
 const EVOLVE_XP = [0, 360, 980, 2150, 4200]; // paliers d'ère allongés : parties plus longues
 const TRANS_XP = 13000; // transcendance : 5× le coût d'origine (2600) pour un endgame qui se mérite
 // ---- cataclysmes naturels : rares, et de moins en moins rares à mesure que le monde se meurt ----
