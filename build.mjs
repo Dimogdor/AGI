@@ -9,7 +9,7 @@
    Electron (PC) ou servi tel quel sur le web.
    Lancer :  npm run build
    ===================================================================== */
-import { readFile, writeFile, mkdir, rm, cp, access } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, cp, access, readdir } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { minify } from 'terser';
 import JsObf from 'javascript-obfuscator';
@@ -25,8 +25,25 @@ const BUILD_ID = VERSION + '-' + Date.now().toString(36);
 
 const exists = async p => { try { await access(p, constants.F_OK); return true; } catch { return false; } };
 
-console.log(`▶ build v${VERSION}`);
-const html = await readFile(SRC, 'utf8');
+// --- assemblage : src/*.js concaténés (ordre alphabétique des préfixes 00..22) injectés
+//     dans src/shell.html à la place du marqueur. Le jeu est ÉCRIT en modules dans src/ ;
+//     guerre-des-eres.html est un ARTEFACT régénéré (jouable sur file://, lisible). ---
+const SRCDIR = new URL('./src/', import.meta.url);
+async function assemble(){
+  const shell = await readFile(new URL('shell.html', SRCDIR), 'utf8');
+  const files = (await readdir(SRCDIR)).filter(f=>f.endsWith('.js')).sort();
+  const js = (await Promise.all(files.map(f=>readFile(new URL(f, SRCDIR),'utf8')))).join('\n');
+  return shell.replace('__BUILD_SCRIPT__', () => js);
+}
+
+const DEV = process.argv.includes('dev');
+console.log(`▶ build v${VERSION}${DEV?' (dev)':''}`);
+// régénère guerre-des-eres.html (lisible + jouable sur file://) à partir des modules src/
+const html = await assemble();
+await writeFile(SRC, html);
+console.log(`  guerre-des-eres.html régénéré depuis src/ (${(html.length/1024)|0} Ko)`);
+// mode dev : on s'arrête là (pas de minif/obfuscation/PWA) — itération rapide
+if (DEV){ console.log('✔ dev prêt (sans obfuscation)'); process.exit(0); }
 
 // --- extraction du <script> principal (le seul du fichier) ---
 const m = html.match(/<script>([\s\S]*?)<\/script>/);
