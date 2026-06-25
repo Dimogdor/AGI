@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<!-- ⚠ FICHIER GÉNÉRÉ — ne pas éditer directement. Source : src/*.js + src/shell.html · régénérer avec `npm run dev`. -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AGI">
+<meta name="mobile-web-app-capable" content="yes">
+<title>AGI</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; touch-action:none; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0d0a0a; font-family:'Arial Narrow',Arial,sans-serif; }
+  /* le menu (et l'écran de fin) doivent pouvoir défiler au doigt sur mobile en plein écran */
+  #menu, #endscreen { touch-action:pan-y; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  #menu *, #endscreen * { touch-action:pan-y; }
+  #menu button, #menu input, #menu .tab, #menu .pick, #menu .go, #menu .tog,
+  #endscreen button { touch-action:manipulation; }
+  /* iOS : on respecte l'encoche / l'indicateur d'accueil pour ne rien rogner en paysage */
+  #menu, #endscreen { padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+  /* bouton plein écran flottant (mobile surtout) */
+  #fsBtn { position:fixed; top:calc(8px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); z-index:40; display:none;
+    pointer-events:auto; cursor:pointer; font-family:inherit; font-size:18px; line-height:1;
+    width:40px; height:40px; color:#e8e0d2; background:rgba(16,13,12,0.78);
+    border:1px solid #4a3a32; border-radius:6px; }
+  #fsBtn:active { background:#2a0e0a; }
+  #langSel { font-family:inherit; font-size:.95em; background:#1a1210; color:#d8d0c4;
+    border:1px solid #4a3a32; padding:5px 10px; cursor:pointer; }
+  body[dir="rtl"] .tuto, body[dir="rtl"] .setRow span { text-align:right; }
+  #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  canvas { display:block; background:#0d0a0a; }
+  #ui { position:absolute; inset:0; pointer-events:none; }
+  .panel { pointer-events:auto; }
+  /* ---------- MENU : dystopie capitaliste, fond animé sur le canvas ---------- */
+  #menu {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    background:transparent; z-index:10; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:3vh 16px 18px;
+    color:#d8d0c4; pointer-events:auto;
+  }
+  #menu > * { pointer-events:auto; }
+  #menu .title {
+    font-size:clamp(70px,17vw,160px); font-weight:700; letter-spacing:.22em; line-height:1;
+    color:#e8e0d2; text-shadow: 3px 3px 0 #a8281e, -1px -1px 0 #00000088;
+    font-stretch:condensed;
+  }
+  #menu .tagline { font-size:clamp(11px,1.7vw,15px); color:#b89a7a; letter-spacing:.3em; margin:2px 0 18px; text-transform:uppercase; }
+  .tabs { display:flex; gap:8px; margin-bottom:18px; }
+  .tab {
+    cursor:pointer; padding:9px 24px; font-size:clamp(13px,2vw,16px); font-family:inherit;
+    color:#b8b0a4; letter-spacing:.16em; background:rgba(12,8,8,0.72); border:1px solid #4a3a32;
+  }
+  .tab.on { color:#fff; border-color:#a8281e; background:rgba(60,16,12,0.78); }
+  .page { display:none; flex-direction:column; align-items:center; gap:16px; max-width:780px; width:100%;
+    background:rgba(10,7,7,0.66); border:1px solid #3a2e28; padding:22px 18px; }
+  .page.on { display:flex; animation:pageIn .28s ease both; }
+  @keyframes pageIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  .tab { transition:color .18s, background .18s, border-color .18s; }
+  #endscreen { animation:pageIn .3s ease both; }
+  /* ============ INTRO DE MISSION (« True Intro » thématique, plein écran) ============ */
+  #briefscreen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center;
+    justify-content:center; z-index:12; padding:4vh 16px; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    color:#e8e0d2; animation:briefFade .45s ease both; }
+  @keyframes briefFade { from { opacity:0; } to { opacity:1; } }
+  #briefCard { position:relative; width:min(700px,95%); padding:0 0 30px; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; text-align:center; border-radius:5px;
+    animation:briefRise .5s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes briefRise { from { opacity:0; transform:translateY(22px) scale(.98); } to { opacity:1; transform:none; } }
+  #briefChrome { width:100%; padding:9px 16px; font-size:clamp(10px,1.7vw,13px); letter-spacing:.22em;
+    display:flex; align-items:center; gap:8px; }
+  #briefYear { letter-spacing:.34em; font-size:clamp(12px,1.9vw,15px); margin:22px 0 4px; opacity:.92; }
+  #briefTitle { font-size:clamp(26px,6vw,46px); font-weight:800; line-height:1.05; letter-spacing:.04em;
+    margin:0 18px 16px; }
+  #briefBody { max-width:560px; line-height:1.7; font-size:clamp(14px,2.3vw,17.5px); margin:0 22px 18px;
+    white-space:pre-line; }
+  #briefObj { font-weight:700; font-size:clamp(13px,2vw,16px); margin:0 22px 22px; padding:9px 18px;
+    border-radius:4px; }
+  #briefscreen .row { padding:0 16px; }
+  /* — HUMANITÉ : manifeste imprimé, encre rouge sur papier sombre — */
+  #briefscreen.brief-hum { background:radial-gradient(circle at 50% 16%, #2a100a 0%, #150b08 64%, #0a0605 100%); }
+  #briefscreen.brief-hum #briefCard { background:#1a110c;
+    border:1px solid #7a2418; box-shadow:0 0 0 5px #0e0807, 0 18px 70px #000000aa, inset 0 0 60px #50160c44; }
+  #briefscreen.brief-hum #briefChrome { background:linear-gradient(90deg,#a8281e,#5e160f); color:#ffe6c8;
+    font-weight:800; text-transform:uppercase; justify-content:center; border-bottom:2px solid #d8483a; }
+  #briefscreen.brief-hum #briefYear { color:#e8a85a; }
+  #briefscreen.brief-hum #briefTitle { color:#f3dca2; text-shadow:2px 2px 0 #7a1a12; }
+  #briefscreen.brief-hum #briefBody { color:#ddcdb8; }
+  #briefscreen.brief-hum #briefObj { color:#ffe0a0; background:#3a1409; border:1px solid #a8552a; }
+  /* — GPT : terminal corporate, monospace cyan + lignes de balayage — */
+  #briefscreen.brief-ia { background:radial-gradient(circle at 50% 28%, #06181f 0%, #04090d 72%, #01050a 100%); }
+  #briefscreen.brief-ia #briefCard { background:#06121a; font-family:'Courier New',ui-monospace,monospace;
+    border:1px solid #1d6f88; box-shadow:0 0 0 1px #0a2a36, 0 18px 70px #000000aa, inset 0 0 70px #0a3a4a3a; }
+  #briefscreen.brief-ia #briefCard::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(120,220,255,0.05) 0 1px, transparent 1px 3px); }
+  #briefscreen.brief-ia #briefChrome { background:#0a2630; color:#8fe6ff; justify-content:flex-start;
+    border-bottom:1px solid #1d6f88; font-family:'Courier New',monospace; }
+  #briefscreen.brief-ia #briefChrome::before { content:"● ● ●"; color:#2f8aa0; letter-spacing:2px; margin-right:6px; }
+  #briefscreen.brief-ia #briefYear { color:#5ad0ff; }
+  #briefscreen.brief-ia #briefTitle { color:#9fe9ff; text-shadow:0 0 14px #2aa8d055; font-weight:700; }
+  #briefscreen.brief-ia #briefBody { color:#bfe6f2; }
+  #briefscreen.brief-ia #briefObj { color:#aef0ff; background:#072430; border:1px solid #1d8faa; }
+  #briefscreen.brief-ia #briefBody, #briefscreen.brief-ia #briefObj { font-family:'Courier New',monospace; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .pick {
+    cursor:pointer; padding:12px 28px; font-size:clamp(14px,2.2vw,18px); font-family:inherit;
+    color:#b8b0a4; letter-spacing:.12em; background:none; border:1px solid #4a3a32;
+  }
+  .pick.sel { color:#fff; border-color:#a8281e; background:#3c100c; }
+  .pick.hum.sel { border-color:#d07a2e; background:#3a230c; }
+  .pick.ia.sel { border-color:#3e8cb8; background:#0c2230; }
+  .chk { display:flex; align-items:center; gap:10px; color:#b8b0a4; font-size:clamp(12px,1.8vw,15px); cursor:pointer; letter-spacing:.08em; }
+  .chk input { width:18px; height:18px; accent-color:#a8281e; cursor:pointer; }
+  .go {
+    cursor:pointer; margin-top:4px; padding:15px 70px;
+    font-size:clamp(17px,2.8vw,23px); letter-spacing:.3em; font-family:inherit; font-weight:700;
+    color:#fff; background:#a8281e; border:1px solid #d8483a;
+  }
+  .go:hover,.go:active { background:#c83a2c; }
+  .tuto { font-size:clamp(12px,1.7vw,14.5px); line-height:1.8; color:#c4bcb0; text-align:left; padding:0 6px; max-height:52vh; overflow-y:auto; }
+  .tuto h3 { color:#e8a06a; font-weight:700; letter-spacing:.1em; margin:13px 0 3px; }
+  .tuto b { color:#e8e0d2; }
+  .tuto kbd { font-family:inherit; border:1px solid #5a4a40; padding:0 6px; font-size:.9em; background:#1a1210; }
+  .setRow { display:flex; align-items:center; justify-content:space-between; width:min(440px,86vw);
+    border-bottom:1px solid #2e2620; padding:10px 4px; font-size:clamp(13px,1.9vw,15px); color:#b8b0a4; }
+  .tog { cursor:pointer; border:1px solid #4a3a32; background:none; color:#988e80;
+    padding:5px 16px; font-family:inherit; font-size:.95em; }
+  .tog.on { border-color:#a8281e; color:#e8e0d2; background:#2a0e0a; }
+  .volBtns { display:flex; gap:6px; align-items:center; }
+  .volBtns button { cursor:pointer; border:1px solid #4a3a32; background:none; color:#d8d0c4;
+    width:32px; height:30px; font-family:inherit; font-size:16px; }
+  .keyBtn { cursor:pointer; border:1px solid #4a3a32; background:#1a1210; color:#d8d0c4;
+    padding:4px 14px; font-family:inherit; font-size:.92em; min-width:96px; }
+  .keyBtn.wait { border-color:#e8a06a; color:#e8a06a; }
+  #keysTitle { color:#e8a06a; letter-spacing:.14em; margin-top:14px; font-size:clamp(13px,1.9vw,15px); }
+  #endscreen {
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+    background:#0d0a0ae8; gap:18px; z-index:11; color:#d8d0c4;
+  }
+  #endtitle { font-size:clamp(38px,8vw,86px); font-weight:700; letter-spacing:.2em; }
+  #endstats { color:#988e80; font-size:clamp(12px,1.9vw,16px); text-align:center; line-height:1.9; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="rotate" style="position:fixed;inset:0;z-index:9999;display:none;background:#15110f;color:#e8e0d2;
+  align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;
+  font-family:system-ui,sans-serif;">
+  <div style="font-size:54px;margin-bottom:16px;">📱⟳</div>
+  <div style="font-size:19px;font-weight:700;letter-spacing:.5px;">Tournez votre appareil</div>
+  <div style="font-size:14px;color:#b7ad9c;margin-top:10px;max-width:320px;line-height:1.5;">
+    AGI — Guerre des Ères se joue en <b>mode paysage</b>. Pivotez l'écran à l'horizontale pour des commandes confortables.</div>
+</div>
+<div id="ui">
+  <div id="menu" class="panel">
+    <div class="title">AGI</div>
+    <div class="tagline" data-i18n="tagline">la dernière bataille de l'humanité · 2025</div>
+    <div class="tabs">
+      <button class="tab on" data-page="play" data-i18n="tab_play">JOUER</button>
+      <button class="tab" data-page="tuto" data-i18n="tab_tuto">TUTORIEL</button>
+      <button class="tab" data-page="opts" data-i18n="tab_opts">PARAMÈTRES</button>
+    </div>
+    <div class="page on" id="page-play">
+      <div class="row">
+        <button class="pick hum sel" id="cardHum" data-i18n="fac_hum">HUMANITÉ</button>
+        <button class="pick ia" id="cardIA">G·P·T</button>
+      </div>
+      <div class="row">
+        <button class="pick diffBtn" data-diff="0" data-i18n="diff_0">Facile</button>
+        <button class="pick diffBtn sel" data-diff="1" data-i18n="diff_1">Normal</button>
+        <button class="pick diffBtn" data-diff="2" data-i18n="diff_2">Difficile</button>
+        <button class="pick diffBtn" data-diff="3" data-i18n="diff_3">Brutal</button>
+      </div>
+      <button class="go" id="startBtn" data-i18n="start">COMMENCER (vs IA)</button>
+      <button class="pick" id="campBtn" data-i18n="camp_btn" style="margin-top:4px; border-color:#c8a23a; color:#f0dca0;">📖 CAMPAGNE SOLO</button>
+      <button class="pick" id="onlineBtn" data-i18n="online_btn" style="border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
+      <div id="onlinePanel" style="display:none; flex-direction:column; gap:10px; align-items:center;
+           border-top:1px solid #3a2e28; padding-top:12px; margin-top:4px; width:100%;">
+        <div data-i18n="online_hint" style="color:#8d84a8; font-size:clamp(11px,1.6vw,13px); text-align:center;">
+          Choisissez d'abord votre camp ci-dessus. La partie se joue en pair-à-pair.</div>
+
+        <!-- ACCUEIL EN LIGNE : créer / rejoindre + parties publiques -->
+        <div id="netHome" style="display:flex; flex-direction:column; gap:10px; align-items:center; width:100%;">
+          <div class="row" style="gap:8px;">
+            <button class="go" id="goCreate" data-i18n="net_create" style="font-size:15px; padding:10px 22px;">CRÉER UNE PARTIE</button>
+            <button class="pick" id="goJoin" data-i18n="net_joincode" style="border-color:#3e8cb8; color:#bfe6ff;">REJOINDRE PAR CODE</button>
+          </div>
+          <div style="width:min(420px,90%);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span data-i18n="net_publics" style="color:#b7ad9c; font-size:13px;">Parties publiques</span>
+              <button class="pick" id="lobbyRefresh" style="font-size:12px; padding:3px 10px;">⟳</button>
+            </div>
+            <div id="lobbyList" style="max-height:148px; overflow-y:auto; width:100%; margin-top:6px;
+                 display:flex; flex-direction:column; gap:5px;"></div>
+          </div>
+        </div>
+
+        <!-- CRÉATION DE SALON -->
+        <div id="netCreate" style="display:none; flex-direction:column; gap:8px; align-items:center; width:min(420px,92%);">
+          <input id="lobbyName" data-i18n-ph="net_name_ph" placeholder="Nom du salon (optionnel)" maxlength="22" autocomplete="off"
+            style="width:100%; text-align:center; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <input id="hostCode" data-i18n-ph="hostcode_ph" placeholder="CODE PERSONNALISÉ (optionnel)" maxlength="5" autocomplete="off"
+            style="width:100%; text-transform:uppercase; text-align:center; letter-spacing:.25em; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <input id="hostPw" data-i18n-ph="net_pw_ph" placeholder="Mot de passe (optionnel)" maxlength="16" autocomplete="off"
+            style="width:100%; text-align:center; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <label class="chk"><input type="checkbox" id="lobbyPublic" checked> <span data-i18n="net_public_chk">Visible dans la liste publique</span></label>
+          <div style="font-size:12px; color:#b7ad9c;" data-i18n="speed_lbl">Vitesse de jeu</div>
+          <div class="row" id="lobbySpeedRow">
+            <button class="pick lobSpd" data-spd="0.75">×0.75</button>
+            <button class="pick lobSpd sel" data-spd="1">×1</button>
+            <button class="pick lobSpd" data-spd="2">×2</button>
+            <button class="pick lobSpd" data-spd="3">×3</button>
+          </div>
+          <button class="go" id="hostBtn" data-i18n="net_createbtn" style="font-size:16px; padding:10px 30px;">CRÉER LE SALON</button>
+          <button class="pick" id="createBack" data-i18n="net_back" style="font-size:12px; color:#988e80;">← Retour</button>
+        </div>
+
+        <!-- REJOINDRE PAR CODE -->
+        <div id="netJoin" style="display:none; flex-direction:column; gap:8px; align-items:center; width:min(420px,92%);">
+          <input id="joinCode" data-i18n-ph="code_ph" placeholder="CODE" maxlength="5" autocomplete="off"
+            style="width:160px; text-transform:uppercase; text-align:center; letter-spacing:.3em; font-family:inherit; font-size:20px; padding:9px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <input id="joinPw" data-i18n-ph="net_pwjoin_ph" placeholder="Mot de passe (si demandé)" maxlength="16" autocomplete="off"
+            style="width:100%; text-align:center; font-family:inherit; font-size:14px; padding:8px; background:#1a1210; border:1px solid #4a3a32; color:#e8e0d2;">
+          <button class="go" id="joinBtn" data-i18n="join_btn" style="font-size:16px; padding:10px 30px;">REJOINDRE</button>
+          <button class="pick" id="joinBack" data-i18n="net_back" style="font-size:12px; color:#988e80;">← Retour</button>
+        </div>
+
+        <!-- SALON CRÉÉ : code à partager bien en évidence -->
+        <div id="netHosting" style="display:none; flex-direction:column; gap:8px; align-items:center; width:min(420px,92%);">
+          <div data-i18n="net_share" style="color:#b7ad9c; font-size:13px;">Donne ce code à ton ami :</div>
+          <div id="hostCodeBig" style="font-size:36px; font-weight:800; letter-spacing:.28em; color:#bfe6ff; background:#10171c; border:1px solid #3e8cb8; border-radius:8px; padding:8px 22px;">-----</div>
+          <button class="pick" id="copyCode" data-i18n="net_copy" style="font-size:13px;">📋 Copier le code</button>
+          <div id="hostingInfo" style="color:#9dc88a; font-size:12px; text-align:center;"></div>
+        </div>
+
+        <!-- LOBBY : les DEUX joueurs sont connectés → chacun choisit son camp ici -->
+        <div id="netLobby" style="display:none; flex-direction:column; gap:12px; align-items:center; width:min(480px,96%);">
+          <div style="color:#bfe6ff; font-size:15px; letter-spacing:.12em;" data-i18n="lob_room">SALON</div>
+          <div id="lobCode" style="font-size:26px; font-weight:800; letter-spacing:.26em; color:#bfe6ff;">-----</div>
+          <div style="display:flex; gap:12px; width:100%; justify-content:center; align-items:stretch;">
+            <div style="flex:1; border:1px solid #3a2e28; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center;">
+              <div style="color:#9dc88a; font-size:12px; letter-spacing:.1em;" data-i18n="lob_you">VOUS</div>
+              <button class="pick lobMe" data-fac="HUM" data-i18n="fac_hum">HUMANITÉ</button>
+              <button class="pick lobMe" data-fac="IA">G·P·T</button>
+            </div>
+            <div style="flex:1; border:1px solid #3a2e28; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center;">
+              <div style="color:#9dc88a; font-size:12px; letter-spacing:.1em;" data-i18n="lob_foe">ADVERSAIRE</div>
+              <div id="lobFoe" style="font-size:18px; font-weight:700; color:#888;">…</div>
+              <div id="lobFoeState" style="font-size:11px; color:#8d84a8;" data-i18n="lob_waiting">en attente…</div>
+            </div>
+          </div>
+          <div style="font-size:11px; color:#8d84a8; text-align:center;" data-i18n="lob_hint">Conseillé : Humanité vs G·P·T — mais les miroirs (mêmes camps) sont permis.</div>
+          <button class="go" id="lobStart" style="font-size:16px; padding:10px 30px;" data-i18n="lob_start">LANCER LA PARTIE</button>
+          <div id="lobWait" style="color:#9dc88a; font-size:13px; text-align:center;" data-i18n="lob_hostwait">En attente que l'hôte lance la partie…</div>
+          <button class="pick" id="lobLeave" style="font-size:12px; color:#988e80;" data-i18n="lob_leave">← Quitter le salon</button>
+        </div>
+
+        <div id="netStatus" style="color:#9dc88a; font-size:clamp(11px,1.6vw,13px); text-align:center; min-height:16px;"></div>
+        <div style="color:#7a7286; font-size:11px; text-align:center;" data-i18n="online_samever">Les deux joueurs doivent avoir la MÊME version.</div>
+        <button class="pick" id="netCancel" data-i18n="cancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
+      </div>
+    </div>
+    <div class="page" id="page-story">
+      <div id="storyIntro" data-i18n="story_intro" style="color:#b7ad9c;font-size:clamp(11px,1.7vw,13px);text-align:center;max-width:520px;margin-bottom:4px;">La Commune — campagne narrative, de la première étincelle à la révolution.</div>
+      <div id="storyList" style="display:flex;flex-direction:column;gap:7px;width:min(520px,94%);max-height:46vh;overflow-y:auto;"></div>
+      <button class="pick" id="storyBack" data-i18n="net_back" style="font-size:13px;color:#988e80;margin-top:4px;">← Retour</button>
+    </div>
+    <div class="page" id="page-tuto">
+      <div class="tuto" id="tutoIntro"></div>
+      <button class="go" id="tutoStartBtn" style="margin-top:6px;">▶ COMMENCER LE TUTORIEL</button>
+    </div>
+    <div class="page" id="page-opts">
+      <div class="setRow"><span data-i18n="set_lang">Langue</span>
+        <select id="langSel">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+          <option value="pt">Português</option>
+          <option value="ru">Русский</option>
+          <option value="zh">中文</option>
+          <option value="ar">العربية</option>
+        </select>
+      </div>
+      <div class="setRow"><span data-i18n="set_music">Musique</span><button class="tog on" id="oMusic">ACTIVE</button></div>
+      <div class="setRow"><span data-i18n="set_sfx">Effets sonores</span><button class="tog on" id="oSfx">ACTIFS</button></div>
+      <div class="setRow"><span data-i18n="set_vol">Volume</span>
+        <div class="volBtns">
+          <input type="range" id="oVol" min="0" max="100" step="5" value="80"
+            style="width:150px; accent-color:#a8281e; cursor:pointer; pointer-events:auto;">
+          <span id="oVolV" style="min-width:42px;text-align:center">80%</span>
+        </div>
+      </div>
+      <div class="setRow"><span data-i18n="set_shake">Secousses d'écran</span><button class="tog on" id="oShake">ACTIVES</button></div>
+      <div id="keysTitle" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
+      <div id="keysBox" style="width:min(440px,86vw)"></div>
+    </div>
+    <div id="verTag" style="margin-top:10px;color:#6c6478;font-size:11px;text-align:center;letter-spacing:.5px;">AGI v__VERSION__</div>
+  </div>
+  <div id="endscreen" class="panel">
+    <div id="endtitle"></div>
+    <div id="endstats"></div>
+    <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
+  </div>
+  <div id="briefscreen" class="panel" style="display:none;">
+    <div id="briefCard">
+      <div id="briefChrome"></div>
+      <div id="briefYear"></div>
+      <div id="briefTitle"></div>
+      <div id="briefBody"></div>
+      <div id="briefObj"></div>
+      <div class="row" style="gap:14px;">
+        <button class="go" id="briefStart" data-i18n="brief_start">▶ LANCER LA MISSION</button>
+        <button class="pick" id="briefBack" data-i18n="brief_back" style="color:#988e80;">← Retour</button>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="fsBtn" title="Plein écran" aria-label="Plein écran">⛶</button>
+<script>
+__BUILD_SCRIPT__
+</script>
+</body>
+</html>
