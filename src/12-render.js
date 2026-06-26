@@ -31,12 +31,17 @@ function pbo(x,y,w,h,col,line){ x=qz(x); y=qz(y); w=Math.max(PX,qz(w)); h=Math.m
   TC.fillStyle=line||shade(col,0.45); TC.fillRect(x-PX,y-PX,w+PX*2,h+PX*2);
   TC.fillStyle=col; TC.fillRect(x,y,w,h); }
 // cache de sprites hors écran : key -> canvas. draw() utilise pb/pbo/… qui ciblent TC.
+// SURÉCHANTILLONNAGE : on cuit chaque sprite à SS× la taille logique (≈ densité de pixels de
+// l'écran) puis on le blitte à sa taille logique → net en 4K au lieu d'un bitmap basse-déf
+// agrandi et flou. SS dépend de SCALE (densité réelle) ; la clé l'inclut → recuisson au resize.
 const SPR = new Map();
+const spriteSS = ()=> Math.max(2, Math.min(4, Math.ceil(SCALE||2)));
 function sprite(key, w, h, draw){
-  let s = SPR.get(key);
-  if (!s){ s=document.createElement('canvas'); s.width=Math.ceil(w); s.height=Math.ceil(h);
-    const c=s.getContext('2d'); c.imageSmoothingEnabled=true;
-    const prev=TC; TC=c; draw(c, s); TC=prev; SPR.set(key,s); }
+  const SS = spriteSS(), k = key+'@'+SS;
+  let s = SPR.get(k);
+  if (!s){ s=document.createElement('canvas'); s.width=Math.ceil(w*SS); s.height=Math.ceil(h*SS);
+    const c=s.getContext('2d'); c.imageSmoothingEnabled=true; c.scale(SS,SS);
+    const prev=TC; TC=c; draw(c, s); TC=prev; SPR.set(k,s); }
   return s;
 }
 
@@ -624,7 +629,7 @@ function blitHumanoid(u, x, gy, kind){
   const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
   projShadow(x, gy, 15);
   ctx.save(); ctx.translate(x+lunge, gy); ctx.rotate(tilt); ctx.scale(dir, sy);
-  ctx.drawImage(spr, -USP.cx, -USP.foot);
+  ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H);
   // reflet chromé temps-réel sur les châssis GPT : bande spéculaire qui balaie le torse/la tête
   if (kind==='bot'){
     ctx.save(); ctx.beginPath(); ctx.rect(-13, -USP.foot+14, 26, 40); ctx.clip();
@@ -633,7 +638,7 @@ function blitHumanoid(u, x, gy, kind){
     sg.addColorStop(0,'rgba(220,245,255,0)'); sg.addColorStop(0.5,'rgba(225,248,255,0.40)'); sg.addColorStop(1,'rgba(220,245,255,0)');
     ctx.fillStyle=sg; ctx.fillRect(-14,-USP.foot+14,28,40); ctx.restore();
   }
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr, -USP.cx, -USP.foot); }
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H); }
   ctx.restore();
   if (atk) attackFX(u, x, gy-26, imp);
 }
@@ -661,8 +666,8 @@ function drawAir(u, x, gy){
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
   const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
-  ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-22); }
+  ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
   ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2.5;
@@ -712,8 +717,8 @@ function drawHero(u, x, gy){
   projShadow(x, gy, 18);
   const spr = sprite('HERO'+u.fac, 64, 100, ()=>heroSprite(u.fac));
   const atk = u.atkT > u.rate-0.18, imp = atk? clamp((u.atkT-(u.rate-0.18))/0.18,0,1):0, lunge=u.side*9*imp;
-  ctx.save(); ctx.translate(x+lunge,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -32, -92);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-92); }
+  ctx.save(); ctx.translate(x+lunge,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -32, -92, 64, 100);
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-92, 64, 100); }
   ctx.restore();
   if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
   ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=6;

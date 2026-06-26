@@ -46,8 +46,8 @@ function tutSpawnWave(){
 const TUT_STEPS = [
   { // 0 — accueil & objectif
     tap:true,
-    text:{fr:"Bienvenue, commandant. Objectif : détruire la base ennemie à droite avant qu'elle n'anéantisse la vôtre. Tout en haut s'affichent vos ressources — 🌾 nourriture, 🪙 argent, 💧 eau — et ce qu'elles rapportent chaque seconde.",
-          en:"Welcome, commander. Goal: destroy the enemy base on the right before it wipes out yours. At the top are your resources — 🌾 food, 🪙 money, 💧 water — and what each earns every second."},
+    text:{fr:"Bienvenue, commandant. Objectif : détruire la base ennemie à droite. En haut, vos ressources — 🌾 nourriture, 🪙 argent, 💧 eau — et leur revenu par seconde.",
+          en:"Welcome, commander. Goal: destroy the enemy base on the right. Top bar: your resources — 🌾 food, 🪙 money, 💧 water — and income per second."},
     focus:()=>({x:0,y:0,w:Math.min(320,W),h:38}),
   },
   { // 1 — ferme (🌾)
@@ -69,8 +69,8 @@ const TUT_STEPS = [
     done:()=>tutHasBuild('farmM'),
   },
   { // 3 — puits (⛲) + bonus de longévité
-    text:{fr:"Enfin un ⛲ PUITS sur le dernier socle : +3 💧/s, et l'eau est rare et vitale. ASTUCE : un bâtiment gardé EN VIE monte lentement en régime — jusqu'à ×3 de production au bout de 15 min ! Protégez et RÉPAREZ vos fermes plutôt que de les laisser tomber.",
-          en:"Finally a ⛲ WELL on the last pad: +3 💧/s, and water is rare and vital. TIP: a building kept ALIVE slowly ramps up — up to ×3 output after 15 min! Protect and REPAIR your farms instead of letting them fall."},
+    text:{fr:"Enfin un ⛲ PUITS sur le dernier socle (+3 💧/s). Astuce : un bâtiment gardé en vie monte en régime — jusqu'à ×3. Protégez et réparez vos fermes !",
+          en:"Finally a ⛲ WELL on the last pad (+3 💧/s). Tip: a building kept alive ramps up — up to ×3 output. Protect and repair your farms!"},
     obj:{fr:"Construisez un puits",en:"Build a well"},
     enter:()=>{ tutGrant(300,300,120); const s=tutEmptySlot(); if(s)tutCam(s.x); },
     focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
@@ -153,7 +153,7 @@ const TUT_STEPS = [
     tap:true,
     text:{fr:"⚠ Une vague ennemie surgit ! Apprenons à nous défendre.",
           en:"⚠ An enemy wave appears! Let's learn to defend."},
-    enter:()=>{ tutSpawnWave(); game.shake=10; sfx('boom');
+    enter:()=>{ tutSpawnWave(); game.shake=6; sfx('boom');   // brève secousse (retombe même gelé)
       announce(tutText({fr:'⚠ VAGUE ENNEMIE',en:'⚠ ENEMY WAVE'}), '#ff5a4a'); },
     focus:()=>{ const e=game.e.units[0]; return e? tutWorldRect(e.x):null; },
   },
@@ -177,8 +177,8 @@ const TUT_STEPS = [
   },
   { // 15 — garnison (explication)
     tap:true,
-    text:{fr:"À SAVOIR : vos murailles et tourelles peuvent ABRITER des unités ! Touchez une muraille ou une tourelle, puis « Garnison » dans son menu pour y placer un tireur — perché et protégé, il tire de plus loin et survit bien mieux.",
-          en:"GOOD TO KNOW: your walls and turrets can GARRISON units! Tap a wall or turret, then \"Garrison\" in its menu to place a ranged unit inside — elevated and protected, it shoots farther and survives far better."},
+    text:{fr:"À SAVOIR : murailles et tourelles peuvent ABRITER un tireur. Touchez-en une, puis « Garnison » — perché et protégé, il tire de plus loin et survit bien mieux.",
+          en:"GOOD TO KNOW: walls and turrets can GARRISON a shooter. Tap one, then \"Garrison\" — elevated and protected, it shoots farther and survives far better."},
     focus:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')) return tutWorldRect(s.x); return null; },
   },
   { // 16 — amélioration de classe (upgrades)
@@ -200,8 +200,8 @@ const TUT_STEPS = [
     done:()=>game.p.capUp===true,
   },
   { // 18 — expérience & pouvoir ultime
-    text:{fr:"L'EXPÉRIENCE ✦ se gagne en frappant l'ennemi, en tenant lacs et zones, et en FORTIFIANT votre base (🏰, menu du château) — une base améliorée rapporte plus d'✦. Elle alimente votre POUVOIR ULTIME : il est prêt, lancez-le avec ✸.",
-          en:"EXPERIENCE ✦ is earned by hitting the enemy, holding lakes and zones, and FORTIFYING your base (🏰, castle menu) — an upgraded base earns more ✦. It powers your ULTIMATE: it's ready, unleash it with ✸."},
+    text:{fr:"L'EXPÉRIENCE ✦ se gagne au combat, en tenant lacs et zones, et en fortifiant votre base. Elle alimente votre POUVOIR ULTIME : il est prêt — lancez-le avec ✸.",
+          en:"EXPERIENCE ✦ comes from combat, holding lakes and zones, and fortifying your base. It powers your ULTIMATE: it's ready — unleash it with ✸."},
     obj:{fr:"Lancez votre pouvoir ultime",en:"Unleash your ultimate"},
     enter:()=>{ const p=game.p; p.specialCd=0; p.xp=Math.max(p.xp, specialXpCost(p)+20); TUT.specBase=game.specialsUsed; camFollow=true; },
     focus:()=>tutHudRect(b=>b.type==='special'),
@@ -219,8 +219,8 @@ const TUT_STEPS = [
   },
   { // 20 — cataclysme (démonstration)
     tap:true,
-    text:{fr:"Le MONDE lui-même est un adversaire. Au fil de la guerre, des CATACLYSMES frappent les deux camps : tempêtes, pluies acides, crues, voire frappes nucléaires. En voici un — observez comme il transforme le champ de bataille. Adaptez toujours votre stratégie.",
-          en:"The WORLD itself is an opponent. As war drags on, CATACLYSMS strike both sides: storms, acid rain, floods, even nuclear strikes. Here's one — watch how it reshapes the battlefield. Always adapt your strategy."},
+    text:{fr:"Le MONDE est un adversaire : des CATACLYSMES frappent les deux camps (tempêtes, crues, frappes nucléaires). En voici un — adaptez toujours votre stratégie.",
+          en:"The WORLD is an opponent: CATACLYSMS strike both sides (storms, floods, nukes). Here's one — always adapt your strategy."},
     enter:()=>{ if (typeof startCata==='function') startCata('sand'); camFollow=false; camX=0; },
     focus:()=>null,
   },
@@ -246,8 +246,8 @@ const TUT_STEPS = [
   },
   { // 23 — fin
     tap:true,
-    text:{fr:"🎉 Tutoriel terminé ! Vous maîtrisez l'économie, le recrutement, la sélection, le lasso, les formations, la défense, les garnisons, les améliorations, les ressources, les pouvoirs, l'évolution et les cataclysmes. Le monde changera à mesure que la guerre s'étire. Bonne guerre, commandant !",
-          en:"🎉 Tutorial complete! You've mastered economy, recruiting, selection, the lasso, formations, defense, garrisons, upgrades, resources, powers, evolution and cataclysms. The world will change as the war drags on. Good war, commander!"},
+    text:{fr:"🎉 Tutoriel terminé ! Économie, troupes, ordres, défense, pouvoirs, évolution — tout est entre vos mains. Bonne guerre, commandant !",
+          en:"🎉 Tutorial complete! Economy, troops, orders, defense, powers, evolution — it's all yours now. Good war, commander!"},
     enter:()=>{ game.flash=0.6; sfx('evolve'); },
     focus:()=>null,
   },
@@ -256,7 +256,7 @@ let _tutNudgeT = 0;
 function tutNudge(){
   const now = performance.now();
   if (now - _tutNudgeT < 750) return; _tutNudgeT = now;
-  sfx('sel'); if (game) game.shake = Math.max(game.shake||0, 4);
+  sfx('sel');   // pas de secousse ici : répétée, elle ferait vibrer l'écran à chaque clic « à côté »
   announce(tutText({fr:"✦ Suivez le guide — faites l'action surlignée",en:"✦ Follow the guide — do the highlighted action"}), '#ffd34a');
 }
 // porte du verrouillage doux : true si l'action est permise (hors tuto : toujours true)
@@ -382,27 +382,17 @@ function drawTut(){
   } else {
     ctx.fillRect(0,0,W,H);
   }
-  // ---- carte d'instruction compacte, placée à l'écart de la cible ET du HUD bas ----
-  const bw = Math.min(430, W-32), pad = 15, titleH = 16, lineH = 19, btnH = 32;
-  const lines = tutWrap(tutText(step.text), bw-pad*2, '14px Arial');
+  // ---- carte d'instruction COMPACTE — placement DÉFINITIF : ancrée tout en HAUT par défaut.
+  // Les cibles actionnables (socles, menu de construction, boutons du HUD) sont TOUJOURS au
+  // centre/bas de l'écran ; une carte courte en haut ne les recouvre donc jamais. Elle ne passe
+  // en bas que si la cible est dans le tiers HAUT (l'étape « barre de ressources »). ----
+  const bw = Math.min(400, W-32), pad = 13, titleH = 15, lineH = 17, btnH = 30;
+  const lines = tutWrap(tutText(step.text), bw-pad*2, '13px Arial');
   const objLine = step.obj ? tutText(step.obj) : null;
-  const bh = pad + titleH + 12 + lines.length*lineH + 10 + btnH + pad + (objLine?22:0);
+  const bh = pad + titleH + 10 + lines.length*lineH + 8 + btnH + pad + (objLine?20:0);
   const bx = clamp((W-bw)/2, 12, W-bw-12);
-  // emplacements candidats : haut, ou bas (toujours au-dessus des rangées d'action du HUD)
-  const topBy = 46, botBy = (H-118) - bh;
-  // obstacle à NE JAMAIS recouvrir : le menu de construction s'il est ouvert (c'est la vraie
-  // cible actionnable), sinon la zone surlignée. Corrige le blocage « le tuto cache le bouton ».
-  const obst = [];
-  if (buildMenu && buildMenu.box) obst.push(buildMenu.box);
-  else if (focus) obst.push({x:fx,y:fy,w:fw,h:fh});
-  const hits = (by)=> obst.some(r=> by < r.y+r.h && by+bh > r.y && bx < r.x+r.w && bx+bw > r.x);
-  let by = (focus && focus.y < H*0.5) ? botBy : topBy;
-  if (hits(by)) by = (by===topBy? botBy : topBy);            // bascule de l'autre côté
-  if (hits(by)){                                             // les deux côtés gênés : prends le plus dégagé
-    const oTop = obst.reduce((m,r)=>Math.max(m, topBy<r.y+r.h&&topBy+bh>r.y?1:0),0);
-    by = oTop? botBy : topBy;
-  }
-  by = clamp(by, 12, H-bh-12);
+  const focusTop = focus && (focus.y + focus.h*0.5) < H*0.4;   // cible dans le tiers haut ?
+  let by = clamp(focusTop ? (H-94-bh) : 44, 12, H-bh-12);
   // flèche de la carte vers la cible
   if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
     tutArrow(clamp(cxF,bx+20,bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
@@ -420,9 +410,9 @@ function drawTut(){
   const dotN=TUT.steps.length, dr=2.4, dgap=7, dtot=dotN*dgap;
   for(let i=0;i<dotN;i++){ ctx.beginPath(); ctx.arc(bx+bw-pad-dtot+i*dgap, by+pad+5, dr, 0,6.283);
     ctx.fillStyle = i===TUT.i? acc : 'rgba(255,255,255,0.22)'; ctx.fill(); }
-  ctx.font='14px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+16;
+  ctx.font='13px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+12;
   for (const ln of lines){ ctx.fillText(ln, bx+pad, ty); ty += lineH; }
-  if (objLine){ ctx.font='700 13px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, bx+pad, ty+4); ty += 22; }
+  if (objLine){ ctx.font='700 12px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, bx+pad, ty+3); ty += 20; }
   // boutons (cibles tactiles ≥32)
   const byB = by + bh - pad - btnH, skipW = 150;
   ctx.fillStyle='rgba(255,255,255,0.08)'; rr(bx+pad, byB, skipW, btnH, 7); ctx.fill();

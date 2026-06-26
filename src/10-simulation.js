@@ -471,7 +471,13 @@ function update(dt){
   // GEL DOUX du tutoriel : on suspend toute la simulation du monde (temps, combat, économie)
   // mais on continue d'écouter l'action du joueur via tutTick — la caméra et les clics, eux,
   // ne passent jamais par update() donc restent pleinement actifs.
-  if (game.tut && TUT && TUT.frozen){ tutTick(dt); return; }
+  if (game.tut && TUT && TUT.frozen){
+    // les FX transitoires (secousse/flash) doivent retomber MÊME gelé, sinon une secousse
+    // déclenchée par une étape (vague ennemie) vibre à l'infini tant que le monde est figé.
+    if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
+    if (game.flash>0) game.flash-=dt;
+    tutTick(dt); return;
+  }
   game.t += dt;
   const p=game.p, e=game.e, d=game.d;
   if (CHEAT.god){ p.hp=p.maxhp; for (const u of p.units) u.hp=u.maxhp; }   // MODE TRICHE : base + troupes du joueur invincibles
