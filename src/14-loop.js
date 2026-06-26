@@ -22,9 +22,12 @@ function drawBarrier(){
 function render(dt){
   if (!game){ if (intro>=0){ drawIntro(dt); } else drawMenuScene(dt); return; }
   ctx.save();
-  if (game.shake>0.3 && SETTINGS.shake) ctx.translate((Math.random()-0.5)*game.shake,(Math.random()-0.5)*game.shake);
+  // SECOUSSE : appliquée UNIQUEMENT au monde, JAMAIS au HUD ni aux overlays — sinon les
+  // boutons / la carte du tuto tremblent hors de leur zone cliquable (« on ne peut plus rien
+  // cliquer »). Elle est posée dans la sauvegarde du monde, restaurée avant le HUD.
   // ---- monde (zoomé, ancré en bas) ----
   ctx.save();
+  if (game.shake>0.3 && SETTINGS.shake) ctx.translate((Math.random()-0.5)*game.shake,(Math.random()-0.5)*game.shake);
   ctx.translate(0, zTY());
   ctx.scale(zoom, zoom);
   drawBG();
