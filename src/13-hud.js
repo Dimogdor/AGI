@@ -30,6 +30,7 @@ layoutHUD();
 // MASQUAGE DYNAMIQUE DU HUD : le bouton ⚡ ÉVOLUER disparaît une fois l'ère plafond atteinte.
 function btnHidden(b){
   if (!game) return false;
+  if (game.tut && TUT && tutBtnHidden(b)) return true;   // tuto : n'affiche que les boutons enseignés
   if (b.type==='evolve' && game.eraCap!=null && game.p.era>=game.eraCap) return true;
   return false;
 }
@@ -190,7 +191,12 @@ function drawHUD(){
   }
   // ---- boutons ----
   HUD.upgRects = [];
-  for (const b of HUD.btns){ if (btnHidden(b)) continue; drawBtn(b); }
+  for (const b of HUD.btns){
+    if (btnHidden(b)) continue;
+    const dim = game.tut && TUT && tutBtnDim(b);    // tuto : acquis mais pas l'étape courante → grisé
+    if (dim){ ctx.save(); ctx.globalAlpha = 0.38; drawBtn(b); ctx.restore(); }
+    else drawBtn(b);
+  }
   if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
   // ---- bannière de sélection (y=H-134, jamais sur les boutons) ----
   HUD.selRect = null;
@@ -216,6 +222,7 @@ function drawHUD(){
       Math.abs(selBox.x1-selBox.x0), Math.abs(selBox.y1-selBox.y0));
   }
   if (buildMenu) drawBuildMenu();
+  if (game && game.tut && TUT) drawTut();
   // RÉGLAGES au premier plan : accessibles même pendant une pause négociée en ligne,
   // et en ligne ils n'impliquent plus la mise en pause du jeu.
   if (settingsOpen){
@@ -451,6 +458,8 @@ function drawBuildMenu(){
   } else {
     opts = buildOptions(p, slot);
   }
+  // TUTORIEL : ne propose que la construction de l'étape + celles déjà enseignées (surbrillance / grisé)
+  if (game.tut && TUT && !buildMenu.base) opts = opts.filter(o => tutBuildAllowed(o.key));
   const bw=210, bh=Math.max(1,opts.length)*34+12;
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);
@@ -460,14 +469,19 @@ function drawBuildMenu(){
   ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
   ctx.textAlign='left';
+  const inTut = game.tut && TUT;
   for (let i=0;i<opts.length;i++){
     const o=opts[i], y=by+8+i*34;
     const free = !Object.keys(o.cost).length;
     const ok = free || canPay(p,o.cost);
+    const cur = inTut && tutBuildCurrent(o.key);     // construction demandée à cette étape
+    const past = inTut && !cur;                       // déjà enseignée → grisée
     buildMenu.rects.push({x:bx+4,y,w:bw-8,h:30,key:o.key});
-    ctx.globalAlpha = ok?1:0.45;
-    ctx.fillStyle='rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
-    ctx.font='700 11.5px Arial'; ctx.fillStyle='#e8e0d2';
+    ctx.globalAlpha = past? 0.4 : (ok?1:0.45);
+    ctx.fillStyle = cur? rgbaC(p.fac.accent,0.18) : 'rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
+    if (cur){ ctx.save(); ctx.strokeStyle=p.fac.accent; ctx.lineWidth=2; ctx.shadowColor=p.fac.accent; ctx.shadowBlur=8;
+      rr(bx+4,y,bw-8,30,5); ctx.stroke(); ctx.restore(); }
+    ctx.font='700 11.5px Arial'; ctx.fillStyle = cur? '#fff' : '#e8e0d2';
     ctx.fillText(o.label, bx+12, y+10);
     ctx.font='600 10px Arial'; ctx.fillStyle='#e8d8a0';
     ctx.fillText(free?'—':costStr(p,o.cost), bx+12, y+23);

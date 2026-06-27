@@ -21,3 +21,4 @@ let particles=[], floaters=[], shots=[], projectiles=[], LIGHTS=[], VIGN=null, d
 let camX = 0, camFollow = true;
 let buildMenu = null, pauseRects = null;
 let selMode = false, selBox = null;       // lasso
+let TUT = null;                            // tutoriel interactif (réécriture propre — voir 15-tutorial.js)

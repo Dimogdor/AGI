@@ -502,7 +502,7 @@ function update(dt){
 
   // ---- événements sociaux/système : deux malus SYMÉTRIQUES de 15 s, un par faction ----
   // Grève générale (humains figés) ↔ Mise à jour forcée (machines figées).
-  if (game.t>120){
+  if (!game.tut && game.t>120){
     game.wClock = (game.wClock + dt) % 150;
     const newW = (game.wClock>=30 && game.wClock<45)? 'strike'
                : (game.wClock>=90 && game.wClock<105)? 'patch' : null;
@@ -514,7 +514,7 @@ function update(dt){
   }
   // ---- événements POSITIFS (équitables : profitent aux DEUX camps) ----
   // Pluie fertile (+30 % nourriture) puis Signal renforcé (ultime plus rapide).
-  if (game.t>90){
+  if (!game.tut && game.t>90){
     game.boonClock = (game.boonClock + dt) % 110;
     const nb = (game.boonClock>=20 && game.boonClock<35)? 'rain'
              : (game.boonClock>=70 && game.boonClock<85)? 'signal' : null;
@@ -548,7 +548,7 @@ function update(dt){
   if (!e.lastSeen && e.hp < e.maxhp*0.2){ e.lastSeen=true; e.lastReady=true; }
 
   if (game.net==='host'){ let c; while((c=net.cmdQ.shift())) applyCmd(c); } // commandes de l'invité
-  else if (!game.net) aiUpdate(dt);                                          // IA en solo (escarmouche)
+  else if (!game.net && !game.tut) aiUpdate(dt);                             // IA en solo (escarmouche ; jamais en tuto)
   processQueue(p); processQueue(e);                                          // file d'attente de production
   updateUnits(p,e,dt); updateUnits(e,p,dt);
   updateBuildings(p,e,dt); updateBuildings(e,p,dt);
@@ -559,8 +559,8 @@ function update(dt){
 
   // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
   // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement.
-  game.dev = clamp(game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);
-  updateCata(dt);
+  game.dev = game.tut? 0 : clamp(game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);
+  if (!game.tut) updateCata(dt);
 
   for (let i=projectiles.length-1;i>=0;i--){
     const pr=projectiles[i]; pr.t+=dt;
@@ -606,6 +606,8 @@ function update(dt){
     camX = lerp(camX, target, Math.min(1,dt*2.2));
   }
   camClamp();
+
+  if (game.tut){ tutTick(dt); return; }   // tutoriel : détection des actions, jamais de victoire/défaite
 
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;

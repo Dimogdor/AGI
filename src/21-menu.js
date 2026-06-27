@@ -13,6 +13,7 @@ document.querySelectorAll('.tab').forEach(tb=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
     tb.classList.add('on');
     $('page-'+tb.dataset.page).classList.add('on');
+    if (tb.dataset.page==='tuto') refreshTutoPage();
   });
 });
 $('cardHum').addEventListener('click', ()=>{ menuFac='HUM';
@@ -101,6 +102,7 @@ $('startBtn').addEventListener('click', ()=>{
   pendingStart = {fac:menuFac, diff:menuDiff};
   intro = 0; introT = 0;
 });
+$('tutoStartBtn').addEventListener('click', startTutorial);
 $('replayBtn').addEventListener('click', ()=>{
   $('endscreen').style.display = 'none';
   $('menu').style.display = 'flex';

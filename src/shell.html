@@ -74,6 +74,10 @@
     color:#fff; background:#a8281e; border:1px solid #d8483a;
   }
   .go:hover,.go:active { background:#c83a2c; }
+  .tuto { font-size:clamp(12px,1.7vw,14.5px); line-height:1.8; color:#c4bcb0; text-align:left; padding:0 6px; max-height:52vh; overflow-y:auto; }
+  .tuto h3 { color:#e8a06a; font-weight:700; letter-spacing:.1em; margin:13px 0 3px; }
+  .tuto b { color:#e8e0d2; }
+  body[dir="rtl"] .tuto { text-align:right; }
   .setRow { display:flex; align-items:center; justify-content:space-between; width:min(440px,86vw);
     border-bottom:1px solid #2e2620; padding:10px 4px; font-size:clamp(13px,1.9vw,15px); color:#b8b0a4; }
   .tog { cursor:pointer; border:1px solid #4a3a32; background:none; color:#988e80;
@@ -110,6 +114,7 @@
     <div class="tagline" data-i18n="tagline">la dernière bataille de l'humanité · 2025</div>
     <div class="tabs">
       <button class="tab on" data-page="play" data-i18n="tab_play">JOUER</button>
+      <button class="tab" data-page="tuto" data-i18n="tab_tuto">TUTORIEL</button>
       <button class="tab" data-page="opts" data-i18n="tab_opts">PARAMÈTRES</button>
     </div>
     <div class="page on" id="page-play">
@@ -210,6 +215,10 @@
         <div style="color:#7a7286; font-size:11px; text-align:center;" data-i18n="online_samever">Les deux joueurs doivent avoir la MÊME version.</div>
         <button class="pick" id="netCancel" data-i18n="cancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
       </div>
+    </div>
+    <div class="page" id="page-tuto">
+      <div class="tuto" id="tutoIntro"></div>
+      <button class="go" id="tutoStartBtn" style="margin-top:6px;">▶ COMMENCER LE TUTORIEL</button>
     </div>
     <div class="page" id="page-opts">
       <div class="setRow"><span data-i18n="set_lang">Langue</span>

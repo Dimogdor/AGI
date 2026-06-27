@@ -231,4 +231,5 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
   const ls = document.getElementById('langSel'); if (ls) ls.value = L;
   if (typeof refreshOpts==='function') refreshOpts();
+  if (typeof refreshTutoPage==='function') refreshTutoPage();
 }

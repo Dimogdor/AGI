@@ -22,6 +22,8 @@ window.addEventListener('keydown', e=>{
     return;
   }
   if (e.code==='Space' || e.code===K.special) e.preventDefault();
+  // tutoriel : Espace/Entrée valide les étapes d'info (« Continuer »)
+  if (game.tut && TUT && (e.code==='Space'||e.code==='Enter') && !TUT.confirmSkip && TUT.steps[TUT.i].tap){ tutBeginAct(); return; }
   if (paused || settingsOpen) return;   // réglages ouverts (même hors pause en ligne) : pas d'action de jeu au clavier
   if (e.code===K.buy1){ tryBuy(p,0); }
   else if (e.code===K.buy2){ tryBuy(p,1); }
@@ -168,6 +170,9 @@ function handleTap(sx, sy, shift){
     if (speedPanel.rects) for (const r of speedPanel.rects) if (inRect(sx,sy,r)){ pickSpeed(r.spd); sfx('sel'); return; }
     speedPanel=null; return;
   }
+  // tutoriel : boutons de la carte (Continuer / Passer / confirmation). Renvoie true si le clic
+  // est consommé ; sinon il atteint le jeu normalement (construire, sélectionner…).
+  if (game.tut && TUT && tutHandleTap(sx,sy)) return;
   // RÉGLAGES ouverts : prioritaires et indépendants de la pause (en ligne, ⚙ ne fige plus le jeu)
   if (settingsOpen){
     if (pauseRects) for (const r of pauseRects) if (inRect(sx,sy,r)){
@@ -347,3 +352,10 @@ cv.addEventListener('wheel', e=>{
   if (e.ctrlKey) setZoom(zoom - e.deltaY*0.0016, s2wX(sx));
   else { camFollow=false; camX += (e.deltaY+e.deltaX)*0.8/zoom; camClamp(); }
 }, {passive:false});
+
+/* PREMIER LANCEMENT : propose automatiquement le tutoriel (relançable depuis l'onglet TUTORIEL) */
+(function maybeFirstLaunchTutorial(){
+  let seen = '1';
+  try { seen = localStorage.getItem('agi_tutoSeen'); } catch(e){}
+  if (!seen) startTutorial();
+})();
