@@ -154,8 +154,10 @@ const TUT_STEPS = [
     text:{fr:"⚠ Une vague ennemie surgit ! Apprenons à nous défendre.",
           en:"⚠ An enemy wave appears! Let's learn to defend."},
     enter:()=>{ tutSpawnWave(); game.shake=6; sfx('boom');   // brève secousse (retombe même gelé)
-      announce(tutText({fr:'⚠ VAGUE ENNEMIE',en:'⚠ ENEMY WAVE'}), '#ff5a4a'); },
-    focus:()=>{ const e=game.e.units[0]; return e? tutWorldRect(e.x):null; },
+      announce(tutText({fr:'⚠ VAGUE ENNEMIE',en:'⚠ ENEMY WAVE'}), '#ff5a4a');
+      // pan vers l'ennemi pour qu'il soit visible, puis la carte + le bouton Continuer restent accessibles
+      const e=game.e.units[0]; if(e) tutCam(e.x-200); },
+    focus:()=>null,  // pas de spotlight : évite le voile quasi-total qui masquait le bouton Continuer
   },
   { // 13 — muraille
     text:{fr:"Bloquez leur avance : construisez une 🧱 MURAILLE sur le socle surligné. Solide, elle encaisse les coups à la place de vos troupes.",
@@ -297,6 +299,7 @@ function tutAdvance(){
   if (!TUT) return;
   TUT.celebrating = false; TUT.celebT = 0;
   const step = TUT.steps[TUT.i];
+  if (step && step.allow) TUT.revealed.push(step.allow);  // mémorise les actions déjà enseignées
   if (step.exit) step.exit();
   TUT.i++;
   if (TUT.i >= TUT.steps.length){ endTutorial(); return; }
@@ -333,8 +336,12 @@ function startTutorial(){
   p.stance = 'hold';
   e.stance = 'hold';
   e.hp = e.maxhp = 20000;            // base ennemie hors d'atteinte jusqu'à l'assaut final
+  // Le tuto enseigne CINQ constructions (ferme · marché · puits · muraille · tourelle). Une base
+  // n'a que 3 socles → sans renfort, muraille/tourelle se construiraient au milieu de la carte
+  // (socle neutre lointain), caméra perdue loin de la base. On ajoute donc 2 socles près de la base.
+  while (p.slots.length < 5) p.slots.push({ x: p.x + (95 + p.slots.length*64), b:null, owner:null });
   camFollow = false; zoom = 1; camX = 0; camClamp();
-  TUT = { i:0, t:0, steps:TUT_STEPS, celebrating:false, celebT:0, uiRects:[], confirmRects:[], confirmSkip:false };
+  TUT = { i:0, t:0, steps:TUT_STEPS, celebrating:false, celebT:0, uiRects:[], confirmRects:[], confirmSkip:false, revealed:[] };
   tutEnterStep();
   announce(tutText({fr:"✦ TUTORIEL — bienvenue, commandant",en:"✦ TUTORIAL — welcome, commander"}), '#ffd34a');
 }
