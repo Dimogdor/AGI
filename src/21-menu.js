@@ -13,26 +13,8 @@ document.querySelectorAll('.tab').forEach(tb=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
     tb.classList.add('on');
     $('page-'+tb.dataset.page).classList.add('on');
-    if (tb.dataset.page==='story') renderStoryList();
   });
 });
-// CAMPAGNE accessible directement depuis le menu principal (plus de sous-onglet HISTOIRE) :
-// le bouton bascule sur la liste des missions ; « Retour » revient à l'écran JOUER.
-function showStoryPage(){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  $('page-story').classList.add('on');
-  renderStoryList();
-}
-function showPlayPage(){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  $('page-play').classList.add('on');
-  const tb=document.querySelector('.tab[data-page="play"]'); if (tb) tb.classList.add('on');
-}
-$('campBtn').addEventListener('click', showStoryPage);
-$('storyBack').addEventListener('click', showPlayPage);
-$('briefStart').addEventListener('click', startMission);
-$('briefBack').addEventListener('click', ()=>{ $('briefscreen').style.display='none'; $('menu').style.display='flex'; });
 $('cardHum').addEventListener('click', ()=>{ menuFac='HUM';
   $('cardHum').classList.add('sel'); $('cardIA').classList.remove('sel'); });
 $('cardIA').addEventListener('click', ()=>{ menuFac='IA';
@@ -119,12 +101,11 @@ $('startBtn').addEventListener('click', ()=>{
   pendingStart = {fac:menuFac, diff:menuDiff};
   intro = 0; introT = 0;
 });
-$('tutoStartBtn').addEventListener('click', startTutorial);
 $('replayBtn').addEventListener('click', ()=>{
   $('endscreen').style.display = 'none';
   $('menu').style.display = 'flex';
   netDisconnect();
-  game = null; paused = false; settingsOpen = false; netPause = null; buildMenu = null; selMode = false; selBox = null; tutoStep = -1; intro = -1; pendingStart = null;
+  game = null; paused = false; settingsOpen = false; netPause = null; buildMenu = null; selMode = false; selBox = null; intro = -1; pendingStart = null;
 });
 /* ---- mode en ligne : navigation entre les vues ---- */
 let lobbyTimer = null;

@@ -280,7 +280,7 @@ function drawBG(){
   ctx.restore();
   // PARTICULES D'AMBIANCE selon la faction/ère du joueur (décor pur, additif). Les cendres
   // (monde mourant) sont déjà gérées plus haut ; ici : pétales humains, étincelles GPT.
-  if (game && game.p && !game.tut && dev<0.45){
+  if (game && game.p && dev<0.45){
     ctx.save(); ctx.globalCompositeOperation='lighter';
     if (game.p.facKey==='HUM' && game.p.era===0){          // pétales portés par le vent
       ctx.fillStyle='rgba(255,150,190,0.45)';
@@ -347,7 +347,7 @@ function drawBG(){
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
   // HERBE DYNAMIQUE : touffes qui ondulent au vent et se couchent au passage des unités lourdes.
-  if (qFx() && game && !game.tut){
+  if (qFx() && game){
     const heavies=[];
     for (const u of game.p.units) if(!u.fly && (u.role==='tank'||u.role==='siege'||u.role==='hero')) heavies.push(u.x);
     for (const u of game.e.units) if(!u.fly && (u.role==='tank'||u.role==='siege'||u.role==='hero')) heavies.push(u.x);

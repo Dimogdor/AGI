@@ -27,35 +27,11 @@ function layoutHUD(){
   HUD.btns.push({type:'pause',     x:W-38,  y:5, w:34, h:28, label:'⚙'});
 }
 layoutHUD();
-// MASQUAGE DYNAMIQUE DU HUD (cohérence en campagne) : une option totalement verrouillée par
-// le script de mission est cachée — jamais affichée grisée. Ex. : si l'ère est plafonnée à sa
-// valeur actuelle, le bouton ⚡ ÉVOLUER disparaît ; une unité interdite par la mission aussi.
+// MASQUAGE DYNAMIQUE DU HUD : le bouton ⚡ ÉVOLUER disparaît une fois l'ère plafond atteinte.
 function btnHidden(b){
   if (!game) return false;
-  // TUTORIEL : montre le bouton de l'action en cours + tous les boutons déjà enseignés (grisés).
-  // Les étapes sans allow (monde, info) cachent tout — évite les clics accidentels en mode gelé.
-  if (game.tut && TUT){
-    const step = TUT.steps[TUT.i];
-    if (step){
-      if (!step.allow) return true;
-      const desc = tutDesc(b);
-      if (step.allow(desc)) return false;      // bouton de l'étape courante → affiché en surbrillance
-      if (TUT.revealed && TUT.revealed.some(p => p(desc))) return false;  // déjà enseigné → affiché grisé
-      return true;                             // jamais enseigné → masqué
-    }
-  }
   if (b.type==='evolve' && game.eraCap!=null && game.p.era>=game.eraCap) return true;
-  if (b.type==='unit'  && game.lockRoles && game.lockRoles.has(ROLES[b.i].key)) return true;
   return false;
-}
-// Retourne true si ce bouton a déjà été enseigné mais n'est pas l'action demandée maintenant.
-function btnGreyed(b){
-  if (!game || !game.tut || !TUT) return false;
-  const step = TUT.steps[TUT.i];
-  if (!step || !step.allow) return false;
-  const desc = tutDesc(b);
-  if (step.allow(desc)) return false;   // étape courante → pas grisé
-  return !!(TUT.revealed && TUT.revealed.some(p => p(desc)));
 }
 function setZoom(nz, cxAnchor){
   const anchor = cxAnchor!==undefined? cxAnchor : camX + VW()/2;
@@ -167,16 +143,7 @@ function drawHUD(){
     ctx.fillRect(mx + n.x/WORLD*mw -1.5, my+4, 3, mh-8);
   }
   for (const u of game.p.units){ ctx.fillStyle=game.p.fac.accent; ctx.fillRect(mx+u.x/WORLD*mw, my+4, 2, 5); }
-  // TOUR-RELAIS BROUILLEUSE active : les blips ENNEMIS sont noyés dans la friture (positions
-  // brouillées) jusqu'à ce qu'on détruise le relais. Tes propres unités restent visibles.
-  if (game.jammed){
-    ctx.fillStyle='rgba(255,90,90,0.55)';
-    for (let i=0;i<22;i++){ const rx=mx+((i*73+game.t*120)%mw); ctx.fillRect(rx, my+3+((i*37)%(mh-6)), 2, 2); }
-    ctx.fillStyle='rgba(255,90,90,0.9)'; ctx.font='700 8px monospace'; ctx.textAlign='center';
-    ctx.fillText('📡 '+tr('mm_jammed'), mx+mw/2, my-4); ctx.textAlign='left';
-  } else {
-    for (const u of game.e.units){ ctx.fillStyle=game.e.fac.accent; ctx.fillRect(mx+u.x/WORLD*mw, my+4, 2, 5); }
-  }
+  for (const u of game.e.units){ ctx.fillStyle=game.e.fac.accent; ctx.fillRect(mx+u.x/WORLD*mw, my+4, 2, 5); }
   ctx.fillStyle='#fff'; ctx.fillRect(mx+game.p.x/WORLD*mw-2, my+1, 4, mh-2);
   ctx.fillRect(mx+game.e.x/WORLD*mw-2, my+1, 4, mh-2);
   ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1;
@@ -201,15 +168,6 @@ function drawHUD(){
     ctx.fillStyle=p.trans?'#ffe9a0':fac.accent; ctx.font='700 8px Arial'; ctx.textAlign='center';
     ctx.fillText(p.era<4?('E'+(p.era+1)):'★', rx, ry+1);
   }
-  // ---- OBJECTIF DE MISSION (mode Histoire) : bannière centrée sous la minimap ----
-  if (game.scenario && !game.over){
-    const txt='🎯 '+objStatus(); ctx.font='700 12px Arial';
-    const tw=ctx.measureText(txt).width, oy=my+mh+12, ow=tw+24;
-    ctx.fillStyle='rgba(16,13,12,0.82)'; rr(W/2-ow/2, oy, ow, 20, 5); ctx.fill();
-    ctx.strokeStyle='rgba(157,216,138,0.4)'; ctx.lineWidth=1; rr(W/2-ow/2, oy, ow, 20, 5); ctx.stroke();
-    ctx.fillStyle='#cde8bc'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(txt, W/2, oy+10); ctx.textBaseline='alphabetic';
-  }
   // ---- chrono de partie (gelé en pause, accéléré/ralenti avec la vitesse de jeu) ----
   ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.font='700 12px Arial'; ctx.fillStyle='#cdbf9a';
@@ -232,14 +190,7 @@ function drawHUD(){
   }
   // ---- boutons ----
   HUD.upgRects = [];
-  for (const b of HUD.btns){
-    if (btnHidden(b)) continue;
-    const grayed = btnGreyed(b);
-    if (grayed) ctx.save();
-    if (grayed) ctx.globalAlpha = 0.38;
-    drawBtn(b);
-    if (grayed) ctx.restore();
-  }
+  for (const b of HUD.btns){ if (btnHidden(b)) continue; drawBtn(b); }
   if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
   // ---- bannière de sélection (y=H-134, jamais sur les boutons) ----
   HUD.selRect = null;
@@ -265,7 +216,6 @@ function drawHUD(){
       Math.abs(selBox.x1-selBox.x0), Math.abs(selBox.y1-selBox.y0));
   }
   if (buildMenu) drawBuildMenu();
-  if (game && game.tut && TUT) drawTut();
   // RÉGLAGES au premier plan : accessibles même pendant une pause négociée en ligne,
   // et en ligne ils n'impliquent plus la mise en pause du jeu.
   if (settingsOpen){
@@ -501,39 +451,23 @@ function drawBuildMenu(){
   } else {
     opts = buildOptions(p, slot);
   }
-  // TUTORIEL : propose le bâtiment de l'étape courante + ceux déjà enseignés (visibles, bloqués par tutGate)
-  if (game.tut && TUT){
-    const step = TUT.steps[TUT.i];
-    if (step && step.allow) opts = opts.filter(o=>{
-      const desc = {t:'build', type:o.key};
-      return step.allow(desc) || (TUT.revealed && TUT.revealed.some(p => p(desc)));
-    });
-  }
   const bw=210, bh=Math.max(1,opts.length)*34+12;
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);
   let by = clamp(w2sY(gY(anchorX))-110-bh, 44, H-bh-150);
-  buildMenu.box = {x:bx, y:by, w:bw, h:bh};        // exposé au tuto pour éviter tout recouvrement
+  buildMenu.box = {x:bx, y:by, w:bw, h:bh};
   buildMenu.rects=[];
   ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
   ctx.textAlign='left';
-  // TUTORIEL : repère quelle construction est demandée À CETTE étape (surbrillance) vs déjà
-  // enseignées (grisées, non sélectionnables mais visibles, comme demandé).
-  const tutStep = (game.tut && TUT) ? TUT.steps[TUT.i] : null;
-  const isCur = o => tutStep && tutStep.allow && tutStep.allow({t:'build', type:o.key});
   for (let i=0;i<opts.length;i++){
     const o=opts[i], y=by+8+i*34;
     const free = !Object.keys(o.cost).length;
     const ok = free || canPay(p,o.cost);
-    const cur = isCur(o);
-    const past = tutStep && !cur;   // en tuto : option déjà enseignée → grisée
     buildMenu.rects.push({x:bx+4,y,w:bw-8,h:30,key:o.key});
-    ctx.globalAlpha = past? 0.4 : (ok?1:0.45);
-    ctx.fillStyle = cur? rgbaC(p.fac.accent,0.18) : 'rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
-    if (cur){ ctx.save(); ctx.strokeStyle=p.fac.accent; ctx.lineWidth=2; ctx.shadowColor=p.fac.accent; ctx.shadowBlur=8;
-      rr(bx+4,y,bw-8,30,5); ctx.stroke(); ctx.restore(); }
-    ctx.font='700 11.5px Arial'; ctx.fillStyle = cur? '#fff' : '#e8e0d2';
+    ctx.globalAlpha = ok?1:0.45;
+    ctx.fillStyle='rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
+    ctx.font='700 11.5px Arial'; ctx.fillStyle='#e8e0d2';
     ctx.fillText(o.label, bx+12, y+10);
     ctx.font='600 10px Arial'; ctx.fillStyle='#e8d8a0';
     ctx.fillText(free?'—':costStr(p,o.cost), bx+12, y+23);

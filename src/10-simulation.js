@@ -326,25 +326,18 @@ function tryMove(u, side, dt){
     if (ahead >= stackMax(side, u)) return;
   }
   u.x += u.spd*(side.heroAlive? (1+(side.heroPow||1)) :1)*(game.winter?0.82:1)*side.side*dt;   // ×2 sous l'aura d'un héros (réduite si la légende est affaiblie) ; neige → léger ralentissement
-  u.x = clamp(u.x, 30, WORLD-30); barrierBlock(u);
-}
-// BARRIÈRE DE SCÉNARIO (brouillard de guerre infranchissable / mur d'énergie) : tant qu'elle n'est
-// pas « ouverte » par un objectif validé, les troupes du joueur ne peuvent pas franchir la ligne —
-// la portion lointaine de la carte ne se dévoile qu'au moment voulu par le récit.
-function barrierBlock(u){
-  const b = game.barrier; if (!b || b.opened) return;
-  if (u.side===1) u.x = Math.min(u.x, b.x - 8);   // côté joueur (avance vers la droite) : stoppé net
+  u.x = clamp(u.x, 30, WORLD-30);
 }
 function moveBack(u, side, dt){
   u.x -= u.spd*1.2*(side.heroAlive? (1+(side.heroPow||1)) :1)*side.side*dt;
-  u.x = clamp(u.x, 30, WORLD-30); barrierBlock(u);
+  u.x = clamp(u.x, 30, WORLD-30);
 }
 // déplacement libre dans les deux sens (tâches, médic) ; renvoie true à l'arrivée
 function moveToward(u, tx, dt, sp=1){
   const d = tx - u.x;
   if (Math.abs(d) < 8) return true;
   u.x += Math.sign(d)*u.spd*sp*dt;
-  u.x = clamp(u.x, 30, WORLD-30); barrierBlock(u);
+  u.x = clamp(u.x, 30, WORLD-30);
   return false;
 }
 function updateBuildings(side, foe, dt){
@@ -454,7 +447,7 @@ function updateZones(dt){
     const push = clamp(np-ne, -3, 3)*0.10*dt;
     if (push!==0){
       z.prog = clamp(z.prog+push, -1, 1);
-      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; if(!game.tut) announce(tr('ev_zone'), '#9dd88a'); }
+      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; announce(tr('ev_zone'), '#9dd88a'); }
       if (z.prog<=-1 && z.owner!=='e'){ z.owner='e'; }
     }
     if (z.owner==='p') p.xp += 0.5*dt; else if (z.owner==='e') e.xp += 0.5*dt;
@@ -467,17 +460,7 @@ function updateZones(dt){
   e.zoneBuff = loser==='e'? 0.05*(3-ownedBy('e')) : 0;
 }
 function update(dt){
-  if (!game || game.over || paused || tutoStep>=0) return;
-  // GEL DOUX du tutoriel : on suspend toute la simulation du monde (temps, combat, économie)
-  // mais on continue d'écouter l'action du joueur via tutTick — la caméra et les clics, eux,
-  // ne passent jamais par update() donc restent pleinement actifs.
-  if (game.tut && TUT && TUT.frozen){
-    // les FX transitoires (secousse/flash) doivent retomber MÊME gelé, sinon une secousse
-    // déclenchée par une étape (vague ennemie) vibre à l'infini tant que le monde est figé.
-    if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
-    if (game.flash>0) game.flash-=dt;
-    tutTick(dt); return;
-  }
+  if (!game || game.over || paused) return;
   game.t += dt;
   const p=game.p, e=game.e, d=game.d;
   if (CHEAT.god){ p.hp=p.maxhp; for (const u of p.units) u.hp=u.maxhp; }   // MODE TRICHE : base + troupes du joueur invincibles
@@ -488,17 +471,13 @@ function update(dt){
   const wM = winterMul();                      // hiver nucléaire : malus nourriture/énergie dégressif (÷2 → ×1 en 6 min)
   const rainMul = game.boon==='rain'? 1.3 : 1; // PLUIE FERTILE : +30 % nourriture (les deux camps)
   p.prodMul = 1 + 0.9*lp;
-  e.prodMul = (1 + 0.9*le) * (d.cheat||1) * (game.saboPenalty||1) * ((game.saboTempT||0)>0?0.85:1);     // triche IA × sabotage durable × malus temporaire −15 % (nœud de données récemment détruit)
-  // BLOCAGE DE RESSOURCES scénarisé (campagne) : pénalité temporaire sur la production du joueur
-  if (game.prodLockT>0) game.prodLockT -= dt;
-  const lockMul = (game.prodLockT>0)? 0.4 : 1;
-  p.f += 4*p.prodMul*wM*rainMul*lockMul*dt; p.m += 2.5*p.prodMul*wM*lockMul*dt; p.w += 0.6*p.prodMul*lockMul*dt;
+  e.prodMul = (1 + 0.9*le) * (d.cheat||1);     // triche IA selon la difficulté
+  p.f += 4*p.prodMul*wM*rainMul*dt; p.m += 2.5*p.prodMul*wM*dt; p.w += 0.6*p.prodMul*dt;
   e.f += 4*d.inc*e.prodMul*wM*rainMul*dt; e.m += 2.5*d.inc*e.prodMul*wM*dt; e.w += 0.6*d.inc*e.prodMul*dt;
   // XP passive de base + bonus par niveau de fortification de la base principale
   p.xp += (2.2 + ((p.fortLvl||1)-1)*1.3)*dt; e.xp += (2.2 + ((e.fortLvl||1)-1)*1.3)*dt;
   for (let i=0;i<6;i++){ if(p.cd[i]>0)p.cd[i]-=dt; if(e.cd[i]>0)e.cd[i]-=dt; }
   if (p.heroCd>0) p.heroCd -= dt; if (e.heroCd>0) e.heroCd -= dt;
-  if (game.saboTempT>0) game.saboTempT -= dt;   // malus temporaire de sabotage (nœud de données)
   // nano-réparation passive de la base
   if (p.autoRepair && p.hp<p.maxhp) p.hp = Math.min(p.maxhp, p.hp+8*dt);
   if (e.autoRepair && e.hp<e.maxhp) e.hp = Math.min(e.maxhp, e.hp+8*dt);
@@ -507,7 +486,7 @@ function update(dt){
   if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le)*sigMul;
   if (p.siegeT>0) p.siegeT -= dt; if (e.siegeT>0) e.siegeT -= dt;   // MODE SIÈGE (héros) : décompte
   // la santé du monde use les vivants : le camp qui DOMINE s'use plus vite (catch-up)
-  if (game.dev>0.12 && !game.tut){
+  if (game.dev>0.12){
     const wearP = game.dev*(0.15+0.85*(1-lp))*dt;
     const wearE = game.dev*(0.15+0.85*(1-le))*dt;
     for (const u of p.units) u.hp -= wearP*1.2;
@@ -523,8 +502,7 @@ function update(dt){
 
   // ---- événements sociaux/système : deux malus SYMÉTRIQUES de 15 s, un par faction ----
   // Grève générale (humains figés) ↔ Mise à jour forcée (machines figées).
-  // (désactivés pendant le tutoriel pour ne pas perturber l'apprentissage)
-  if (!game.tut && !game.scenario && game.t>120){          // (en campagne : événements pilotés par le script)
+  if (game.t>120){
     game.wClock = (game.wClock + dt) % 150;
     const newW = (game.wClock>=30 && game.wClock<45)? 'strike'
                : (game.wClock>=90 && game.wClock<105)? 'patch' : null;
@@ -536,7 +514,7 @@ function update(dt){
   }
   // ---- événements POSITIFS (équitables : profitent aux DEUX camps) ----
   // Pluie fertile (+30 % nourriture) puis Signal renforcé (ultime plus rapide).
-  if (!game.tut && !game.scenario && game.t>90){
+  if (game.t>90){
     game.boonClock = (game.boonClock + dt) % 110;
     const nb = (game.boonClock>=20 && game.boonClock<35)? 'rain'
              : (game.boonClock>=70 && game.boonClock<85)? 'signal' : null;
@@ -547,24 +525,22 @@ function update(dt){
     }
   }
   // ---- 4e ZONE BONUS temporaire : apparaît vers la mi-partie, ~60 s, puis disparaît ----
-  if (!game.tut){
-    game.bonusClock += dt;
-    if (!game.scenario && !game.bonusZone && !game._bz && game.bonusClock>180){
-      game._bz = true;
-      game.bonusZone = {x:WORLD*(0.42+Math.random()*0.16), owner:null, prog:0, t:0};
-      announce(tr('ev_bonuszone'), '#ffd34a'); sfx('node');
-    }
-    if (game.bonusZone){
-      const z=game.bonusZone; z.t+=dt;
-      let np=0,ne=0;
-      for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
-      for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
-      z.prog = clamp(z.prog + clamp(np-ne,-3,3)*0.12*dt, -1, 1);
-      z.owner = z.prog>=0.6?'p': z.prog<=-0.6?'e':null;
-      z.contested = (np>0 && ne>0);                         // grésille/oscille à l'écran
-      if (z.owner==='p') p.xp += 1.4*dt; else if (z.owner==='e') e.xp += 1.4*dt;
-      if (z.t>60) game.bonusZone = null;                    // disparaît
-    }
+  game.bonusClock += dt;
+  if (!game.bonusZone && !game._bz && game.bonusClock>180){
+    game._bz = true;
+    game.bonusZone = {x:WORLD*(0.42+Math.random()*0.16), owner:null, prog:0, t:0};
+    announce(tr('ev_bonuszone'), '#ffd34a'); sfx('node');
+  }
+  if (game.bonusZone){
+    const z=game.bonusZone; z.t+=dt;
+    let np=0,ne=0;
+    for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
+    for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
+    z.prog = clamp(z.prog + clamp(np-ne,-3,3)*0.12*dt, -1, 1);
+    z.owner = z.prog>=0.6?'p': z.prog<=-0.6?'e':null;
+    z.contested = (np>0 && ne>0);                         // grésille/oscille à l'écran
+    if (z.owner==='p') p.xp += 1.4*dt; else if (z.owner==='e') e.xp += 1.4*dt;
+    if (z.t>60) game.bonusZone = null;                    // disparaît
   }
   // ---- siège final : sous 20 % de PV, le pouvoir désespéré se débloque ----
   if (!p.lastSeen && p.hp < p.maxhp*0.2){ p.lastSeen=true; p.lastReady=true;
@@ -572,7 +548,7 @@ function update(dt){
   if (!e.lastSeen && e.hp < e.maxhp*0.2){ e.lastSeen=true; e.lastReady=true; }
 
   if (game.net==='host'){ let c; while((c=net.cmdQ.shift())) applyCmd(c); } // commandes de l'invité
-  else if (!game.net && !game.tut) aiUpdate(dt);                             // IA en solo seulement (jamais en tuto : ennemi scripté)
+  else if (!game.net) aiUpdate(dt);                                          // IA en solo (escarmouche)
   processQueue(p); processQueue(e);                                          // file d'attente de production
   updateUnits(p,e,dt); updateUnits(e,p,dt);
   updateBuildings(p,e,dt); updateBuildings(e,p,dt);
@@ -582,13 +558,9 @@ function update(dt){
   checkTrans(p); checkTrans(e);
 
   // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
-  // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement
-  // santé du monde : dynamique par défaut ; certaines missions la FIGENT (devLock) pour une ambiance
-  // verrouillée et cohérente avec leur décor (undercity stable, désert aride, monde mourant…).
-  game.dev = game.tut? 0
-    : (game.devLock!=null? game.devLock
-      : clamp((game.devBase||0) + game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1));
-  if (!game.tut) updateCata(dt);
+  // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement.
+  game.dev = clamp(game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);
+  updateCata(dt);
 
   for (let i=projectiles.length-1;i>=0;i--){
     const pr=projectiles[i]; pr.t+=dt;
@@ -635,30 +607,6 @@ function update(dt){
   }
   camClamp();
 
-  if (game.tut){
-    // TUTORIEL : on ne peut jamais perdre (base plancher à 25 %) ; la fin est pilotée par le script
-    if (p.hp < p.maxhp*0.25) p.hp = p.maxhp*0.25;
-    if (e.hp < 0) e.hp = 0;
-    tutTick(dt);
-    return;
-  }
-  // MODE HISTOIRE : l'objectif scénarisé pilote la victoire/défaite (sauf la finale qui
-  // garde la renaissance épique de base en phase 2).
-  if (game.scenario){
-    processTriggers(dt);
-    updatePOIs(dt);
-    const r = scenarioCheck(dt);
-    if (r==='win'){ endMission(true); return; }
-    if (r==='lose'){ endMission(false); return; }
-    const o = game.scenario.mission.obj;
-    if (e.hp<=0 && o.type==='destroyFull' && (e.phase||1)<2){
-      e.phase=2; e.maxhp=Math.round(e.maxhp*2.2); e.hp=e.maxhp;
-      if (!game.winter) triggerNuclearWinter();
-      else { game.flash=Math.max(game.flash||0,1.2); game.shake=Math.max(game.shake,20);
-        nukeBlast(e.x, 220); announce(tr('ev_reborn'), '#bfe6ff'); sfx('boom'); }
-    }
-    return;   // en campagne, on ne retombe jamais dans la logique 2-phases symétrique
-  }
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;
     // SECONDE CHANCE — INDÉPENDANTE PAR CAMP : la 1re fois qu'une base tombe, elle renaît

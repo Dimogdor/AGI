@@ -24,10 +24,6 @@ function tryBuy(side, ri){
   if (isGuest(side)){ guestCmd({c:'buy',ri}); sfx('buy',ri); return true; }
   const role = ROLES[ri];
   if (role.minEra && side.era < role.minEra) return false;
-  // unités verrouillées par le script de mission : côté joueur (lockRoles) ET côté IA (aiLockRoles).
-  // L'IA respecte désormais le pool autorisé de la mission — fini les unités hors-scénario.
-  if (side===game.p && game.lockRoles && game.lockRoles.has(role.key)) return false;
-  if (side===game.e && game.aiLockRoles && game.aiLockRoles.has(role.key)) return false;
   // quota strict de SOUTIEN (médic humain ET ruche GPT) : 1, +1 par niveau d'amélioration (max 3)
   if (role.key==='support'){
     const maxS = 1 + Math.min(2, side.upg.support||0);
@@ -217,7 +213,6 @@ function tryBuild(side, slot, type){
   if (slot.b || !canPay(side, BUILDS[type].cost)) return false;
   let near = side.slots.includes(slot);
   if (!near) for (const u of side.units) if (Math.abs(u.x-slot.x)<110){ near=true; break; }
-  if (game && game.tut) near = true;   // tutoriel : tout socle indiqué se bâtit immédiatement
   if (!near){
     // construction à distance : il faut qu'une troupe ait déjà dépassé ce point
     if ((slot.x - side.adv)*side.side > 0){
@@ -400,10 +395,6 @@ function tryCapUp(side){
 // ---- invocation du héros légendaire ----
 function tryHero(side){
   if (isGuest(side)){ guestCmd({c:'hero'}); return true; }
-  // CAMPAGNE : l'IA n'invoque son unité légendaire (Singularité / Che) QUE dans les missions où
-  // le scénario l'autorise (aiHeroOK, fixé par la mission). Corrige le bug « Singularité dès la
-  // mission 2 ». En escarmouche/online (pas de scenario), aucune restriction.
-  if (side===game.e && game.scenario && !game.aiHeroOK) return false;
   if (side.units.some(u=>u.role==='hero')){
     if (side===game.p) announce('🦸 Votre héros est déjà sur le terrain', '#d88'); return false; }
   if (side.heroCd>0){
@@ -421,9 +412,7 @@ function tryHero(side){
   return true;
 }
 function spawnHero(side, power){
-  // power ∈ ]0..1] : puissance de la légende. 1 = pleine (défaut). En CAMPAGNE, la mission 4
-  // libère la Singularité/Che AFFAIBLIE selon le nombre de cœurs de stase encore debout
-  // (le joueur peut la « désamorcer » en sabotant les cœurs à temps → boss gérable).
+  // power ∈ ]0..1] : puissance de la légende. 1 = pleine (défaut).
   power = (power>0)? Math.min(power,1) : 1;
   const mm = statMul(side.era), hum = side.facKey==='HUM';
   // profils opposés (le buff d'équipe ×3/×2 reste identique) : Che = meneur tanky avec aura de
