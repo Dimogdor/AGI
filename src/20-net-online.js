@@ -91,8 +91,6 @@ function drawOnlinePauseInfo(){
 // point d'entrée unique : un appui sur « pause » selon le contexte (solo / en ligne)
 // ⚙ — ouvre le menu de réglages (gèle aussi la partie le temps qu'il est ouvert)
 function togglePauseAction(){
-  if (tutoStep>=0) return;
-  if (game && game.tut) return;   // tutoriel : pas de pause manuelle — le gel est géré par TUT.frozen
   if (buildMenu){ buildMenu=null; return; }
   if (isOnline()){
     // ⚙ EN LIGNE : ouvre/ferme uniquement les RÉGLAGES, SANS imposer de pause au jeu.
@@ -107,7 +105,7 @@ function togglePauseAction(){
 }
 // ⏸ — pause simple : fige la partie SANS masquer le champ de bataille (pour observer la situation)
 function toggleSoftPause(){
-  if (tutoStep>=0 || !game || game.over || game.tut) return;
+  if (!game || game.over) return;
   if (buildMenu) buildMenu=null;
   if (isOnline()){                       // en ligne : pause négociée (le terrain reste visible des deux côtés)
     if (!paused) onlinePauseRequest();

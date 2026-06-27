@@ -116,7 +116,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
     cata:null, cataT:0, cataDur:0, cataX:0, cataCd:90, // cataclysmes naturels (voir CATAS)
     winter:false, winterT:0,                            // hiver nucléaire temporaire (2e phase de base)
     aiThink:2, msg:null, msgT:0,
-    eraCap:4, scenario:null,             // plafond d'ère (campagne) + état de mission Histoire
+    eraCap:4,                            // plafond d'ère (jusqu'à la Transcendance)
     speed: 1,   // TOUJOURS ×1 au lancement d'une partie (on ne traîne plus le ×3 d'une partie précédente) ; modifiable en cours. Online : la vitesse convenue est réappliquée par le lobby après newGame.
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
@@ -125,7 +125,6 @@ function newGame(facKey, diff, withTuto, eFacOverride){
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;
   selMode = false; selBox = null;
-  tutoStep = -1;
   announce("⚔ 2025 — LA GUERRE COMMENCE ⚔", "#e8d8a0");
 }
 // capture des effets transitoires pour les renvoyer à l'invité (hôte uniquement)

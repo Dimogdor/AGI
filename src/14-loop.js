@@ -1,30 +1,9 @@
 /* ================= BOUCLE & RENDU ================= */
-// MUR D'ÉNERGIE / BROUILLARD DE SCÉNARIO : barrière verticale animée + voile sombre sur la portion
-// scellée de la carte (dessinée dans le repère « monde » zoomé, comme les unités : x = monde - camX).
-function drawBarrier(){
-  const b = game.barrier, x = b.x - camX, vw = VW(), gz = gY(b.x);
-  const top = -zTY()/zoom - 40, bot = gz + 20;
-  // voile sombre sur la zone scellée (au-delà du mur, côté ennemi)
-  ctx.save();
-  ctx.fillStyle = 'rgba(10,14,26,0.42)'; ctx.fillRect(x, top, (vw - x) + 60, bot - top);
-  // mur lui-même : dégradé translucide + balayage lumineux animé
-  const pulse = 0.45 + 0.25*Math.sin(game.t*3);
-  const g = ctx.createLinearGradient(x-16, 0, x+16, 0);
-  g.addColorStop(0, 'rgba(90,208,255,0)');
-  g.addColorStop(0.5, rgbaC('#5ad0ff', pulse));
-  g.addColorStop(1, 'rgba(90,208,255,0)');
-  ctx.fillStyle = g; ctx.fillRect(x-16, top, 32, bot - top);
-  // créneaux d'énergie qui défilent verticalement
-  ctx.globalAlpha = 0.5; ctx.fillStyle = '#bfe9ff';
-  for (let yy = top + ((game.t*70) % 26); yy < bot; yy += 26) ctx.fillRect(x-2, yy, 4, 12);
-  ctx.restore(); ctx.globalAlpha = 1;
-}
 function render(dt){
   if (!game){ if (intro>=0){ drawIntro(dt); } else drawMenuScene(dt); return; }
   ctx.save();
   // SECOUSSE : appliquée UNIQUEMENT au monde, JAMAIS au HUD ni aux overlays — sinon les
-  // boutons / la carte du tuto tremblent hors de leur zone cliquable (« on ne peut plus rien
-  // cliquer »). Elle est posée dans la sauvegarde du monde, restaurée avant le HUD.
+  // boutons tremblent hors de leur zone cliquable. Posée dans la sauvegarde du monde, restaurée avant le HUD.
   // ---- monde (zoomé, ancré en bas) ----
   ctx.save();
   if (game.shake>0.3 && SETTINGS.shake) ctx.translate((Math.random()-0.5)*game.shake,(Math.random()-0.5)*game.shake);
@@ -36,10 +15,8 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
-  if (game.pois) drawPOIs();
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
-  if (game.barrier && !game.barrier.opened) drawBarrier();
   for (const s of shots){
     ctx.globalAlpha = 1-s.t/s.dur;
     ctx.strokeStyle = FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=2.2;
@@ -141,3 +118,87 @@ function drawSpeedOverlays(){
     speedPanel.rects=rects;
   }
 }
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now-last)/1000, 0.05); last=now;
+  // ALERTE PERF : on lisse le FPS ; s'il reste bas longtemps en jeu et que la qualité
+  // n'est pas déjà au minimum, on invite UNE fois à la réduire dans les paramètres.
+  if (dt>0){ fpsAvg += ((1/dt)-fpsAvg)*0.05;
+    if (!fpsWarned && game && !game.over && !paused && SETTINGS.quality!=='low' && game.t>8 && fpsAvg<34){
+      fpsWarned=true; announce(tr('perf_warn'), '#ffcf6a'); }
+  }
+  if (PERF.on){ PERF.fps += ((dt>0?1/dt:60)-PERF.fps)*0.1; PERF.t0 = performance.now(); }
+  if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
+  const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
+  if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
+  else if (game && !game.over && !paused){
+    // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
+    let rem = dt * sp;
+    while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; }
+  } else update(dt);                                    // menu / intro / pause / fin : logique inchangée
+  if (PERF.on){ const n=performance.now(); PERF.upd += (n-PERF.t0 - PERF.upd)*0.15; PERF.t0=n; }
+  // l'hôte diffuse l'état ~12 fois/seconde (cadence en temps réel, indépendante de la vitesse de jeu)
+  if (game && game.net==='host' && net && net.peer && !paused && !game.over){
+    net.acc += dt;
+    if (net.acc >= 0.08){ net.acc = 0; net.sendState({s:serialize(), ev:net.ev}); net.ev = []; }
+  }
+  // remise à zéro systématique : aucune transformation ne peut fuir d'une frame à l'autre
+  ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  ctx.fillStyle='#0d0a0a'; ctx.fillRect(0,0,W,H);
+  if (PERF.on) PERF.t0 = performance.now();
+  try { render(dt); }
+  catch(err){ ctx.setTransform(SCALE,0,0,SCALE,0,0); console.error(err); }
+  if (PERF.on){ PERF.rend += (performance.now()-PERF.t0 - PERF.rend)*0.15; drawPerfHud(); }
+  if (CHEAT.unlocked && CHEAT.open && game && !game.over) drawCheatPanel();
+  requestAnimationFrame(loop);
+}
+// MODE TRICHE (dev) — panneau d'actions de test, n'apparaît qu'une fois déverrouillé
+function drawCheatPanel(){
+  ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  const items = [
+    {k:'res',     l:'💰 +10000 ressources'},
+    {k:'xp',      l:'✦ +2000 XP'},
+    {k:'evolve',  l:'⚡ Évoluer (ère +1)'},
+    {k:'special', l:'✸ Pouvoir prêt'},
+    {k:'hero',    l:'🦸 Héros dispo + ressources'},
+    {k:'mature',  l:'🌾 Fermes au régime max (×3)'},
+    {k:'wave',    l:'☠ Vague ennemie (+5)'},
+    {k:'god',     l:(CHEAT.god?'🛡 GOD: ON':'🛡 GOD: OFF')},
+    {k:'win',     l:'🏆 Gagner (base ennemie)'},
+  ];
+  const pw=192, rh=24, pad=8, ph=pad*2+18+items.length*rh;
+  const px=W-pw-10, py=64;
+  ctx.fillStyle='rgba(14,8,16,0.94)'; rr(px,py,pw,ph,7); ctx.fill();
+  ctx.strokeStyle='#ff5af0'; ctx.lineWidth=1.4; rr(px,py,pw,ph,7); ctx.stroke();
+  ctx.textAlign='left'; ctx.font='700 11px Arial'; ctx.fillStyle='#ff9bf0';
+  ctx.fillText('★ TRICHE (DEV) — F9', px+pad, py+pad+8);
+  CHEAT.rects = [];
+  for (let i=0;i<items.length;i++){
+    const it=items[i], y=py+pad+16+i*rh;
+    const on = it.k==='god' && CHEAT.god;
+    ctx.fillStyle = on? 'rgba(255,90,240,0.22)':'rgba(255,255,255,0.06)';
+    rr(px+pad, y, pw-pad*2, rh-4, 4); ctx.fill();
+    ctx.fillStyle = '#f0d8f0'; ctx.font='600 11px Arial';
+    ctx.fillText(it.l, px+pad+8, y+(rh-4)/2+1);
+    CHEAT.rects.push({x:px+pad, y, w:pw-pad*2, h:rh-4, k:it.k});
+  }
+}
+// overlay de diagnostic perf (coin haut-gauche) — n'apparaît que si PERF.on
+function drawPerfHud(){
+  ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  const lines = [
+    'FPS '+PERF.fps.toFixed(0)+'  ('+(1000/Math.max(1,PERF.fps)).toFixed(1)+' ms)',
+    'sim '+PERF.upd.toFixed(2)+' ms   rendu '+PERF.rend.toFixed(2)+' ms',
+    game? ('unités '+(game.p.units.length+game.e.units.length)+'  part '+particles.length
+          +'  fx '+(LIGHTS.length+deaths.length+shots.length+projectiles.length)) : 'menu',
+    'q='+SETTINGS.quality+(typeof DECOR!=='undefined'?('  décor '+DECOR.length):''),
+  ];
+  ctx.font='11px monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
+  const w=232, h=8+lines.length*15;
+  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(6,6,w,h);
+  ctx.fillStyle = PERF.fps<30? '#ff8a6a' : PERF.fps<50? '#ffcf6a' : '#9dd88a';
+  for (let i=0;i<lines.length;i++) ctx.fillText(lines[i], 12, 11+i*15);
+  ctx.textBaseline='alphabetic';
+}
+requestAnimationFrame(loop);

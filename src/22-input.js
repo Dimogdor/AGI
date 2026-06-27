@@ -22,35 +22,32 @@ window.addEventListener('keydown', e=>{
     return;
   }
   if (e.code==='Space' || e.code===K.special) e.preventDefault();
-  // tutoriel guidé : Espace/Entrée avance les étapes informatives (« Continuer »)
-  if (game.tut && TUT){
-    const step = TUT.steps[TUT.i];
-    if ((e.code==='Space'||e.code==='Enter') && step && step.tap && !TUT.confirmSkip){ tutBeginAct(); return; }
-  }
+  // tutoriel : Espace/Entrée valide les étapes d'info (« Continuer »)
+  if (game.tut && TUT && (e.code==='Space'||e.code==='Enter') && !TUT.confirmSkip && TUT.steps[TUT.i].tap){ tutBeginAct(); return; }
   if (paused || settingsOpen) return;   // réglages ouverts (même hors pause en ligne) : pas d'action de jeu au clavier
-  if (e.code===K.buy1){ if (tutGate({t:'buy',i:0})) tryBuy(p,0); }
-  else if (e.code===K.buy2){ if (tutGate({t:'buy',i:1})) tryBuy(p,1); }
-  else if (e.code===K.buy3){ if (tutGate({t:'buy',i:2})) tryBuy(p,2); }
-  else if (e.code===K.buy4){ if (tutGate({t:'buy',i:3})) tryBuy(p,3); }
-  else if (e.code===K.buy5){ if (tutGate({t:'buy',i:4})) tryBuy(p,4); }
-  else if (e.code===K.buy6){ if (tutGate({t:'buy',i:5})) tryBuy(p,5); }
-  else if (e.code===K.evolve){ if (tutGate({t:'evolve'})) tryEvolve(p); }
-  else if (e.code===K.special){ if (tutGate({t:'special'})) trySpecial(p); }
-  else if (e.code===K.charge){ if (tutGate({t:'stance',st:'charge'})) setStance(p,'charge'); }
-  else if (e.code===K.hold){ if (tutGate({t:'stance',st:'hold'})) setStance(p,'hold'); }
-  else if (e.code===K.retreat){ if (tutGate({t:'stance',st:'retreat'})) setStance(p,'retreat'); }
-  else if (e.code===K.formation){ if (tutGate({t:'formation'})){ p.formation=!p.formation;
-    announce(p.formation? '⚏ Formation activée':'⚏ Formation libre', '#e8d8a0'); } }
-  else if (e.code===K.repairall){ if (tutGate({t:'repairall'})) tryRepairAll(p); }
+  if (e.code===K.buy1){ tryBuy(p,0); }
+  else if (e.code===K.buy2){ tryBuy(p,1); }
+  else if (e.code===K.buy3){ tryBuy(p,2); }
+  else if (e.code===K.buy4){ tryBuy(p,3); }
+  else if (e.code===K.buy5){ tryBuy(p,4); }
+  else if (e.code===K.buy6){ tryBuy(p,5); }
+  else if (e.code===K.evolve){ tryEvolve(p); }
+  else if (e.code===K.special){ trySpecial(p); }
+  else if (e.code===K.charge){ setStance(p,'charge'); }
+  else if (e.code===K.hold){ setStance(p,'hold'); }
+  else if (e.code===K.retreat){ setStance(p,'retreat'); }
+  else if (e.code===K.formation){ p.formation=!p.formation;
+    announce(p.formation? '⚏ Formation activée':'⚏ Formation libre', '#e8d8a0'); }
+  else if (e.code===K.repairall){ tryRepairAll(p); }
   else if (e.code===K.follow) camFollow=!camFollow;
-  else if (e.code===K.capup){ if (tutGate({t:'cap'})) tryCapUp(p); }
+  else if (e.code===K.capup){ tryCapUp(p); }
   else if (e.code===K.zoomin || e.code==='NumpadAdd') setZoom(zoom+0.12);
   else if (e.code===K.zoomout || e.code==='NumpadSubtract') setZoom(zoom-0.12);
 });
 window.addEventListener('keyup', e=>kdown.delete(e.code));
 // caméra fluide au clavier
 (function camKeys(){
-  if (game && !paused && !game.over && tutoStep<0){
+  if (game && !paused && !game.over){
     const K = SETTINGS.keys;
     if (kdown.has(K.left)) { camX -= 9/zoom; camFollow=false; camClamp(); }
     if (kdown.has(K.right)){ camX += 9/zoom; camFollow=false; camClamp(); }
@@ -76,7 +73,7 @@ cv.addEventListener('contextmenu', e=>e.preventDefault());
 let hoverUnitBtn = -1;
 cv.addEventListener('pointermove', e=>{
   if (e.pointerType==='touch'){ hoverUnitBtn=-1; return; }
-  if (!game || game.over || paused || buildMenu || tutoStep>=0){ hoverUnitBtn=-1; return; }
+  if (!game || game.over || paused || buildMenu){ hoverUnitBtn=-1; return; }
   const {sx,sy} = evXY(e); hoverUnitBtn=-1;
   for (const b of HUD.btns) if (b.type==='unit' && !btnHidden(b) && inRect(sx,sy,b)){ hoverUnitBtn=b.i; break; }
 });
@@ -94,7 +91,7 @@ cv.addEventListener('pointerdown', e=>{
     pdown = null; selBox = null;
     return;
   }
-  if (!game || game.over || paused || tutoStep>=0 || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
+  if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
   const lasso = (selMode || e.shiftKey) && sy>38 && sy<H-102;
   pdown = {sx, sy, moved:false, lasso};
   if (lasso) selBox = {x0:sx, y0:sy, x1:sx, y1:sy};
@@ -116,7 +113,7 @@ cv.addEventListener('pointermove', e=>{
   if (Math.abs(sx-pdown.sx)>6 || Math.abs(sy-pdown.sy)>6) pdown.moved = true;
   if (pdown.lasso){ selBox.x1 = sx; selBox.y1 = sy; return; }
   // glisser = caméra (zone monde) — autorisé aussi en PAUSE (sauf menu réglages) pour observer la carte
-  if (game && !game.over && tutoStep<0 && !buildMenu && !settingsOpen && pdown.moved && pdown.sy>38 && pdown.sy<H-102){
+  if (game && !game.over && !buildMenu && !settingsOpen && pdown.moved && pdown.sy>38 && pdown.sy<H-102){
     dragging = true; camFollow = false;
     camX -= dx/zoom; camClamp();
   }
@@ -173,25 +170,9 @@ function handleTap(sx, sy, shift){
     if (speedPanel.rects) for (const r of speedPanel.rects) if (inRect(sx,sy,r)){ pickSpeed(r.spd); sfx('sel'); return; }
     speedPanel=null; return;
   }
-  // tutoriel guidé : panneau (continuer / passer) + confirmation de skip prioritaires
-  if (game.tut && TUT){
-    if (TUT.confirmSkip){
-      for (const r of (TUT.confirmRects||[])) if (inRect(sx,sy,r)){
-        if (r.key==='yes'){ sfx('sel'); endTutorial(); } else { sfx('sel'); TUT.confirmSkip=false; }
-        return;
-      }
-      return;                       // modal : rien d'autre n'est cliquable
-    }
-    let hitUi=false;
-    for (const r of (TUT.uiRects||[])) if (inRect(sx,sy,r)){
-      hitUi=true;
-      if (r.key==='skip'){ sfx('sel'); TUT.confirmSkip=true; }
-      else if (r.key==='cont'){ sfx('sel'); tutBeginAct(); }   // étape informative : « Continuer » → étape suivante
-      return;
-    }
-    if (hitUi) return;
-    // sinon : on laisse le clic atteindre le jeu (sélection / ouverture de menus restent libres)
-  }
+  // tutoriel : boutons de la carte (Continuer / Passer / confirmation). Renvoie true si le clic
+  // est consommé ; sinon il atteint le jeu normalement (construire, sélectionner…).
+  if (game.tut && TUT && tutHandleTap(sx,sy)) return;
   // RÉGLAGES ouverts : prioritaires et indépendants de la pause (en ligne, ⚙ ne fige plus le jeu)
   if (settingsOpen){
     if (pauseRects) for (const r of pauseRects) if (inRect(sx,sy,r)){
@@ -207,7 +188,7 @@ function handleTap(sx, sy, shift){
       else if (r.key==='follow') camFollow=!camFollow;
       else if (r.key==='quit'){
         netDisconnect();
-        paused=false; settingsOpen=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null; tutoStep=-1;
+        paused=false; settingsOpen=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null;
         $('menu').style.display='flex';
       }
       sfx('sel'); return;
@@ -239,12 +220,6 @@ function handleTap(sx, sy, shift){
     const slot = buildMenu.slot, base = buildMenu.base;
     buildMenu = null;
     if (!hit) return;
-    // tutoriel : seule la construction enseignée à l'étape courante est autorisée
-    if (game.tut){
-      if (!base && hit && BUILDS[hit]){ if (tutGate({t:'build', type:hit})) tryBuild(p, slot, hit); }
-      else tutNudge();
-      return;
-    }
     if (base){
       if (hit==='repairBase') tryRepairBase(p);
       else if (hit==='repairAll') tryRepairAll(p);
@@ -287,7 +262,6 @@ function handleTap(sx, sy, shift){
   if (HUD.selRect && inRect(sx,sy,HUD.selRect)){ game.sel.clear(); sfx('sel'); return; }
   // ⬆ d'amélioration de classe (annonce le coût si on ne peut pas payer)
   for (const r of HUD.upgRects) if (inRect(sx,sy,r)){
-    if (game.tut){ if (tutGate({t:'upg', i:r.i})) tryUpgRole(p, r.i); return; }   // tutoriel : amélioration de classe enseignée
     if (!tryUpgRole(p, r.i)){
       const lvl = p.upg[ROLES[r.i].key]||0;
       if (lvl<3) announce('⬆ Coût : '+costStr(p,{f:90*(lvl+1), m:180*(lvl+1)}), '#d8a06a');
@@ -296,22 +270,22 @@ function handleTap(sx, sy, shift){
   }
   // boutons HUD
   for (const b of HUD.btns) if (!btnHidden(b) && inRect(sx,sy,b)){
-    if (b.type==='unit'){ if (tutGate({t:'buy',i:b.i})) tryBuy(p, b.i); }
-    else if (b.type==='hero'){ if (!heroBtnReady(p)) continue; if (tutGate({t:'hero'})) tryHero(p); }
-    else if (b.type==='special'){ if (tutGate({t:'special'})) trySpecial(p); }
-    else if (b.type==='evolve'){ if (tutGate({t:'evolve'})) tryEvolve(p); }
-    else if (b.type==='cap'){ if (tutGate({t:'cap'})) tryCapUp(p); }
-    else if (b.type==='stance'){ if (tutGate({t:'stance',st:b.st})) setStance(p, b.st); }
+    if (b.type==='unit'){ tryBuy(p, b.i); }
+    else if (b.type==='hero'){ if (!heroBtnReady(p)) continue; tryHero(p); }
+    else if (b.type==='special'){ trySpecial(p); }
+    else if (b.type==='evolve'){ tryEvolve(p); }
+    else if (b.type==='cap'){ tryCapUp(p); }
+    else if (b.type==='stance'){ setStance(p, b.st); }
     else if (b.type==='lasso'){ selMode=!selMode; sfx('sel'); }
-    else if (b.type==='formation'){ if (tutGate({t:'formation'})){
+    else if (b.type==='formation'){
       if (game.net==='guest'){ guestCmd({c:'form'}); sfx('sel'); return; }
       p.formation=!p.formation; sfx('sel');
       announce(p.formation?
         (p.facKey==='HUM'? '⚏ Phalange ouvrière : corps à corps devant, tireurs derrière, artillerie au fond'
                          : '⚏ Essaim calculé : lames en première vague, optimiseurs au centre, canons au fond')
-        : '⚏ Formation libre', '#e8d8a0'); }
+        : '⚏ Formation libre', '#e8d8a0');
     }
-    else if (b.type==='repairall'){ if (tutGate({t:'repairall'})) tryRepairAll(p); }
+    else if (b.type==='repairall'){ tryRepairAll(p); }
     else if (b.type==='cam'){
       if (b.go==='base'){ camFollow=false; camX = clamp(p.x - VW()*0.25, 0, WORLD-VW()); }
       else if (b.go==='front'){
@@ -379,11 +353,9 @@ cv.addEventListener('wheel', e=>{
   else { camFollow=false; camX += (e.deltaY+e.deltaX)*0.8/zoom; camClamp(); }
 }, {passive:false});
 
-/* ---- PREMIER LANCEMENT : on propose automatiquement le tutoriel guidé ----
-   (skippable même au premier lancement, avec confirmation ; relançable
-   ensuite depuis l'onglet TUTORIEL) ---- */
+/* PREMIER LANCEMENT : propose automatiquement le tutoriel (relançable depuis l'onglet TUTORIEL) */
 (function maybeFirstLaunchTutorial(){
-  let seen = null;
-  try { seen = localStorage.getItem('agi_tutoSeen'); } catch(e){ seen = '1'; }
+  let seen = '1';
+  try { seen = localStorage.getItem('agi_tutoSeen'); } catch(e){}
   if (!seen) startTutorial();
 })();

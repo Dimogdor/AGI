@@ -28,7 +28,7 @@
   #fsBtn:active { background:#2a0e0a; }
   #langSel { font-family:inherit; font-size:.95em; background:#1a1210; color:#d8d0c4;
     border:1px solid #4a3a32; padding:5px 10px; cursor:pointer; }
-  body[dir="rtl"] .tuto, body[dir="rtl"] .setRow span { text-align:right; }
+  body[dir="rtl"] .setRow span { text-align:right; }
   #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   canvas { display:block; background:#0d0a0a; }
   #ui { position:absolute; inset:0; pointer-events:none; }
@@ -58,49 +58,6 @@
   @keyframes pageIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
   .tab { transition:color .18s, background .18s, border-color .18s; }
   #endscreen { animation:pageIn .3s ease both; }
-  /* ============ INTRO DE MISSION (« True Intro » thématique, plein écran) ============ */
-  #briefscreen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center;
-    justify-content:center; z-index:12; padding:4vh 16px; overflow-y:auto; -webkit-overflow-scrolling:touch;
-    color:#e8e0d2; animation:briefFade .45s ease both; }
-  @keyframes briefFade { from { opacity:0; } to { opacity:1; } }
-  #briefCard { position:relative; width:min(700px,95%); padding:0 0 30px; overflow:hidden;
-    display:flex; flex-direction:column; align-items:center; text-align:center; border-radius:5px;
-    animation:briefRise .5s cubic-bezier(.2,.7,.2,1) both; }
-  @keyframes briefRise { from { opacity:0; transform:translateY(22px) scale(.98); } to { opacity:1; transform:none; } }
-  #briefChrome { width:100%; padding:9px 16px; font-size:clamp(10px,1.7vw,13px); letter-spacing:.22em;
-    display:flex; align-items:center; gap:8px; }
-  #briefYear { letter-spacing:.34em; font-size:clamp(12px,1.9vw,15px); margin:22px 0 4px; opacity:.92; }
-  #briefTitle { font-size:clamp(26px,6vw,46px); font-weight:800; line-height:1.05; letter-spacing:.04em;
-    margin:0 18px 16px; }
-  #briefBody { max-width:560px; line-height:1.7; font-size:clamp(14px,2.3vw,17.5px); margin:0 22px 18px;
-    white-space:pre-line; }
-  #briefObj { font-weight:700; font-size:clamp(13px,2vw,16px); margin:0 22px 22px; padding:9px 18px;
-    border-radius:4px; }
-  #briefscreen .row { padding:0 16px; }
-  /* — HUMANITÉ : manifeste imprimé, encre rouge sur papier sombre — */
-  #briefscreen.brief-hum { background:radial-gradient(circle at 50% 16%, #2a100a 0%, #150b08 64%, #0a0605 100%); }
-  #briefscreen.brief-hum #briefCard { background:#1a110c;
-    border:1px solid #7a2418; box-shadow:0 0 0 5px #0e0807, 0 18px 70px #000000aa, inset 0 0 60px #50160c44; }
-  #briefscreen.brief-hum #briefChrome { background:linear-gradient(90deg,#a8281e,#5e160f); color:#ffe6c8;
-    font-weight:800; text-transform:uppercase; justify-content:center; border-bottom:2px solid #d8483a; }
-  #briefscreen.brief-hum #briefYear { color:#e8a85a; }
-  #briefscreen.brief-hum #briefTitle { color:#f3dca2; text-shadow:2px 2px 0 #7a1a12; }
-  #briefscreen.brief-hum #briefBody { color:#ddcdb8; }
-  #briefscreen.brief-hum #briefObj { color:#ffe0a0; background:#3a1409; border:1px solid #a8552a; }
-  /* — GPT : terminal corporate, monospace cyan + lignes de balayage — */
-  #briefscreen.brief-ia { background:radial-gradient(circle at 50% 28%, #06181f 0%, #04090d 72%, #01050a 100%); }
-  #briefscreen.brief-ia #briefCard { background:#06121a; font-family:'Courier New',ui-monospace,monospace;
-    border:1px solid #1d6f88; box-shadow:0 0 0 1px #0a2a36, 0 18px 70px #000000aa, inset 0 0 70px #0a3a4a3a; }
-  #briefscreen.brief-ia #briefCard::after { content:""; position:absolute; inset:0; pointer-events:none;
-    background:repeating-linear-gradient(0deg, rgba(120,220,255,0.05) 0 1px, transparent 1px 3px); }
-  #briefscreen.brief-ia #briefChrome { background:#0a2630; color:#8fe6ff; justify-content:flex-start;
-    border-bottom:1px solid #1d6f88; font-family:'Courier New',monospace; }
-  #briefscreen.brief-ia #briefChrome::before { content:"● ● ●"; color:#2f8aa0; letter-spacing:2px; margin-right:6px; }
-  #briefscreen.brief-ia #briefYear { color:#5ad0ff; }
-  #briefscreen.brief-ia #briefTitle { color:#9fe9ff; text-shadow:0 0 14px #2aa8d055; font-weight:700; }
-  #briefscreen.brief-ia #briefBody { color:#bfe6f2; }
-  #briefscreen.brief-ia #briefObj { color:#aef0ff; background:#072430; border:1px solid #1d8faa; }
-  #briefscreen.brief-ia #briefBody, #briefscreen.brief-ia #briefObj { font-family:'Courier New',monospace; }
   .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .pick {
     cursor:pointer; padding:12px 28px; font-size:clamp(14px,2.2vw,18px); font-family:inherit;
@@ -120,7 +77,7 @@
   .tuto { font-size:clamp(12px,1.7vw,14.5px); line-height:1.8; color:#c4bcb0; text-align:left; padding:0 6px; max-height:52vh; overflow-y:auto; }
   .tuto h3 { color:#e8a06a; font-weight:700; letter-spacing:.1em; margin:13px 0 3px; }
   .tuto b { color:#e8e0d2; }
-  .tuto kbd { font-family:inherit; border:1px solid #5a4a40; padding:0 6px; font-size:.9em; background:#1a1210; }
+  body[dir="rtl"] .tuto { text-align:right; }
   .setRow { display:flex; align-items:center; justify-content:space-between; width:min(440px,86vw);
     border-bottom:1px solid #2e2620; padding:10px 4px; font-size:clamp(13px,1.9vw,15px); color:#b8b0a4; }
   .tog { cursor:pointer; border:1px solid #4a3a32; background:none; color:#988e80;
@@ -172,7 +129,6 @@
         <button class="pick diffBtn" data-diff="3" data-i18n="diff_3">Brutal</button>
       </div>
       <button class="go" id="startBtn" data-i18n="start">COMMENCER (vs IA)</button>
-      <button class="pick" id="campBtn" data-i18n="camp_btn" style="margin-top:4px; border-color:#c8a23a; color:#f0dca0;">📖 CAMPAGNE SOLO</button>
       <button class="pick" id="onlineBtn" data-i18n="online_btn" style="border-color:#3e8cb8; color:#bfe6ff;">🌐 JOUER EN LIGNE (1v1)</button>
       <div id="onlinePanel" style="display:none; flex-direction:column; gap:10px; align-items:center;
            border-top:1px solid #3a2e28; padding-top:12px; margin-top:4px; width:100%;">
@@ -260,11 +216,6 @@
         <button class="pick" id="netCancel" data-i18n="cancel" style="font-size:12px; padding:6px 16px; color:#988e80;">Annuler</button>
       </div>
     </div>
-    <div class="page" id="page-story">
-      <div id="storyIntro" data-i18n="story_intro" style="color:#b7ad9c;font-size:clamp(11px,1.7vw,13px);text-align:center;max-width:520px;margin-bottom:4px;">La Commune — campagne narrative, de la première étincelle à la révolution.</div>
-      <div id="storyList" style="display:flex;flex-direction:column;gap:7px;width:min(520px,94%);max-height:46vh;overflow-y:auto;"></div>
-      <button class="pick" id="storyBack" data-i18n="net_back" style="font-size:13px;color:#988e80;margin-top:4px;">← Retour</button>
-    </div>
     <div class="page" id="page-tuto">
       <div class="tuto" id="tutoIntro"></div>
       <button class="go" id="tutoStartBtn" style="margin-top:6px;">▶ COMMENCER LE TUTORIEL</button>
@@ -302,19 +253,6 @@
     <div id="endtitle"></div>
     <div id="endstats"></div>
     <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
-  </div>
-  <div id="briefscreen" class="panel" style="display:none;">
-    <div id="briefCard">
-      <div id="briefChrome"></div>
-      <div id="briefYear"></div>
-      <div id="briefTitle"></div>
-      <div id="briefBody"></div>
-      <div id="briefObj"></div>
-      <div class="row" style="gap:14px;">
-        <button class="go" id="briefStart" data-i18n="brief_start">▶ LANCER LA MISSION</button>
-        <button class="pick" id="briefBack" data-i18n="brief_back" style="color:#988e80;">← Retour</button>
-      </div>
-    </div>
   </div>
 </div>
 <button id="fsBtn" title="Plein écran" aria-label="Plein écran">⛶</button>

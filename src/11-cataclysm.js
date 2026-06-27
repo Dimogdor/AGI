@@ -17,7 +17,7 @@ function updateCata(dt){
   if (g.cataCd>0) return;
   // prochaine échéance : très espacée tant que le monde est sain, resserrée quand il agonise
   g.cataCd = lerp(150, 26, g.dev) + Math.random()*45;
-  if (g.dev < 0.10 || g.noCata) return;     // monde vivable, ou météo verrouillée par la mission : pas de cataclysme
+  if (g.dev < 0.10) return;     // monde encore vivable : pas de cataclysme
   triggerCata();
 }
 function triggerCata(){

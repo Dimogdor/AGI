@@ -195,7 +195,7 @@ function netGuestTick(dt){
 function netNeutralDiff(){ return {name:'EN LIGNE', inc:1, think:1, eraLag:0, hpMul:1, cheat:1}; }
 function startHostGame(){
   audioInit(); musicStart();
-  intro=-1; pendingStart=null; tutoStep=-1;
+  intro=-1; pendingStart=null;
   newGame(net.myFac, 1, false, net.foeFac);
   game.d = netNeutralDiff();
   game.e.hp = game.e.maxhp = 1500;
@@ -210,7 +210,7 @@ function startHostGame(){
 }
 function startGuestGame(data){
   audioInit(); musicStart();
-  intro=-1; pendingStart=null; tutoStep=-1;
+  intro=-1; pendingStart=null;
   // l'invité construit une coquille « vue normale » (lui à gauche) que les snapshots rempliront
   net.myFac = data.guestFac; net.foeFac = data.hostFac;
   newGame(data.guestFac, 1, false, data.hostFac);
