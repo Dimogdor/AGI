@@ -518,14 +518,22 @@ function drawBuildMenu(){
   ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
   ctx.textAlign='left';
+  // TUTORIEL : repère quelle construction est demandée À CETTE étape (surbrillance) vs déjà
+  // enseignées (grisées, non sélectionnables mais visibles, comme demandé).
+  const tutStep = (game.tut && TUT) ? TUT.steps[TUT.i] : null;
+  const isCur = o => tutStep && tutStep.allow && tutStep.allow({t:'build', type:o.key});
   for (let i=0;i<opts.length;i++){
     const o=opts[i], y=by+8+i*34;
     const free = !Object.keys(o.cost).length;
     const ok = free || canPay(p,o.cost);
+    const cur = isCur(o);
+    const past = tutStep && !cur;   // en tuto : option déjà enseignée → grisée
     buildMenu.rects.push({x:bx+4,y,w:bw-8,h:30,key:o.key});
-    ctx.globalAlpha = ok?1:0.45;
-    ctx.fillStyle='rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
-    ctx.font='700 11.5px Arial'; ctx.fillStyle='#e8e0d2';
+    ctx.globalAlpha = past? 0.4 : (ok?1:0.45);
+    ctx.fillStyle = cur? rgbaC(p.fac.accent,0.18) : 'rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
+    if (cur){ ctx.save(); ctx.strokeStyle=p.fac.accent; ctx.lineWidth=2; ctx.shadowColor=p.fac.accent; ctx.shadowBlur=8;
+      rr(bx+4,y,bw-8,30,5); ctx.stroke(); ctx.restore(); }
+    ctx.font='700 11.5px Arial'; ctx.fillStyle = cur? '#fff' : '#e8e0d2';
     ctx.fillText(o.label, bx+12, y+10);
     ctx.font='600 10px Arial'; ctx.fillStyle='#e8d8a0';
     ctx.fillText(free?'—':costStr(p,o.cost), bx+12, y+23);

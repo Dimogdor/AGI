@@ -336,6 +336,10 @@ function startTutorial(){
   p.stance = 'hold';
   e.stance = 'hold';
   e.hp = e.maxhp = 20000;            // base ennemie hors d'atteinte jusqu'à l'assaut final
+  // Le tuto enseigne CINQ constructions (ferme · marché · puits · muraille · tourelle). Une base
+  // n'a que 3 socles → sans renfort, muraille/tourelle se construiraient au milieu de la carte
+  // (socle neutre lointain), caméra perdue loin de la base. On ajoute donc 2 socles près de la base.
+  while (p.slots.length < 5) p.slots.push({ x: p.x + (95 + p.slots.length*64), b:null, owner:null });
   camFollow = false; zoom = 1; camX = 0; camClamp();
   TUT = { i:0, t:0, steps:TUT_STEPS, celebrating:false, celebT:0, uiRects:[], confirmRects:[], confirmSkip:false, revealed:[] };
   tutEnterStep();
