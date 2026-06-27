@@ -461,6 +461,14 @@ function updateZones(dt){
 }
 function update(dt){
   if (!game || game.over || paused) return;
+  // TUTORIEL : monde gelé pendant les étapes d'info / le bloc défense — la simulation est
+  // suspendue mais les FX retombent et tutTick continue de détecter les actions. Toujours
+  // réversible (un bouton « Continuer » / « Passer » visible). Jamais de blocage.
+  if (game.tut && TUT && tutFrozen()){
+    if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
+    if (game.flash>0) game.flash-=dt;
+    tutTick(dt); return;
+  }
   game.t += dt;
   const p=game.p, e=game.e, d=game.d;
   if (CHEAT.god){ p.hp=p.maxhp; for (const u of p.units) u.hp=u.maxhp; }   // MODE TRICHE : base + troupes du joueur invincibles

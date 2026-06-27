@@ -161,25 +161,84 @@ const TUT_STEPS = [
     allow:a=>a.t==='cap',
     done:()=>game.p.capUp===true,
   },
-  { // 13 — pouvoir ultime
-    text:{fr:"L'EXPÉRIENCE ✦ se gagne au combat et alimente votre POUVOIR ULTIME. Il est prêt : lancez-le avec ✸.",
-          en:"EXPERIENCE ✦ comes from combat and powers your ULTIMATE. It's ready: unleash it with ✸."},
+  // ===== BLOC DÉFENSE : monde GELÉ + mini-vague ennemie, pour apprendre le combat sans pression =====
+  { // 13 — alerte défense (info, GEL + vague)
+    tap:true,
+    text:{fr:"⚠ Une mini-vague ennemie approche — le jeu est EN PAUSE le temps de comprendre. Le combat est automatique : la mêlée encaisse devant, les tireurs frappent derrière. Préparons la défense.",
+          en:"⚠ A small enemy wave is coming — the game is PAUSED so you can take it in. Combat is automatic: melee tanks in front, ranged strike from behind. Let's prepare a defense."},
+    enter:()=>{ TUT.freeze=true; tutSpawnWave(); game.shake=6; sfx('boom'); camFollow=false;
+      const e=game.e.units[0]; tutCam(e? e.x-260 : game.p.x+260);
+      announce(tutText({fr:'⚠ VAGUE ENNEMIE — jeu en pause',en:'⚠ ENEMY WAVE — game paused'}), '#ff5a4a'); },
+    focus:()=>null,
+  },
+  { // 14 — muraille
+    text:{fr:"🧱 Bloquez-les : bâtissez une MURAILLE sur le socle surligné. Solide, elle encaisse les coups à la place de vos troupes.",
+          en:"🧱 Block them: build a WALL on the highlighted pad. Sturdy, it takes hits instead of your troops."},
+    obj:{fr:"Construisez une muraille",en:"Build a wall"},
+    enter:()=>{ tutGrant(400,400,200); const s=tutEmptySlot(); if(s)tutCam(s.x); },
+    focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
+    allow:a=>a.t==='build'&&a.type==='wall',
+    done:()=>tutHasBuild('wall'),
+  },
+  { // 15 — tourelle
+    text:{fr:"🗼 Ajoutez une TOURELLE sur le socle surligné : elle tire automatiquement sur tout ennemi à portée.",
+          en:"🗼 Add a TURRET on the highlighted pad: it automatically fires at any enemy in range."},
+    obj:{fr:"Construisez une tourelle",en:"Build a turret"},
+    enter:()=>{ tutGrant(400,500,200); const s=tutEmptySlot(); if(s)tutCam(s.x); },
+    focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
+    allow:a=>a.t==='build'&&a.type==='turret',
+    done:()=>tutHasBuild('turret'),
+  },
+  { // 16 — garnison (info)
+    tap:true,
+    text:{fr:"🚪 GARNISON : touchez une tour ou une muraille, puis « Garnison » pour y abriter un tireur. Perché et protégé, il tire de plus loin et survit bien mieux.",
+          en:"🚪 GARRISON: tap a turret or wall, then \"Garrison\" to shelter a shooter inside. Elevated and protected, it shoots farther and survives much longer."},
+    enter:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')){ tutCam(s.x); break; } },
+    focus:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')) return tutWorldRect(s.x); return null; },
+  },
+  { // 17 — le combat ! (DÉGEL + on écrase la vague)
+    text:{fr:"La pause se lève ! Ordonnez la ⚔ CHARGE : muraille, tourelle et troupes vont écraser la vague. Regardez le combat se résoudre.",
+          en:"The pause lifts! Order the ⚔ CHARGE: wall, turret and troops will crush the wave. Watch the fight play out."},
+    obj:{fr:"Repoussez la vague ennemie",en:"Repel the enemy wave"},
+    enter:()=>{ TUT.freeze=false; game.p.stance='charge'; game.e.stance='charge'; camFollow=true; },
+    focus:()=>tutHudRect(b=>b.type==='stance'&&b.st==='charge'),
+    allow:a=>a.t==='stance',
+    done:()=>game.e.units.length===0,
+  },
+  { // 18 — expérience (info)
+    tap:true,
+    text:{fr:"✦ L'EXPÉRIENCE se gagne en combattant, en tenant les zones ◈ et les lacs 💧, et en fortifiant votre base. Elle alimente vos pouvoirs et vos évolutions — votre moteur de progression.",
+          en:"✦ EXPERIENCE comes from fighting, holding zones ◈ and lakes 💧, and fortifying your base. It powers your abilities and evolutions — your engine of progression."},
+    enter:()=>{ camFollow=false; camX=0; },
+    focus:()=>({x:248,y:6,w:120,h:34}),   // compteur ✦ dans le bandeau du haut
+  },
+  { // 19 — pouvoir ultime
+    text:{fr:"Votre POUVOIR ULTIME ✸ est alimenté par l'✦. Il est prêt : lancez-le (bouton surligné).",
+          en:"Your ULTIMATE ✸ is powered by ✦. It's ready: unleash it (highlighted button)."},
     obj:{fr:"Lancez votre pouvoir ultime",en:"Unleash your ultimate"},
     enter:()=>{ const p=game.p; p.specialCd=0; p.xp=Math.max(p.xp, specialXpCost(p)+30); TUT.specBase=game.specialsUsed; camFollow=true; },
     focus:()=>tutHudRect(b=>b.type==='special'),
     allow:a=>a.t==='special',
     done:()=>game.specialsUsed>(TUT.specBase||0),
   },
-  { // 14 — évolution d'ère
-    text:{fr:"L'✦ permet aussi d'ÉVOLUER : changer d'ère rend TOUTES vos forces plus puissantes. Touchez ⚡ ÉVOLUER.",
-          en:"✦ also lets you EVOLVE: advancing an era makes ALL your forces stronger. Tap ⚡ EVOLVE."},
+  { // 20 — évolution d'ère
+    text:{fr:"L'✦ permet aussi d'ÉVOLUER : changer d'ère rend TOUTES vos forces plus puissantes et débloque de nouvelles unités. Touchez ⚡ ÉVOLUER.",
+          en:"✦ also lets you EVOLVE: advancing an era makes ALL your forces stronger and unlocks new units. Tap ⚡ EVOLVE."},
     obj:{fr:"Évoluez vers l'ère suivante",en:"Evolve to the next era"},
     enter:()=>{ const p=game.p; TUT.eraBase=p.era; p.xp=Math.max(p.xp, EVOLVE_XP[Math.min(p.era+1,4)]+30); camFollow=false; camX=0; },
     focus:()=>tutHudRect(b=>b.type==='evolve'),
     allow:a=>a.t==='evolve',
     done:()=>game.p.era>(TUT.eraBase||0),
   },
-  { // 15 — héros
+  { // 21 — fortifier la base
+    text:{fr:"Votre BASE aussi s'améliore : touchez-la, puis « Fortifier » — plus de points de vie ET plus d'✦ passif. Pensez aussi à la réparer en cours de partie.",
+          en:"Your BASE upgrades too: tap it, then \"Fortify\" — more HP AND more passive ✦. Remember to repair it mid-game too."},
+    obj:{fr:"Fortifiez votre base",en:"Fortify your base"},
+    enter:()=>{ const p=game.p; TUT.fortBase=(p.fortLvl||1); tutGrant(700,700,200); camFollow=false; tutCam(p.x); },
+    focus:()=>tutWorldRect(game.p.x),
+    done:()=>(game.p.fortLvl||1)>(TUT.fortBase||1),
+  },
+  { // 22 — héros
     text:{fr:"Une fois par partie, invoquez votre 🦸 HÉROS légendaire : il décuple la force de toute votre armée tant qu'il vit.",
           en:"Once per game, summon your 🦸 legendary HERO: he massively boosts your whole army while alive."},
     obj:{fr:"Invoquez votre héros",en:"Summon your hero"},
@@ -188,14 +247,21 @@ const TUT_STEPS = [
     allow:a=>a.t==='hero',
     done:()=>game.p.units.some(u=>u.role==='hero'),
   },
-  { // 16 — fin
+  { // 23 — fin
     tap:true,
-    text:{fr:"🎉 Tutoriel terminé ! Économie, troupes, ordres, améliorations, pouvoirs, évolution, héros — tout est à vous. Bonne guerre, commandant !",
-          en:"🎉 Tutorial complete! Economy, troops, orders, upgrades, powers, evolution, hero — it's all yours. Good war, commander!"},
-    enter:()=>{ game.flash=0.5; sfx('evolve'); },
+    text:{fr:"🎉 Tutoriel terminé ! Économie, armée, contrôle, défense, garnisons, expérience, pouvoirs, évolution, base et héros — tout est à vous. Bonne guerre, commandant !",
+          en:"🎉 Tutorial complete! Economy, army, control, defense, garrisons, experience, powers, evolution, base and hero — it's all yours. Good war, commander!"},
+    enter:()=>{ camFollow=false; camX=0; game.flash=0.5; sfx('evolve'); },
     focus:()=>null,
   },
 ];
+// mini-vague ennemie scriptée (combat d'apprentissage) — 3 unités, gelées jusqu'au dégel
+function tutSpawnWave(){
+  const e = game.e, baseX = game.p.x + 640;
+  spawnUnit(e, 0, false, baseX);        // mêlée
+  spawnUnit(e, 0, false, baseX + 44);   // mêlée
+  spawnUnit(e, 2, false, baseX + 92);   // tireur
+}
 /* ---- cycle de vie ---- */
 function startTutorial(){
   audioInit(); musicStart(); goFullscreen();
@@ -206,8 +272,10 @@ function startTutorial(){
   const p = game.p, e = game.e;
   p.stance = 'hold'; e.stance = 'hold';
   e.hp = e.maxhp = 9e9;              // base ennemie inattaquable (aucune victoire accidentelle)
+  // le tuto enseigne 5 constructions (ferme/marché/puits/muraille/tourelle) : 2 socles en plus
+  while (p.slots.length < 5) p.slots.push({ x: p.x + (95 + p.slots.length*64), b:null, owner:null });
   camFollow = false; zoom = 1; camX = 0; camClamp();
-  TUT = { i:0, t:0, steps:TUT_STEPS, revealed:[], celebrating:false, celebT:0, confirmSkip:false, uiRects:[], confirmRects:[] };
+  TUT = { i:0, t:0, steps:TUT_STEPS, revealed:[], celebrating:false, celebT:0, confirmSkip:false, freeze:false, uiRects:[], confirmRects:[] };
   tutEnterStep();
   announce(tutText({fr:"✦ TUTORIEL — bienvenue, commandant",en:"✦ TUTORIAL — welcome, commander"}), '#ffd34a');
 }
@@ -241,6 +309,13 @@ function tutTick(dt){
     TUT.celebrating = true; TUT.celebT = 0; sfx('cap');
     const cx = s2wX(W/2); addFloater(cx, gY(cx)-150, '✓', '#9dc88a', 22);
   }
+}
+// monde gelé ? (appelé par update) — gel explicite (bloc défense) OU pendant une étape d'info,
+// pour un écran calme et un bouton « Continuer » fiable. Toujours réversible (Continuer/Passer).
+function tutFrozen(){
+  if (!game || !game.tut || !TUT) return false;
+  const step = TUT.steps[TUT.i];
+  return !!(TUT.freeze || (step && step.tap));
 }
 /* ---- visibilité progressive du HUD (appelée par 13-hud.js) ---- */
 function tutBtnHidden(b){            // true = masquer (jamais enseigné)
@@ -302,6 +377,7 @@ function drawTut(){
   const bx = clamp((W-bw)/2, 12, W-bw-12);
   const focusTop = focus && (focus.y + focus.h*0.5) < H*0.4;
   let by = clamp(focusTop ? (H-94-bh) : 44, 12, H-bh-12);
+  TUT.cardRect = {x:bx, y:by, w:bw, h:bh};   // toute la carte est cliquable sur les étapes d'info
   if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
     tutArrow(clamp(cxF,bx+20,bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
   TUT.uiRects = [];
@@ -376,6 +452,9 @@ function tutHandleTap(sx, sy){
     else if (r.key==='cont'){ sfx('sel'); tutBeginAct(); }
     return true;
   }
+  // étape d'info : tout clic SUR la carte (hors boutons) avance aussi → bouton « Continuer » jamais capricieux
+  const step = TUT.steps[TUT.i];
+  if (step && step.tap && TUT.cardRect && inRect(sx,sy,TUT.cardRect)){ sfx('sel'); tutBeginAct(); return true; }
   return false;   // sinon : le clic atteint le jeu normalement
 }
 // contenu de l'onglet TUTORIEL du menu
