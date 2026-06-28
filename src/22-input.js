@@ -151,7 +151,11 @@ function endPointer(e){
   }
   const lasso = pdown.lasso;
   pdown = null; dragging = false;
-  if (lasso){ finishLasso(); return; }
+  // VRAI glisser en mode lasso = sélection rectangle. En revanche un simple APPUI (sans glisser)
+  // doit rester un tap normal : on peut ainsi construire/sélectionner même en mode lasso actif
+  // (corrige le blocage des socles muraille/tourelle quand ⬚ LASSO est enclenché juste avant).
+  if (lasso && !tap){ finishLasso(); return; }
+  selBox = null;
   if (tap) handleTap(sx,sy,e.shiftKey);
 }
 cv.addEventListener('pointerup', endPointer);

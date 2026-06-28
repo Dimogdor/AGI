@@ -252,7 +252,10 @@ const TUT_STEPS = [
     text:{fr:"Une fois par partie, invoquez votre 🦸 HÉROS légendaire : il décuple la force de toute votre armée tant qu'il vit.",
           en:"Once per game, summon your 🦸 legendary HERO: he massively boosts your whole army while alive."},
     obj:{fr:"Invoquez votre héros",en:"Summon your hero"},
-    enter:()=>{ const p=game.p; p.heroCd=0; tutGrant(900,900,400); camFollow=true; },
+    // garantit l'invocation DANS TOUS LES CAS, peu importe ce qui a été dépensé avant :
+    // ressources largement au-dessus du coût du héros + recharge remise à zéro.
+    enter:()=>{ const p=game.p; p.heroCd=0;
+      tutGrant((HERO_COST.f||0)+400, (HERO_COST.m||0)+400, (HERO_COST.w||0)+400); camFollow=true; },
     focus:()=>tutHudRect(b=>b.type==='hero'),
     allow:a=>a.t==='hero',
     done:()=>game.p.units.some(u=>u.role==='hero'),
@@ -310,11 +313,14 @@ function startTutorial(){
   e.hp = e.maxhp = 9e9;              // base ennemie inattaquable (jusqu'à l'assaut final)
   // BARRIÈRE : bloque le front au milieu de la carte — les troupes du joueur ne la franchissent
   // pas tant qu'elle n'est pas levée (assaut final). Évite que les unités filent trop loin.
-  const barrierX = p.x + 1150;
+  // Placée NETTEMENT en avant des socles : les unités se massent contre la barrière, donc bien
+  // à droite des socles de défense, qui restent ainsi dégagés et faciles à toucher.
+  const barrierX = p.x + 1300;
   game.tutBarrier = barrierX;
-  // 2 socles de DÉFENSE posés sur la ligne de front (pour muraille + tourelle, au milieu de la carte)
-  p.slots.push({ x: barrierX - 95, b:null, owner:null });
-  p.slots.push({ x: barrierX - 45, b:null, owner:null });
+  // 2 socles de DÉFENSE en arrière de la barrière (muraille + tourelle) — l'ennemi n'étant pas
+  // bloqué par la barrière, il vient jusqu'à eux : la tourelle aura toujours des cibles à portée.
+  p.slots.push({ x: barrierX - 295, b:null, owner:null });
+  p.slots.push({ x: barrierX - 235, b:null, owner:null });
   camFollow = false; zoom = 1; camX = 0; camClamp();
   TUT = { i:0, t:0, steps:TUT_STEPS, revealed:[], celebrating:false, celebT:0, confirmSkip:false, freeze:false, uiRects:[], confirmRects:[] };
   tutEnterStep();
@@ -372,6 +378,13 @@ function tutBtnDim(b){               // true = afficher grisé (acquis, pas l'é
   if (step && step.allow && step.allow(desc)) return false;
   return TUT.revealed.some(p => p(desc));
 }
+// onglet ⬆ d'amélioration de classe : masqué tant que le tuto n'a pas atteint l'étape « amélioration »
+// (sinon le joueur peut tout monter au max trop tôt et l'étape devient infaisable).
+function tutUpgAllowed(){
+  if (!game || !game.tut || !TUT) return true;
+  const step = TUT.steps[TUT.i], d = {t:'upg'};
+  return (step && step.allow && step.allow(d)) || TUT.revealed.some(p => p(d));
+}
 function tutBuildAllowed(key){       // option de menu de construction visible en tuto ?
   if (!game || !game.tut || !TUT) return true;
   const step = TUT.steps[TUT.i], d = {t:'build', type:key};
@@ -383,13 +396,6 @@ function tutBuildCurrent(key){       // option à mettre en surbrillance dans le
   return !!(step && step.allow && step.allow({t:'build', type:key}));
 }
 /* ---- rendu (halo + carte) ---- */
-function tutArrow(cx, edgeY, down, pulse){
-  const o = (down?1:-1)*(7+5*pulse);
-  ctx.fillStyle = '#ffd34a'; ctx.beginPath();
-  if (down){ ctx.moveTo(cx, edgeY-4+o+14); ctx.lineTo(cx-11, edgeY-4+o); ctx.lineTo(cx+11, edgeY-4+o); }
-  else      { ctx.moveTo(cx, edgeY+4+o-14); ctx.lineTo(cx-11, edgeY+4+o); ctx.lineTo(cx+11, edgeY+4+o); }
-  ctx.closePath(); ctx.fill();
-}
 function tutWrap(text, maxW, font){
   ctx.font = font; const words = text.split(' '), lines=[]; let cur='';
   for (const w of words){ const test = cur? cur+' '+w : w;
@@ -440,8 +446,7 @@ function drawTut(){
   const cbx = TUT.cardPos ? clamp(TUT.cardPos.x, 8, W-bw-8) : bx;
   TUT.cardRect = {x:cbx, y:by, w:bw, h:bh};   // mémorisé pour le clic + le glisser
   const Bx = cbx;
-  if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
-    tutArrow(clamp(cxF,Bx+20,Bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
+  // (plus de flèche de guidage : seul le HALO autour de la cible indique où regarder)
   TUT.uiRects = [];
   ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=16; ctx.shadowOffsetY=4;
   const pg=ctx.createLinearGradient(Bx,by,Bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.93)'); pg.addColorStop(1,'rgba(14,12,18,0.93)');
