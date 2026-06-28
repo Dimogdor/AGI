@@ -90,6 +90,15 @@ const TUT_STEPS = [
     allow:a=>a.t==='buy'&&a.i===0,
     done:()=>tutCount('melee')>=2,
   },
+  { // 4b — TANK (mêlée lourde) : encaisse, met les formations en valeur
+    text:{fr:"Recrutez DEUX 🛡 TANKS : très résistants et lents, ils encaissent en première ligne et rendent vos FORMATIONS bien plus solides.",
+          en:"Recruit TWO 🛡 TANKS: very tough and slow, they soak hits on the front line and make your FORMATIONS far sturdier."},
+    obj:{fr:"Recrutez 2 tanks",en:"Recruit 2 tanks"},
+    enter:()=>{ tutGrant(600,700,150); camFollow=false; camX=0; },
+    focus:()=>tutHudRect(b=>b.type==='unit'&&b.i===1),
+    allow:a=>a.t==='buy'&&a.i===1,
+    done:()=>tutCount('tank')>=2,
+  },
   { // 5 — tireurs
     text:{fr:"Recrutez DEUX 🏹 TIREURS : fragiles, mais ils frappent de loin. Mêlez toujours mêlée et distance.",
           en:"Recruit TWO 🏹 RANGED: fragile, but they strike from afar. Always mix melee and ranged."},
@@ -319,7 +328,7 @@ function endTutorial(){
 }
 function tutEnterStep(){
   const step = TUT.steps[TUT.i];
-  TUT.t = 0; TUT.uiRects = [];
+  TUT.t = 0; TUT.uiRects = []; TUT.cardPos = null;   // chaque étape repart en position auto
   if (step.enter) step.enter();
 }
 function tutBeginAct(){ if (TUT && TUT.steps[TUT.i].tap) tutAdvance(); }   // bouton « Continuer »
@@ -401,47 +410,71 @@ function drawTut(){
     ctx.strokeStyle=rgbaC(acc,0.55+0.4*pulse); ctx.lineWidth=3; ctx.shadowColor=acc; ctx.shadowBlur=16;
     rr(fx,fy,fw,fh,12); ctx.stroke(); ctx.restore();
   }
-  // CARTE d'instruction — ancrée en haut, déplacée en bas seulement si la cible est en haut
-  const bw = Math.min(400, W-32), pad = 13, titleH = 15, lineH = 17, btnH = 30;
-  const lines = tutWrap(tutText(step.text), bw-pad*2, '13px Arial');
+  // CARTE d'instruction — COMPACTE, déplaçable (glisser) et auto-repositionnée pour ne JAMAIS
+  // recouvrir la cible surlignée ni un menu ouvert dessous.
+  const bw = Math.min(326, W-24), pad = 11, titleH = 13, lineH = 16, btnH = 28;
+  const lines = tutWrap(tutText(step.text), bw-pad*2, '12px Arial');
   const objLine = step.obj ? tutText(step.obj) : null;
-  const bh = pad + titleH + 10 + lines.length*lineH + 8 + btnH + pad + (objLine?20:0);
-  const bx = clamp((W-bw)/2, 12, W-bw-12);
-  const focusTop = focus && (focus.y + focus.h*0.5) < H*0.4;
-  let by = clamp(focusTop ? (H-94-bh) : 44, 12, H-bh-12);
-  TUT.cardRect = {x:bx, y:by, w:bw, h:bh};   // toute la carte est cliquable sur les étapes d'info
+  const bh = pad + titleH + 8 + lines.length*lineH + 6 + btnH + pad + (objLine?18:0);
+  const bx = clamp((W-bw)/2, 10, W-bw-10);
+  // obstacles à éviter : la cible surlignée + un éventuel menu de construction
+  const obst = [];
+  if (focus) obst.push({x:fx,y:fy,w:fw,h:fh});
+  if (buildMenu && buildMenu.box) obst.push(buildMenu.box);
+  const ovArea = (y)=> obst.reduce((s,o)=>{
+    const ox=Math.max(0,Math.min(bx+bw,o.x+o.w)-Math.max(bx,o.x));
+    const oy=Math.max(0,Math.min(y+bh,o.y+o.h)-Math.max(y,o.y)); return s+ox*oy; }, 0);
+  // si la carte a été DÉPLACÉE à la main mais qu'un menu s'ouvre dessous → on la relâche (auto)
+  if (TUT.cardPos && buildMenu && buildMenu.box){
+    const c=TUT.cardPos, o=buildMenu.box;
+    if (!(c.x+bw<o.x || c.x>o.x+o.w || c.y+bh<o.y || c.y>o.y+o.h)) TUT.cardPos = null;
+  }
+  let by;
+  if (TUT.cardPos){ by = clamp(TUT.cardPos.y, 8, H-bh-8); }
+  else {
+    const focusTop = focus && (focus.y + focus.h*0.5) < H*0.4;
+    const cand = focusTop ? [H-bh-12, 44] : [44, H-bh-12];   // ordre préféré
+    by = cand.reduce((best,y)=> ovArea(y) < ovArea(best)? y : best, cand[0]);
+    by = clamp(by, 8, H-bh-8);
+  }
+  const cbx = TUT.cardPos ? clamp(TUT.cardPos.x, 8, W-bw-8) : bx;
+  TUT.cardRect = {x:cbx, y:by, w:bw, h:bh};   // mémorisé pour le clic + le glisser
+  const Bx = cbx;
   if (focus){ const cxF=fx+fw/2, fromBelow = by > fy;
-    tutArrow(clamp(cxF,bx+20,bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
+    tutArrow(clamp(cxF,Bx+20,Bx+bw-20), fromBelow? fy+fh : fy, !fromBelow, pulse); }
   TUT.uiRects = [];
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=18; ctx.shadowOffsetY=5;
-  const pg=ctx.createLinearGradient(bx,by,bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.92)'); pg.addColorStop(1,'rgba(14,12,18,0.92)');
-  ctx.fillStyle=pg; rr(bx,by,bw,bh,12); ctx.fill(); ctx.restore();
-  ctx.save(); ctx.strokeStyle=rgbaC(acc,0.9); ctx.lineWidth=2; ctx.shadowColor=acc; ctx.shadowBlur=8; rr(bx,by,bw,bh,12); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=16; ctx.shadowOffsetY=4;
+  const pg=ctx.createLinearGradient(Bx,by,Bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.93)'); pg.addColorStop(1,'rgba(14,12,18,0.93)');
+  ctx.fillStyle=pg; rr(Bx,by,bw,bh,11); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.strokeStyle=rgbaC(acc,0.9); ctx.lineWidth=1.8; ctx.shadowColor=acc; ctx.shadowBlur=7; rr(Bx,by,bw,bh,11); ctx.stroke(); ctx.restore();
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
-  ctx.font='700 11px Arial'; ctx.fillStyle=acc;
-  ctx.fillText('✦ '+tutText({fr:'TUTORIEL',en:'TUTORIAL'}), bx+pad, by+pad+8);
-  const dotN=TUT.steps.length, dr=2.4, dgap=7, dtot=dotN*dgap;
-  for(let i=0;i<dotN;i++){ ctx.beginPath(); ctx.arc(bx+bw-pad-dtot+i*dgap, by+pad+5, dr, 0,6.283);
+  ctx.font='700 10px Arial'; ctx.fillStyle=acc;
+  ctx.fillText('✦ '+tutText({fr:'TUTORIEL',en:'TUTORIAL'}), Bx+pad, by+pad+7);
+  // poignée de déplacement (indice visuel « glissez-moi ») au centre de l'en-tête
+  ctx.fillStyle=rgbaC(acc,0.5); ctx.font='10px Arial'; ctx.textAlign='center';
+  ctx.fillText('⠿', Bx+bw/2-14, by+pad+7);
+  ctx.textAlign='left';
+  const dotN=TUT.steps.length, dr=2.2, dgap=6, dtot=dotN*dgap;
+  for(let i=0;i<dotN;i++){ ctx.beginPath(); ctx.arc(Bx+bw-pad-dtot+i*dgap, by+pad+4, dr, 0,6.283);
     ctx.fillStyle = i===TUT.i? acc : 'rgba(255,255,255,0.22)'; ctx.fill(); }
-  ctx.font='13px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+12;
-  for (const ln of lines){ ctx.fillText(ln, bx+pad, ty); ty += lineH; }
-  if (objLine){ ctx.font='700 12px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, bx+pad, ty+3); ty += 20; }
-  const byB = by + bh - pad - btnH, skipW = 150;
-  ctx.fillStyle='rgba(255,255,255,0.08)'; rr(bx+pad, byB, skipW, btnH, 7); ctx.fill();
-  ctx.font='700 12px Arial'; ctx.fillStyle='#d8a0a0'; ctx.textAlign='center';
-  ctx.fillText(tutText({fr:'Passer ✕',en:'Skip ✕'}), bx+pad+skipW/2, byB+btnH/2+4);
-  TUT.uiRects.push({key:'skip', x:bx+pad, y:byB, w:skipW, h:btnH});
+  ctx.font='12px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+10;
+  for (const ln of lines){ ctx.fillText(ln, Bx+pad, ty); ty += lineH; }
+  if (objLine){ ctx.font='700 11px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, Bx+pad, ty+2); ty += 18; }
+  const byB = by + bh - pad - btnH, skipW = 124;
+  ctx.fillStyle='rgba(255,255,255,0.08)'; rr(Bx+pad, byB, skipW, btnH, 6); ctx.fill();
+  ctx.font='700 11px Arial'; ctx.fillStyle='#d8a0a0'; ctx.textAlign='center';
+  ctx.fillText(tutText({fr:'Passer ✕',en:'Skip ✕'}), Bx+pad+skipW/2, byB+btnH/2+4);
+  TUT.uiRects.push({key:'skip', x:Bx+pad, y:byB, w:skipW, h:btnH});
   if (step.tap){
-    const contW = 188;
-    ctx.save(); ctx.fillStyle=rgbaC(acc,0.95); ctx.shadowColor=acc; ctx.shadowBlur=10; rr(bx+bw-pad-contW, byB, contW, btnH, 7); ctx.fill(); ctx.restore();
-    ctx.fillStyle='#14110f'; ctx.font='700 13px Arial';
-    ctx.fillText(tutText({fr:'Continuer ▸',en:'Continue ▸'}), bx+bw-pad-contW/2, byB+btnH/2+4);
-    TUT.uiRects.push({key:'cont', x:bx+bw-pad-contW, y:byB, w:contW, h:btnH});
+    const contW = bw - pad*2 - skipW - 8;
+    ctx.save(); ctx.fillStyle=rgbaC(acc,0.95); ctx.shadowColor=acc; ctx.shadowBlur=9; rr(Bx+bw-pad-contW, byB, contW, btnH, 6); ctx.fill(); ctx.restore();
+    ctx.fillStyle='#14110f'; ctx.font='700 12px Arial';
+    ctx.fillText(tutText({fr:'Continuer ▸',en:'Continue ▸'}), Bx+bw-pad-contW/2, byB+btnH/2+4);
+    TUT.uiRects.push({key:'cont', x:Bx+bw-pad-contW, y:byB, w:contW, h:btnH});
   } else {
-    // rappel pulsé : plus visible si le joueur hésite (>6 s sur l'étape)
     const urge = TUT.t>6 ? 1 : 0.6;
-    ctx.font='700 12px Arial'; ctx.fillStyle=rgbaC('#9dd88a', (0.5+0.5*pulse)*urge); ctx.textAlign='right';
-    ctx.fillText(tutText({fr:'▸ à vous de jouer',en:'▸ your turn'}), bx+bw-pad, byB+btnH/2+4);
+    ctx.font='700 11px Arial'; ctx.fillStyle=rgbaC('#9dd88a', (0.5+0.5*pulse)*urge); ctx.textAlign='right';
+    ctx.fillText(tutText({fr:'▸ à vous de jouer',en:'▸ your turn'}), Bx+bw-pad, byB+btnH/2+4);
   }
   ctx.textAlign='left';
   if (TUT.confirmSkip) drawTutConfirm();
@@ -484,9 +517,13 @@ function tutHandleTap(sx, sy){
     else if (r.key==='cont'){ sfx('sel'); tutBeginAct(); }
     return true;
   }
-  // étape d'info : tout clic SUR la carte (hors boutons) avance aussi → bouton « Continuer » jamais capricieux
+  // clic SUR la carte : étape d'info → valide ; étape d'action → simplement consommé
+  // (pas de click-through vers le HUD/le monde sous la carte).
   const step = TUT.steps[TUT.i];
-  if (step && step.tap && TUT.cardRect && inRect(sx,sy,TUT.cardRect)){ sfx('sel'); tutBeginAct(); return true; }
+  if (TUT.cardRect && inRect(sx,sy,TUT.cardRect)){
+    if (step && step.tap){ sfx('sel'); tutBeginAct(); }
+    return true;
+  }
   return false;   // sinon : le clic atteint le jeu normalement
 }
 // contenu de l'onglet TUTORIEL du menu
