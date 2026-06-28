@@ -79,6 +79,7 @@ cv.addEventListener('pointermove', e=>{
 });
 
 let _fsTried=false;
+let tutDragging=null;          // glisser-déposer de la carte du tutoriel
 cv.addEventListener('pointerdown', e=>{
   audioInit(); musicStart();
   if (!_fsTried){ _fsTried=true; goFullscreen(); }   // plein écran auto dès la 1re interaction (PC + Android)
@@ -88,8 +89,13 @@ cv.addEventListener('pointerdown', e=>{
   if (ptrs.size===2){             // pincement
     const [a,b] = [...ptrs.values()];
     pinch = { d0: Math.hypot(a.sx-b.sx, a.sy-b.sy), z0: zoom, wx: s2wX((a.sx+b.sx)/2) };
-    pdown = null; selBox = null;
+    pdown = null; selBox = null; tutDragging = null;
     return;
+  }
+  // TUTORIEL : presser la carte la SAISIT (pour la glisser) ; un simple appui sans bouger = valider
+  if (game && game.tut && TUT && !TUT.confirmSkip && TUT.cardRect && inRect(sx,sy,TUT.cardRect)){
+    tutDragging = { ox: sx-TUT.cardRect.x, oy: sy-TUT.cardRect.y, sx0:sx, sy0:sy, moved:false };
+    pdown = null; return;
   }
   if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
   const lasso = (selMode || e.shiftKey) && sy>38 && sy<H-102;
@@ -108,6 +114,12 @@ cv.addEventListener('pointermove', e=>{
     if (pinch.d0>0) setZoom(pinch.z0 * d/pinch.d0, pinch.wx);
     return;
   }
+  if (tutDragging && TUT){
+    if (Math.abs(sx-tutDragging.sx0)>4 || Math.abs(sy-tutDragging.sy0)>4) tutDragging.moved=true;
+    if (tutDragging.moved){ const cr=TUT.cardRect||{w:320,h:160};
+      TUT.cardPos = { x: clamp(sx-tutDragging.ox, 8, W-cr.w-8), y: clamp(sy-tutDragging.oy, 8, H-cr.h-8) }; }
+    return;
+  }
   if (!pdown) return;
   const dx = sx-prev.sx;
   if (Math.abs(sx-pdown.sx)>6 || Math.abs(sy-pdown.sy)>6) pdown.moved = true;
@@ -120,6 +132,12 @@ cv.addEventListener('pointermove', e=>{
 });
 
 function endPointer(e){
+  if (tutDragging){
+    const moved = tutDragging.moved; tutDragging = null;
+    ptrs.delete(e.pointerId); if (ptrs.size<2) pinch=null; pdown=null;
+    if (!moved){ const {sx,sy} = evXY(e); handleTap(sx,sy,e.shiftKey); }   // appui sans glisser = valider la carte
+    return;
+  }
   const was = ptrs.has(e.pointerId);
   ptrs.delete(e.pointerId);
   if (ptrs.size<2) pinch = null;
@@ -137,7 +155,7 @@ function endPointer(e){
   if (tap) handleTap(sx,sy,e.shiftKey);
 }
 cv.addEventListener('pointerup', endPointer);
-cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; pdown=null; selBox=null; dragging=false; });
+cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; pdown=null; selBox=null; dragging=false; tutDragging=null; });
 
 function finishLasso(){
   if (!selBox){ return; }

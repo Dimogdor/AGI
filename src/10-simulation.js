@@ -616,8 +616,8 @@ function update(dt){
   camClamp();
 
   if (game.tut){
-    // BARRIÈRE du tutoriel : les troupes du joueur ne franchissent pas la ligne tant qu'elle tient
-    if (game.tutBarrier!=null) for (const u of game.p.units) if (!u.fly && u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    // BARRIÈRE du tutoriel : AUCUNE troupe du joueur (y compris AÉRIENNE) ne franchit la ligne
+    if (game.tutBarrier!=null) for (const u of game.p.units) if (u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
     tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
   }
 
