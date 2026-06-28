@@ -370,7 +370,8 @@ function drawBtn(b){
     ctx.globalAlpha = 1;
   }
   // onglet ⬆ d'amélioration de classe sur les boutons d'unités
-  if (b.type==='unit'){
+  // (en tuto : masqué tant que l'étape « amélioration » n'est pas atteinte)
+  if (b.type==='unit' && (!game.tut || !TUT || tutUpgAllowed())){
     const role=ROLES[b.i];
     if (!(role.minEra && p.era<role.minEra)){
       const lvl = p.upg[role.key]||0;
