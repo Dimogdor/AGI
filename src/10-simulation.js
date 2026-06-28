@@ -202,6 +202,7 @@ function updateUnits(side, foe, dt){
         } else if (u.range>60){
           shots.push({x:u.x+u.side*10, y:sy0, tx:target.x, ty:ty0, t:0, dur:0.16, fac:u.fac, era:u.era});
           dealDmg(target, dmgOut, u);
+          if (qFx() && Math.random()<0.55) burst(target.x, ty0, FACTIONS[u.fac].eraCols[u.era], 4, 0.5);  // étincelles d'impact
           if (u.side===1) sfx('shoot', u.era);
         } else {
           dealDmg(target, dmgOut, u);
