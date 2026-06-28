@@ -458,8 +458,9 @@ function drawBuildMenu(){
   } else {
     opts = buildOptions(p, slot);
   }
-  // TUTORIEL : ne propose que la construction de l'étape + celles déjà enseignées (surbrillance / grisé)
-  if (game.tut && TUT && !buildMenu.base) opts = opts.filter(o => tutBuildAllowed(o.key));
+  // TUTORIEL : sur un SOCLE VIDE, ne proposer que la construction de l'étape + celles déjà
+  // enseignées. (Sur un bâtiment existant — réparer / améliorer / GARNISON — on ne filtre rien.)
+  if (game.tut && TUT && !buildMenu.base && !slot.b) opts = opts.filter(o => tutBuildAllowed(o.key));
   const bw=210, bh=Math.max(1,opts.length)*34+12;
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);
@@ -469,7 +470,7 @@ function drawBuildMenu(){
   ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
   ctx.textAlign='left';
-  const inTut = game.tut && TUT;
+  const inTut = game.tut && TUT && !buildMenu.base && !slot.b;   // surbrillance/grisé : uniquement les constructions sur socle vide
   for (let i=0;i<opts.length;i++){
     const o=opts[i], y=by+8+i*34;
     const free = !Object.keys(o.cost).length;

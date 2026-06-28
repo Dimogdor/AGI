@@ -2490,7 +2490,11 @@ function update(dt){
   }
   camClamp();
 
-  if (game.tut){ tutTick(dt); return; }   // tutoriel : détection des actions, jamais de victoire/défaite
+  if (game.tut){
+    // BARRIÈRE du tutoriel : les troupes du joueur ne franchissent pas la ligne tant qu'elle tient
+    if (game.tutBarrier!=null) for (const u of game.p.units) if (!u.fly && u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
+  }
 
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;
@@ -4202,8 +4206,9 @@ function drawBuildMenu(){
   } else {
     opts = buildOptions(p, slot);
   }
-  // TUTORIEL : ne propose que la construction de l'étape + celles déjà enseignées (surbrillance / grisé)
-  if (game.tut && TUT && !buildMenu.base) opts = opts.filter(o => tutBuildAllowed(o.key));
+  // TUTORIEL : sur un SOCLE VIDE, ne proposer que la construction de l'étape + celles déjà
+  // enseignées. (Sur un bâtiment existant — réparer / améliorer / GARNISON — on ne filtre rien.)
+  if (game.tut && TUT && !buildMenu.base && !slot.b) opts = opts.filter(o => tutBuildAllowed(o.key));
   const bw=210, bh=Math.max(1,opts.length)*34+12;
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);
@@ -4213,7 +4218,7 @@ function drawBuildMenu(){
   ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
   ctx.textAlign='left';
-  const inTut = game.tut && TUT;
+  const inTut = game.tut && TUT && !buildMenu.base && !slot.b;   // surbrillance/grisé : uniquement les constructions sur socle vide
   for (let i=0;i<opts.length;i++){
     const o=opts[i], y=by+8+i*34;
     const free = !Object.keys(o.cost).length;
@@ -4335,6 +4340,7 @@ function render(dt){
   drawBase(game.p); drawBase(game.e);
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
+  if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   for (const s of shots){
     ctx.globalAlpha = 1-s.t/s.dur;
     ctx.strokeStyle = FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=2.2;
@@ -4685,19 +4691,19 @@ const TUT_STEPS = [
     done:()=>game.p.capUp===true,
   },
   // ===== BLOC DÉFENSE : monde GELÉ + mini-vague ennemie, pour apprendre le combat sans pression =====
-  { // 13 — alerte défense (info, GEL + vague)
+  // ===== BLOC DÉFENSE : une barrière bloque le front (vos unités n'avancent pas trop loin).
+  //       On fortifie la LIGNE au milieu de la carte, on garnit, puis on encaisse une vague. =====
+  { // 13 — la barrière (info, gelé)
     tap:true,
-    text:{fr:"⚠ Une mini-vague ennemie approche — le jeu est EN PAUSE le temps de comprendre. Le combat est automatique : la mêlée encaisse devant, les tireurs frappent derrière. Préparons la défense.",
-          en:"⚠ A small enemy wave is coming — the game is PAUSED so you can take it in. Combat is automatic: melee tanks in front, ranged strike from behind. Let's prepare a defense."},
-    enter:()=>{ TUT.freeze=true; tutSpawnWave(); game.shake=6; sfx('boom'); camFollow=false;
-      const e=game.e.units[0]; tutCam(e? e.x-260 : game.p.x+260);
-      announce(tutText({fr:'⚠ VAGUE ENNEMIE — jeu en pause',en:'⚠ ENEMY WAVE — game paused'}), '#ff5a4a'); },
+    text:{fr:"🛡 Une BARRIÈRE d'énergie bloque le front au milieu de la carte : vos troupes ne peuvent pas avancer pour l'instant. Profitez-en pour FORTIFIER cette ligne. Le combat est automatique : mêlée devant, tireurs derrière.",
+          en:"🛡 An energy BARRIER blocks the front at mid-map: your troops can't advance yet. Use this time to FORTIFY the line. Combat is automatic: melee in front, ranged behind."},
+    enter:()=>{ camFollow=false; tutCam(game.tutBarrier); },
     focus:()=>null,
   },
-  { // 14 — muraille
-    text:{fr:"🧱 Bloquez-les : bâtissez une MURAILLE sur le socle surligné. Solide, elle encaisse les coups à la place de vos troupes.",
-          en:"🧱 Block them: build a WALL on the highlighted pad. Sturdy, it takes hits instead of your troops."},
-    obj:{fr:"Construisez une muraille",en:"Build a wall"},
+  { // 14 — muraille (sur la ligne de front, au milieu de la carte)
+    text:{fr:"🧱 Bâtissez une MURAILLE sur le socle surligné, sur la ligne de front. Solide, elle encaisse les coups à la place de vos troupes.",
+          en:"🧱 Build a WALL on the highlighted pad, on the front line. Sturdy, it takes hits instead of your troops."},
+    obj:{fr:"Construisez une muraille (ligne de front)",en:"Build a wall (front line)"},
     enter:()=>{ tutGrant(400,400,200); const s=tutEmptySlot(); if(s)tutCam(s.x); },
     focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
     allow:a=>a.t==='build'&&a.type==='wall',
@@ -4712,20 +4718,21 @@ const TUT_STEPS = [
     allow:a=>a.t==='build'&&a.type==='turret',
     done:()=>tutHasBuild('turret'),
   },
-  { // 16 — garnison (info)
-    tap:true,
-    text:{fr:"🚪 GARNISON : touchez une tour ou une muraille, puis « Garnison » pour y abriter un tireur. Perché et protégé, il tire de plus loin et survit bien mieux.",
-          en:"🚪 GARRISON: tap a turret or wall, then \"Garrison\" to shelter a shooter inside. Elevated and protected, it shoots farther and survives much longer."},
+  { // 16 — garnison (ACTION, monde vivant : le tireur marche jusqu'au bâtiment)
+    text:{fr:"🚪 GARNISON : touchez votre tour ou muraille, puis « Garnison (tireur) ». Un tireur ira s'y abriter — perché et protégé, il tire de plus loin et survit bien mieux.",
+          en:"🚪 GARRISON: tap your turret or wall, then \"Garrison (shooter)\". A shooter will take cover inside — elevated and protected, it shoots farther and survives much longer."},
+    obj:{fr:"Garnissez une tour ou une muraille",en:"Garrison a turret or wall"},
     enter:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')){ tutCam(s.x); break; } },
     focus:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')) return tutWorldRect(s.x); return null; },
+    done:()=>sideBuildSlots(game.p).some(s=>s.b && s.b.gar && s.b.gar.length>0),
   },
-  { // 17 — le combat ! (DÉGEL + on écrase la vague)
-    text:{fr:"La pause se lève ! Ordonnez la ⚔ CHARGE : muraille, tourelle et troupes vont écraser la vague. Regardez le combat se résoudre.",
-          en:"The pause lifts! Order the ⚔ CHARGE: wall, turret and troops will crush the wave. Watch the fight play out."},
+  { // 17 — la vague ! (combat réel — la barrière tient, l'ennemi vient de droite)
+    text:{fr:"⚠ Une vague ennemie attaque la LIGNE depuis la droite ! Tenez : muraille, tourelle, garnison et troupes vont la repousser. Regardez le combat.",
+          en:"⚠ An enemy wave attacks the LINE from the right! Hold: wall, turret, garrison and troops will repel it. Watch the fight."},
     obj:{fr:"Repoussez la vague ennemie",en:"Repel the enemy wave"},
-    enter:()=>{ TUT.freeze=false; game.p.stance='charge'; game.e.stance='charge'; camFollow=true; },
-    focus:()=>tutHudRect(b=>b.type==='stance'&&b.st==='charge'),
-    allow:a=>a.t==='stance',
+    enter:()=>{ tutSpawnWave(); game.shake=6; sfx('boom'); game.p.stance='hold'; camFollow=false; tutCam(game.tutBarrier);
+      announce(tutText({fr:'⚠ VAGUE ENNEMIE',en:'⚠ ENEMY WAVE'}), '#ff5a4a'); },
+    focus:()=>null,
     done:()=>game.e.units.length===0,
   },
   { // 18 — expérience (info)
@@ -4770,20 +4777,46 @@ const TUT_STEPS = [
     allow:a=>a.t==='hero',
     done:()=>game.p.units.some(u=>u.role==='hero'),
   },
-  { // 23 — fin
+  { // 23 — assaut final (la barrière TOMBE, on libère la carte, on détruit la base)
+    text:{fr:"⚔ La BARRIÈRE TOMBE ! La voie est libre. Ordonnez la CHARGE et menez votre armée détruire la base ennemie !",
+          en:"⚔ The BARRIER FALLS! The path is open. Order the CHARGE and lead your army to destroy the enemy base!"},
+    obj:{fr:"Détruisez la base ennemie",en:"Destroy the enemy base"},
+    enter:()=>{ const e=game.e; game.tutBarrier=null;        // libère la carte
+      e.hp=e.maxhp=600; e.stance='hold'; game.p.stance='charge'; camFollow=true;
+      announce(tutText({fr:'🛡 BARRIÈRE TOMBÉE — À L\'ASSAUT !',en:'🛡 BARRIER DOWN — CHARGE!'}), '#9dd88a'); },
+    focus:()=>tutHudRect(b=>b.type==='stance'&&b.st==='charge'),
+    allow:a=>a.t==='stance',
+    done:()=>game.e.hp<=0,
+  },
+  { // 24 — fin
     tap:true,
-    text:{fr:"🎉 Tutoriel terminé ! Économie, armée, contrôle, défense, garnisons, expérience, pouvoirs, évolution, base et héros — tout est à vous. Bonne guerre, commandant !",
-          en:"🎉 Tutorial complete! Economy, army, control, defense, garrisons, experience, powers, evolution, base and hero — it's all yours. Good war, commander!"},
-    enter:()=>{ camFollow=false; camX=0; game.flash=0.5; sfx('evolve'); },
+    text:{fr:"🎉 Victoire ! Tutoriel terminé : économie, armée, contrôle, défense, garnisons, expérience, pouvoirs, évolution, base et héros — tout est à vous. Bonne guerre, commandant !",
+          en:"🎉 Victory! Tutorial complete: economy, army, control, defense, garrisons, experience, powers, evolution, base and hero — it's all yours. Good war, commander!"},
+    enter:()=>{ camFollow=false; camX=0; game.flash=0.6; sfx('evolve'); },
     focus:()=>null,
   },
 ];
-// mini-vague ennemie scriptée (combat d'apprentissage) — 3 unités, gelées jusqu'au dégel
+// mini-vague ennemie scriptée : 3 unités surgissent À DROITE de la barrière et chargent la ligne
 function tutSpawnWave(){
-  const e = game.e, baseX = game.p.x + 640;
-  spawnUnit(e, 0, false, baseX);        // mêlée
-  spawnUnit(e, 0, false, baseX + 44);   // mêlée
-  spawnUnit(e, 2, false, baseX + 92);   // tireur
+  const e = game.e, x = (game.tutBarrier!=null? game.tutBarrier : game.p.x+1150) + 440;
+  e.stance = 'charge';                   // la vague avance vers la ligne du joueur
+  spawnUnit(e, 0, false, x);             // mêlée
+  spawnUnit(e, 0, false, x + 44);        // mêlée
+  spawnUnit(e, 2, false, x + 92);        // tireur
+}
+// barrière d'énergie du tutoriel (repère MONDE — dessinée dans le repère zoomé, appelée par render)
+function drawTutBarrier(){
+  if (!game || !game.tut || game.tutBarrier==null) return;
+  const x = game.tutBarrier - camX, top = -zTY()/zoom - 40, bot = gY(game.tutBarrier) + 20;
+  const pulse = 0.45 + 0.25*Math.sin(performance.now()/333);
+  ctx.save();
+  ctx.fillStyle = 'rgba(10,14,26,0.30)'; ctx.fillRect(x, top, 60, bot-top);   // léger voile côté scellé
+  const g = ctx.createLinearGradient(x-14,0,x+14,0);
+  g.addColorStop(0,'rgba(90,208,255,0)'); g.addColorStop(0.5,rgbaC('#5ad0ff',pulse)); g.addColorStop(1,'rgba(90,208,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(x-14, top, 28, bot-top);
+  ctx.globalAlpha = 0.5; ctx.fillStyle = '#bfe9ff';
+  for (let yy = top + ((performance.now()/14)%26); yy < bot; yy += 26) ctx.fillRect(x-2, yy, 4, 12);
+  ctx.restore(); ctx.globalAlpha = 1;
 }
 /* ---- cycle de vie ---- */
 function startTutorial(){
@@ -4794,9 +4827,14 @@ function startTutorial(){
   game.tut = true; game.speed = 1;
   const p = game.p, e = game.e;
   p.stance = 'hold'; e.stance = 'hold';
-  e.hp = e.maxhp = 9e9;              // base ennemie inattaquable (aucune victoire accidentelle)
-  // le tuto enseigne 5 constructions (ferme/marché/puits/muraille/tourelle) : 2 socles en plus
-  while (p.slots.length < 5) p.slots.push({ x: p.x + (95 + p.slots.length*64), b:null, owner:null });
+  e.hp = e.maxhp = 9e9;              // base ennemie inattaquable (jusqu'à l'assaut final)
+  // BARRIÈRE : bloque le front au milieu de la carte — les troupes du joueur ne la franchissent
+  // pas tant qu'elle n'est pas levée (assaut final). Évite que les unités filent trop loin.
+  const barrierX = p.x + 1150;
+  game.tutBarrier = barrierX;
+  // 2 socles de DÉFENSE posés sur la ligne de front (pour muraille + tourelle, au milieu de la carte)
+  p.slots.push({ x: barrierX - 95, b:null, owner:null });
+  p.slots.push({ x: barrierX - 45, b:null, owner:null });
   camFollow = false; zoom = 1; camX = 0; camClamp();
   TUT = { i:0, t:0, steps:TUT_STEPS, revealed:[], celebrating:false, celebT:0, confirmSkip:false, freeze:false, uiRects:[], confirmRects:[] };
   tutEnterStep();

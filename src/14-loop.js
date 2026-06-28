@@ -17,6 +17,7 @@ function render(dt){
   drawBase(game.p); drawBase(game.e);
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
+  if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   for (const s of shots){
     ctx.globalAlpha = 1-s.t/s.dur;
     ctx.strokeStyle = FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=2.2;

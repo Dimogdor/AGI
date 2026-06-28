@@ -615,7 +615,11 @@ function update(dt){
   }
   camClamp();
 
-  if (game.tut){ tutTick(dt); return; }   // tutoriel : détection des actions, jamais de victoire/défaite
+  if (game.tut){
+    // BARRIÈRE du tutoriel : les troupes du joueur ne franchissent pas la ligne tant qu'elle tient
+    if (game.tutBarrier!=null) for (const u of game.p.units) if (!u.fly && u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
+  }
 
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;
