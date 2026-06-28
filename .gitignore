@@ -3,6 +3,7 @@ node_modules/
 www/
 dist-pc/
 dist-ota/
+dist-apk/
 
 # projets natifs générés localement (créés par `npx cap add …`,
 # nécessitent Xcode / Android Studio — non versionnés ici)
