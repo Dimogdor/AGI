@@ -325,6 +325,8 @@ function drawBG(){
     ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx,cy,cw*0.6,cw*0.22,0,0,6.283); ctx.fill();
   }
   ctx.restore();
+  // MONTAGNES LOINTAINES (parallaxe la plus lente, fortement embrumées) → profondeur du décor
+  drawFarRange(vw, bot, dev, t);
   // collines avec brume de profondeur (3 plans)
   hill(0.18, GROUND-130, 90, lerpColArr(devLerp(GRASS),bot,0.7), vw);
   hill(0.32, GROUND-95,  70, lerpColArr(devLerp(GRASS),bot,0.5), vw);
@@ -428,6 +430,25 @@ function drawZone(z, dev, t, vw){
   // étiquette de contrôle
   ctx.font='700 9px Arial'; ctx.textAlign='center'; ctx.fillStyle=rgbaC(acc,0.92);
   ctx.fillText(owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral'), x, y-hh-9);
+}
+// chaîne de montagnes lointaine : silhouette dentelée, très embrumée, parallaxe ultra-lente.
+// neige sur les sommets quand le monde est sain ; teinte cendrée quand il agonise.
+function drawFarRange(vw, bot, dev, t){
+  const off = camX*0.04, base = GROUND-150, amp = 150;
+  const col = lerpColArr(devLerp(GRASS), bot, 0.86);
+  ctx.beginPath(); ctx.moveTo(0,GROUND);
+  const pts=[];
+  for (let x=0;x<=vw;x+=24){ const wx=x+off;
+    const h = (Math.abs(Math.sin(wx*0.0016))*amp + Math.abs(Math.sin(wx*0.0041+1.7))*amp*0.5);
+    const y = base - h; pts.push([x,y]); x===0?ctx.moveTo(0,y):ctx.lineTo(x,y); }
+  ctx.lineTo(vw,GROUND); ctx.lineTo(0,GROUND); ctx.closePath();
+  const g=ctx.createLinearGradient(0,base-amp,0,base+30);
+  g.addColorStop(0,shade('rgb('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+')',1.16));
+  g.addColorStop(1,colS(col));
+  ctx.fillStyle=g; ctx.fill();
+  // neige / givre sur les crêtes (s'efface quand le monde meurt)
+  if (dev<0.55){ ctx.save(); ctx.globalAlpha=0.5*(1-dev*1.6>0?1-dev*1.6:0); ctx.strokeStyle='rgba(236,244,255,0.9)'; ctx.lineWidth=2;
+    ctx.beginPath(); for(let i=0;i<pts.length;i++){ const p=pts[i]; i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); } ctx.stroke(); ctx.restore(); }
 }
 function hill(par, base, amp, col, vw){
   const off = camX*par;
@@ -621,14 +642,30 @@ function blitHumanoid(u, x, gy, kind){
   if (u.role==='gremlin'){ drawGremlin(u,x,gy); return; }
   const fac = kind==='hum'? 'HUM':'IA', key='S'+kind+u.role+u.era+(u.trans?'T':'');
   const spr = sprite(key, USP.W, USP.H, ()=>drawUnitSprite(kind,fac,u.role,u.era,u.trans));
-  const t=u.bob, dir=u.side, sy = 1 + 0.03*Math.sin(t*2.6);   // léger tassement, PIEDS ANCRÉS au sol
+  const t=u.bob, dir=u.side;
+  // DÉMARCHE : balancement + foulée quand l'unité avance (détectée via le delta de position monde)
+  const mv = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
+  const moving = mv>0.04;
+  const gAmp = (u.role==='tank'||u.role==='siege')? 0.5 : 1;        // les lourds se dandinent moins
+  const ph = t*1.5;
+  const stepBob = moving ? -Math.abs(Math.sin(ph))*2.6*gAmp : 0;    // le corps s'élève à chaque pas
+  const stepSkew = moving ? Math.sin(ph)*0.06*gAmp : 0;            // foulée (cisaillement horizontal)
+  let sy = 1 + 0.03*Math.sin(t*2.6);                               // léger tassement, PIEDS ANCRÉS au sol
+  if (u.flash>0) sy *= 0.86;                                       // ÉCRASEMENT bref à l'impact (feedback)
   const atk = u.atkT > u.rate-0.16;
   const imp = atk ? clamp((u.atkT-(u.rate-0.16))/0.16, 0, 1) : 0;   // 1 à l'impact → 0
   const fwd = (u.role==='melee'||u.role==='tank');                  // mêlée : jab avant ; tir/siège : recul
   const lunge = fwd ? dir*9*imp : (atk? -dir*5*imp : 0);
   const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
   projShadow(x, gy, 15);
-  ctx.save(); ctx.translate(x+lunge, gy); ctx.rotate(tilt); ctx.scale(dir, sy);
+  // POUSSIÈRE DE PAS : petites volutes au sol quand l'unité marche (cosmétique, plafonné)
+  if (moving && qFx() && particles.length<440 && Math.random()<0.09){
+    particles.push({ x:u.x-dir*7, y:gy-1, vx:-dir*6+(Math.random()*6-3), vy:-8-Math.random()*8,
+      r:1.4+Math.random()*1.6, life:0.4+Math.random()*0.3, t:0, color:'rgba(198,184,156,0.5)' });
+  }
+  ctx.save(); ctx.translate(x+lunge, gy+stepBob); ctx.rotate(tilt);
+  if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
+  ctx.scale(dir, sy);
   ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H);
   // reflet chromé temps-réel sur les châssis GPT : bande spéculaire qui balaie le torse/la tête
   if (kind==='bot'){

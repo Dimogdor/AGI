@@ -18,18 +18,31 @@ function render(dt){
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
-  for (const s of shots){
-    ctx.globalAlpha = 1-s.t/s.dur;
-    ctx.strokeStyle = FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=2.2;
-    ctx.beginPath(); ctx.moveTo(s.x-camX,s.y); ctx.lineTo(s.tx-camX,s.ty); ctx.stroke();
+  if (shots.length){ ctx.lineCap='round';
+    if (qFx()){ ctx.save(); ctx.globalCompositeOperation='lighter';   // halo additif (sans shadowBlur — coûteux)
+      for (const s of shots){ ctx.globalAlpha=(1-s.t/s.dur)*0.4; ctx.strokeStyle=FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=5;
+        ctx.beginPath(); ctx.moveTo(s.x-camX,s.y); ctx.lineTo(s.tx-camX,s.ty); ctx.stroke(); }
+      ctx.restore(); }
+    for (const s of shots){ ctx.globalAlpha=1-s.t/s.dur; ctx.strokeStyle=FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.moveTo(s.x-camX,s.y); ctx.lineTo(s.tx-camX,s.ty); ctx.stroke(); }
     ctx.globalAlpha=1;
   }
+  const projGlow = qFx();
+  if (projGlow){ ctx.save(); ctx.globalCompositeOperation='lighter'; }
   for (const pr of projectiles){
     const k = pr.t/pr.dur;
-    const px = lerp(pr.sx,pr.tx,k)-camX, py = gY(lerp(pr.sx,pr.tx,k))-26 - Math.sin(k*Math.PI)*90;
-    ctx.fillStyle=FACTIONS[pr.fac].eraCols[pr.era];
-    ctx.beginPath(); ctx.arc(px,py,4,0,6.28); ctx.fill();
+    const wx2 = lerp(pr.sx,pr.tx,k), px = wx2-camX, py = gY(wx2)-26 - Math.sin(k*Math.PI)*90;
+    const col = FACTIONS[pr.fac].eraCols[pr.era];
+    if (projGlow){                                   // traînée + lueur additive (cercles pleins, pas de gradient)
+      if (pr._px!=null){ ctx.strokeStyle=rgbaC(col,0.4); ctx.lineWidth=3; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(pr._px,pr._py); ctx.lineTo(px,py); ctx.stroke(); }
+      pr._px=px; pr._py=py;
+      ctx.fillStyle=rgbaC(col,0.28); ctx.beginPath(); ctx.arc(px,py,8,0,6.28); ctx.fill();
+    }
+    ctx.fillStyle=col;
+    ctx.beginPath(); ctx.arc(px,py,3.4,0,6.28); ctx.fill();
   }
+  if (projGlow) ctx.restore();
   // RAGDOLLS DE MORT (par rôle) : bascule au sol · chute en vrille (volants) · effondrement (tanks)
   for (const d of deaths){
     const x=d.x-camX; if (x<-30||x>VW()+30) continue;
