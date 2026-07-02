@@ -216,7 +216,7 @@ function startHostGame(){
   resetSpeedNet();
   net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO, speed:game.speed});
   $('menu').style.display='none'; closeNetUI();
-  announce('🌐 PARTIE EN LIGNE — '+FACTIONS[net.myFac].name+' vs '+FACTIONS[net.foeFac].name, '#9dc88a');
+  announce(fmt('a_net_start',{a:FACTIONS[net.myFac].name, b:FACTIONS[net.foeFac].name}), '#9dc88a');
 }
 function startGuestGame(data){
   audioInit(); musicStart();
@@ -238,7 +238,7 @@ function startGuestGame(data){
                 {x:WORLD*0.42,b:null,owner:null}, {x:WORLD*0.33,b:null,owner:null} ];
   GX = {};
   $('menu').style.display='none'; closeNetUI();
-  announce('🌐 CONNECTÉ — vous jouez '+FACTIONS[data.guestFac].name, '#9dc88a');
+  announce(fmt('a_net_conn',{name:FACTIONS[data.guestFac].name}), '#9dc88a');
 }
 function onPeerLeft(){
   if (!game){
@@ -257,6 +257,6 @@ function onPeerLeft(){
     return;
   }
   paused = false; netPause = null;
-  announce('🔌 Adversaire déconnecté', '#ff5a4a');
+  announce(tr('a_net_dc'), '#ff5a4a');
   if (!game.over){ game.over=true; game.win = game.net==='host'; setTimeout(showEnd, 600); }
 }

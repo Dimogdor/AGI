@@ -37,7 +37,7 @@ window.addEventListener('keydown', e=>{
   else if (e.code===K.hold){ setStance(p,'hold'); }
   else if (e.code===K.retreat){ setStance(p,'retreat'); }
   else if (e.code===K.formation){ p.formation=!p.formation;
-    announce(p.formation? '⚏ Formation activée':'⚏ Formation libre', '#e8d8a0'); }
+    announce(tr(p.formation? 'a_form_on':'a_form_off'), '#e8d8a0'); }
   else if (e.code===K.repairall){ tryRepairAll(p); }
   else if (e.code===K.follow) camFollow=!camFollow;
   else if (e.code===K.capup){ tryCapUp(p); }
@@ -98,8 +98,8 @@ cv.addEventListener('pointerdown', e=>{
     pdown = null; return;
   }
   if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
-  const lasso = (selMode || e.shiftKey) && sy>38 && sy<H-102;
-  pdown = {sx, sy, moved:false, lasso, t0:performance.now(), touch:e.pointerType==='touch'};
+  const lasso = (selMode || e.shiftKey) && e.button===0 && sy>38 && sy<H-102;
+  pdown = {sx, sy, moved:false, lasso, t0:performance.now(), touch:e.pointerType==='touch', btn:e.button};
   if (lasso) selBox = {x0:sx, y0:sy, x1:sx, y1:sy};
 });
 
@@ -150,16 +150,17 @@ function endPointer(e){
     return;
   }
   const lasso = pdown.lasso;
-  // ORDRE DE POSITION (tactile) : rester APPUYÉ LONGTEMPS sans bouger = envoyer la sélection
-  // défendre ce point précis (à la souris, c'est le simple clic gauche qui donne l'ordre).
+  // ORDRE DE POSITION : CLIC DROIT (souris) ou APPUI LONG sans bouger (tactile) = envoyer
+  // la sélection défendre ce point précis. Le clic gauche garde ses rôles historiques.
   const long = pdown.touch && !pdown.moved && (performance.now()-pdown.t0) > 450;
+  const right = pdown.btn===2;
   pdown = null; dragging = false;
   // VRAI glisser en mode lasso = sélection rectangle. En revanche un simple APPUI (sans glisser)
   // doit rester un tap normal : on peut ainsi construire/sélectionner même en mode lasso actif
   // (corrige le blocage des socles muraille/tourelle quand ⬚ LASSO est enclenché juste avant).
   if (lasso && !tap){ finishLasso(); return; }
   selBox = null;
-  if (tap) handleTap(sx,sy,e.shiftKey,{touch:e.pointerType==='touch', long});
+  if (tap) handleTap(sx,sy,e.shiftKey,{touch:e.pointerType==='touch', long, right});
 }
 cv.addEventListener('pointerup', endPointer);
 cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; pdown=null; selBox=null; dragging=false; tutDragging=null; });
@@ -175,7 +176,7 @@ function finishLasso(){
     const ux = w2sX(u.x), uy = w2sY(gY(u.x)-22);
     if (ux>=x0 && ux<=x1 && uy>=y0-26 && uy<=y1+26) game.sel.add(u);
   }
-  if (game.sel.size){ sfx('sel'); announce('✓ '+game.sel.size+' unité(s) sélectionnée(s)', '#ffd34a'); }
+  if (game.sel.size){ sfx('sel'); announce(fmt('a_lasso',{n:game.sel.size}), '#ffd34a'); }
 }
 
 function handleTap(sx, sy, shift, opts){
@@ -194,6 +195,14 @@ function handleTap(sx, sy, shift, opts){
   if (speedPanel){
     if (speedPanel.rects) for (const r of speedPanel.rects) if (inRect(sx,sy,r)){ pickSpeed(r.spd); sfx('sel'); return; }
     speedPanel=null; return;
+  }
+  // CLIC DROIT : réservé EXCLUSIVEMENT à l'ordre de position — il n'actionne jamais un bouton,
+  // un menu ni la sélection. Il s'applique à la sélection courante uniquement.
+  if (opts && opts.right){
+    if (paused || settingsOpen || buildMenu) return;
+    if (game.tut && TUT && TUT.confirmSkip) return;
+    if (game.sel.size) orderPoint(game.p, s2wX(sx));
+    return;
   }
   // tutoriel : boutons de la carte (Continuer / Passer / confirmation). Renvoie true si le clic
   // est consommé ; sinon il atteint le jeu normalement (construire, sélectionner…).
@@ -257,7 +266,7 @@ function handleTap(sx, sy, shift, opts){
         else {
           for (const g of p.gar){ g.x = p.x + 40 + Math.random()*30; p.units.push(g); }
           const n = p.gar.length; p.gar = [];
-          if (n){ announce('🛡 '+n+' garde(s) renvoyée(s) au front', '#e8d8a0'); sfx('build'); }
+          if (n){ announce(fmt('a_guard_out',{n:n}), '#e8d8a0'); sfx('build'); }
         }
       }
       return;
@@ -272,7 +281,7 @@ function handleTap(sx, sy, shift, opts){
       else if (slot.b && slot.b.gar.length){
         for (const g of slot.b.gar){ g.x = slot.x + (Math.random()*30-15); p.units.push(g); }
         const n = slot.b.gar.length; slot.b.gar = [];
-        announce('🚪 '+n+' troupe(s) sortie(s)', '#e8d8a0'); sfx('build');
+        announce(fmt('a_ungar',{n:n}), '#e8d8a0'); sfx('build');
       }
     }
     else if (hit==='demolish'){
@@ -289,7 +298,7 @@ function handleTap(sx, sy, shift, opts){
   for (const r of HUD.upgRects) if (inRect(sx,sy,r)){
     if (!tryUpgRole(p, r.i)){
       const lvl = p.upg[ROLES[r.i].key]||0;
-      if (lvl<3) announce('⬆ Coût : '+costStr(p,{f:90*(lvl+1), m:180*(lvl+1)}), '#d8a06a');
+      if (lvl<3) announce(fmt('a_upgcost',{cost:costStr(p,{f:90*(lvl+1), m:180*(lvl+1)})}), '#d8a06a');
     }
     return;
   }
@@ -305,10 +314,7 @@ function handleTap(sx, sy, shift, opts){
     else if (b.type==='formation'){
       if (game.net==='guest'){ guestCmd({c:'form'}); sfx('sel'); return; }
       p.formation=!p.formation; sfx('sel');
-      announce(p.formation?
-        (p.facKey==='HUM'? '⚏ Phalange ouvrière : corps à corps devant, tireurs derrière, artillerie au fond'
-                         : '⚏ Essaim calculé : lames en première vague, optimiseurs au centre, canons au fond')
-        : '⚏ Formation libre', '#e8d8a0');
+      announce(p.formation? tr(p.facKey==='HUM'? 'a_form_hum':'a_form_ia') : tr('a_form_off'), '#e8d8a0');
     }
     else if (b.type==='repairall'){ tryRepairAll(p); }
     else if (b.type==='cam'){
@@ -366,13 +372,12 @@ function handleTap(sx, sy, shift, opts){
     return;
   }
   // ---- sol ----
-  // ORDRE DE POSITION : avec une sélection active, le CLIC GAUCHE (souris) ou un APPUI LONG
-  // (tactile) sur le terrain envoie les unités DÉFENDRE ce point exact — elles s'y rendent,
-  // combattent ce qu'elles croisent, puis tiennent la position.
-  if (game.sel.size && (!opts || !opts.touch || opts.long)){
+  // ORDRE DE POSITION (tactile) : APPUI LONG sur le terrain avec une sélection active = envoyer
+  // ces unités DÉFENDRE ce point exact (à la souris : clic droit, géré plus haut).
+  if (game.sel.size && opts && opts.touch && opts.long){
     if (orderPoint(p, wx)) return;
   }
-  // tap tactile bref sur le sol : désélection (comportement historique)
+  // tap bref / clic gauche sur le sol : désélection (comportement historique)
   if (game.sel.size){ game.sel.clear(); sfx('sel'); }
 }
 

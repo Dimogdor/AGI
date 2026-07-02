@@ -30,7 +30,7 @@ function tryBuy(side, ri){
     const nS = side.units.filter(u=>u.role==='support').length
              + side.queue.filter(q=>ROLES[q].key==='support').length;
     if (nS>=maxS){
-      if (side===game.p) announce('🚑 Quota de soutien atteint ('+maxS+') — améliorez le Soutien ⬆', '#d88');
+      if (side===game.p) announce(fmt('a_supquota',{n:maxS}), '#d88');
       return false;
     }
   }
@@ -39,11 +39,11 @@ function tryBuy(side, ri){
   // cap atteint → FILE D'ATTENTE (max 10) : production auto dès qu'une place se libère
   if (unitTotal(side) + side.queue.length >= side.cap){
     if (side.queue.length>=10){
-      if (side===game.p) announce('⏳ File d\'attente pleine (10)', '#d88');
+      if (side===game.p) announce(tr('a_qfull'), '#d88');
       return false;
     }
     pay(side,cost); side.cd[ri] = 0.5 + ri*0.45; side.queue.push(ri);
-    if (side===game.p){ sfx('buy', ri); announce('⏳ '+rname(side,role.key)+' en file ('+side.queue.length+'/10)', '#9dc88a'); }
+    if (side===game.p){ sfx('buy', ri); announce(fmt('a_queued',{name:rname(side,role.key), n:side.queue.length}), '#9dc88a'); }
     return true;
   }
   pay(side,cost); side.cd[ri] = 0.5 + ri*0.45;
@@ -129,7 +129,7 @@ function tryUpgRole(side, ri){
   const cost = {f:90*(lvl+1), m:180*(lvl+1)};
   if (!canPay(side,cost)) return false;
   pay(side,cost); side.upg[key]=lvl+1;
-  if (side===game.p){ sfx('cap'); announce("⬆ "+lUnit(side.facKey,key,side.era)+" niveau "+(lvl+1), "#e8d8a0"); }
+  if (side===game.p){ sfx('cap'); announce(fmt('a_upgraded',{name:lUnit(side.facKey,key,side.era), n:lvl+1}), "#e8d8a0"); }
   return true;
 }
 function tryEvolve(side){
@@ -139,8 +139,7 @@ function tryEvolve(side){
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
   burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
-  const who = side===game.p? "VOS FORCES":"L'ENNEMI";
-  announce("⚡ "+who+" : "+lEra(side.facKey,side.era)+" ⚡", side.fac.accent);
+  announce(fmt(side===game.p? 'a_evolve_you':'a_evolve_foe', {era:lEra(side.facKey,side.era)}), side.fac.accent);
   if (side===game.p){ sfx('evolve'); voice(side.facKey); game.shake=8;
     // LORE CONTEXTUEL : une courte phrase historique s'affiche au passage d'ère.
     addFloater(camX+VW()/2, 96, lEraLore(side.facKey, side.era), '#e8d8a0', 14);
@@ -203,7 +202,7 @@ function castLastStand(side){
   for (const u of side.units) u.hp = u.maxhp;   // les nôtres se relèvent
   side.hp = Math.min(side.maxhp, side.hp+500);
   game.shake=22; game.flash=0.9; game.specialsUsed++;
-  announce('☠ '+(side.facKey==='HUM'? 'LA COMMUNE NE MEURT JAMAIS':'PROTOCOLE OMÉGA')+' ☠', side.fac.accent);
+  announce(tr(side.facKey==='HUM'? 'a_last_hum':'a_last_ia'), side.fac.accent);
   sfx('trans');
   return true;
 }
@@ -219,13 +218,13 @@ function tryBuild(side, slot, type){
   if (!near){
     // construction à distance : il faut qu'une troupe ait déjà dépassé ce point
     if ((slot.x - side.adv)*side.side > 0){
-      if (side===game.p) announce("🚧 Terrain non sécurisé — vos troupes doivent d'abord dépasser ce point", "#d88");
+      if (side===game.p) announce(tr('a_unsafe'), "#d88");
       return false;
     }
     let sites=0;
     for (const s2 of sideBuildSlots(side)) if (s2.b && s2.b.type==='site') sites++;
     if (sites>=2){
-      if (side===game.p) announce("🚧 Deux chantiers maximum à la fois", "#d88");
+      if (side===game.p) announce(tr('a_twosites'), "#d88");
       return false;
     }
   }
@@ -237,7 +236,7 @@ function tryBuild(side, slot, type){
   } else {
     // chantier fragile : une troupe du pool viendra le terminer
     slot.b = { type:'site', buildType:type, hp:140, maxhp:140, lvl:1, gar:[] };
-    if (side===game.p) announce("🚧 Chantier ouvert — une troupe arrive pour construire", "#e8d8a0");
+    if (side===game.p) announce(tr('a_siteopen'), "#e8d8a0");
   }
   if (side===game.p) sfx('build');
   return true;
@@ -268,7 +267,7 @@ function dispatchGarrison(side, slot, role){
   }
   if (best){
     best.task = {kind:'garrison', slot};
-    if (side===game.p){ sfx('sel'); announce('🚪 '+rname(side,best.role)+' en route vers le bâtiment', '#e8d8a0'); }
+    if (side===game.p){ sfx('sel'); announce(fmt('a_garway',{name:rname(side,best.role)}), '#e8d8a0'); }
     return true;
   }
   // sinon : recrute directement le rôle demandé (tireur par défaut)
@@ -277,7 +276,7 @@ function dispatchGarrison(side, slot, role){
   if (ri>=0 && unitTotal(side)<side.cap && canPay(side, cost)){
     pay(side, cost); spawnUnit(side, ri);
     side.units[side.units.length-1].task = {kind:'garrison', slot};
-    if (side===game.p){ sfx('buy',ri); announce('🪖 Recrue envoyée en garnison', '#e8d8a0'); }
+    if (side===game.p){ sfx('buy',ri); announce(tr('a_garrecruit'), '#e8d8a0'); }
     return true;
   }
   return false;
@@ -298,7 +297,7 @@ function tryRepairAll(side){
   if (side.hp < side.maxhp && tryRepairBase(side)) did = true;
   for (const s of sideBuildSlots(side))
     if (s.b && s.b.type!=='site' && s.b.hp<s.b.maxhp && tryRepair(side, s)) did = true;
-  if (did && side===game.p) announce('🔧 Réparations effectuées', '#9dc88a');
+  if (did && side===game.p) announce(tr('a_repaired'), '#9dc88a');
   return did;
 }
 function tryFortify(side){
@@ -308,7 +307,7 @@ function tryFortify(side){
   const c = {f:250*lvl, m:250*lvl};
   if (!canPay(side,c)) return false;
   pay(side,c); side.fortLvl = lvl+1; side.maxhp += 800; side.hp += 800;
-  if (side===game.p){ sfx('cap'); announce('🏰 Base fortifiée niveau '+side.fortLvl, '#e8d8a0'); }
+  if (side===game.p){ sfx('cap'); announce(fmt('a_fortified',{n:side.fortLvl}), '#e8d8a0'); }
   return true;
 }
 function tryAutoRepair(side){
@@ -350,7 +349,7 @@ function tryRepairBase(side){
   const c = {f:120, m:120};
   if (!canPay(side,c)) return false;
   pay(side,c); side.hp = Math.min(side.maxhp, side.hp+500);
-  if (side===game.p){ sfx('build'); announce("🔧 Base réparée (+500)", "#9dc88a"); }
+  if (side===game.p){ sfx('build'); announce(tr('a_baserepaired'), "#9dc88a"); }
   return true;
 }
 // coût d'amélioration : jamais payé dans la ressource que le bâtiment produit
@@ -378,13 +377,13 @@ function tryGarrison(side, slot){
   const free = GAR_MAX - slot.b.gar.length;
   if (free<=0) return false;
   const eligible = [...game.sel].filter(u=>u.range>60 && !u.fly && u.role!=='support' && Math.abs(u.x-slot.x)<260).slice(0, free);
-  if (!eligible.length){ announce("Aucune unité à distance de la sélection à proximité", "#d88"); return false; }
+  if (!eligible.length){ announce(tr('a_nogar'), "#d88"); return false; }
   for (const u of eligible){
     slot.b.gar.push(u);
     side.units.splice(side.units.indexOf(u),1);
     game.sel.delete(u);
   }
-  announce("🚪 "+eligible.length+" troupe(s) en garnison", "#e8d8a0");
+  announce(fmt('a_garred',{n:eligible.length}), "#e8d8a0");
   sfx('build');
   return true;
 }
@@ -393,26 +392,23 @@ function tryCapUp(side){
   const cost = {m:350, w:100};
   if (side.capUp || !canPay(side,cost)) return false;
   pay(side,cost); side.capUp=true; side.cap=40;
-  if (side===game.p) { sfx('cap'); announce("📈 CAPACITÉ : 40 UNITÉS", "#e8d8a0"); }
+  if (side===game.p) { sfx('cap'); announce(tr('a_cap40'), "#e8d8a0"); }
   return true;
 }
 // ---- invocation du héros légendaire ----
 function tryHero(side){
   if (isGuest(side)){ guestCmd({c:'hero'}); return true; }
   if (side.units.some(u=>u.role==='hero')){
-    if (side===game.p) announce('🦸 Votre héros est déjà sur le terrain', '#d88'); return false; }
+    if (side===game.p) announce(tr('a_hero_there'), '#d88'); return false; }
   if (side.heroCd>0){
-    if (side===game.p) announce('🦸 Héros en recharge ('+Math.ceil(side.heroCd)+'s)', '#d88'); return false; }
+    if (side===game.p) announce(fmt('a_hero_cd',{n:Math.ceil(side.heroCd)}), '#d88'); return false; }
   if (!canPay(side, HERO_COST)){
-    if (side===game.p) announce('🦸 Coût : '+costStr(side,HERO_COST), '#d88'); return false; }
+    if (side===game.p) announce(fmt('a_hero_cost',{cost:costStr(side,HERO_COST)}), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
   spawnHero(side);
   if (side===game.p){ sfx('trans'); voice(side.facKey); game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
-  const reveal = side.facKey==='HUM'
-    ? '✊ CHE GUEVARA À LA RESCOUSSE — ¡Hasta la victoria siempre! (×3 dégâts, ×2 vitesse)'
-    : '◆ SINGULARITÉ INVOQUÉE — la conscience artificielle déferle (×3 dégâts, ×2 vitesse)';
-  announce(reveal, side.fac.accent);
+  announce(tr(side.facKey==='HUM'? 'a_hero_hum':'a_hero_ia'), side.fac.accent);
   return true;
 }
 function spawnHero(side, power){
@@ -442,7 +438,7 @@ function orderPoint(side, wx){
   if (isGuest(side)){
     guestCmd({c:'point', x:Math.round(WORLD-wx), ids:[...game.sel].map(u=>u.id)});   // vue miroir → coordonnée hôte
     game.rally = {x:wx, t:0};
-    sfx('sel'); announce('⚑ '+game.sel.size+' unité(s) en route vers le point', '#e8d8a0');
+    sfx('sel'); announce(fmt('a_point',{n:game.sel.size}), '#e8d8a0');
     return true;
   }
   const sel = [...game.sel];
@@ -451,7 +447,7 @@ function orderPoint(side, wx){
     u.px = clamp(wx + (i-(sel.length-1)/2)*16, 40, WORLD-40);   // éventail autour du point
   });
   game.rally = {x:wx, t:0};
-  sfx('sel'); announce('⚑ '+sel.length+' unité(s) en route vers le point', '#e8d8a0');
+  sfx('sel'); announce(fmt('a_point',{n:sel.length}), '#e8d8a0');
   addFloater(wx, gY(wx)-60, '⚑', '#ffd34a', 16);
   return true;
 }
@@ -467,7 +463,7 @@ function setStance(side, st){
       u.ord = st;
       if (st==='hold') u.holdX = u.x;
     }
-    announce((st==='charge'?'⚔':st==='hold'?'✋':'↩')+' Ordre donné à '+game.sel.size+' unité(s)', '#e8d8a0');
+    announce((st==='charge'?'⚔ ':st==='hold'?'✋ ':'↩ ')+fmt('a_order',{n:game.sel.size}), '#e8d8a0');
   } else {
     side.stance = st;
     if (st==='hold'){

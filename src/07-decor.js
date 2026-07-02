@@ -125,7 +125,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;
   selMode = false; selBox = null;
-  announce("⚔ 2025 — LA GUERRE COMMENCE ⚔", "#e8d8a0");
+  announce(tr('a_start'), "#e8d8a0");
 }
 // capture des effets transitoires pour les renvoyer à l'invité (hôte uniquement)
 function netEv(e){ if (game && game.net==='host' && net && net.ev && net.ev.length<160) net.ev.push(e); }
@@ -168,14 +168,14 @@ function dispatchBaseGarrison(side, role){
   }
   if (best){
     best.task = {kind:'gbase'};
-    if (side===game.p){ sfx('sel'); announce('🛡 '+rname(side,role)+' rappelé au château', '#e8d8a0'); }
+    if (side===game.p){ sfx('sel'); announce(fmt('a_guard_recall',{name:rname(side,role)}), '#e8d8a0'); }
     return true;
   }
   const ri = ROLES.findIndex(r=>r.key===role), cost = unitCost(side, ri);
   if (unitTotal(side)<side.cap && canPay(side, cost)){
     pay(side, cost); spawnUnit(side, ri);
     side.units[side.units.length-1].task = {kind:'gbase'};
-    if (side===game.p){ sfx('buy',ri); announce('🪖 Recrue affectée à la garde du château', '#e8d8a0'); }
+    if (side===game.p){ sfx('buy',ri); announce(tr('a_guard_recruit'), '#e8d8a0'); }
     return true;
   }
   return false;

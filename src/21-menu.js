@@ -254,9 +254,9 @@ $('langSel').addEventListener('change', ()=>{ SETTINGS.lang=$('langSel').value; 
 applyLang();
 refreshOpts();
 
-/* ---------- À PROPOS : avis (étoiles + texte), rapport de bug, don ---------- */
+/* ---------- À PROPOS : avis (étoiles + texte) et rapport de bug ---------- */
 // Tout passe par l'application e-mail de l'utilisateur (mailto préréempli) : fonctionne
-// hors-ligne, sans serveur, sur web / APK / PC. Le don ouvre PayPal (page de don).
+// hors-ligne, sans serveur, sur web / APK / PC.
 let fbRating = 0;
 function refreshStars(){
   document.querySelectorAll('#fbStars button').forEach((b,i)=>{
@@ -285,12 +285,6 @@ if (bugEl) bugEl.addEventListener('click', ()=>{
   openMail('[AGI] '+t('about_subj_bug'),
     (txt || t('about_bug_tpl')) + '\n\n— '+gameVersion()+'\n— '+navigator.userAgent);
 });
-const donEl = $('fbDonate');
-if (donEl) donEl.addEventListener('click', ()=>{
-  window.open('https://www.paypal.com/donate/?business='+encodeURIComponent('dimdevche@gmail.com')
-              +'&no_recurring=0&currency_code=EUR', '_blank');
-});
-
 /* ---------- Touches reconfigurables ---------- */
 let keyWait = null;
 function keyName(code){

@@ -70,7 +70,7 @@ function updateUnits(side, foe, dt){
         if (okB){
           sl.b = mkB(side, sl.b.buildType);
           burst(sl.x, gY(sl.x)-26, '#e8d8a0', 10);
-          if (side===game.p){ sfx('build'); announce('🏗 Construction terminée', '#9dc88a'); }
+          if (side===game.p){ sfx('build'); announce(tr('a_built'), '#9dc88a'); }
         } else garMoves.push({u, sl, base:okC});
         u.task = null;
       }
@@ -107,7 +107,7 @@ function updateUnits(side, foe, dt){
           u.droneT = Math.max(2.6, 4.5 - 0.5*lvl);
           if (droneCount(side) < droneCap(side)){
             spawnUnit(side, 0, true, u.x + side.side*14);
-            addFloater(u.x, gY(u.x)-56, "✿ drone", "#5ad0ff");
+            addFloater(u.x, gY(u.x)-56, tr('f_drone'), "#5ad0ff");
             burst(u.x, gY(u.x)-36, '#5ad0ff', 5, 0.5);
           }
         }
@@ -195,7 +195,7 @@ function updateUnits(side, foe, dt){
         if (u.heat>=1){
           u.heat = 0; u.tiredT = isIA? 6 : 3;
           addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0),
-            isIA? '🔥 surchauffe':'😮‍💨 fatigue', '#d8a06a', 11);
+            tr(isIA? 'f_overheat':'f_tired'), '#d8a06a', 11);
         }
         const sy0 = gY(u.x)-26-(u.fly? u.flyH:0);
         const ty0 = gY(target.x)-(target.isBase?56:(target.fly? 24+target.flyH : 24));
@@ -241,7 +241,7 @@ function updateUnits(side, foe, dt){
       const i = side.units.indexOf(gm.u);
       if (i>=0) side.units.splice(i,1);
       game.sel.delete(gm.u);
-      if (side===game.p) announce(gm.base? '🛡 Garde du château renforcée':'🚪 Unité en garnison', '#e8d8a0');
+      if (side===game.p) announce(tr(gm.base? 'a_guard_in':'a_gar_in'), '#e8d8a0');
     }
   }
   for (let i=side.units.length-1;i>=0;i--){
@@ -257,8 +257,7 @@ function updateUnits(side, foe, dt){
           const tier = Math.min(3, Math.floor(k.kills/4));
           if (tier > (k.vetTier||0)){
             k.vetTier = tier; k.vet = true; k.dmg *= 1.06;
-            const tag = k.fac==='HUM'? '★ Conscience de classe ' : '★ Auto-optimisation ';
-            addFloater(k.x, gY(k.x)-62-(k.fly?k.flyH:0), tag+tier, '#ffd34a', 12);
+            addFloater(k.x, gY(k.x)-62-(k.fly?k.flyH:0), fmt(k.fac==='HUM'? 'f_vet_hum':'f_vet_ia', {n:tier}), '#ffd34a', 12);
             sfx('cap');
           }
         }
