@@ -140,6 +140,9 @@ function updateUnits(side, foe, dt){
       } else if (u.ord==='retreat'){
         const homeX = side.x + side.side*150;
         if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
+      } else if (u.ord==='point'){
+        // ordre de position explicite : le soutien s'y poste (et soigne ce qui passe à portée)
+        if (u.px!=null && Math.abs(u.x-u.px)>10) moveToward(u, u.px, dt, 1.05);
       } else if (best){
         // pas d'ordre explicite : comportement autonome — rejoint le blessé prioritaire
         if (Math.abs(best.x-u.x) > hr*0.7) moveToward(u, best.x - side.side*14, dt, 1.1);
@@ -212,6 +215,10 @@ function updateUnits(side, foe, dt){
       }
     } else if (noMove){
       // tient sa position de repli
+    } else if (st==='point'){
+      // ORDRE DE POSITION : rejoint le point assigné (⚑) puis DÉFEND sur place —
+      // le ciblage ci-dessus reste actif, l'unité combat tout ce qui entre à portée.
+      if (u.px!=null && Math.abs(u.x-u.px)>10) moveToward(u, u.px, dt, 1.05);
     } else if (st==='hold'){
       const hx = u.ord==='hold'? u.holdX : side.holdX;
       if (hx!==null && (u.x-hx)*side.side>=0){ /* tient */ }
@@ -608,6 +615,7 @@ function update(dt){
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
   if (game.flash>0) game.flash-=dt;
   if (game.msgT>0) game.msgT-=dt;
+  if (game.rally){ game.rally.t+=dt; if (game.rally.t>3) game.rally=null; }   // marqueur ⚑ éphémère
 
   if (camFollow && !dragging){
     let front = p.units.length? Math.max(...p.units.map(u=>u.x)) : p.x+200;
@@ -618,7 +626,10 @@ function update(dt){
 
   if (game.tut){
     // BARRIÈRE du tutoriel : AUCUNE troupe du joueur (y compris AÉRIENNE) ne franchit la ligne
-    if (game.tutBarrier!=null) for (const u of game.p.units) if (u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    if (game.tutBarrier!=null) for (const u of game.p.units){
+      if (u.px!=null && u.px>game.tutBarrier) u.px = game.tutBarrier;
+      if (u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    }
     tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
   }
 

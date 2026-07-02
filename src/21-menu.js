@@ -254,6 +254,43 @@ $('langSel').addEventListener('change', ()=>{ SETTINGS.lang=$('langSel').value; 
 applyLang();
 refreshOpts();
 
+/* ---------- À PROPOS : avis (étoiles + texte), rapport de bug, don ---------- */
+// Tout passe par l'application e-mail de l'utilisateur (mailto préréempli) : fonctionne
+// hors-ligne, sans serveur, sur web / APK / PC. Le don ouvre PayPal (page de don).
+let fbRating = 0;
+function refreshStars(){
+  document.querySelectorAll('#fbStars button').forEach((b,i)=>{
+    const on = i<fbRating;
+    b.classList.toggle('on', on); b.textContent = on? '★':'☆';
+  });
+}
+document.querySelectorAll('#fbStars button').forEach((b,i)=>{
+  b.addEventListener('click', ()=>{ fbRating = (fbRating===i+1)? 0 : i+1; refreshStars(); });
+});
+refreshStars();
+function gameVersion(){ const v=$('verTag'); return v? v.textContent.trim() : 'AGI'; }
+function openMail(subject, body){
+  location.href = 'mailto:dimdevche@gmail.com?subject='+encodeURIComponent(subject)
+                + '&body='+encodeURIComponent(body);
+}
+const fbEl = $('fbSend');
+if (fbEl) fbEl.addEventListener('click', ()=>{
+  const txt = ($('fbText').value||'').trim();
+  const stars = fbRating? '★'.repeat(fbRating)+'☆'.repeat(5-fbRating)+' ('+fbRating+'/5)\n\n' : '';
+  openMail('[AGI] '+t('about_subj_fb'), stars + txt + '\n\n— '+gameVersion());
+});
+const bugEl = $('fbBug');
+if (bugEl) bugEl.addEventListener('click', ()=>{
+  const txt = ($('fbText').value||'').trim();
+  openMail('[AGI] '+t('about_subj_bug'),
+    (txt || t('about_bug_tpl')) + '\n\n— '+gameVersion()+'\n— '+navigator.userAgent);
+});
+const donEl = $('fbDonate');
+if (donEl) donEl.addEventListener('click', ()=>{
+  window.open('https://www.paypal.com/donate/?business='+encodeURIComponent('dimdevche@gmail.com')
+              +'&no_recurring=0&currency_code=EUR', '_blank');
+});
+
 /* ---------- Touches reconfigurables ---------- */
 let keyWait = null;
 function keyName(code){
