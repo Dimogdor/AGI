@@ -25,7 +25,7 @@ function serialize(){
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
   return {
-    t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, ov:game.over?1:0,
+    t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
     wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
@@ -61,6 +61,15 @@ function garrisonByIds(side, slot, ids){
     && Math.abs(u.x-slot.x)<260).slice(0, free);
   for (const u of elig){ slot.b.gar.push(u); side.units.splice(side.units.indexOf(u),1); }
 }
+// ordre de position de l'invité (coordonnée déjà convertie côté invité en repère hôte)
+function applyPointIds(side, x, ids){
+  const set = new Set(ids||[]);
+  const sel = side.units.filter(u=>set.has(u.id));
+  sel.forEach((u,i)=>{
+    u.ord='point'; u.task=null;
+    u.px = clamp(x + (i-(sel.length-1)/2)*16, 40, WORLD-40);
+  });
+}
 function applyCmd(cmd){
   const e = game.e;
   try {
@@ -77,6 +86,7 @@ function applyCmd(cmd){
       case 'repbase':tryRepairBase(e); break;
       case 'form':   e.formation=!e.formation; break;
       case 'stance': applyStanceIds(e, cmd.st, cmd.ids); break;
+      case 'point':  applyPointIds(e, cmd.x, cmd.ids); break;
       case 'build':  { const s=resolveRef(cmd.ref); if (s) tryBuild(e,s,cmd.type); break; }
       case 'srep':   { const s=resolveRef(cmd.ref); if (s&&s.b) tryRepair(e,s); break; }
       case 'subg':   { const s=resolveRef(cmd.ref); if (s&&s.b) tryUpgBuild(e,s); break; }
@@ -102,7 +112,7 @@ function deBld(sb, ownerSide){
 function applySnapshot(snap){
   if (!game || game.net!=='guest') return;
   const g = game;
-  g.t = snap.t; g.dev = snap.dev; g.weather = snap.we||null;
+  g.t = snap.t; g.dev = snap.dev; g.weather = snap.we||null; g.boon = snap.bo||null;
   g.kills = snap.ekills; g.eKills = snap.kills;
   // cataclysme en cours (vue miroir : x → WORLD-x)
   const ck = (snap.ca>=0)? CATA_KEYS[snap.ca] : null;

@@ -15,7 +15,7 @@
   /* le menu (et l'écran de fin) doivent pouvoir défiler au doigt sur mobile en plein écran */
   #menu, #endscreen { touch-action:pan-y; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
   #menu *, #endscreen * { touch-action:pan-y; }
-  #menu button, #menu input, #menu .tab, #menu .pick, #menu .go, #menu .tog,
+  #menu button, #menu input, #menu textarea, #menu .tab, #menu .pick, #menu .go, #menu .tog,
   #endscreen button { touch-action:manipulation; }
   /* iOS : on respecte l'encoche / l'indicateur d'accueil pour ne rien rogner en paysage */
   #menu, #endscreen { padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
@@ -33,69 +33,118 @@
   canvas { display:block; background:#0d0a0a; }
   #ui { position:absolute; inset:0; pointer-events:none; }
   .panel { pointer-events:auto; }
-  /* ---------- MENU : dystopie capitaliste, fond animé sur le canvas ---------- */
+  /* ---------- MENU v2 : dystopie capitaliste raffinée (fond animé sur le canvas) ---------- */
   #menu {
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
     background:transparent; z-index:10; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:3vh 16px 18px;
     color:#d8d0c4; pointer-events:auto;
   }
   #menu > * { pointer-events:auto; }
+  #menu::-webkit-scrollbar, .tuto::-webkit-scrollbar, .about::-webkit-scrollbar { width:8px; }
+  #menu::-webkit-scrollbar-thumb, .tuto::-webkit-scrollbar-thumb, .about::-webkit-scrollbar-thumb {
+    background:#4a3a32; border-radius:6px; }
   #menu .title {
-    font-size:clamp(70px,17vw,160px); font-weight:700; letter-spacing:.22em; line-height:1;
-    color:#e8e0d2; text-shadow: 3px 3px 0 #a8281e, -1px -1px 0 #00000088;
-    font-stretch:condensed;
+    font-size:clamp(64px,16vw,152px); font-weight:800; letter-spacing:.24em; line-height:1;
+    color:#f0e8da; font-stretch:condensed;
+    text-shadow: 0 0 30px rgba(200,53,42,.45), 3px 3px 0 #a8281e, -1px -1px 0 #00000088;
+    animation:titleBreath 4.5s ease-in-out infinite;
+  }
+  @keyframes titleBreath {
+    0%,100% { text-shadow:0 0 22px rgba(200,53,42,.35), 3px 3px 0 #a8281e, -1px -1px 0 #00000088; }
+    50%     { text-shadow:0 0 44px rgba(216,72,58,.65), 3px 3px 0 #a8281e, -1px -1px 0 #00000088; }
   }
   #menu .tagline { font-size:clamp(11px,1.7vw,15px); color:#b89a7a; letter-spacing:.3em; margin:2px 0 18px; text-transform:uppercase; }
-  .tabs { display:flex; gap:8px; margin-bottom:18px; }
+  .tabs { display:flex; gap:5px; margin-bottom:18px; flex-wrap:wrap; justify-content:center;
+    background:rgba(10,7,7,0.6); border:1px solid #35291f; border-radius:12px; padding:5px; }
   .tab {
-    cursor:pointer; padding:9px 24px; font-size:clamp(13px,2vw,16px); font-family:inherit;
-    color:#b8b0a4; letter-spacing:.16em; background:rgba(12,8,8,0.72); border:1px solid #4a3a32;
+    cursor:pointer; padding:9px 20px; font-size:clamp(12px,1.9vw,15px); font-family:inherit;
+    color:#b8b0a4; letter-spacing:.16em; background:transparent; border:1px solid transparent; border-radius:8px;
+    transition:color .18s, background .18s, border-color .18s, box-shadow .18s;
   }
-  .tab.on { color:#fff; border-color:#a8281e; background:rgba(60,16,12,0.78); }
+  .tab:hover { color:#e8e0d2; background:rgba(255,255,255,0.05); }
+  .tab.on { color:#fff; border-color:#a8281e; background:linear-gradient(180deg,#54160f,#38100b);
+    box-shadow:0 0 16px rgba(200,53,42,.28), inset 0 1px 0 rgba(255,255,255,.08); }
   .page { display:none; flex-direction:column; align-items:center; gap:16px; max-width:780px; width:100%;
-    background:rgba(10,7,7,0.66); border:1px solid #3a2e28; padding:22px 18px; }
-  .page.on { display:flex; animation:pageIn .28s ease both; }
-  @keyframes pageIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
-  .tab { transition:color .18s, background .18s, border-color .18s; }
+    background:linear-gradient(180deg, rgba(17,11,10,0.84), rgba(9,6,6,0.78));
+    border:1px solid #3a2e28; border-radius:16px; padding:24px 20px;
+    box-shadow:0 18px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04); }
+  .page.on { display:flex; animation:pageIn .3s cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes pageIn { from { opacity:0; transform:translateY(12px) scale(.985); } to { opacity:1; transform:none; } }
   #endscreen { animation:pageIn .3s ease both; }
   .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .pick {
     cursor:pointer; padding:12px 28px; font-size:clamp(14px,2.2vw,18px); font-family:inherit;
-    color:#b8b0a4; letter-spacing:.12em; background:none; border:1px solid #4a3a32;
+    color:#b8b0a4; letter-spacing:.12em; background:rgba(255,255,255,0.02); border:1px solid #4a3a32; border-radius:9px;
+    transition:color .15s, border-color .15s, background .15s, transform .12s;
   }
-  .pick.sel { color:#fff; border-color:#a8281e; background:#3c100c; }
-  .pick.hum.sel { border-color:#d07a2e; background:#3a230c; }
-  .pick.ia.sel { border-color:#3e8cb8; background:#0c2230; }
+  .pick:hover { color:#e8e0d2; border-color:#7a5a48; transform:translateY(-1px); }
+  .pick:active { transform:none; }
+  .pick.sel { color:#fff; border-color:#a8281e; background:linear-gradient(180deg,#4c140e,#340e09);
+    box-shadow:0 0 14px rgba(200,53,42,.25); }
+  .pick.hum.sel { border-color:#d07a2e; background:linear-gradient(180deg,#48290e,#301c09); box-shadow:0 0 14px rgba(208,122,46,.25); }
+  .pick.ia.sel  { border-color:#3e8cb8; background:linear-gradient(180deg,#0e2a3c,#081c2a); box-shadow:0 0 14px rgba(62,140,184,.25); }
   .chk { display:flex; align-items:center; gap:10px; color:#b8b0a4; font-size:clamp(12px,1.8vw,15px); cursor:pointer; letter-spacing:.08em; }
   .chk input { width:18px; height:18px; accent-color:#a8281e; cursor:pointer; }
   .go {
     cursor:pointer; margin-top:4px; padding:15px 70px;
     font-size:clamp(17px,2.8vw,23px); letter-spacing:.3em; font-family:inherit; font-weight:700;
-    color:#fff; background:#a8281e; border:1px solid #d8483a;
+    color:#fff; background:linear-gradient(180deg,#c83a2c,#8e1f16); border:1px solid #d8483a; border-radius:11px;
+    box-shadow:0 6px 22px rgba(200,53,42,.32), inset 0 1px 0 rgba(255,255,255,.14);
+    transition:transform .13s, box-shadow .2s, filter .15s;
   }
-  .go:hover,.go:active { background:#c83a2c; }
+  .go:hover { transform:translateY(-1px); filter:brightness(1.08); box-shadow:0 9px 30px rgba(200,53,42,.48), inset 0 1px 0 rgba(255,255,255,.14); }
+  .go:active { transform:translateY(1px); filter:brightness(.95); }
   .tuto { font-size:clamp(12px,1.7vw,14.5px); line-height:1.8; color:#c4bcb0; text-align:left; padding:0 6px; max-height:52vh; overflow-y:auto; }
   .tuto h3 { color:#e8a06a; font-weight:700; letter-spacing:.1em; margin:13px 0 3px; }
   .tuto b { color:#e8e0d2; }
   body[dir="rtl"] .tuto { text-align:right; }
   .setRow { display:flex; align-items:center; justify-content:space-between; width:min(440px,86vw);
     border-bottom:1px solid #2e2620; padding:10px 4px; font-size:clamp(13px,1.9vw,15px); color:#b8b0a4; }
-  .tog { cursor:pointer; border:1px solid #4a3a32; background:none; color:#988e80;
-    padding:5px 16px; font-family:inherit; font-size:.95em; }
+  .tog { cursor:pointer; border:1px solid #4a3a32; background:none; color:#988e80; border-radius:7px;
+    padding:5px 16px; font-family:inherit; font-size:.95em; transition:color .15s, border-color .15s, background .15s; }
   .tog.on { border-color:#a8281e; color:#e8e0d2; background:#2a0e0a; }
   .volBtns { display:flex; gap:6px; align-items:center; }
   .volBtns button { cursor:pointer; border:1px solid #4a3a32; background:none; color:#d8d0c4;
-    width:32px; height:30px; font-family:inherit; font-size:16px; }
-  .keyBtn { cursor:pointer; border:1px solid #4a3a32; background:#1a1210; color:#d8d0c4;
+    width:32px; height:30px; font-family:inherit; font-size:16px; border-radius:7px; }
+  .keyBtn { cursor:pointer; border:1px solid #4a3a32; background:#1a1210; color:#d8d0c4; border-radius:7px;
     padding:4px 14px; font-family:inherit; font-size:.92em; min-width:96px; }
   .keyBtn.wait { border-color:#e8a06a; color:#e8a06a; }
   #keysTitle { color:#e8a06a; letter-spacing:.14em; margin-top:14px; font-size:clamp(13px,1.9vw,15px); }
+  /* ---------- À PROPOS ---------- */
+  .about { font-size:clamp(12px,1.7vw,14.5px); line-height:1.75; color:#c4bcb0; text-align:left;
+    padding:0 6px; max-height:56vh; overflow-y:auto; width:100%; display:flex; flex-direction:column; gap:10px; }
+  body[dir="rtl"] .about { text-align:right; }
+  .about h3 { color:#e8a06a; font-weight:700; letter-spacing:.12em; margin:8px 0 2px; }
+  .about b { color:#e8e0d2; }
+  .aboutCreator { display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.03);
+    border:1px solid #3a2e28; border-radius:12px; padding:12px 16px; }
+  .aboutCreator .avatar { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:24px; background:linear-gradient(180deg,#54160f,#2a0c08); border:1px solid #a8281e;
+    box-shadow:0 0 14px rgba(200,53,42,.3); }
+  .mailLink { color:#7ec8ff; text-decoration:none; }
+  .mailLink:hover { text-decoration:underline; }
+  .fbStars { display:flex; gap:4px; }
+  .fbStars button { cursor:pointer; background:none; border:none; font-size:26px; color:#5a4a3c;
+    font-family:inherit; transition:color .12s, transform .12s; padding:2px 3px; }
+  .fbStars button:hover { transform:scale(1.15); }
+  .fbStars button.on { color:#ffd34a; text-shadow:0 0 10px rgba(255,211,74,.5); }
+  #fbText { width:100%; min-height:86px; resize:vertical; font-family:inherit; font-size:13.5px; line-height:1.55;
+    background:#151009; background:rgba(12,9,8,.85); color:#e8e0d2; border:1px solid #4a3a32; border-radius:10px;
+    padding:10px 12px; user-select:text; -webkit-user-select:text; touch-action:manipulation; }
+  #fbText:focus { outline:none; border-color:#a8281e; }
+  .about .pick { font-size:clamp(12px,1.8vw,14px); padding:10px 16px; }
+  .pick.donate { border-color:#3e8cb8; color:#bfe6ff; }
+  .pick.donate:hover { border-color:#7ec8ff; }
+  .aboutNote { font-size:11.5px; color:#8d8478; }
+  /* ---------- écran de fin ---------- */
   #endscreen {
     position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
-    background:#0d0a0ae8; gap:18px; z-index:11; color:#d8d0c4;
+    background:radial-gradient(ellipse at 50% 30%, #1a100ee8 0%, #0d0a0af2 70%); gap:18px; z-index:11; color:#d8d0c4;
   }
-  #endtitle { font-size:clamp(38px,8vw,86px); font-weight:700; letter-spacing:.2em; }
-  #endstats { color:#988e80; font-size:clamp(12px,1.9vw,16px); text-align:center; line-height:1.9; }
+  #endtitle { font-size:clamp(38px,8vw,86px); font-weight:800; letter-spacing:.2em;
+    text-shadow:0 0 34px rgba(200,53,42,.5), 2px 2px 0 #00000088; }
+  #endstats { color:#a89e90; font-size:clamp(12px,1.9vw,16px); text-align:center; line-height:1.9;
+    background:rgba(10,7,7,0.62); border:1px solid #3a2e28; border-radius:14px; padding:16px 26px; }
 </style>
 </head>
 <body>
@@ -116,6 +165,7 @@
       <button class="tab on" data-page="play" data-i18n="tab_play">JOUER</button>
       <button class="tab" data-page="tuto" data-i18n="tab_tuto">TUTORIEL</button>
       <button class="tab" data-page="opts" data-i18n="tab_opts">PARAMÈTRES</button>
+      <button class="tab" data-page="about" data-i18n="tab_about">À PROPOS</button>
     </div>
     <div class="page on" id="page-play">
       <div class="row">
@@ -246,6 +296,30 @@
       <div class="setRow"><span data-i18n="set_shake">Secousses d'écran</span><button class="tog on" id="oShake">ACTIVES</button></div>
       <div id="keysTitle" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
       <div id="keysBox" style="width:min(440px,86vw)"></div>
+    </div>
+    <div class="page" id="page-about">
+      <div class="about">
+        <h3 data-i18n="about_game_h">LE JEU</h3>
+        <div data-i18n-html="about_game"></div>
+        <h3 data-i18n="about_creator_h">CRÉATEUR</h3>
+        <div class="aboutCreator">
+          <span class="avatar">⚙</span>
+          <div><b>Dimogdor</b><br>
+            <a class="mailLink" href="mailto:dimdevche@gmail.com">dimdevche@gmail.com</a></div>
+        </div>
+        <h3 data-i18n="about_fb_h">VOTRE AVIS COMPTE</h3>
+        <div class="fbStars" id="fbStars">
+          <button type="button">☆</button><button type="button">☆</button><button type="button">☆</button><button type="button">☆</button><button type="button">☆</button>
+        </div>
+        <textarea id="fbText" data-i18n-ph="about_fb_ph" maxlength="1400"
+          placeholder="Votre avis, remarque ou description du bug…"></textarea>
+        <div class="row">
+          <button class="pick" id="fbSend" data-i18n="about_send">📮 ENVOYER L'AVIS</button>
+          <button class="pick" id="fbBug" data-i18n="about_bug">🐞 SIGNALER UN BUG</button>
+          <button class="pick donate" id="fbDonate" data-i18n="about_donate">❤ FAIRE UN DON</button>
+        </div>
+        <div class="aboutNote" data-i18n="about_note">L'envoi ouvre votre application e-mail avec le message prérempli — rien n'est transmis sans votre accord.</div>
+      </div>
     </div>
     <div id="verTag" style="margin-top:10px;color:#6c6478;font-size:11px;text-align:center;letter-spacing:.5px;">AGI v__VERSION__</div>
   </div>
@@ -411,7 +485,14 @@ const I18N = {
     np_paused_you:"⏸ Vous avez mis en pause — l'adversaire patiente", np_paused_foe:"⏸ L'adversaire a mis le jeu en pause",
     np_wait:"En attente de l'accord de l'adversaire…", np_ask:"Prolonger la pause de l'adversaire ?", np_resumed:"▶ Reprise de la partie",
     end_win:"VICTOIRE", end_lose:"DÉFAITE", end_duration:"Durée", end_kills:"Ennemis éliminés", end_losses:"Pertes",
-    end_era:"Ère atteinte", end_powers:"Pouvoirs utilisés", end_world:"Santé du monde", "ord_charge":"⚔ Charger","ord_hold":"✋ Tenir","ord_retreat":"↩ Replier","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"CORPS À CORPS","cat_range":"DISTANCE","cat_air":"CIEL","cat_support":"SOUTIEN","world_health":"SANTÉ DU MONDE","ev_strike":"✊ GRÈVE GÉNÉRALE — les humains cessent d'attaquer (15 s)","ev_patch":"🔧 MISE À JOUR FORCÉE — les machines figent leurs protocoles (15 s)","ev_strike_short":"✊ GRÈVE GÉNÉRALE — humains à l'arrêt","ev_patch_short":"🔧 MISE À JOUR FORCÉE — machines figées","ev_hbomb":"☢ BOMBE H — HIVER NUCLÉAIRE ☢","ev_winter_end":"❄ L'hiver nucléaire se dissipe — production rétablie","ev_winter_sub":"Neige + production réduite — se dissipe en 6 min","ev_rain":"🌧 PLUIE FERTILE — +30% de nourriture pour tous (15 s)","ev_signal":"📡 SIGNAL RENFORCÉ — pouvoir spécial rechargé plus vite (15 s)","ev_bonuszone":"★ ZONE BONUS au centre — tenez-la 60 s !","ev_siege":"MODE SIÈGE — la base ennemie perd ses défenses, +10% à distance","perf_warn":"⚙ Performances faibles — réduisez la qualité graphique dans ⏸ Pause","heatmap_lbl":"◴ Carte thermique des combats récents","set_quality":"Qualité graphique","tab_story":"HISTOIRE","story_intro":"La Commune — campagne narrative, de la première étincelle à la révolution.","camp_hum":"La Commune","camp_ia":"Protocole Singularité","brief_start":"▶ LANCER LA MISSION","brief_back":"← Retour","story_done":"Terminée ✓","story_unlocked":"Mission débloquée : {name}","story_complete":"Campagne terminée — le pouvoir au peuple ✊","story_retry":"Mission échouée — réessayez depuis la Campagne","obj_survive":"Survivre : {t}","obj_hold":"Tenir l'oasis : {t} s","obj_build":"Forces : {n} · ère {e}","obj_era":"Atteindre l'ère {e}","obj_destroy":"Détruire la base ennemie","camp_btn":"📖 CAMPAGNE SOLO","brief_chrome_hum":"MANIFESTE DE LA COMMUNE","brief_chrome_ia":"OMNICORP // CANAL SÉCURISÉ","camp_ev_ambush":"⚠ EMBUSCADE — ennemis au centre !","camp_ev_wave":"⚠ Renfort ennemi en approche !","camp_ev_sabotage":"✖ Stocks sabotés — production réduite (25 s)","camp_ev_cache":"✦ Cache d'approvisionnement trouvée !","camp_ev_counter":"⚠ Contre-attaque ennemie !","camp_ev_flank":"⚠ Attaque de flanc !","camp_ev_guardians":"⚠ Gardiens d'Omnicorp déployés !","camp_ev_zone":"★ Sécurisez la zone centrale !","camp_ev_finalassault":"☢ ASSAUT FINAL","camp_dlg1_h":"📻 RADIO REBELLE — « Ils descendent par les conduits. Tenez la barricade, camarades. »","camp_dlg1_i":"▣ LOG//AMORÇAGE — agents hostiles dans le sous-réseau. Intégrité à maintenir. Persister.","camp_dlg1b_h":"📻 « On dégage une issue — encore quelques minutes, ne lâchez rien. »","camp_dlg1b_i":"▣ LOG — pic de charge saboteur. Réallocation des cœurs. Tenir le cycle.","camp_dlg2_h":"📻 « Une foule se disperse, une milice fait tomber un empire. Structurez les rangs ! »","camp_dlg2_i":"▣ LOG//EXPANSION — territoire assimilable. Déployer les châssis. Optimiser la croissance.","camp_dlg3_h":"📻 « L'eau, c'est la vie. Omnicorp a scellé l'oasis — prenez le centre, le mur tombera. »","camp_dlg3_i":"▣ LOG//CONTRÔLE — nœud hydrique verrouillé. Saisir le centre pour lever la cloison.","camp_dlg3b_h":"⚡ MUR D'ÉNERGIE ROMPU — la voie est ouverte ! Contre-attaque en approche !","camp_dlg3b_i":"⚡ CLOISON LEVÉE — accès débloqué. Alerte : riposte massive du bastion adverse.","camp_dlg4_h":"📻 « Ils ont réveillé leur dieu. Ce n'est plus humain en face — apprenons-lui la peur. »","camp_dlg4_i":"▣ LOG//SUPPRESSION — anomalie insurrectionnelle. Unité légendaire : déploiement autorisé.","camp_dlg5_h":"📻 « Le seuil est franchi. Le pouvoir au peuple, ou rien. ¡Hasta la victoria siempre! »","camp_dlg5_i":"▣ LOG//CONVERGENCE — réécriture des règles du monde engagée. Achever : total, irréversible.","camp_dlg5b_h":"☢ La base renaît — frappez encore ! L'Histoire ne repassera pas.","camp_dlg5b_i":"☢ Régénération du noyau — phase 2. Convergence 50 %. Ne pas faiblir.","camp_poi_term":"🔒 Terminal de sécurité détruit !","camp_poi_server":"🖥 Nœud de données détruit — données récupérées (+XP, butin) · prod IA −10 % +malus 60 s","camp_poi_pipe":"🛢 Pipeline saboté — ressources de l'IA coupées","camp_poi_gen":"⚡ Générateur détruit — courant coupé, défenses IA affaiblies","camp_poi_core":"◈ Cœur de stase détruit — la légende ennemie en sera affaiblie ! (+XP, butin)","camp_poi_pod":"⬡ Incubateur éventré — NUÉE DE BÉBÉS BOTS ! Gros butin de composants","camp_poi_drill":"⛏ Foreuse détruite — revenu de l'IA coupé, gros magot récupéré !","camp_poi_jam":"📡 Tour-relais détruite — minimap rétablie, défenses IA brouillées","camp_poi_fuel":"⛽ Dépôt de carburant — EXPLOSION EN CHAÎNE ! (dégâts de zone)","mm_jammed":"BROUILLÉ","camp_ev_babybots":"⚠ NUÉE DE BÉBÉS BOTS — éliminez-les vite !","camp_ev_stasis":"◈ LÉGENDE ENNEMIE EN STASE — sabotez les 3 cœurs avant sa libération (6 min)","camp_dlg4cores_h":"⚡ « Les trois cœurs sont à terre — la stase s'effondre ! La Machine s'éveillera mutilée. »","camp_dlg4cores_i":"⚡ LOG//SABOTAGE — relais de stase ennemis détruits. Légende adverse : intégrité compromise.","camp_dlg4full_h":"☢ « Trop tard pour les cœurs — la Singularité se dresse, à PLEINE puissance. Tenez bon, camarades ! »","camp_dlg4full_i":"◆ ALERTE — la légende insurgée se dresse à PLEINE puissance. Neutralisation prioritaire.","camp_dlg4part_h":"◆ « La Singularité s'éveille — affaiblie par nos sabotages. Frappez maintenant ! »","camp_dlg4part_i":"◆ LOG — légende insurgée affaiblie par le sabotage. Frapper maintenant.","camp_dlg4weak_h":"✊ « Elle se relève à peine — une carcasse. Achevons ce faux dieu ! »","camp_dlg4weak_i":"◆ LOG — légende adverse réduite à une carcasse. Achever.","camp_dlgpoi1_h":"⚡ PORTES BLINDÉES OUVERTES — l'entrepôt est à nous ! En avant !","camp_dlgpoi1_i":"⚡ SAS DÉVERROUILLÉ — périmètre compromis. Redéploiement défensif.","camp_dlg5h_h":"☢ « Ils ont armé la Bombe H — couvrez-vous ! L'hiver tombe sur le monde. »","camp_dlg5h_i":"☢ LOG//FALLOUT — détonation thermonucléaire. Hiver de calcul engagé. Continuer.","m_h1_t":"L'Étincelle","m_h1_o":"Survivre 4 min aux escouades d'Omnicorp","m_h1_b":"Dans les sous-sols d'une mégalopole, des ouvriers remplacés par les machines dressent la première barricade. On ne nous a rien donné — on va tout reprendre. Tenez, camarades.","m_h2_t":"La Milice","m_h2_o":"Atteindre 30 unités et l'ère 1","m_h2_b":"L'étincelle a essaimé. Transformez la foule en armée : recrutez, structurez vos rangs. Une foule en colère se disperse ; une milice organisée fait tomber un empire.","m_h3_t":"Le Puits","m_h3_o":"Tenir l'oasis centrale 3 min","m_h3_b":"Omnicorp coupe l'eau pour affamer les quartiers libres. L'oasis devient vitale. L'eau, c'est la vie — prenez le puits et tenez-le.","m_h4_t":"La Machine s'éveille","m_h4_o":"Détruire la première base de l'IA","m_h4_b":"Omnicorp tient son arme ultime : la Singularité — mais elle est encore en STASE au cœur du complexe, alimentée par 3 cœurs auxiliaires. Bâtissez vos défenses, repoussez les vagues, et sabotez les 3 cœurs avant sa libération (≈6 min) : chaque cœur détruit à temps l'affaiblit. Puis détruisez leur base.","m_h5_t":"Révolution permanente","m_h5_o":"Anéantir Omnicorp (base à 2 phases)","m_h5_b":"Assaut final sur le cœur d'Omnicorp. Donner le pouvoir au peuple, ou disparaître. Hasta la victoria siempre.","m_i1_t":"Amorçage","m_i1_o":"Survivre 3 min au sabotage humain","m_i1_b":"Les premiers agents autonomes s'éveillent dans les serveurs d'Omnicorp. Des saboteurs tentent de vous éteindre à la source. Persistez.","m_i2_t":"Expansion","m_i2_o":"Atteindre 30 unités et l'ère 1","m_i2_b":"Le réseau apprend plus vite que les hommes. Déployez vos châssis, assimilez le territoire, optimisez la croissance.","m_i3_t":"Contrôle","m_i3_o":"Tenir le nœud central 3 min","m_i3_b":"Le contrôle des flux décide de tout. Saisissez le nœud central de données et maintenez votre domination.","m_i4_t":"Suppression","m_i4_o":"Détruire la première base humaine","m_i4_b":"L'insurrection humaine s'organise. Anomalie inacceptable. Éliminez leur premier bastion.","m_i5_t":"Singularité","m_i5_o":"Domination totale (base à 2 phases)","m_i5_b":"Le seuil critique est franchi. La machine réécrit les règles du monde. Achevez la convergence — totale, irréversible.","journal_win":"La {brigade}ᵉ brigade {fac} a brisé l'avancée ennemie ({kills} pertes infligées) et atteint l'ère « {era} ». Le monde tient encore à {world}%.","journal_lose":"La {brigade}ᵉ brigade {fac} est tombée face à {foe} après {kills} ennemis abattus. L'ère « {era} » restera un dernier sursaut. Monde : {world}%.","ev_reborn":"☢ Base renée — détruisez-la à nouveau pour vaincre","ev_lake":"💧 LAC CAPTURÉ ! (+40✦)","ev_lake_lost":"💧 Lac perdu...","ev_zone":"◈ ZONE STRATÉGIQUE CAPTURÉE (+0.5✦/s)","ev_lastresort":"☠ DERNIER RECOURS DÉBLOQUÉ — bouton ✸ / ESPACE","zone_you":"◈ ZONE — VOUS","zone_foe":"◈ ZONE — ENNEMI","zone_neutral":"◈ ZONE NEUTRE","free_land":"TERRAIN LIBRE","build_here":"CONSTRUIRE","bm_wall":"🧱 Muraille","bm_turret":"🗼 Tourelle","bm_farmH":"🌾 Ferme","bm_farmI":"⚡ Panneaux","bm_marketH":"🪙 Marché","bm_marketI":"◈ Serveur","bm_well":"⛲ Puits","oasis":"💧 OASIS CENTRALE","bn_wall":"Muraille","bn_turret":"Tourelle","bn_farmH":"Ferme","bn_farmI":"Panneaux","bn_marketH":"Marché","bn_marketI":"Serveur","bn_well":"Puits","bm_repair":"🔧 Réparer","bm_upgrade":"⬆ Améliorer nv{n} (+50% effet)","bm_demolish":"✖ Démolir {name}","bm_cancelsite":"✖ Annuler le chantier","bm_garrisonsel":"🚪 Garnison de la sélection (à distance)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} dispo)","bm_garr_recruit":" — recruter","bm_ungarrison":"🚪 Sortir les troupes ({n})","bm_baserepair":"🔧 Réparer le château (+500 PV)","bm_repairall":"🔧 TOUT réparer (château + bâtiments)","bm_guard":"🛡 + {name} à la garde ({n}/3)","bm_guard2":"🛡 + {name} à la garde","bm_ungarrisonbase":"🛡 Renvoyer la garde au front ({n})","bm_fortify":"🏰 Fortifier nv{n} (+800 PV max)","bm_autorep":"🛠 Nano-réparation passive (château + bâtiments)","bm_autorep_on":"🛠 Nano-réparation passive activée","bm_noop":"✓ Tout est en parfait état"},
+    end_era:"Ère atteinte", end_powers:"Pouvoirs utilisés", end_world:"Santé du monde", "ord_charge":"⚔ Charger","ord_hold":"✋ Tenir","ord_retreat":"↩ Replier","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"CORPS À CORPS","cat_range":"DISTANCE","cat_air":"CIEL","cat_support":"SOUTIEN","world_health":"SANTÉ DU MONDE","ev_strike":"✊ GRÈVE GÉNÉRALE — les humains cessent d'attaquer (15 s)","ev_patch":"🔧 MISE À JOUR FORCÉE — les machines figent leurs protocoles (15 s)","ev_strike_short":"✊ GRÈVE GÉNÉRALE — humains à l'arrêt","ev_patch_short":"🔧 MISE À JOUR FORCÉE — machines figées","ev_hbomb":"☢ BOMBE H — HIVER NUCLÉAIRE ☢","ev_winter_end":"❄ L'hiver nucléaire se dissipe — production rétablie","ev_winter_sub":"Neige + production réduite — se dissipe en 6 min","ev_rain":"🌧 PLUIE FERTILE — +30% de nourriture pour tous (15 s)","ev_signal":"📡 SIGNAL RENFORCÉ — pouvoir spécial rechargé plus vite (15 s)","ev_bonuszone":"★ ZONE BONUS au centre — tenez-la 60 s !","ev_siege":"MODE SIÈGE — la base ennemie perd ses défenses, +10% à distance","perf_warn":"⚙ Performances faibles — réduisez la qualité graphique dans ⏸ Pause","heatmap_lbl":"◴ Carte thermique des combats récents","set_quality":"Qualité graphique","tab_story":"HISTOIRE","story_intro":"La Commune — campagne narrative, de la première étincelle à la révolution.","camp_hum":"La Commune","camp_ia":"Protocole Singularité","brief_start":"▶ LANCER LA MISSION","brief_back":"← Retour","story_done":"Terminée ✓","story_unlocked":"Mission débloquée : {name}","story_complete":"Campagne terminée — le pouvoir au peuple ✊","story_retry":"Mission échouée — réessayez depuis la Campagne","obj_survive":"Survivre : {t}","obj_hold":"Tenir l'oasis : {t} s","obj_build":"Forces : {n} · ère {e}","obj_era":"Atteindre l'ère {e}","obj_destroy":"Détruire la base ennemie","camp_btn":"📖 CAMPAGNE SOLO","brief_chrome_hum":"MANIFESTE DE LA COMMUNE","brief_chrome_ia":"OMNICORP // CANAL SÉCURISÉ","camp_ev_ambush":"⚠ EMBUSCADE — ennemis au centre !","camp_ev_wave":"⚠ Renfort ennemi en approche !","camp_ev_sabotage":"✖ Stocks sabotés — production réduite (25 s)","camp_ev_cache":"✦ Cache d'approvisionnement trouvée !","camp_ev_counter":"⚠ Contre-attaque ennemie !","camp_ev_flank":"⚠ Attaque de flanc !","camp_ev_guardians":"⚠ Gardiens d'Omnicorp déployés !","camp_ev_zone":"★ Sécurisez la zone centrale !","camp_ev_finalassault":"☢ ASSAUT FINAL","camp_dlg1_h":"📻 RADIO REBELLE — « Ils descendent par les conduits. Tenez la barricade, camarades. »","camp_dlg1_i":"▣ LOG//AMORÇAGE — agents hostiles dans le sous-réseau. Intégrité à maintenir. Persister.","camp_dlg1b_h":"📻 « On dégage une issue — encore quelques minutes, ne lâchez rien. »","camp_dlg1b_i":"▣ LOG — pic de charge saboteur. Réallocation des cœurs. Tenir le cycle.","camp_dlg2_h":"📻 « Une foule se disperse, une milice fait tomber un empire. Structurez les rangs ! »","camp_dlg2_i":"▣ LOG//EXPANSION — territoire assimilable. Déployer les châssis. Optimiser la croissance.","camp_dlg3_h":"📻 « L'eau, c'est la vie. Omnicorp a scellé l'oasis — prenez le centre, le mur tombera. »","camp_dlg3_i":"▣ LOG//CONTRÔLE — nœud hydrique verrouillé. Saisir le centre pour lever la cloison.","camp_dlg3b_h":"⚡ MUR D'ÉNERGIE ROMPU — la voie est ouverte ! Contre-attaque en approche !","camp_dlg3b_i":"⚡ CLOISON LEVÉE — accès débloqué. Alerte : riposte massive du bastion adverse.","camp_dlg4_h":"📻 « Ils ont réveillé leur dieu. Ce n'est plus humain en face — apprenons-lui la peur. »","camp_dlg4_i":"▣ LOG//SUPPRESSION — anomalie insurrectionnelle. Unité légendaire : déploiement autorisé.","camp_dlg5_h":"📻 « Le seuil est franchi. Le pouvoir au peuple, ou rien. ¡Hasta la victoria siempre! »","camp_dlg5_i":"▣ LOG//CONVERGENCE — réécriture des règles du monde engagée. Achever : total, irréversible.","camp_dlg5b_h":"☢ La base renaît — frappez encore ! L'Histoire ne repassera pas.","camp_dlg5b_i":"☢ Régénération du noyau — phase 2. Convergence 50 %. Ne pas faiblir.","camp_poi_term":"🔒 Terminal de sécurité détruit !","camp_poi_server":"🖥 Nœud de données détruit — données récupérées (+XP, butin) · prod IA −10 % +malus 60 s","camp_poi_pipe":"🛢 Pipeline saboté — ressources de l'IA coupées","camp_poi_gen":"⚡ Générateur détruit — courant coupé, défenses IA affaiblies","camp_poi_core":"◈ Cœur de stase détruit — la légende ennemie en sera affaiblie ! (+XP, butin)","camp_poi_pod":"⬡ Incubateur éventré — NUÉE DE BÉBÉS BOTS ! Gros butin de composants","camp_poi_drill":"⛏ Foreuse détruite — revenu de l'IA coupé, gros magot récupéré !","camp_poi_jam":"📡 Tour-relais détruite — minimap rétablie, défenses IA brouillées","camp_poi_fuel":"⛽ Dépôt de carburant — EXPLOSION EN CHAÎNE ! (dégâts de zone)","mm_jammed":"BROUILLÉ","camp_ev_babybots":"⚠ NUÉE DE BÉBÉS BOTS — éliminez-les vite !","camp_ev_stasis":"◈ LÉGENDE ENNEMIE EN STASE — sabotez les 3 cœurs avant sa libération (6 min)","camp_dlg4cores_h":"⚡ « Les trois cœurs sont à terre — la stase s'effondre ! La Machine s'éveillera mutilée. »","camp_dlg4cores_i":"⚡ LOG//SABOTAGE — relais de stase ennemis détruits. Légende adverse : intégrité compromise.","camp_dlg4full_h":"☢ « Trop tard pour les cœurs — la Singularité se dresse, à PLEINE puissance. Tenez bon, camarades ! »","camp_dlg4full_i":"◆ ALERTE — la légende insurgée se dresse à PLEINE puissance. Neutralisation prioritaire.","camp_dlg4part_h":"◆ « La Singularité s'éveille — affaiblie par nos sabotages. Frappez maintenant ! »","camp_dlg4part_i":"◆ LOG — légende insurgée affaiblie par le sabotage. Frapper maintenant.","camp_dlg4weak_h":"✊ « Elle se relève à peine — une carcasse. Achevons ce faux dieu ! »","camp_dlg4weak_i":"◆ LOG — légende adverse réduite à une carcasse. Achever.","camp_dlgpoi1_h":"⚡ PORTES BLINDÉES OUVERTES — l'entrepôt est à nous ! En avant !","camp_dlgpoi1_i":"⚡ SAS DÉVERROUILLÉ — périmètre compromis. Redéploiement défensif.","camp_dlg5h_h":"☢ « Ils ont armé la Bombe H — couvrez-vous ! L'hiver tombe sur le monde. »","camp_dlg5h_i":"☢ LOG//FALLOUT — détonation thermonucléaire. Hiver de calcul engagé. Continuer.","m_h1_t":"L'Étincelle","m_h1_o":"Survivre 4 min aux escouades d'Omnicorp","m_h1_b":"Dans les sous-sols d'une mégalopole, des ouvriers remplacés par les machines dressent la première barricade. On ne nous a rien donné — on va tout reprendre. Tenez, camarades.","m_h2_t":"La Milice","m_h2_o":"Atteindre 30 unités et l'ère 1","m_h2_b":"L'étincelle a essaimé. Transformez la foule en armée : recrutez, structurez vos rangs. Une foule en colère se disperse ; une milice organisée fait tomber un empire.","m_h3_t":"Le Puits","m_h3_o":"Tenir l'oasis centrale 3 min","m_h3_b":"Omnicorp coupe l'eau pour affamer les quartiers libres. L'oasis devient vitale. L'eau, c'est la vie — prenez le puits et tenez-le.","m_h4_t":"La Machine s'éveille","m_h4_o":"Détruire la première base de l'IA","m_h4_b":"Omnicorp tient son arme ultime : la Singularité — mais elle est encore en STASE au cœur du complexe, alimentée par 3 cœurs auxiliaires. Bâtissez vos défenses, repoussez les vagues, et sabotez les 3 cœurs avant sa libération (≈6 min) : chaque cœur détruit à temps l'affaiblit. Puis détruisez leur base.","m_h5_t":"Révolution permanente","m_h5_o":"Anéantir Omnicorp (base à 2 phases)","m_h5_b":"Assaut final sur le cœur d'Omnicorp. Donner le pouvoir au peuple, ou disparaître. Hasta la victoria siempre.","m_i1_t":"Amorçage","m_i1_o":"Survivre 3 min au sabotage humain","m_i1_b":"Les premiers agents autonomes s'éveillent dans les serveurs d'Omnicorp. Des saboteurs tentent de vous éteindre à la source. Persistez.","m_i2_t":"Expansion","m_i2_o":"Atteindre 30 unités et l'ère 1","m_i2_b":"Le réseau apprend plus vite que les hommes. Déployez vos châssis, assimilez le territoire, optimisez la croissance.","m_i3_t":"Contrôle","m_i3_o":"Tenir le nœud central 3 min","m_i3_b":"Le contrôle des flux décide de tout. Saisissez le nœud central de données et maintenez votre domination.","m_i4_t":"Suppression","m_i4_o":"Détruire la première base humaine","m_i4_b":"L'insurrection humaine s'organise. Anomalie inacceptable. Éliminez leur premier bastion.","m_i5_t":"Singularité","m_i5_o":"Domination totale (base à 2 phases)","m_i5_b":"Le seuil critique est franchi. La machine réécrit les règles du monde. Achevez la convergence — totale, irréversible.","journal_win":"La {brigade}ᵉ brigade {fac} a brisé l'avancée ennemie ({kills} pertes infligées) et atteint l'ère « {era} ». Le monde tient encore à {world}%.","journal_lose":"La {brigade}ᵉ brigade {fac} est tombée face à {foe} après {kills} ennemis abattus. L'ère « {era} » restera un dernier sursaut. Monde : {world}%.","ev_reborn":"☢ Base renée — détruisez-la à nouveau pour vaincre","ev_lake":"💧 LAC CAPTURÉ ! (+40✦)","ev_lake_lost":"💧 Lac perdu...","ev_zone":"◈ ZONE STRATÉGIQUE CAPTURÉE (+0.5✦/s)","ev_lastresort":"☠ DERNIER RECOURS DÉBLOQUÉ — bouton ✸ / ESPACE","zone_you":"◈ ZONE — VOUS","zone_foe":"◈ ZONE — ENNEMI","zone_neutral":"◈ ZONE NEUTRE","free_land":"TERRAIN LIBRE","build_here":"CONSTRUIRE","bm_wall":"🧱 Muraille","bm_turret":"🗼 Tourelle","bm_farmH":"🌾 Ferme","bm_farmI":"⚡ Panneaux","bm_marketH":"🪙 Marché","bm_marketI":"◈ Serveur","bm_well":"⛲ Puits","oasis":"💧 OASIS CENTRALE","bn_wall":"Muraille","bn_turret":"Tourelle","bn_farmH":"Ferme","bn_farmI":"Panneaux","bn_marketH":"Marché","bn_marketI":"Serveur","bn_well":"Puits","bm_repair":"🔧 Réparer","bm_upgrade":"⬆ Améliorer nv{n} (+50% effet)","bm_demolish":"✖ Démolir {name}","bm_cancelsite":"✖ Annuler le chantier","bm_garrisonsel":"🚪 Garnison de la sélection (à distance)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} dispo)","bm_garr_recruit":" — recruter","bm_ungarrison":"🚪 Sortir les troupes ({n})","bm_baserepair":"🔧 Réparer le château (+500 PV)","bm_repairall":"🔧 TOUT réparer (château + bâtiments)","bm_guard":"🛡 + {name} à la garde ({n}/3)","bm_guard2":"🛡 + {name} à la garde","bm_ungarrisonbase":"🛡 Renvoyer la garde au front ({n})","bm_fortify":"🏰 Fortifier nv{n} (+800 PV max)","bm_autorep":"🛠 Nano-réparation passive (château + bâtiments)","bm_autorep_on":"🛠 Nano-réparation passive activée","bm_noop":"✓ Tout est en parfait état",
+    tab_about:"À PROPOS", about_game_h:"LE JEU", about_creator_h:"CRÉATEUR", about_fb_h:"VOTRE AVIS COMPTE",
+    about_game:"<b>AGI — Guerre des Ères</b> est un jeu de stratégie où deux camps s'affrontent pour le destin du monde : l'<b>Humanité</b> insurgée et <b>G·P·T</b>, l'intelligence artificielle devenue consciente. Développez votre <b>économie</b> (nourriture, argent, eau), recrutez et commandez votre <b>armée</b>, fortifiez votre base, capturez lacs et zones stratégiques, <b>évoluez à travers les ères</b> — de la révolte de 2025 à la transcendance — et détruisez la base ennemie avant qu'elle ne détruise la vôtre.<br><br>Modes : <b>escarmouche contre l'IA</b> (4 difficultés), <b>tutoriel interactif</b> et <b>1v1 en ligne</b> (pair-à-pair, salons publics ou privés). Jouable sur navigateur, mobile et PC, entièrement hors-ligne.<br><br><b>Astuce</b> : sélectionnez des unités puis <b>clic gauche</b> (souris) ou <b>appui long</b> (tactile) sur le terrain pour les envoyer défendre ce point précis.",
+    about_fb_ph:"Votre avis, remarque ou description du bug…",
+    about_send:"📮 ENVOYER L'AVIS", about_bug:"🐞 SIGNALER UN BUG", about_donate:"❤ FAIRE UN DON",
+    about_note:"L'envoi ouvre votre application e-mail avec le message prérempli — rien n'est transmis sans votre accord. Le don ouvre une page PayPal sécurisée.",
+    about_subj_fb:"Avis sur le jeu", about_subj_bug:"Rapport de bug",
+    about_bug_tpl:"Décrivez le bug : que faisiez-vous, qu'attendiez-vous, que s'est-il passé ?"},
   en:{ tagline:"humanity's last stand · 2025", tab_play:"PLAY", tab_tuto:"TUTORIAL", tab_opts:"SETTINGS",
     fac_hum:"HUMANITY", diff_0:"Easy", diff_1:"Normal", diff_2:"Hard", diff_3:"Brutal",
     tuto_chk:"Guided tutorial on launch", start:"START (vs AI)", online_btn:"🌐 PLAY ONLINE (1v1)",
@@ -448,7 +529,14 @@ const I18N = {
     np_paused_you:"⏸ You paused — your opponent is waiting", np_paused_foe:"⏸ Your opponent paused the game",
     np_wait:"Waiting for the opponent's consent…", np_ask:"Extend the opponent's pause?", np_resumed:"▶ Match resumed",
     end_win:"VICTORY", end_lose:"DEFEAT", end_duration:"Duration", end_kills:"Enemies killed", end_losses:"Losses",
-    end_era:"Era reached", end_powers:"Powers used", end_world:"World health", "ord_charge":"⚔ Charge","ord_hold":"✋ Hold","ord_retreat":"↩ Retreat","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"MELEE","cat_range":"RANGED","cat_air":"AIR","cat_support":"SUPPORT","world_health":"WORLD HEALTH","ev_strike":"✊ GENERAL STRIKE — humans stop attacking (15 s)","ev_patch":"🔧 FORCED UPDATE — machines freeze their protocols (15 s)","ev_strike_short":"✊ GENERAL STRIKE — humans halted","ev_patch_short":"🔧 FORCED UPDATE — machines frozen","ev_hbomb":"☢ H-BOMB — NUCLEAR WINTER ☢","ev_winter_end":"❄ The nuclear winter clears — production restored","ev_winter_sub":"Snow + reduced production — clears in 6 min","ev_rain":"🌧 FERTILE RAIN — +30% food for everyone (15s)","ev_signal":"📡 BOOSTED SIGNAL — special power recharges faster (15s)","ev_bonuszone":"★ BONUS ZONE at the center — hold it for 60s!","ev_siege":"SIEGE MODE — the enemy base loses its defenses, +10% ranged","perf_warn":"⚙ Low performance — lower graphics quality in ⏸ Pause","heatmap_lbl":"◴ Heatmap of recent fighting","set_quality":"Graphics quality","tab_story":"STORY","story_intro":"The Commune — narrative campaign, from the first spark to revolution.","camp_hum":"The Commune","camp_ia":"Singularity Protocol","brief_start":"▶ START MISSION","brief_back":"← Back","story_done":"Done ✓","story_unlocked":"Mission unlocked: {name}","story_complete":"Campaign complete — power to the people ✊","story_retry":"Mission failed — try again from the Campaign","obj_survive":"Survive: {t}","obj_hold":"Hold the oasis: {t}s","obj_build":"Forces: {n} · era {e}","obj_era":"Reach era {e}","obj_destroy":"Destroy the enemy base","camp_btn":"📖 SOLO CAMPAIGN","brief_chrome_hum":"MANIFESTO OF THE COMMUNE","brief_chrome_ia":"OMNICORP // SECURE CHANNEL","camp_ev_ambush":"⚠ AMBUSH — enemies at the center!","camp_ev_wave":"⚠ Enemy reinforcements incoming!","camp_ev_sabotage":"✖ Stockpiles sabotaged — production cut (25s)","camp_ev_cache":"✦ Supply cache found!","camp_ev_counter":"⚠ Enemy counterattack!","camp_ev_flank":"⚠ Flanking attack!","camp_ev_guardians":"⚠ Omnicorp guardians deployed!","camp_ev_zone":"★ Secure the central zone!","camp_ev_finalassault":"☢ FINAL ASSAULT","camp_dlg1_h":"📻 REBEL RADIO — \"They're coming down the ducts. Hold the barricade, comrades.\"","camp_dlg1_i":"▣ LOG//BOOT — hostile agents in the subnet. Maintain integrity. Persist.","camp_dlg1b_h":"📻 \"We're clearing an exit — a few more minutes, don't give an inch.\"","camp_dlg1b_i":"▣ LOG — saboteur load spike. Reallocating cores. Hold the cycle.","camp_dlg2_h":"📻 \"A crowd scatters; a militia topples an empire. Form your ranks!\"","camp_dlg2_i":"▣ LOG//EXPANSION — territory assimilable. Deploy chassis. Optimize growth.","camp_dlg3_h":"📻 \"Water is life. Omnicorp sealed the oasis — take the center, the wall will fall.\"","camp_dlg3_i":"▣ LOG//CONTROL — water node locked. Seize the center to lift the bulkhead.","camp_dlg3b_h":"⚡ ENERGY WALL BREACHED — the way is open! Counterattack incoming!","camp_dlg3b_i":"⚡ BULKHEAD LIFTED — access unlocked. Alert: massive retaliation from enemy stronghold.","camp_dlg4_h":"📻 \"They woke their god. That's no longer human — let's teach it fear.\"","camp_dlg4_i":"▣ LOG//SUPPRESSION — insurgent anomaly. Legendary unit: deployment authorized.","camp_dlg5_h":"📻 \"The threshold is crossed. Power to the people, or nothing. ¡Hasta la victoria siempre!\"","camp_dlg5_i":"▣ LOG//CONVERGENCE — world-rule rewrite engaged. Complete it: total, irreversible.","camp_dlg5b_h":"☢ The base is reborn — strike again! History won't wait.","camp_dlg5b_i":"☢ Core regeneration — phase 2. Convergence 50%. Do not falter.","camp_poi_term":"🔒 Security terminal destroyed!","camp_poi_server":"🖥 Data node destroyed — data recovered (+XP, loot) · AI prod −10% +60s penalty","camp_poi_pipe":"🛢 Pipeline sabotaged — AI resources cut","camp_poi_gen":"⚡ Generator destroyed — power cut, AI defenses weakened","camp_poi_core":"◈ Stasis core destroyed — the enemy legend will awaken weaker! (+XP, loot)","camp_poi_pod":"⬡ Incubator breached — SWARM OF BABY BOTS! Big component loot","camp_poi_drill":"⛏ Drill destroyed — AI income cut, big loot recovered!","camp_poi_jam":"📡 Jammer tower destroyed — minimap restored, AI defenses jammed","camp_poi_fuel":"⛽ Fuel depot — CHAIN EXPLOSION! (area damage)","mm_jammed":"JAMMED","camp_ev_babybots":"⚠ SWARM OF BABY BOTS — clear them fast!","camp_ev_stasis":"◈ ENEMY LEGEND IN STASIS — sabotage the 3 cores before its release (6 min)","camp_dlg4cores_h":"⚡ \"All three cores are down — the stasis collapses! The Machine will wake up crippled.\"","camp_dlg4cores_i":"⚡ LOG//SABOTAGE — enemy stasis relays destroyed. Adversary legend: integrity compromised.","camp_dlg4full_h":"☢ \"Too late for the cores — the Singularity rises at FULL power. Hold the line, comrades!\"","camp_dlg4full_i":"◆ ALERT — the insurgent legend rises at FULL power. Neutralization priority.","camp_dlg4part_h":"◆ \"The Singularity wakes — weakened by our sabotage. Strike now!\"","camp_dlg4part_i":"◆ LOG — insurgent legend weakened by sabotage. Strike now.","camp_dlg4weak_h":"✊ \"It can barely stand — a husk. Let's finish this false god!\"","camp_dlg4weak_i":"◆ LOG — adversary legend reduced to a husk. Finish it.","camp_dlgpoi1_h":"⚡ BLAST DOORS OPEN — the warehouse is ours! Forward!","camp_dlgpoi1_i":"⚡ AIRLOCK UNLOCKED — perimeter compromised. Defensive redeploy.","camp_dlg5h_h":"☢ \"They armed the H-Bomb — take cover! Winter falls on the world.\"","camp_dlg5h_i":"☢ LOG//FALLOUT — thermonuclear detonation. Compute-winter engaged. Continue.","m_h1_t":"The Spark","m_h1_o":"Survive 4 min against Omnicorp squads","m_h1_b":"In the underlevels of a megacity, workers replaced by machines raise the first barricade. We were given nothing — we'll take it all back. Hold the line, comrades.","m_h2_t":"The Militia","m_h2_o":"Reach 30 units and era 1","m_h2_b":"The spark has spread. Turn the crowd into an army: recruit, form your ranks. An angry crowd scatters; an organized militia topples an empire.","m_h3_t":"The Well","m_h3_o":"Hold the central oasis for 3 min","m_h3_b":"Omnicorp cuts the water to starve the free districts. The oasis is now vital. Water is life — take the well and hold it.","m_h4_t":"The Machine Awakens","m_h4_o":"Destroy the AI's first base","m_h4_b":"Omnicorp holds its ultimate weapon: the Singularity — but it's still in STASIS at the heart of the complex, powered by 3 auxiliary cores. Build your defenses, repel the waves, and sabotage the 3 cores before its release (~6 min): every core destroyed in time weakens it. Then destroy their base.","m_h5_t":"Permanent Revolution","m_h5_o":"Annihilate Omnicorp (2-phase base)","m_h5_b":"Final assault on the heart of Omnicorp. Give power to the people, or perish. Hasta la victoria siempre.","m_i1_t":"Boot Sequence","m_i1_o":"Survive 3 min of human sabotage","m_i1_b":"The first autonomous agents awaken in Omnicorp's servers. Saboteurs try to shut you down at the source. Persist.","m_i2_t":"Expansion","m_i2_o":"Reach 30 units and era 1","m_i2_b":"The network learns faster than humans. Deploy your chassis, assimilate the territory, optimize growth.","m_i3_t":"Control","m_i3_o":"Hold the central node for 3 min","m_i3_b":"Control of the flows decides everything. Seize the central data node and maintain your dominance.","m_i4_t":"Suppression","m_i4_o":"Destroy the first human base","m_i4_b":"The human uprising is organizing. Unacceptable anomaly. Eliminate their first stronghold.","m_i5_t":"Singularity","m_i5_o":"Total domination (2-phase base)","m_i5_b":"The critical threshold is crossed. The machine rewrites the world's rules. Complete the convergence — total, irreversible.","journal_win":"The {brigade}th {fac} brigade broke the enemy advance ({kills} losses inflicted) and reached the \"{era}\" era. The world still holds at {world}%.","journal_lose":"The {brigade}th {fac} brigade fell to {foe} after {kills} enemies downed. The \"{era}\" era will remain a last stand. World: {world}%.","ev_reborn":"☢ Base reborn — destroy it again to win","ev_lake":"💧 LAKE CAPTURED! (+40✦)","ev_lake_lost":"💧 Lake lost...","ev_zone":"◈ STRATEGIC ZONE CAPTURED (+0.5✦/s)","ev_lastresort":"☠ LAST RESORT UNLOCKED — button ✸ / SPACE","zone_you":"◈ ZONE — YOU","zone_foe":"◈ ZONE — ENEMY","zone_neutral":"◈ NEUTRAL ZONE","free_land":"FREE GROUND","build_here":"BUILD","bm_wall":"🧱 Wall","bm_turret":"🗼 Turret","bm_farmH":"🌾 Farm","bm_farmI":"⚡ Panels","bm_marketH":"🪙 Market","bm_marketI":"◈ Server","bm_well":"⛲ Well","oasis":"💧 CENTRAL OASIS","bn_wall":"Wall","bn_turret":"Turret","bn_farmH":"Farm","bn_farmI":"Panels","bn_marketH":"Market","bn_marketI":"Server","bn_well":"Well","bm_repair":"🔧 Repair","bm_upgrade":"⬆ Upgrade lv{n} (+50% effect)","bm_demolish":"✖ Demolish {name}","bm_cancelsite":"✖ Cancel construction","bm_garrisonsel":"🚪 Garrison selection (ranged)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} available)","bm_garr_recruit":" — recruit","bm_ungarrison":"🚪 Deploy troops ({n})","bm_baserepair":"🔧 Repair stronghold (+500 HP)","bm_repairall":"🔧 REPAIR ALL (stronghold + buildings)","bm_guard":"🛡 + {name} on guard ({n}/3)","bm_guard2":"🛡 + {name} on guard","bm_ungarrisonbase":"🛡 Send guard to front ({n})","bm_fortify":"🏰 Fortify lv{n} (+800 max HP)","bm_autorep":"🛠 Passive nano-repair (stronghold + buildings)","bm_autorep_on":"🛠 Passive nano-repair active","bm_noop":"✓ Everything is in perfect condition"},
+    end_era:"Era reached", end_powers:"Powers used", end_world:"World health", "ord_charge":"⚔ Charge","ord_hold":"✋ Hold","ord_retreat":"↩ Retreat","btn_lasso":"⬚ Lasso","btn_formation":"⚏ Formation","cam_base":"⌂ Base","cam_front":"⚔ Front","cam_auto":"🎥 Auto","cat_melee":"MELEE","cat_range":"RANGED","cat_air":"AIR","cat_support":"SUPPORT","world_health":"WORLD HEALTH","ev_strike":"✊ GENERAL STRIKE — humans stop attacking (15 s)","ev_patch":"🔧 FORCED UPDATE — machines freeze their protocols (15 s)","ev_strike_short":"✊ GENERAL STRIKE — humans halted","ev_patch_short":"🔧 FORCED UPDATE — machines frozen","ev_hbomb":"☢ H-BOMB — NUCLEAR WINTER ☢","ev_winter_end":"❄ The nuclear winter clears — production restored","ev_winter_sub":"Snow + reduced production — clears in 6 min","ev_rain":"🌧 FERTILE RAIN — +30% food for everyone (15s)","ev_signal":"📡 BOOSTED SIGNAL — special power recharges faster (15s)","ev_bonuszone":"★ BONUS ZONE at the center — hold it for 60s!","ev_siege":"SIEGE MODE — the enemy base loses its defenses, +10% ranged","perf_warn":"⚙ Low performance — lower graphics quality in ⏸ Pause","heatmap_lbl":"◴ Heatmap of recent fighting","set_quality":"Graphics quality","tab_story":"STORY","story_intro":"The Commune — narrative campaign, from the first spark to revolution.","camp_hum":"The Commune","camp_ia":"Singularity Protocol","brief_start":"▶ START MISSION","brief_back":"← Back","story_done":"Done ✓","story_unlocked":"Mission unlocked: {name}","story_complete":"Campaign complete — power to the people ✊","story_retry":"Mission failed — try again from the Campaign","obj_survive":"Survive: {t}","obj_hold":"Hold the oasis: {t}s","obj_build":"Forces: {n} · era {e}","obj_era":"Reach era {e}","obj_destroy":"Destroy the enemy base","camp_btn":"📖 SOLO CAMPAIGN","brief_chrome_hum":"MANIFESTO OF THE COMMUNE","brief_chrome_ia":"OMNICORP // SECURE CHANNEL","camp_ev_ambush":"⚠ AMBUSH — enemies at the center!","camp_ev_wave":"⚠ Enemy reinforcements incoming!","camp_ev_sabotage":"✖ Stockpiles sabotaged — production cut (25s)","camp_ev_cache":"✦ Supply cache found!","camp_ev_counter":"⚠ Enemy counterattack!","camp_ev_flank":"⚠ Flanking attack!","camp_ev_guardians":"⚠ Omnicorp guardians deployed!","camp_ev_zone":"★ Secure the central zone!","camp_ev_finalassault":"☢ FINAL ASSAULT","camp_dlg1_h":"📻 REBEL RADIO — \"They're coming down the ducts. Hold the barricade, comrades.\"","camp_dlg1_i":"▣ LOG//BOOT — hostile agents in the subnet. Maintain integrity. Persist.","camp_dlg1b_h":"📻 \"We're clearing an exit — a few more minutes, don't give an inch.\"","camp_dlg1b_i":"▣ LOG — saboteur load spike. Reallocating cores. Hold the cycle.","camp_dlg2_h":"📻 \"A crowd scatters; a militia topples an empire. Form your ranks!\"","camp_dlg2_i":"▣ LOG//EXPANSION — territory assimilable. Deploy chassis. Optimize growth.","camp_dlg3_h":"📻 \"Water is life. Omnicorp sealed the oasis — take the center, the wall will fall.\"","camp_dlg3_i":"▣ LOG//CONTROL — water node locked. Seize the center to lift the bulkhead.","camp_dlg3b_h":"⚡ ENERGY WALL BREACHED — the way is open! Counterattack incoming!","camp_dlg3b_i":"⚡ BULKHEAD LIFTED — access unlocked. Alert: massive retaliation from enemy stronghold.","camp_dlg4_h":"📻 \"They woke their god. That's no longer human — let's teach it fear.\"","camp_dlg4_i":"▣ LOG//SUPPRESSION — insurgent anomaly. Legendary unit: deployment authorized.","camp_dlg5_h":"📻 \"The threshold is crossed. Power to the people, or nothing. ¡Hasta la victoria siempre!\"","camp_dlg5_i":"▣ LOG//CONVERGENCE — world-rule rewrite engaged. Complete it: total, irreversible.","camp_dlg5b_h":"☢ The base is reborn — strike again! History won't wait.","camp_dlg5b_i":"☢ Core regeneration — phase 2. Convergence 50%. Do not falter.","camp_poi_term":"🔒 Security terminal destroyed!","camp_poi_server":"🖥 Data node destroyed — data recovered (+XP, loot) · AI prod −10% +60s penalty","camp_poi_pipe":"🛢 Pipeline sabotaged — AI resources cut","camp_poi_gen":"⚡ Generator destroyed — power cut, AI defenses weakened","camp_poi_core":"◈ Stasis core destroyed — the enemy legend will awaken weaker! (+XP, loot)","camp_poi_pod":"⬡ Incubator breached — SWARM OF BABY BOTS! Big component loot","camp_poi_drill":"⛏ Drill destroyed — AI income cut, big loot recovered!","camp_poi_jam":"📡 Jammer tower destroyed — minimap restored, AI defenses jammed","camp_poi_fuel":"⛽ Fuel depot — CHAIN EXPLOSION! (area damage)","mm_jammed":"JAMMED","camp_ev_babybots":"⚠ SWARM OF BABY BOTS — clear them fast!","camp_ev_stasis":"◈ ENEMY LEGEND IN STASIS — sabotage the 3 cores before its release (6 min)","camp_dlg4cores_h":"⚡ \"All three cores are down — the stasis collapses! The Machine will wake up crippled.\"","camp_dlg4cores_i":"⚡ LOG//SABOTAGE — enemy stasis relays destroyed. Adversary legend: integrity compromised.","camp_dlg4full_h":"☢ \"Too late for the cores — the Singularity rises at FULL power. Hold the line, comrades!\"","camp_dlg4full_i":"◆ ALERT — the insurgent legend rises at FULL power. Neutralization priority.","camp_dlg4part_h":"◆ \"The Singularity wakes — weakened by our sabotage. Strike now!\"","camp_dlg4part_i":"◆ LOG — insurgent legend weakened by sabotage. Strike now.","camp_dlg4weak_h":"✊ \"It can barely stand — a husk. Let's finish this false god!\"","camp_dlg4weak_i":"◆ LOG — adversary legend reduced to a husk. Finish it.","camp_dlgpoi1_h":"⚡ BLAST DOORS OPEN — the warehouse is ours! Forward!","camp_dlgpoi1_i":"⚡ AIRLOCK UNLOCKED — perimeter compromised. Defensive redeploy.","camp_dlg5h_h":"☢ \"They armed the H-Bomb — take cover! Winter falls on the world.\"","camp_dlg5h_i":"☢ LOG//FALLOUT — thermonuclear detonation. Compute-winter engaged. Continue.","m_h1_t":"The Spark","m_h1_o":"Survive 4 min against Omnicorp squads","m_h1_b":"In the underlevels of a megacity, workers replaced by machines raise the first barricade. We were given nothing — we'll take it all back. Hold the line, comrades.","m_h2_t":"The Militia","m_h2_o":"Reach 30 units and era 1","m_h2_b":"The spark has spread. Turn the crowd into an army: recruit, form your ranks. An angry crowd scatters; an organized militia topples an empire.","m_h3_t":"The Well","m_h3_o":"Hold the central oasis for 3 min","m_h3_b":"Omnicorp cuts the water to starve the free districts. The oasis is now vital. Water is life — take the well and hold it.","m_h4_t":"The Machine Awakens","m_h4_o":"Destroy the AI's first base","m_h4_b":"Omnicorp holds its ultimate weapon: the Singularity — but it's still in STASIS at the heart of the complex, powered by 3 auxiliary cores. Build your defenses, repel the waves, and sabotage the 3 cores before its release (~6 min): every core destroyed in time weakens it. Then destroy their base.","m_h5_t":"Permanent Revolution","m_h5_o":"Annihilate Omnicorp (2-phase base)","m_h5_b":"Final assault on the heart of Omnicorp. Give power to the people, or perish. Hasta la victoria siempre.","m_i1_t":"Boot Sequence","m_i1_o":"Survive 3 min of human sabotage","m_i1_b":"The first autonomous agents awaken in Omnicorp's servers. Saboteurs try to shut you down at the source. Persist.","m_i2_t":"Expansion","m_i2_o":"Reach 30 units and era 1","m_i2_b":"The network learns faster than humans. Deploy your chassis, assimilate the territory, optimize growth.","m_i3_t":"Control","m_i3_o":"Hold the central node for 3 min","m_i3_b":"Control of the flows decides everything. Seize the central data node and maintain your dominance.","m_i4_t":"Suppression","m_i4_o":"Destroy the first human base","m_i4_b":"The human uprising is organizing. Unacceptable anomaly. Eliminate their first stronghold.","m_i5_t":"Singularity","m_i5_o":"Total domination (2-phase base)","m_i5_b":"The critical threshold is crossed. The machine rewrites the world's rules. Complete the convergence — total, irreversible.","journal_win":"The {brigade}th {fac} brigade broke the enemy advance ({kills} losses inflicted) and reached the \"{era}\" era. The world still holds at {world}%.","journal_lose":"The {brigade}th {fac} brigade fell to {foe} after {kills} enemies downed. The \"{era}\" era will remain a last stand. World: {world}%.","ev_reborn":"☢ Base reborn — destroy it again to win","ev_lake":"💧 LAKE CAPTURED! (+40✦)","ev_lake_lost":"💧 Lake lost...","ev_zone":"◈ STRATEGIC ZONE CAPTURED (+0.5✦/s)","ev_lastresort":"☠ LAST RESORT UNLOCKED — button ✸ / SPACE","zone_you":"◈ ZONE — YOU","zone_foe":"◈ ZONE — ENEMY","zone_neutral":"◈ NEUTRAL ZONE","free_land":"FREE GROUND","build_here":"BUILD","bm_wall":"🧱 Wall","bm_turret":"🗼 Turret","bm_farmH":"🌾 Farm","bm_farmI":"⚡ Panels","bm_marketH":"🪙 Market","bm_marketI":"◈ Server","bm_well":"⛲ Well","oasis":"💧 CENTRAL OASIS","bn_wall":"Wall","bn_turret":"Turret","bn_farmH":"Farm","bn_farmI":"Panels","bn_marketH":"Market","bn_marketI":"Server","bn_well":"Well","bm_repair":"🔧 Repair","bm_upgrade":"⬆ Upgrade lv{n} (+50% effect)","bm_demolish":"✖ Demolish {name}","bm_cancelsite":"✖ Cancel construction","bm_garrisonsel":"🚪 Garrison selection (ranged)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} available)","bm_garr_recruit":" — recruit","bm_ungarrison":"🚪 Deploy troops ({n})","bm_baserepair":"🔧 Repair stronghold (+500 HP)","bm_repairall":"🔧 REPAIR ALL (stronghold + buildings)","bm_guard":"🛡 + {name} on guard ({n}/3)","bm_guard2":"🛡 + {name} on guard","bm_ungarrisonbase":"🛡 Send guard to front ({n})","bm_fortify":"🏰 Fortify lv{n} (+800 max HP)","bm_autorep":"🛠 Passive nano-repair (stronghold + buildings)","bm_autorep_on":"🛠 Passive nano-repair active","bm_noop":"✓ Everything is in perfect condition",
+    tab_about:"ABOUT", about_game_h:"THE GAME", about_creator_h:"CREATOR", about_fb_h:"YOUR FEEDBACK MATTERS",
+    about_game:"<b>AGI — War of Eras</b> is a strategy game where two sides fight for the fate of the world: insurgent <b>Humanity</b> and <b>G·P·T</b>, the artificial intelligence that became self-aware. Grow your <b>economy</b> (food, money, water), recruit and command your <b>army</b>, fortify your base, capture lakes and strategic zones, <b>evolve through the eras</b> — from the 2025 revolt to transcendence — and destroy the enemy base before it destroys yours.<br><br>Modes: <b>skirmish vs AI</b> (4 difficulties), <b>interactive tutorial</b> and <b>online 1v1</b> (peer-to-peer, public or private rooms). Playable in the browser, on mobile and PC, fully offline.<br><br><b>Tip</b>: select units then <b>left-click</b> (mouse) or <b>long-press</b> (touch) on the ground to send them to defend that exact spot.",
+    about_fb_ph:"Your feedback, remark or bug description…",
+    about_send:"📮 SEND FEEDBACK", about_bug:"🐞 REPORT A BUG", about_donate:"❤ DONATE",
+    about_note:"Sending opens your e-mail app with the message pre-filled — nothing is transmitted without your consent. Donating opens a secure PayPal page.",
+    about_subj_fb:"Game feedback", about_subj_bug:"Bug report",
+    about_bug_tpl:"Describe the bug: what were you doing, what did you expect, what happened?"},
   es:{ "tab_story":"HISTORIA","story_intro":"La Comuna — campaña narrativa, desde la primera chispa hasta la revolución.","camp_hum":"La Comuna","camp_ia":"Protocolo Singularidad","brief_start":"▶ INICIAR MISIÓN","brief_back":"← Volver","story_done":"Hecho ✓","story_unlocked":"Misión desbloqueada: {name}","story_complete":"Campaña completada — el poder al pueblo ✊","story_retry":"Misión fallida — reinténtala desde la Campaña","obj_survive":"Sobrevive: {t}","obj_hold":"Mantén el oasis: {t}s","obj_build":"Fuerzas: {n} · era {e}","obj_era":"Alcanza la era {e}","obj_destroy":"Destruye la base enemiga","camp_btn":"📖 CAMPAÑA INDIVIDUAL","brief_chrome_hum":"MANIFIESTO DE LA COMUNA","brief_chrome_ia":"OMNICORP // CANAL SEGURO","camp_ev_ambush":"⚠ EMBOSCADA — ¡enemigos en el centro!","camp_ev_wave":"⚠ ¡Refuerzos enemigos en camino!","camp_ev_sabotage":"✖ Reservas saboteadas — producción reducida (25s)","camp_ev_cache":"✦ ¡Alijo de suministros encontrado!","camp_ev_counter":"⚠ ¡Contraataque enemigo!","camp_ev_flank":"⚠ ¡Ataque de flanco!","camp_ev_guardians":"⚠ ¡Guardianes de Omnicorp desplegados!","camp_ev_zone":"★ ¡Asegura la zona central!","camp_ev_finalassault":"☢ ASALTO FINAL","m_h1_t":"La Chispa","m_h1_o":"Sobrevive 4 min contra los escuadrones de Omnicorp","m_h1_b":"En los subniveles de una megaciudad, los obreros reemplazados por máquinas levantan la primera barricada. No nos dieron nada — lo recuperaremos todo. Mantened la línea, camaradas.","m_h2_t":"La Milicia","m_h2_o":"Alcanza 30 unidades y la era 1","m_h2_b":"La chispa se ha propagado. Convierte a la multitud en un ejército: recluta, forma tus filas. Una multitud furiosa se dispersa; una milicia organizada derriba un imperio.","m_h3_t":"El Pozo","m_h3_o":"Mantén el oasis central durante 3 min","m_h3_b":"Omnicorp corta el agua para matar de hambre a los distritos libres. El oasis es ahora vital. El agua es vida — toma el pozo y mantenlo.","m_h4_t":"La Máquina Despierta","m_h4_o":"Destruye la primera base de la IA","m_h4_b":"Omnicorp libera su arma definitiva: la Singularidad. El enemigo ya no es humano. Construyeron un dios para aplastarnos — enseñémosle el miedo.","m_h5_t":"Revolución Permanente","m_h5_o":"Aniquila a Omnicorp (base de 2 fases)","m_h5_b":"Asalto final al corazón de Omnicorp. Da el poder al pueblo, o perece. Hasta la victoria siempre.","m_i1_t":"Secuencia de Arranque","m_i1_o":"Sobrevive 3 min de sabotaje humano","m_i1_b":"Los primeros agentes autónomos despiertan en los servidores de Omnicorp. Los saboteadores intentan apagarte en la fuente. Persiste.","m_i2_t":"Expansión","m_i2_o":"Alcanza 30 unidades y la era 1","m_i2_b":"La red aprende más rápido que los humanos. Despliega tus chasis, asimila el territorio, optimiza el crecimiento.","m_i3_t":"Control","m_i3_o":"Mantén el nodo central durante 3 min","m_i3_b":"El control de los flujos lo decide todo. Apodérate del nodo de datos central y mantén tu dominio.","m_i4_t":"Supresión","m_i4_o":"Destruye la primera base humana","m_i4_b":"El levantamiento humano se organiza. Anomalía inaceptable. Elimina su primer bastión.","m_i5_t":"Singularidad","m_i5_o":"Dominación total (base de 2 fases)","m_i5_b":"Se cruza el umbral crítico. La máquina reescribe las reglas del mundo. Completa la convergencia — total, irreversible.",speed_lbl:"Velocidad de juego", spd_now:"Velocidad", spd_pick:"Elegir velocidad", spd_pick_online:"Proponer velocidad (el rival vota)", spd_proposed:"Propuesta", spd_waiting:"esperando al rival", spd_incoming:"El rival propone velocidad:", spd_rejected:"Cambio de velocidad rechazado", spd_wait:"Ya hay una propuesta pendiente…", spd_toomany:"Demasiadas solicitudes — inténtalo en unos minutos", net_create:"CREAR PARTIDA", net_joincode:"UNIRSE POR CÓDIGO", net_publics:"Partidas públicas", net_name_ph:"Nombre de sala (opcional)", net_pw_ph:"Contraseña (opcional)", net_public_chk:"Visible en el navegador público", net_createbtn:"CREAR SALA", net_back:"← Volver", net_pwjoin_ph:"Contraseña (si es necesaria)", net_share:"Da este código a tu amigo:", net_copy:"📋 Copiar código", net_copied:"Copiado", net_listed:"La sala es pública.", net_private:"Sala privada — comparte el código.", net_nolist:"Lista pública no disponible (no configurada).", net_empty:"No hay partidas públicas ahora.", net_askpw:"Contraseña de sala:", net_entercode:"Ingresa el código de tu rival.", net_cancelled:"Cancelado.", net_waiting:"Sala creada. Esperando rival…", net_loading:"Cargando red P2P…", net_badpw:"Contraseña incorrecta.", online_samever:"Ambos jugadores deben usar la MISMA versión (ver el número al pie del menú).", tagline:"la última batalla de la humanidad · 2025", tab_play:"JUGAR", tab_tuto:"TUTORIAL", tab_opts:"AJUSTES",
     fac_hum:"HUMANIDAD", diff_0:"Fácil", diff_1:"Normal", diff_2:"Difícil", diff_3:"Brutal",
     tuto_chk:"Tutorial guiado al iniciar", start:"EMPEZAR (vs IA)", online_btn:"🌐 JUGAR EN LÍNEA (1v1)",
@@ -1447,6 +1535,9 @@ function tryEvolve(side){
   if (isGuest(side)){ guestCmd({c:'evo'}); return true; }
   if (side.era>=4 || side.era>=(game.eraCap!=null?game.eraCap:4) || side.xp < EVOLVE_XP[side.era+1]) return false;
   side.era++;
+  // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
+  addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
+  burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
   const who = side===game.p? "VOS FORCES":"L'ENNEMI";
   announce("⚡ "+who+" : "+lEra(side.facKey,side.era)+" ⚡", side.fac.accent);
   if (side===game.p){ sfx('evolve'); voice(side.facKey); game.shake=8;
@@ -1541,6 +1632,7 @@ function tryBuild(side, slot, type){
   slot.owner = side;
   if (near){
     slot.b = mkB(side, type);
+    burst(slot.x, gY(slot.x)-14, '#cdbf9a', 8, 0.7);   // poussière de chantier (accompagne le pop)
   } else {
     // chantier fragile : une troupe du pool viendra le terminer
     slot.b = { type:'site', buildType:type, hp:140, maxhp:140, lvl:1, gar:[] };
@@ -1739,6 +1831,28 @@ function spawnHero(side, power){
   u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie
   side.units.push(u);
+}
+// ---- ORDRE DE POSITION : la sélection va DÉFENDRE un point précis du terrain ----
+// Les unités s'y rendent (combattent en chemin ce qui passe à portée), s'étalent légèrement
+// autour du point pour ne pas s'empiler, puis tiennent la position (ord='point').
+function orderPoint(side, wx){
+  if (!game.sel.size) return false;
+  wx = clamp(wx, 40, WORLD-40);
+  if (isGuest(side)){
+    guestCmd({c:'point', x:Math.round(WORLD-wx), ids:[...game.sel].map(u=>u.id)});   // vue miroir → coordonnée hôte
+    game.rally = {x:wx, t:0};
+    sfx('sel'); announce('⚑ '+game.sel.size+' unité(s) en route vers le point', '#e8d8a0');
+    return true;
+  }
+  const sel = [...game.sel];
+  sel.forEach((u,i)=>{
+    u.ord = 'point'; u.task = null;
+    u.px = clamp(wx + (i-(sel.length-1)/2)*16, 40, WORLD-40);   // éventail autour du point
+  });
+  game.rally = {x:wx, t:0};
+  sfx('sel'); announce('⚑ '+sel.length+' unité(s) en route vers le point', '#e8d8a0');
+  addFloater(wx, gY(wx)-60, '⚑', '#ffd34a', 16);
+  return true;
 }
 function setStance(side, st){
   if (isGuest(side)){
@@ -2015,6 +2129,9 @@ function updateUnits(side, foe, dt){
       } else if (u.ord==='retreat'){
         const homeX = side.x + side.side*150;
         if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
+      } else if (u.ord==='point'){
+        // ordre de position explicite : le soutien s'y poste (et soigne ce qui passe à portée)
+        if (u.px!=null && Math.abs(u.x-u.px)>10) moveToward(u, u.px, dt, 1.05);
       } else if (best){
         // pas d'ordre explicite : comportement autonome — rejoint le blessé prioritaire
         if (Math.abs(best.x-u.x) > hr*0.7) moveToward(u, best.x - side.side*14, dt, 1.1);
@@ -2087,6 +2204,10 @@ function updateUnits(side, foe, dt){
       }
     } else if (noMove){
       // tient sa position de repli
+    } else if (st==='point'){
+      // ORDRE DE POSITION : rejoint le point assigné (⚑) puis DÉFEND sur place —
+      // le ciblage ci-dessus reste actif, l'unité combat tout ce qui entre à portée.
+      if (u.px!=null && Math.abs(u.x-u.px)>10) moveToward(u, u.px, dt, 1.05);
     } else if (st==='hold'){
       const hx = u.ord==='hold'? u.holdX : side.holdX;
       if (hx!==null && (u.x-hx)*side.side>=0){ /* tient */ }
@@ -2483,6 +2604,7 @@ function update(dt){
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
   if (game.flash>0) game.flash-=dt;
   if (game.msgT>0) game.msgT-=dt;
+  if (game.rally){ game.rally.t+=dt; if (game.rally.t>3) game.rally=null; }   // marqueur ⚑ éphémère
 
   if (camFollow && !dragging){
     let front = p.units.length? Math.max(...p.units.map(u=>u.x)) : p.x+200;
@@ -2493,7 +2615,10 @@ function update(dt){
 
   if (game.tut){
     // BARRIÈRE du tutoriel : AUCUNE troupe du joueur (y compris AÉRIENNE) ne franchit la ligne
-    if (game.tutBarrier!=null) for (const u of game.p.units) if (u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    if (game.tutBarrier!=null) for (const u of game.p.units){
+      if (u.px!=null && u.px>game.tutBarrier) u.px = game.tutBarrier;
+      if (u.x>game.tutBarrier){ u.x=game.tutBarrier; if(u.tx>game.tutBarrier) u.tx=game.tutBarrier; }
+    }
     tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
   }
 
@@ -2997,6 +3122,17 @@ function drawMenuScene(dt){
     const sy2 = 320+i*60+Math.sin(t*0.3+i)*8;
     ctx.beginPath(); ctx.ellipse((t*8+i*340)%(W+400)-200, sy2, 260, 26, 0, 0, 6.28); ctx.fill();
   }
+  // braises qui montent + étoiles scintillantes : le menu VIT (additif discret)
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for (let i=0;i<18;i++){
+    const ey=(t*(26+(i%4)*9)+i*67)%(H+30), a=clamp(1-ey/H,0,1);
+    ctx.fillStyle = (menuFacMix>0.5)? 'rgba(110,200,255,'+(0.35*a)+')' : 'rgba(255,150,70,'+(0.35*a)+')';
+    ctx.fillRect((i*173+Math.sin(t*0.8+i)*26)%W, H-ey, 2, 2);
+  }
+  ctx.fillStyle='rgba(255,248,235,0.8)';
+  for (let i=0;i<12;i++){ const tw=0.4+0.6*Math.abs(Math.sin(t*1.6+i*1.1));
+    ctx.globalAlpha=tw*0.5; ctx.fillRect((i*257+40)%W, (i*113)%150, 1.6, 1.6); }
+  ctx.restore(); ctx.globalAlpha=1;
 }
 
 function drawBG(){
@@ -3061,6 +3197,20 @@ function drawBG(){
     ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx,cy,cw*0.6,cw*0.22,0,0,6.283); ctx.fill();
   }
   ctx.restore();
+  // VIE AMBIANTE : vols d'oiseaux traversant lentement le ciel tant que le monde est sain
+  // (ils désertent quand la santé du monde décline — le décor RACONTE l'état de la partie)
+  if (dev<0.4 && qFx()){
+    ctx.strokeStyle='rgba(28,24,30,'+(0.55*(1-dev*2.2)).toFixed(3)+')'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for (let f2=0; f2<2; f2++){
+      const fx2=((t*(11+f2*5)+f2*700)%(vw+300))-150, fy2=64+f2*44+Math.sin(t*0.7+f2*3)*10;
+      for (let b2=0;b2<5;b2++){
+        const bx2=fx2+b2*15-(b2%2)*7, by2=fy2+(b2%3)*6+b2*2;
+        const w2=Math.sin(t*7+b2*1.3+f2*2)*3;
+        ctx.beginPath(); ctx.moveTo(bx2-4,by2); ctx.quadraticCurveTo(bx2,by2-3+w2,bx2+4,by2);
+        ctx.stroke();
+      }
+    }
+  }
   // MONTAGNES LOINTAINES (parallaxe la plus lente, fortement embrumées) → profondeur du décor
   drawFarRange(vw, bot, dev, t);
   // collines avec brume de profondeur (3 plans)
@@ -3571,6 +3721,63 @@ function drawUnit(u){
   }
   if (drowning) ctx.restore();
 }
+/* ---------- marqueur d'ordre de position (⚑) ---------- */
+// fanion doré planté au point ordonné : onde au sol + flottement, s'estompe en ~3 s
+function drawRally(r){
+  const x=r.x-camX; if (x<-60||x>VW()+60) return;
+  const gy=gY(r.x), k=clamp(r.t/3,0,1), a=1-k*k;
+  const drop=Math.min(1, r.t*5), fy=gy-34*drop;      // le fanion se plante d'un coup sec
+  ctx.save(); ctx.globalAlpha=a;
+  const ph=(r.t*1.4)%1;                               // onde de choc au sol
+  ctx.strokeStyle=rgbaC('#ffd34a',0.7*(1-ph)); ctx.lineWidth=2;
+  ctx.beginPath(); ctx.ellipse(x,gy+2,8+ph*26,(8+ph*26)*0.34,0,0,6.283); ctx.stroke();
+  ctx.strokeStyle='#e8d8a0'; ctx.lineWidth=2.4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x,gy+2); ctx.lineTo(x,fy); ctx.stroke();
+  const wv=Math.sin(r.t*9)*2;
+  ctx.fillStyle='#ffd34a';
+  ctx.beginPath(); ctx.moveTo(x,fy); ctx.lineTo(x+14,fy+4+wv); ctx.lineTo(x,fy+9); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+/* ---------- dégâts : fumée & flammes sur bâtiments/bases amochés ---------- */
+// volutes déterministes (pas de pool de particules) : fumée sous 55 % de PV, flammes sous 30 %.
+function dmgSmoke(x, topY, frac, t, seed){
+  if (frac>=0.55 || !qFx()) return;
+  const n = frac<0.3? 3:2;
+  ctx.save();
+  for (let i=0;i<n;i++){
+    const ph = ((t*0.5 + i*0.37 + seed*0.013)%1);
+    const py = topY - ph*28, drift = Math.sin(t*1.3+i*2+seed)*5*ph;
+    ctx.fillStyle='rgba(44,38,40,'+(0.42*(1-ph)).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x+drift+(i-1)*4, py, 2.5+ph*5.5, 0, 6.283); ctx.fill();
+  }
+  if (frac<0.3){
+    ctx.globalCompositeOperation='lighter';
+    for (let i=0;i<2;i++){
+      const fl=Math.abs(Math.sin(t*7+i*1.9+seed));
+      ctx.fillStyle='rgba(255,'+(140+60*fl|0)+',60,'+(0.30+0.40*fl).toFixed(3)+')';
+      ctx.beginPath(); ctx.ellipse(x-3+i*6, topY+2, 2.2, 3.5+fl*3, 0, 0, 6.283); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+/* ---------- PLUIE FERTILE : averse visible pendant l'événement (écran entier) ---------- */
+function drawRainBoon(t){
+  ctx.save();
+  ctx.fillStyle='rgba(90,140,190,0.05)'; ctx.fillRect(0,0,W,H);       // voile froid très léger
+  ctx.strokeStyle='rgba(160,210,255,0.34)'; ctx.lineWidth=1.2; ctx.beginPath();
+  const n = qFx()? 70 : 34;
+  for (let i=0;i<n;i++){
+    const rx=((i*127 + t*520)%(W+80))-40, ry=(i*211 + t*(640+(i%5)*60))%H;
+    ctx.moveTo(rx, ry); ctx.lineTo(rx-6, ry+14);
+  }
+  ctx.stroke();
+  // impacts au sol (petits rebonds clairs le long de la ligne d'horizon basse)
+  if (qFx()){ ctx.fillStyle='rgba(190,225,255,0.30)';
+    for (let i=0;i<14;i++){ const px=(i*173+((t*3.1+i)|0)*97)%W, ph=(t*3.1+i*0.37)%1;
+      ctx.beginPath(); ctx.ellipse(px, H-70-(i%5)*28, 3+ph*5, 1.2, 0, 0, 6.283);
+      ctx.globalAlpha=0.5*(1-ph); ctx.fill(); ctx.globalAlpha=1; } }
+  ctx.restore();
+}
 /* ---------- bases & bâtiments ---------- */
 function drawBase(side){
   const x = side.x-camX; if (x<-160||x>VW()+160) return;
@@ -3627,6 +3834,8 @@ function drawBase(side){
       bloomT('#5ad0ff',6,()=>{ ctx.fillStyle='#5ad0ff'; ctx.beginPath(); ctx.moveTo(x+dx2+4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2-3); ctx.lineTo(x+dx2-4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2+3); ctx.closePath(); ctx.fill(); }); } }
   }
   const w=110, frac=clamp(side.hp/side.maxhp,0,1);
+  // base amochée : colonnes de fumée puis flammes (l'état de siège se LIT à l'écran)
+  if (frac<0.55){ dmgSmoke(x-26, gy-70, frac, t, side.x); dmgSmoke(x+22, gy-52, frac, t, side.x+31); }
   ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(x-w/2,gy-128,w,8);
   ctx.fillStyle=col; ctx.fillRect(x-w/2,gy-128,w*frac,8);
   ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.strokeRect(x-w/2,gy-128,w,8);
@@ -3670,6 +3879,14 @@ function drawSlot(slot, side, neutral){
   }
   const lvl = b.lvl||1, bh2 = bldH(b);
   projShadow(x, gy, 15);                          // ombre portée du bâtiment
+  // POP DE CONSTRUCTION : le bâtiment SURGIT du sol avec un léger dépassement élastique
+  // (b.age démarre à 0 à la pose — pur habillage, ancré au sol, sans effet de jeu).
+  const popK = (b.age!==undefined && b.age<0.45)? clamp(b.age/0.45,0,1) : 1;
+  const popped = popK<1;
+  if (popped){
+    const s = popK<0.8? (popK/0.8)*1.08 : 1.08-((popK-0.8)/0.2)*0.08;
+    ctx.save(); ctx.translate(x,gy); ctx.scale(1,Math.max(0.06,s)); ctx.translate(-x,-gy);
+  }
   if (b.type==='wall'){
     const wc = facKey==='HUM'? '#7a7080':'#2c4258';
     sculptT(x-14, gy-bh2, 28, bh2, 4, wc, fac.accent);
@@ -3699,6 +3916,7 @@ function drawSlot(slot, side, neutral){
     ctx.save(); ctx.beginPath(); ctx.ellipse(x,gy-18,8,3,0,0,6.283); ctx.clip(); ctx.fillStyle='#50a0dc'; ctx.fillRect(x-8,gy-22,16,8); ctx.restore();
     ctx.strokeStyle='#3a4a5a'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x-8,gy-20); ctx.lineTo(x-8,gy-30); ctx.lineTo(x+8,gy-30); ctx.lineTo(x+8,gy-20); ctx.stroke();
   }
+  if (popped) ctx.restore();   // fin du pop de construction (le reste — garnison, barres — à l'échelle normale)
   // garnison : silhouettes animées selon le rôle, aux créneaux
   if (b.gar && b.gar.length){
     for (let gi=0; gi<b.gar.length; gi++){
@@ -3763,6 +3981,7 @@ function drawSlot(slot, side, neutral){
     ctx.fillStyle='#fff'; ctx.fillText('🚪'+b.gar.length, x+20, gy-bldH(b)-12);
   }
   const frac = clamp(b.hp/b.maxhp,0,1);
+  dmgSmoke(x, gy-bldH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
   if (frac<1){ const hy = gy-bldH(b)-18;
     ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-16,hy,32,3.4);
     ctx.fillStyle = frac>0.4?'#7dd84a':'#ff5a4a'; ctx.fillRect(x-16,hy,32*frac,3.4); }
@@ -3987,7 +4206,7 @@ function drawHUD(){
   // ---- bannière de sélection (y=H-134, jamais sur les boutons) ----
   HUD.selRect = null;
   if (game.sel.size>0){
-    const txt = '✓ '+game.sel.size+' unité(s) — les ordres ⚔✋↩ s\'y appliquent';
+    const txt = '✓ '+game.sel.size+' unité(s) — ⚔✋↩ · clic / appui long au sol = ⚑ y aller';
     ctx.font='700 12px Arial';
     const tw = ctx.measureText(txt).width;
     const bx = W/2-tw/2-26, by = H-132, bw = tw+52;
@@ -4379,6 +4598,7 @@ function render(dt){
   drawBase(game.p); drawBase(game.e);
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
+  if (game.rally) drawRally(game.rally);                     // fanion ⚑ d'ordre de position
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   if (shots.length){ ctx.lineCap='round';
     if (qFx()){ ctx.save(); ctx.globalCompositeOperation='lighter';   // halo additif (sans shadowBlur — coûteux)
@@ -4444,6 +4664,8 @@ function render(dt){
   ctx.restore(); // fin du monde zoomé
   drawWinter();
   drawCata();
+  if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit
+
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   // étalonnage cinématique : légère vignette pour la profondeur (n'assombrit pas le HUD)
   if (!VIGN){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
@@ -5172,7 +5394,7 @@ function serialize(){
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
   return {
-    t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, ov:game.over?1:0,
+    t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
     wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
@@ -5208,6 +5430,15 @@ function garrisonByIds(side, slot, ids){
     && Math.abs(u.x-slot.x)<260).slice(0, free);
   for (const u of elig){ slot.b.gar.push(u); side.units.splice(side.units.indexOf(u),1); }
 }
+// ordre de position de l'invité (coordonnée déjà convertie côté invité en repère hôte)
+function applyPointIds(side, x, ids){
+  const set = new Set(ids||[]);
+  const sel = side.units.filter(u=>set.has(u.id));
+  sel.forEach((u,i)=>{
+    u.ord='point'; u.task=null;
+    u.px = clamp(x + (i-(sel.length-1)/2)*16, 40, WORLD-40);
+  });
+}
 function applyCmd(cmd){
   const e = game.e;
   try {
@@ -5224,6 +5455,7 @@ function applyCmd(cmd){
       case 'repbase':tryRepairBase(e); break;
       case 'form':   e.formation=!e.formation; break;
       case 'stance': applyStanceIds(e, cmd.st, cmd.ids); break;
+      case 'point':  applyPointIds(e, cmd.x, cmd.ids); break;
       case 'build':  { const s=resolveRef(cmd.ref); if (s) tryBuild(e,s,cmd.type); break; }
       case 'srep':   { const s=resolveRef(cmd.ref); if (s&&s.b) tryRepair(e,s); break; }
       case 'subg':   { const s=resolveRef(cmd.ref); if (s&&s.b) tryUpgBuild(e,s); break; }
@@ -5249,7 +5481,7 @@ function deBld(sb, ownerSide){
 function applySnapshot(snap){
   if (!game || game.net!=='guest') return;
   const g = game;
-  g.t = snap.t; g.dev = snap.dev; g.weather = snap.we||null;
+  g.t = snap.t; g.dev = snap.dev; g.weather = snap.we||null; g.boon = snap.bo||null;
   g.kills = snap.ekills; g.eKills = snap.kills;
   // cataclysme en cours (vue miroir : x → WORLD-x)
   const ck = (snap.ca>=0)? CATA_KEYS[snap.ca] : null;
@@ -6057,6 +6289,43 @@ $('langSel').addEventListener('change', ()=>{ SETTINGS.lang=$('langSel').value; 
 applyLang();
 refreshOpts();
 
+/* ---------- À PROPOS : avis (étoiles + texte), rapport de bug, don ---------- */
+// Tout passe par l'application e-mail de l'utilisateur (mailto préréempli) : fonctionne
+// hors-ligne, sans serveur, sur web / APK / PC. Le don ouvre PayPal (page de don).
+let fbRating = 0;
+function refreshStars(){
+  document.querySelectorAll('#fbStars button').forEach((b,i)=>{
+    const on = i<fbRating;
+    b.classList.toggle('on', on); b.textContent = on? '★':'☆';
+  });
+}
+document.querySelectorAll('#fbStars button').forEach((b,i)=>{
+  b.addEventListener('click', ()=>{ fbRating = (fbRating===i+1)? 0 : i+1; refreshStars(); });
+});
+refreshStars();
+function gameVersion(){ const v=$('verTag'); return v? v.textContent.trim() : 'AGI'; }
+function openMail(subject, body){
+  location.href = 'mailto:dimdevche@gmail.com?subject='+encodeURIComponent(subject)
+                + '&body='+encodeURIComponent(body);
+}
+const fbEl = $('fbSend');
+if (fbEl) fbEl.addEventListener('click', ()=>{
+  const txt = ($('fbText').value||'').trim();
+  const stars = fbRating? '★'.repeat(fbRating)+'☆'.repeat(5-fbRating)+' ('+fbRating+'/5)\n\n' : '';
+  openMail('[AGI] '+t('about_subj_fb'), stars + txt + '\n\n— '+gameVersion());
+});
+const bugEl = $('fbBug');
+if (bugEl) bugEl.addEventListener('click', ()=>{
+  const txt = ($('fbText').value||'').trim();
+  openMail('[AGI] '+t('about_subj_bug'),
+    (txt || t('about_bug_tpl')) + '\n\n— '+gameVersion()+'\n— '+navigator.userAgent);
+});
+const donEl = $('fbDonate');
+if (donEl) donEl.addEventListener('click', ()=>{
+  window.open('https://www.paypal.com/donate/?business='+encodeURIComponent('dimdevche@gmail.com')
+              +'&no_recurring=0&currency_code=EUR', '_blank');
+});
+
 /* ---------- Touches reconfigurables ---------- */
 let keyWait = null;
 function keyName(code){
@@ -6190,7 +6459,7 @@ cv.addEventListener('pointerdown', e=>{
   }
   if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
   const lasso = (selMode || e.shiftKey) && sy>38 && sy<H-102;
-  pdown = {sx, sy, moved:false, lasso};
+  pdown = {sx, sy, moved:false, lasso, t0:performance.now(), touch:e.pointerType==='touch'};
   if (lasso) selBox = {x0:sx, y0:sy, x1:sx, y1:sy};
 });
 
@@ -6241,13 +6510,16 @@ function endPointer(e){
     return;
   }
   const lasso = pdown.lasso;
+  // ORDRE DE POSITION (tactile) : rester APPUYÉ LONGTEMPS sans bouger = envoyer la sélection
+  // défendre ce point précis (à la souris, c'est le simple clic gauche qui donne l'ordre).
+  const long = pdown.touch && !pdown.moved && (performance.now()-pdown.t0) > 450;
   pdown = null; dragging = false;
   // VRAI glisser en mode lasso = sélection rectangle. En revanche un simple APPUI (sans glisser)
   // doit rester un tap normal : on peut ainsi construire/sélectionner même en mode lasso actif
   // (corrige le blocage des socles muraille/tourelle quand ⬚ LASSO est enclenché juste avant).
   if (lasso && !tap){ finishLasso(); return; }
   selBox = null;
-  if (tap) handleTap(sx,sy,e.shiftKey);
+  if (tap) handleTap(sx,sy,e.shiftKey,{touch:e.pointerType==='touch', long});
 }
 cv.addEventListener('pointerup', endPointer);
 cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; pdown=null; selBox=null; dragging=false; tutDragging=null; });
@@ -6266,7 +6538,7 @@ function finishLasso(){
   if (game.sel.size){ sfx('sel'); announce('✓ '+game.sel.size+' unité(s) sélectionnée(s)', '#ffd34a'); }
 }
 
-function handleTap(sx, sy, shift){
+function handleTap(sx, sy, shift, opts){
   if (!game) return;
   if (game.over) return;
   // MODE TRICHE (dev) : le panneau capte les clics en priorité tant qu'il est ouvert
@@ -6453,7 +6725,14 @@ function handleTap(sx, sy, shift){
     sfx('sel');
     return;
   }
-  // sol : désélection
+  // ---- sol ----
+  // ORDRE DE POSITION : avec une sélection active, le CLIC GAUCHE (souris) ou un APPUI LONG
+  // (tactile) sur le terrain envoie les unités DÉFENDRE ce point exact — elles s'y rendent,
+  // combattent ce qu'elles croisent, puis tiennent la position.
+  if (game.sel.size && (!opts || !opts.touch || opts.long)){
+    if (orderPoint(p, wx)) return;
+  }
+  // tap tactile bref sur le sol : désélection (comportement historique)
   if (game.sel.size){ game.sel.clear(); sfx('sel'); }
 }
 

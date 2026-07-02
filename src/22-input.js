@@ -99,7 +99,7 @@ cv.addEventListener('pointerdown', e=>{
   }
   if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
   const lasso = (selMode || e.shiftKey) && sy>38 && sy<H-102;
-  pdown = {sx, sy, moved:false, lasso};
+  pdown = {sx, sy, moved:false, lasso, t0:performance.now(), touch:e.pointerType==='touch'};
   if (lasso) selBox = {x0:sx, y0:sy, x1:sx, y1:sy};
 });
 
@@ -150,13 +150,16 @@ function endPointer(e){
     return;
   }
   const lasso = pdown.lasso;
+  // ORDRE DE POSITION (tactile) : rester APPUYÉ LONGTEMPS sans bouger = envoyer la sélection
+  // défendre ce point précis (à la souris, c'est le simple clic gauche qui donne l'ordre).
+  const long = pdown.touch && !pdown.moved && (performance.now()-pdown.t0) > 450;
   pdown = null; dragging = false;
   // VRAI glisser en mode lasso = sélection rectangle. En revanche un simple APPUI (sans glisser)
   // doit rester un tap normal : on peut ainsi construire/sélectionner même en mode lasso actif
   // (corrige le blocage des socles muraille/tourelle quand ⬚ LASSO est enclenché juste avant).
   if (lasso && !tap){ finishLasso(); return; }
   selBox = null;
-  if (tap) handleTap(sx,sy,e.shiftKey);
+  if (tap) handleTap(sx,sy,e.shiftKey,{touch:e.pointerType==='touch', long});
 }
 cv.addEventListener('pointerup', endPointer);
 cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; pdown=null; selBox=null; dragging=false; tutDragging=null; });
@@ -175,7 +178,7 @@ function finishLasso(){
   if (game.sel.size){ sfx('sel'); announce('✓ '+game.sel.size+' unité(s) sélectionnée(s)', '#ffd34a'); }
 }
 
-function handleTap(sx, sy, shift){
+function handleTap(sx, sy, shift, opts){
   if (!game) return;
   if (game.over) return;
   // MODE TRICHE (dev) : le panneau capte les clics en priorité tant qu'il est ouvert
@@ -362,7 +365,14 @@ function handleTap(sx, sy, shift){
     sfx('sel');
     return;
   }
-  // sol : désélection
+  // ---- sol ----
+  // ORDRE DE POSITION : avec une sélection active, le CLIC GAUCHE (souris) ou un APPUI LONG
+  // (tactile) sur le terrain envoie les unités DÉFENDRE ce point exact — elles s'y rendent,
+  // combattent ce qu'elles croisent, puis tiennent la position.
+  if (game.sel.size && (!opts || !opts.touch || opts.long)){
+    if (orderPoint(p, wx)) return;
+  }
+  // tap tactile bref sur le sol : désélection (comportement historique)
   if (game.sel.size){ game.sel.clear(); sfx('sel'); }
 }
 

@@ -201,7 +201,7 @@ function drawHUD(){
   // ---- bannière de sélection (y=H-134, jamais sur les boutons) ----
   HUD.selRect = null;
   if (game.sel.size>0){
-    const txt = '✓ '+game.sel.size+' unité(s) — les ordres ⚔✋↩ s\'y appliquent';
+    const txt = '✓ '+game.sel.size+' unité(s) — ⚔✋↩ · clic / appui long au sol = ⚑ y aller';
     ctx.font='700 12px Arial';
     const tw = ctx.measureText(txt).width;
     const bx = W/2-tw/2-26, by = H-132, bw = tw+52;

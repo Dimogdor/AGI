@@ -136,6 +136,9 @@ function tryEvolve(side){
   if (isGuest(side)){ guestCmd({c:'evo'}); return true; }
   if (side.era>=4 || side.era>=(game.eraCap!=null?game.eraCap:4) || side.xp < EVOLVE_XP[side.era+1]) return false;
   side.era++;
+  // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
+  addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
+  burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
   const who = side===game.p? "VOS FORCES":"L'ENNEMI";
   announce("⚡ "+who+" : "+lEra(side.facKey,side.era)+" ⚡", side.fac.accent);
   if (side===game.p){ sfx('evolve'); voice(side.facKey); game.shake=8;
@@ -230,6 +233,7 @@ function tryBuild(side, slot, type){
   slot.owner = side;
   if (near){
     slot.b = mkB(side, type);
+    burst(slot.x, gY(slot.x)-14, '#cdbf9a', 8, 0.7);   // poussière de chantier (accompagne le pop)
   } else {
     // chantier fragile : une troupe du pool viendra le terminer
     slot.b = { type:'site', buildType:type, hp:140, maxhp:140, lvl:1, gar:[] };
@@ -428,6 +432,28 @@ function spawnHero(side, power){
   u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie
   side.units.push(u);
+}
+// ---- ORDRE DE POSITION : la sélection va DÉFENDRE un point précis du terrain ----
+// Les unités s'y rendent (combattent en chemin ce qui passe à portée), s'étalent légèrement
+// autour du point pour ne pas s'empiler, puis tiennent la position (ord='point').
+function orderPoint(side, wx){
+  if (!game.sel.size) return false;
+  wx = clamp(wx, 40, WORLD-40);
+  if (isGuest(side)){
+    guestCmd({c:'point', x:Math.round(WORLD-wx), ids:[...game.sel].map(u=>u.id)});   // vue miroir → coordonnée hôte
+    game.rally = {x:wx, t:0};
+    sfx('sel'); announce('⚑ '+game.sel.size+' unité(s) en route vers le point', '#e8d8a0');
+    return true;
+  }
+  const sel = [...game.sel];
+  sel.forEach((u,i)=>{
+    u.ord = 'point'; u.task = null;
+    u.px = clamp(wx + (i-(sel.length-1)/2)*16, 40, WORLD-40);   // éventail autour du point
+  });
+  game.rally = {x:wx, t:0};
+  sfx('sel'); announce('⚑ '+sel.length+' unité(s) en route vers le point', '#e8d8a0');
+  addFloater(wx, gY(wx)-60, '⚑', '#ffd34a', 16);
+  return true;
 }
 function setStance(side, st){
   if (isGuest(side)){

@@ -17,6 +17,7 @@ function render(dt){
   drawBase(game.p); drawBase(game.e);
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
+  if (game.rally) drawRally(game.rally);                     // fanion ⚑ d'ordre de position
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   if (shots.length){ ctx.lineCap='round';
     if (qFx()){ ctx.save(); ctx.globalCompositeOperation='lighter';   // halo additif (sans shadowBlur — coûteux)
@@ -82,6 +83,8 @@ function render(dt){
   ctx.restore(); // fin du monde zoomé
   drawWinter();
   drawCata();
+  if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit
+
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   // étalonnage cinématique : légère vignette pour la profondeur (n'assombrit pas le HUD)
   if (!VIGN){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);

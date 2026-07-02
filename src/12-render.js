@@ -261,6 +261,17 @@ function drawMenuScene(dt){
     const sy2 = 320+i*60+Math.sin(t*0.3+i)*8;
     ctx.beginPath(); ctx.ellipse((t*8+i*340)%(W+400)-200, sy2, 260, 26, 0, 0, 6.28); ctx.fill();
   }
+  // braises qui montent + étoiles scintillantes : le menu VIT (additif discret)
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for (let i=0;i<18;i++){
+    const ey=(t*(26+(i%4)*9)+i*67)%(H+30), a=clamp(1-ey/H,0,1);
+    ctx.fillStyle = (menuFacMix>0.5)? 'rgba(110,200,255,'+(0.35*a)+')' : 'rgba(255,150,70,'+(0.35*a)+')';
+    ctx.fillRect((i*173+Math.sin(t*0.8+i)*26)%W, H-ey, 2, 2);
+  }
+  ctx.fillStyle='rgba(255,248,235,0.8)';
+  for (let i=0;i<12;i++){ const tw=0.4+0.6*Math.abs(Math.sin(t*1.6+i*1.1));
+    ctx.globalAlpha=tw*0.5; ctx.fillRect((i*257+40)%W, (i*113)%150, 1.6, 1.6); }
+  ctx.restore(); ctx.globalAlpha=1;
 }
 
 function drawBG(){
@@ -325,6 +336,20 @@ function drawBG(){
     ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx,cy,cw*0.6,cw*0.22,0,0,6.283); ctx.fill();
   }
   ctx.restore();
+  // VIE AMBIANTE : vols d'oiseaux traversant lentement le ciel tant que le monde est sain
+  // (ils désertent quand la santé du monde décline — le décor RACONTE l'état de la partie)
+  if (dev<0.4 && qFx()){
+    ctx.strokeStyle='rgba(28,24,30,'+(0.55*(1-dev*2.2)).toFixed(3)+')'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for (let f2=0; f2<2; f2++){
+      const fx2=((t*(11+f2*5)+f2*700)%(vw+300))-150, fy2=64+f2*44+Math.sin(t*0.7+f2*3)*10;
+      for (let b2=0;b2<5;b2++){
+        const bx2=fx2+b2*15-(b2%2)*7, by2=fy2+(b2%3)*6+b2*2;
+        const w2=Math.sin(t*7+b2*1.3+f2*2)*3;
+        ctx.beginPath(); ctx.moveTo(bx2-4,by2); ctx.quadraticCurveTo(bx2,by2-3+w2,bx2+4,by2);
+        ctx.stroke();
+      }
+    }
+  }
   // MONTAGNES LOINTAINES (parallaxe la plus lente, fortement embrumées) → profondeur du décor
   drawFarRange(vw, bot, dev, t);
   // collines avec brume de profondeur (3 plans)
@@ -835,6 +860,63 @@ function drawUnit(u){
   }
   if (drowning) ctx.restore();
 }
+/* ---------- marqueur d'ordre de position (⚑) ---------- */
+// fanion doré planté au point ordonné : onde au sol + flottement, s'estompe en ~3 s
+function drawRally(r){
+  const x=r.x-camX; if (x<-60||x>VW()+60) return;
+  const gy=gY(r.x), k=clamp(r.t/3,0,1), a=1-k*k;
+  const drop=Math.min(1, r.t*5), fy=gy-34*drop;      // le fanion se plante d'un coup sec
+  ctx.save(); ctx.globalAlpha=a;
+  const ph=(r.t*1.4)%1;                               // onde de choc au sol
+  ctx.strokeStyle=rgbaC('#ffd34a',0.7*(1-ph)); ctx.lineWidth=2;
+  ctx.beginPath(); ctx.ellipse(x,gy+2,8+ph*26,(8+ph*26)*0.34,0,0,6.283); ctx.stroke();
+  ctx.strokeStyle='#e8d8a0'; ctx.lineWidth=2.4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x,gy+2); ctx.lineTo(x,fy); ctx.stroke();
+  const wv=Math.sin(r.t*9)*2;
+  ctx.fillStyle='#ffd34a';
+  ctx.beginPath(); ctx.moveTo(x,fy); ctx.lineTo(x+14,fy+4+wv); ctx.lineTo(x,fy+9); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+/* ---------- dégâts : fumée & flammes sur bâtiments/bases amochés ---------- */
+// volutes déterministes (pas de pool de particules) : fumée sous 55 % de PV, flammes sous 30 %.
+function dmgSmoke(x, topY, frac, t, seed){
+  if (frac>=0.55 || !qFx()) return;
+  const n = frac<0.3? 3:2;
+  ctx.save();
+  for (let i=0;i<n;i++){
+    const ph = ((t*0.5 + i*0.37 + seed*0.013)%1);
+    const py = topY - ph*28, drift = Math.sin(t*1.3+i*2+seed)*5*ph;
+    ctx.fillStyle='rgba(44,38,40,'+(0.42*(1-ph)).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x+drift+(i-1)*4, py, 2.5+ph*5.5, 0, 6.283); ctx.fill();
+  }
+  if (frac<0.3){
+    ctx.globalCompositeOperation='lighter';
+    for (let i=0;i<2;i++){
+      const fl=Math.abs(Math.sin(t*7+i*1.9+seed));
+      ctx.fillStyle='rgba(255,'+(140+60*fl|0)+',60,'+(0.30+0.40*fl).toFixed(3)+')';
+      ctx.beginPath(); ctx.ellipse(x-3+i*6, topY+2, 2.2, 3.5+fl*3, 0, 0, 6.283); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+/* ---------- PLUIE FERTILE : averse visible pendant l'événement (écran entier) ---------- */
+function drawRainBoon(t){
+  ctx.save();
+  ctx.fillStyle='rgba(90,140,190,0.05)'; ctx.fillRect(0,0,W,H);       // voile froid très léger
+  ctx.strokeStyle='rgba(160,210,255,0.34)'; ctx.lineWidth=1.2; ctx.beginPath();
+  const n = qFx()? 70 : 34;
+  for (let i=0;i<n;i++){
+    const rx=((i*127 + t*520)%(W+80))-40, ry=(i*211 + t*(640+(i%5)*60))%H;
+    ctx.moveTo(rx, ry); ctx.lineTo(rx-6, ry+14);
+  }
+  ctx.stroke();
+  // impacts au sol (petits rebonds clairs le long de la ligne d'horizon basse)
+  if (qFx()){ ctx.fillStyle='rgba(190,225,255,0.30)';
+    for (let i=0;i<14;i++){ const px=(i*173+((t*3.1+i)|0)*97)%W, ph=(t*3.1+i*0.37)%1;
+      ctx.beginPath(); ctx.ellipse(px, H-70-(i%5)*28, 3+ph*5, 1.2, 0, 0, 6.283);
+      ctx.globalAlpha=0.5*(1-ph); ctx.fill(); ctx.globalAlpha=1; } }
+  ctx.restore();
+}
 /* ---------- bases & bâtiments ---------- */
 function drawBase(side){
   const x = side.x-camX; if (x<-160||x>VW()+160) return;
@@ -891,6 +973,8 @@ function drawBase(side){
       bloomT('#5ad0ff',6,()=>{ ctx.fillStyle='#5ad0ff'; ctx.beginPath(); ctx.moveTo(x+dx2+4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2-3); ctx.lineTo(x+dx2-4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2+3); ctx.closePath(); ctx.fill(); }); } }
   }
   const w=110, frac=clamp(side.hp/side.maxhp,0,1);
+  // base amochée : colonnes de fumée puis flammes (l'état de siège se LIT à l'écran)
+  if (frac<0.55){ dmgSmoke(x-26, gy-70, frac, t, side.x); dmgSmoke(x+22, gy-52, frac, t, side.x+31); }
   ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(x-w/2,gy-128,w,8);
   ctx.fillStyle=col; ctx.fillRect(x-w/2,gy-128,w*frac,8);
   ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.strokeRect(x-w/2,gy-128,w,8);
@@ -934,6 +1018,14 @@ function drawSlot(slot, side, neutral){
   }
   const lvl = b.lvl||1, bh2 = bldH(b);
   projShadow(x, gy, 15);                          // ombre portée du bâtiment
+  // POP DE CONSTRUCTION : le bâtiment SURGIT du sol avec un léger dépassement élastique
+  // (b.age démarre à 0 à la pose — pur habillage, ancré au sol, sans effet de jeu).
+  const popK = (b.age!==undefined && b.age<0.45)? clamp(b.age/0.45,0,1) : 1;
+  const popped = popK<1;
+  if (popped){
+    const s = popK<0.8? (popK/0.8)*1.08 : 1.08-((popK-0.8)/0.2)*0.08;
+    ctx.save(); ctx.translate(x,gy); ctx.scale(1,Math.max(0.06,s)); ctx.translate(-x,-gy);
+  }
   if (b.type==='wall'){
     const wc = facKey==='HUM'? '#7a7080':'#2c4258';
     sculptT(x-14, gy-bh2, 28, bh2, 4, wc, fac.accent);
@@ -963,6 +1055,7 @@ function drawSlot(slot, side, neutral){
     ctx.save(); ctx.beginPath(); ctx.ellipse(x,gy-18,8,3,0,0,6.283); ctx.clip(); ctx.fillStyle='#50a0dc'; ctx.fillRect(x-8,gy-22,16,8); ctx.restore();
     ctx.strokeStyle='#3a4a5a'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x-8,gy-20); ctx.lineTo(x-8,gy-30); ctx.lineTo(x+8,gy-30); ctx.lineTo(x+8,gy-20); ctx.stroke();
   }
+  if (popped) ctx.restore();   // fin du pop de construction (le reste — garnison, barres — à l'échelle normale)
   // garnison : silhouettes animées selon le rôle, aux créneaux
   if (b.gar && b.gar.length){
     for (let gi=0; gi<b.gar.length; gi++){
@@ -1027,6 +1120,7 @@ function drawSlot(slot, side, neutral){
     ctx.fillStyle='#fff'; ctx.fillText('🚪'+b.gar.length, x+20, gy-bldH(b)-12);
   }
   const frac = clamp(b.hp/b.maxhp,0,1);
+  dmgSmoke(x, gy-bldH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
   if (frac<1){ const hy = gy-bldH(b)-18;
     ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-16,hy,32,3.4);
     ctx.fillStyle = frac>0.4?'#7dd84a':'#ff5a4a'; ctx.fillRect(x-16,hy,32*frac,3.4); }
