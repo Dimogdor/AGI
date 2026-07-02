@@ -198,7 +198,7 @@ async function getIceServers(){
 }
 function nsend(t, d){ try { if (net && net.conn && net.conn.open) net.conn.send({t, d}); } catch(e){} }
 function versionFail(){
-  netStatus('⚠ Versions différentes : METTEZ À JOUR le jeu des deux côtés (rechargez la page), puis réessayez.');
+  netStatus(tr('net_vermismatch'));
   try { iosHint('Versions différentes — rechargez le jeu des deux côtés.'); } catch(e){}
   setTimeout(netDisconnect, 50);
 }
@@ -210,7 +210,7 @@ function nrecv(msg){
   else if (t==='hi'){                                   // l'hôte reçoit le bonjour de l'invité (version + mot de passe)
     if (net.role==='host' && !game){
       if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); versionFail(); return; }
-      if (net.pw && (d.pw||'') !== net.pw){ nsend('pwko', {}); netStatus('Tentative avec un mot de passe incorrect — toujours en attente.'); return; }
+      if (net.pw && (d.pw||'') !== net.pw){ nsend('pwko', {}); netStatus(tr('net_badpw_wait')); return; }
       net.foeFac = d.fac;                                // faction initiale de l'invité
       net.sendLok({ v:NET_PROTO, hostFac:net.myFac, speed:net.speed });  // confirme + partage la faction de l'hôte
       enterLobby();                                      // → écran de lobby commun (choix des camps)
@@ -244,8 +244,8 @@ function bindConn(conn){
   conn.on('open', ()=>{
     if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
     net.peer = true; net.peerId = conn.peer;
-    if (net.role==='guest'){ netStatus('Hôte trouvé — connexion…'); net.sendHello({fac:net.myFac, v:NET_PROTO, pw:net.pw||''}); }
-    else netStatus('Adversaire connecté !');
+    if (net.role==='guest'){ netStatus(tr('net_found')); net.sendHello({fac:net.myFac, v:NET_PROTO, pw:net.pw||''}); }
+    else netStatus(tr('net_peer_conn'));
   });
   conn.on('data', nrecv);
   conn.on('close', ()=>{ if (net){ net.peer=false; } onPeerLeft(); });
@@ -255,7 +255,7 @@ async function netConnect(role, code, fac, opts){
   opts = opts || {};
   netStatus(t('net_loading'));
   const Peer = await loadPeerLib();
-  if (!Peer){ netStatus('⚠ Réseau P2P inaccessible (connexion ? pare-feu ?). Réessayez.'); return; }
+  if (!Peer){ netStatus(tr('net_nop2p')); return; }
   netDisconnect();                                        // repart propre si une tentative précédente traîne
   const RTC = await getIceServers();                      // STUN + TURN (Cloudflare dédié ou repli public)
   const hostId = 'agi-' + code;
@@ -267,7 +267,7 @@ async function netConnect(role, code, fac, opts){
           sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o),
           sendSpeed:o=>nsend('sp',o), sendLok:o=>nsend('lok',o), sendLF:o=>nsend('lf',o) };
   try { peerObj = new Peer(myId, { config: RTC, debug: 1 }); }
-  catch(err){ netStatus('⚠ Impossible d\'initialiser le réseau.'); return; }
+  catch(err){ netStatus(tr('net_initfail')); return; }
   const tryConnect = ()=>{
     if (!peerObj || peerObj.destroyed) return;
     const conn = peerObj.connect(hostId, { reliable:true });
@@ -278,35 +278,33 @@ async function netConnect(role, code, fac, opts){
       showHostingCode(code);                              // affiche le code à partager
       netStatus(t('net_waiting'));
       if (net && net.pub){ lobbyPublish(); net.hbTimer = setInterval(lobbyPublish, 20000); } // heartbeat liste publique
-    } else { netStatus('Recherche du salon « '+code+' »…'); tryConnect(); }
+    } else { netStatus(fmt('net_search',{code:code})); tryConnect(); }
   });
   peerObj.on('connection', conn=>{ if (role==='host') bindConn(conn); });   // invité entrant côté hôte
   peerObj.on('error', err=>{
     const ty = err && err.type;
     if (ty==='unavailable-id'){
-      netStatus('⚠ Ce code est déjà pris. Choisissez-en un autre pour créer le salon.');
+      netStatus(tr('net_codetaken'));
     } else if (ty==='peer-unavailable'){
       // course possible : l'invité arrive avant que l'hôte soit enregistré → on retente
       if (role==='guest' && net && (net.tries = (net.tries||0)+1) <= 6 && !net.peer){
-        netStatus('Salon pas encore prêt… nouvelle tentative ('+net.tries+'/6)…');
+        netStatus(fmt('net_retry',{n:net.tries}));
         setTimeout(()=>{ if (net && !net.peer) tryConnect(); }, 2500);
       } else {
-        netStatus('Aucun hôte pour « '+code+' ». Vérifiez le code (l\'hôte doit avoir créé le salon), puis réessayez.');
+        netStatus(fmt('net_nohost',{code:code}));
       }
     } else if (ty==='network' || ty==='server-error' || ty==='socket-error' || ty==='socket-closed'){
-      netStatus('⚠ Serveur de mise en relation momentanément injoignable. Réessayez dans un instant.');
+      netStatus(tr('net_relayerr'));
     } else if (ty==='browser-incompatible'){
-      netStatus('⚠ Ce navigateur ne supporte pas le P2P (WebRTC).');
+      netStatus(tr('net_nowebrtc'));
     } else {
-      netStatus('⚠ Erreur réseau'+(ty?' ('+ty+')':'')+'. Réessayez.');
+      netStatus(fmt('net_err',{t:(ty?' ('+ty+')':'')}));
     }
   });
   peerObj.on('disconnected', ()=>{ try { peerObj.reconnect(); } catch(e){} });
   // sans adversaire au bout de ~35 s, on guide plutôt que de laisser attendre dans le vide
   net.findTimer = setTimeout(()=>{
-    if (net && !net.peer) netStatus(role==='host'
-      ? 'Toujours en attente… l\'adversaire doit saisir EXACTEMENT le code « '+code+' ».'
-      : 'Aucun hôte pour « '+code+' ». Vérifiez le code, ou demandez à l\'hôte de recréer le salon.');
+    if (net && !net.peer) netStatus(fmt(role==='host'? 'net_stillwait':'net_nohost2', {code:code}));
   }, 35000);
 }
 function netDisconnect(){

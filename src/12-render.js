@@ -982,7 +982,7 @@ function drawBase(side){
   if (side===game.p && frac<0.95){
     ctx.font='12px Arial'; ctx.textAlign='center';
     ctx.fillStyle='rgba(255,255,255,'+(0.5+0.3*Math.sin(t*3))+')';
-    ctx.fillText('🔧 toucher pour réparer', x, gy-138);
+    ctx.fillText(tr('hud_tap_repair'), x, gy-138);
   }
 }
 function drawSlot(slot, side, neutral){

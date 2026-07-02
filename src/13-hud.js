@@ -201,7 +201,7 @@ function drawHUD(){
   // ---- bannière de sélection (y=H-134, jamais sur les boutons) ----
   HUD.selRect = null;
   if (game.sel.size>0){
-    const txt = '✓ '+game.sel.size+' unité(s) — ⚔✋↩ · clic / appui long au sol = ⚑ y aller';
+    const txt = fmt('hud_sel',{n:game.sel.size});
     ctx.font='700 12px Arial';
     const tw = ctx.measureText(txt).width;
     const bx = W/2-tw/2-26, by = H-132, bw = tw+52;
@@ -291,7 +291,7 @@ function drawBtn(b){
   let label='', sub='', ok=false, col=fac.accent, prog=1, small=b.h<40;
   if (b.type==='unit'){
     const role=ROLES[b.i];
-    if (role.minEra && p.era<role.minEra){ label='🔒 '+role.label; sub='Ère '+(role.minEra+1); ok=false; }
+    if (role.minEra && p.era<role.minEra){ label='🔒 '+lUnit(p.facKey, role.key, role.minEra); sub=fmt('hud_era_lock',{n:role.minEra+1}); ok=false; }
     else {
       const cost=unitCost(p,b.i);
       label=lUnit(p.facKey, role.key, p.era);
@@ -302,7 +302,7 @@ function drawBtn(b){
     }
   } else if (b.type==='special'){
     if (p.lastReady && !p.lastUsed){
-      label='☠ DERNIER RECOURS'; sub='UNIQUE · GRATUIT [ESP]'; ok=true; col='#ffd34a'; prog=1;
+      label=tr('hud_last'); sub=tr('hud_last_sub'); ok=true; col='#ffd34a'; prog=1;
     } else {
       label='✸ '+lSpecial(p.facKey, p.era);
       const xc = specialXpCost(p);
@@ -311,15 +311,15 @@ function drawBtn(b){
       prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc)); col='#c88';
     }
   } else if (b.type==='evolve'){
-    label='⚡ ÉVOLUER'; col='#e8d8a0';
+    label=tr('hud_evolve'); col='#e8d8a0';
     if (p.era<4){ ok = p.xp>=EVOLVE_XP[p.era+1]; sub='✦'+EVOLVE_XP[p.era+1]+' [E]';
       prog = Math.min(1,p.xp/EVOLVE_XP[p.era+1]); }
     else if (!p.trans){ ok=false; sub='✦'+TRANS_XP+' → '+p.fac.sym; prog=Math.min(1,p.xp/TRANS_XP); }
-    else { ok=false; sub='TRANSCENDÉ'; prog=1; }
+    else { ok=false; sub=tr('hud_trans'); prog=1; }
   } else if (b.type==='cap'){
-    label='👥 +10 cap'; col='#9dc88a';
+    label=tr('hud_cap'); col='#9dc88a';
     ok = !p.capUp && canPay(p,{m:350,w:100});
-    sub = p.capUp? 'ACQUIS':costStr(p,{m:350,w:100})+' [U]';
+    sub = p.capUp? tr('hud_owned'):costStr(p,{m:350,w:100})+' [U]';
     prog = p.capUp?1:0.5;
   } else if (b.type==='stance'){
     label=b.label;
@@ -330,10 +330,10 @@ function drawBtn(b){
   } else if (b.type==='formation'){
     label=b.label; ok=p.formation; col = p.formation? '#9dc88a':'#8a867e';
   } else if (b.type==='repairall'){
-    label='🔧 TOUT'; col='#9dc88a';
+    label=tr('hud_repall'); col='#9dc88a';
     const rc = repairAllCost(p);
     ok = rc.f>0 || rc.m>0;
-    sub = ok? costStr(p, rc)+' [R]' : 'rien à réparer';
+    sub = ok? costStr(p, rc)+' [R]' : tr('hud_norep');
   } else if (b.type==='cam'){
     label=b.label; ok = b.go==='follow' && camFollow;
     col = ok? '#9dc88a':'#8a867e';
@@ -513,8 +513,8 @@ function drawSoftPause(){
   ctx.fillText(t('p_resume'), W/2, ry+rh/2+1);
   pauseRects = [{x:rx,y:ry,w:rw,h:rh,key:'resume'}];
 }
-const QUAL_LBL = {low:'Faible', medium:'Moyen', high:'Élevé', ultra:'Ultra'};
-function qualityName(){ return QUAL_LBL[SETTINGS.quality]||SETTINGS.quality; }
+const QUAL_KEY = {low:'qual_low', medium:'qual_med', high:'qual_high', ultra:'qual_ultra'};
+function qualityName(){ return tr(QUAL_KEY[SETTINGS.quality]||'qual_med'); }
 function cycleQuality(){ const i=QUALITIES.indexOf(SETTINGS.quality); SETTINGS.quality=QUALITIES[(i+1)%QUALITIES.length]; fpsWarned=false; saveSettings(); }
 function drawPause(){
   ctx.fillStyle='rgba(10,8,7,0.78)'; ctx.fillRect(0,0,W,H);
