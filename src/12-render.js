@@ -373,6 +373,21 @@ function drawBG(){
   ctx.fillStyle=gg; ctx.fill();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
+  // TEXTURE DU SOL : cailloux et mottes déterministes (hachage de la coordonnée monde) +
+  // éclats de lumière rasante — la bande de terre n'est plus un simple aplat.
+  if (qFx()){
+    const stepT = SETTINGS.quality==='ultra'? 22 : 34;
+    ctx.fillStyle='rgba(28,20,16,0.22)';
+    for (let sx=0; sx<=vw; sx+=stepT){
+      const wx=sx+camX, h1=Math.abs(Math.sin(wx*0.0173))*0.997%1;
+      ctx.beginPath(); ctx.ellipse(sx+h1*22, gY(wx)+9+h1*24, 2.4+h1*2.8, 1.1+h1, 0, 0, 6.283); ctx.fill();
+    }
+    ctx.fillStyle='rgba(255,238,204,0.05)';
+    for (let sx=17; sx<=vw; sx+=stepT*1.7){
+      const wx=sx+camX, h1=Math.abs(Math.sin(wx*0.0311))*0.997%1;
+      ctx.fillRect(sx, gY(wx)+4+h1*18, 5+h1*7, 1.4);
+    }
+  }
   // HERBE DYNAMIQUE : touffes qui ondulent au vent et se couchent au passage des unités lourdes.
   if (qFx() && game){
     const heavies=[];
@@ -985,6 +1000,7 @@ function drawBase(side){
     ctx.fillText(tr('hud_tap_repair'), x, gy-138);
   }
 }
+let SLOT_LABELS = [];   // libellés de socles posés cette frame (anti-chevauchement)
 function drawSlot(slot, side, neutral){
   const x = slot.x-camX; if (x<-60||x>VW()+60) return;
   const gy = gY(slot.x), t = game.t;
@@ -1003,8 +1019,13 @@ function drawSlot(slot, side, neutral){
       const fy=gy-26+Math.sin(t*2.6)*2;     // « + » flottant (aucun support)
       bloomT(ac,8,()=>{ ctx.strokeStyle=ac; ctx.lineWidth=3; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(x-6,fy); ctx.lineTo(x+6,fy); ctx.moveTo(x,fy-6); ctx.lineTo(x,fy+6); ctx.stroke(); });
-      ctx.font='700 9px Arial'; ctx.textAlign='center'; ctx.fillStyle=rgbaC(ac,0.92);
-      ctx.fillText(neutral?tr('free_land'):tr('build_here'), x, gy-40);
+      // ÉTIQUETTE anti-chevauchement : des socles côte à côte (éco de base, tuto) partageaient
+      // le même texte illisible — on n'écrit le libellé que si aucun voisin ne l'a déjà posé.
+      if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){
+        SLOT_LABELS.push(slot.x);
+        ctx.font='700 9px Arial'; ctx.textAlign='center'; ctx.fillStyle=rgbaC(ac,0.92);
+        ctx.fillText(neutral?tr('free_land'):tr('build_here'), x, gy-40);
+      }
     }
     return;
   }

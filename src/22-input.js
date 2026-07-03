@@ -197,11 +197,11 @@ function handleTap(sx, sy, shift, opts){
     speedPanel=null; return;
   }
   // CLIC DROIT : réservé EXCLUSIVEMENT à l'ordre de position — il n'actionne jamais un bouton,
-  // un menu ni la sélection. Il s'applique à la sélection courante uniquement.
+  // un menu ni la sélection. Sélection active → elle seule y va ; AUCUNE sélection → toute l'armée.
   if (opts && opts.right){
     if (paused || settingsOpen || buildMenu) return;
     if (game.tut && TUT && TUT.confirmSkip) return;
-    if (game.sel.size) orderPoint(game.p, s2wX(sx));
+    orderPoint(game.p, s2wX(sx));
     return;
   }
   // tutoriel : boutons de la carte (Continuer / Passer / confirmation). Renvoie true si le clic
@@ -372,9 +372,9 @@ function handleTap(sx, sy, shift, opts){
     return;
   }
   // ---- sol ----
-  // ORDRE DE POSITION (tactile) : APPUI LONG sur le terrain avec une sélection active = envoyer
-  // ces unités DÉFENDRE ce point exact (à la souris : clic droit, géré plus haut).
-  if (game.sel.size && opts && opts.touch && opts.long){
+  // ORDRE DE POSITION (tactile) : APPUI LONG sur le terrain = envoyer la sélection — ou TOUTE
+  // l'armée si rien n'est sélectionné — DÉFENDRE ce point exact (souris : clic droit, plus haut).
+  if (opts && opts.touch && opts.long){
     if (orderPoint(p, wx)) return;
   }
   // tap bref / clic gauche sur le sol : désélection (comportement historique)

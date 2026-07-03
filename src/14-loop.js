@@ -10,6 +10,7 @@ function render(dt){
   ctx.translate(0, zTY());
   ctx.scale(zoom, zoom);
   drawBG();
+  SLOT_LABELS.length = 0;                    // étiquettes de socles : remises à zéro chaque frame
   for (const n of game.nodes) drawNode(n);
   for (const s of game.p.slots) drawSlot(s, game.p, false);
   for (const s of game.e.slots) drawSlot(s, game.e, false);

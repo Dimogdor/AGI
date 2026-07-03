@@ -8,8 +8,9 @@ const CATAS = {
   flood: {name:'INONDATION',        col:'#3fa0e8', dur:9,  icon:'🌊'}, // détruit le sol (sauf garnisons)
   sand:  {name:'TEMPÊTE DE SABLE',  col:'#d9b46a', dur:11, icon:'🌪'}, // détruit le ciel + visibilité nulle
   nuke:  {name:'BOMBE ATOMIQUE',    col:'#fff0a0', dur:6,  icon:'☢'},  // rase TOUT sauf les bases
+  meteor:{name:'PLUIE DE MÉTÉORITES', col:'#ff7a3a', dur:14, icon:'☄'}, // RARE : ciel d'enfer, impacts mortels
 };
-const CATA_KEYS = ['acid','heat','flood','sand','nuke'];
+const CATA_KEYS = ['acid','heat','flood','sand','nuke','meteor'];   // 'meteor' EN DERNIER (compat indices réseau)
 // ÉQUILIBRAGE (audit de proportionnalité coût↔puissance, valable à TOUTES les ères grâce
 // aux multiplicateurs uniformes statMul/costMul/up) :
 //  • Mêlée  = la moins chère, vrai DPS de choc — frappe TRÈS fort mais fragile et rapide.
