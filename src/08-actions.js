@@ -429,25 +429,29 @@ function spawnHero(side, power){
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie
   side.units.push(u);
 }
-// ---- ORDRE DE POSITION : la sélection va DÉFENDRE un point précis du terrain ----
-// Les unités s'y rendent (combattent en chemin ce qui passe à portée), s'étalent légèrement
-// autour du point pour ne pas s'empiler, puis tiennent la position (ord='point').
+// ---- ORDRE DE POSITION : aller DÉFENDRE un point précis du terrain ----
+// Avec une sélection : seules les unités sélectionnées y vont. SANS sélection : TOUTE
+// l'armée reçoit l'ordre. Les unités s'y rendent (combattent en chemin), s'étalent en
+// éventail pour ne pas s'empiler, puis tiennent la position (ord='point').
 function orderPoint(side, wx){
-  if (!game.sel.size) return false;
+  const all = !game.sel.size;
   wx = clamp(wx, 40, WORLD-40);
   if (isGuest(side)){
-    guestCmd({c:'point', x:Math.round(WORLD-wx), ids:[...game.sel].map(u=>u.id)});   // vue miroir → coordonnée hôte
+    if (all && !side.units.length) return false;
+    // vue miroir → coordonnée hôte ; ids vide = toute l'armée
+    guestCmd({c:'point', x:Math.round(WORLD-wx), ids: all? [] : [...game.sel].map(u=>u.id)});
     game.rally = {x:wx, t:0};
-    sfx('sel'); announce(fmt('a_point',{n:game.sel.size}), '#e8d8a0');
+    sfx('sel'); announce(all? tr('a_point_all') : fmt('a_point',{n:game.sel.size}), '#e8d8a0');
     return true;
   }
-  const sel = [...game.sel];
+  const sel = all? side.units.filter(u=>u.role!=='gremlin') : [...game.sel];
+  if (!sel.length) return false;
   sel.forEach((u,i)=>{
     u.ord = 'point'; u.task = null;
     u.px = clamp(wx + (i-(sel.length-1)/2)*16, 40, WORLD-40);   // éventail autour du point
   });
   game.rally = {x:wx, t:0};
-  sfx('sel'); announce(fmt('a_point',{n:sel.length}), '#e8d8a0');
+  sfx('sel'); announce(all? tr('a_point_all') : fmt('a_point',{n:sel.length}), '#e8d8a0');
   addFloater(wx, gY(wx)-60, '⚑', '#ffd34a', 16);
   return true;
 }

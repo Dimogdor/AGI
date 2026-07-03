@@ -13,9 +13,16 @@ function genDecor(theme){
   const pool = DECOR_THEMES[theme] || DECOR_THEMES.default;
   let seed = 1337 + (theme? theme.length*97 + theme.charCodeAt(0) : 0);
   const rnd = ()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
-  const out=[];
-  for (let i=0;i<24;i++) out.push({ x:140+rnd()*(WORLD-280), kind:pool[(rnd()*pool.length)|0],
-    s:0.8+rnd()*0.7, ph:rnd()*6.28, flip: rnd()<0.5?1:-1 });
+  // placement PROPRE : jamais sur une base, un socle, un lac ni une zone (fini l'épave
+  // collée derrière le château), et espacement minimal pour que rien ne se chevauche.
+  const out=[]; let guard=0;
+  while (out.length<24 && guard++<800){
+    const x = 140+rnd()*(WORLD-280);
+    const kind = pool[(rnd()*pool.length)|0], s = 0.8+rnd()*0.7, ph = rnd()*6.28, flip = rnd()<0.5?1:-1;
+    if (!mapClear(x, 34)) continue;
+    if (out.some(o=>Math.abs(o.x-x)<50)) continue;
+    out.push({x, kind, s, ph, flip});
+  }
   out.sort((a,b)=>a.x-b.x);
   return out;
 }

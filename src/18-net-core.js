@@ -62,9 +62,11 @@ function garrisonByIds(side, slot, ids){
   for (const u of elig){ slot.b.gar.push(u); side.units.splice(side.units.indexOf(u),1); }
 }
 // ordre de position de l'invité (coordonnée déjà convertie côté invité en repère hôte)
+// ids vide = TOUTE l'armée (aucune sélection côté invité)
 function applyPointIds(side, x, ids){
   const set = new Set(ids||[]);
-  const sel = side.units.filter(u=>set.has(u.id));
+  const sel = (ids && ids.length)? side.units.filter(u=>set.has(u.id))
+                                 : side.units.filter(u=>u.role!=='gremlin');
   sel.forEach((u,i)=>{
     u.ord='point'; u.task=null;
     u.px = clamp(x + (i-(sel.length-1)/2)*16, 40, WORLD-40);

@@ -28,6 +28,7 @@ function triggerCata(){
     ['acid', 32], ['heat', 32], ['sand', 32],
     ['flood', 5],                       // crue : exceptionnelle (était ~25 %)
     ['nuke', g.dev>0.7 ? 3 : 0],        // frappe atomique : très rare et monde très abîmé
+    ['meteor', g.dev>0.35 ? 4 : 1],     // pluie de météorites : RARE, un peu moins en fin de monde
   ];
   let total=0; for (const [,w] of pool) total+=w;
   let r=Math.random()*total, key='acid';
@@ -53,6 +54,9 @@ function startCata(key){
   } else if (key==='sand'){
     g.shake=Math.max(g.shake,8);
     for (const s of [g.p,g.e]) for (const u of s.units) if (u.fly){ u.hp=0; burst(u.x, gY(u.x)-30, '#d9b46a', 6); }
+  } else if (key==='meteor'){
+    g.shake=Math.max(g.shake,6);
+    METEORS.length=0; g.metT=0.9;      // premières chutes après ~1 s d'annonce
   }
 }
 function cataName(key){ const k='cata_'+key; const s=(typeof t==='function')? t(k):null; return (s&&s!==k)? s : CATAS[key].name; }
@@ -76,7 +80,38 @@ function applyCataEffects(dt){
     }});
   } else if (k==='sand'){                                   // la tempête continue d'arracher tout volant
     each(u=>{ if (u.fly) u.hp -= 30*dt; });
+  } else if (k==='meteor'){                                 // chutes échelonnées sur toute la carte
+    g.metT = (g.metT||0) - dt;
+    if (g.metT<=0 && g.cataT < g.cataDur-1.2){
+      g.metT = 0.55 + Math.random()*0.7;
+      METEORS.push({ tx: 120+Math.random()*(WORLD-240), t:0,
+                     dur: 0.85+Math.random()*0.35, dx: 150+Math.random()*130 });
+    }
+    for (let i=METEORS.length-1;i>=0;i--){
+      const m=METEORS[i]; m.t+=dt;
+      if (m.t>=m.dur){ METEORS.splice(i,1); meteorImpact(m.tx); }
+    }
   }
+}
+// impact de météorite : ONE-SHOT en frappe directe, souffle de zone autour, marque au sol
+let METEORS = [];
+function meteorImpact(cx){
+  const g=game, gy=gY(cx);
+  burst(cx, gy-10, '#ff9a4a', qN(18), 1.7); burst(cx, gy-6, '#ffe0b0', qN(8), 1.0);
+  addLight(cx, gy-20, '#ff8a3a', 160, 0.5);
+  sfxAt('boom', cx);
+  if (Math.random()<0.6) addCrater(cx, 24+Math.random()*16);
+  g.shake = Math.max(g.shake, 6);
+  for (const side of [g.p,g.e]){
+    for (const u of side.units){
+      const d = Math.abs(u.x-cx);
+      if (d < 16){ u.hp = 0; burst(u.x, gY(u.x)-16-(u.fly?u.flyH:0), '#ff6a3a', 6); } // frappe directe : one-shot
+      else if (d < 75){ u.hp -= 30 + 60*(1-d/75); u.flash = 0.2; }                    // souffle de zone
+    }
+    for (const s of sideBuildSlots(side)) if (s.b && Math.abs(s.x-cx)<60) s.b.hp -= 130;
+  }
+  if (Math.abs(g.p.x-cx)<75) g.p.hp -= 60;
+  if (Math.abs(g.e.x-cx)<75) g.e.hp -= 60;
 }
 // frappe nucléaire (cataclysme) : un cratère LOCALISÉ autour de cx, pas la carte entière.
 // (la Bombe H scénarisée, elle, garde razeMap : c'est la chute d'une base.)
@@ -148,6 +183,35 @@ function drawCata(){
     // rafales plus claires
     ctx.fillStyle='rgba(245,220,170,'+(0.3*fade)+')';
     for (let i=0;i<40;i++){ const x=((i*131+tt*1900)%(W+60))-30, y=(i*97+30)%H; ctx.fillRect(x,y,26,2.2); }
+  } else if (k==='meteor'){
+    // CIEL D'ENFER : voile rouge apocalyptique + lueur incandescente à l'horizon
+    const g2=ctx.createLinearGradient(0,0,0,H);
+    g2.addColorStop(0,'rgba(110,8,4,'+(0.36*fade)+')');
+    g2.addColorStop(0.55,'rgba(150,36,12,'+(0.22*fade)+')');
+    g2.addColorStop(1,'rgba(255,96,32,'+(0.12*fade)+')');
+    ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    // braises portées par le vent
+    for (let i=0;i<26;i++){ const x=(i*167+tt*40)%W, y=H-((tt*(46+(i%5)*15)+i*83)%H);
+      ctx.fillStyle='rgba(255,140,60,'+(0.26*fade)+')'; ctx.fillRect(x,y,2,2); }
+    // stries lointaines (pluie de fond, purement cosmétique — visibles aussi côté invité)
+    ctx.strokeStyle='rgba(255,150,70,'+(0.20*fade)+')'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for (let i=0;i<7;i++){ const x=((i*233+tt*310)%(W+160))-80, y=(i*127+tt*90)%(H*0.5);
+      ctx.beginPath(); ctx.moveTo(x+26,y-38); ctx.lineTo(x,y); ctx.stroke(); }
+    // MÉTÉORES actifs : boule incandescente + longue traînée de feu (repère monde → écran)
+    for (const m of METEORS){
+      const k2=m.t/m.dur, ix=w2sX(m.tx), iy=w2sY(gY(m.tx));
+      const sx0=ix+m.dx, sy0=-40;
+      const px=lerp(sx0,ix,k2), py=lerp(sy0,iy,k2);
+      const tx2=px+(sx0-ix)*0.16, ty2=py+(sy0-iy)*0.16;
+      ctx.strokeStyle='rgba(255,120,40,0.35)'; ctx.lineWidth=9;
+      ctx.beginPath(); ctx.moveTo(tx2,ty2); ctx.lineTo(px,py); ctx.stroke();
+      ctx.strokeStyle='rgba(255,190,100,0.75)'; ctx.lineWidth=3.5;
+      ctx.beginPath(); ctx.moveTo(tx2,ty2); ctx.lineTo(px,py); ctx.stroke();
+      ctx.fillStyle='rgba(255,120,40,0.65)'; ctx.beginPath(); ctx.arc(px,py,8,0,6.283); ctx.fill();
+      ctx.fillStyle='#ffe6c0'; ctx.beginPath(); ctx.arc(px,py,4.2,0,6.283); ctx.fill();
+    }
+    ctx.restore();
   } else if (k==='nuke'){
     const gx=w2sX(game.cataX||WORLD/2), gz=w2sY(GROUND);
     if (tt<0.55){ ctx.fillStyle='rgba(255,250,238,'+(1-tt/0.55)+')'; ctx.fillRect(0,0,W,H); }   // éclair aveuglant
