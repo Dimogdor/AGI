@@ -1152,6 +1152,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
   };
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
   DECOR = genDecor('default');             // habillage par défaut (escarmouche/online) ; re-thémé par mission
+  if (typeof ambReset==='function') ambReset();   // remet à zéro les événements de fond cosmétiques
   particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[];
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;
@@ -2807,6 +2808,179 @@ function sprite(key, w, h, draw){
   return s;
 }
 
+/* ====== CINÉMATIQUE v3 : profondeur de champ, monde vivant, dégradation, post-FX ====== */
+// support du flou canvas (Safari ancien ne l'a pas → dégradation gracieuse, aucun crash)
+const CANF = (()=>{ try{ const c=document.createElement('canvas').getContext('2d');
+  c.filter='blur(1px)'; return c.filter==='blur(1px)'; }catch(e){ return false; } })();
+const qHi = ()=> SETTINGS.quality==='high' || SETTINGS.quality==='ultra';
+// GRAIN FILMIQUE : bruit pré-cuit, tuilé avec un décalage aléatoire par frame
+let GRAIN=null;
+function grainCanvas(){
+  if (GRAIN) return GRAIN;
+  GRAIN=document.createElement('canvas'); GRAIN.width=GRAIN.height=160;
+  const c=GRAIN.getContext('2d'), im=c.createImageData(160,160);
+  for (let i=0;i<im.data.length;i+=4){ const v=128+((Math.random()*64-32)|0);
+    im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=255; }
+  c.putImageData(im,0,0); return GRAIN;
+}
+// ÉTALONNAGE + GRAIN (écran entier, après la vignette) : ombres teal, hautes lumières
+// chaudes, grain discret — le « look film » post-apocalyptique, purement cosmétique.
+function drawFilmGrade(){
+  if (!qHi()) return;
+  ctx.save();
+  ctx.globalCompositeOperation='multiply';
+  const sh=ctx.createLinearGradient(0,0,0,H);
+  sh.addColorStop(0,'rgba(255,255,255,1)'); sh.addColorStop(1,'rgba(214,228,232,1)');   // ombres froides en bas
+  ctx.fillStyle=sh; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  const hl=ctx.createLinearGradient(0,0,0,H*0.5);
+  hl.addColorStop(0,'rgba(30,18,6,0.5)'); hl.addColorStop(1,'rgba(0,0,0,0)');            // hautes lumières dorées
+  ctx.fillStyle=hl; ctx.fillRect(0,0,W,H*0.5);
+  ctx.globalCompositeOperation='overlay'; ctx.globalAlpha=0.05;
+  const g=grainCanvas(), ox=(Math.random()*160)|0, oy=(Math.random()*160)|0;
+  for (let y=-oy; y<H; y+=160) for (let x=-ox; x<W; x+=160) ctx.drawImage(g, x, y);
+  ctx.restore(); ctx.globalAlpha=1;
+}
+/* ---- MONDE VIVANT : événements de fond aléatoires (100 % cosmétiques, aucun gameplay) ----
+   Avions/hélicos qui traversent le ciel et s'écrasent à l'horizon, voitures qui explosent
+   dans la ville lointaine ; les épaves laissent des COLONNES DE FUMÉE persistantes. Plus le
+   monde agonise (game.dev), plus ces chutes sont fréquentes : la carte SE DÉGRADE sous vos yeux. */
+const AMB = { last:0, next:14, ev:null, smokes:[], fires:[] };
+function ambReset(){ AMB.ev=null; AMB.smokes.length=0; AMB.fires.length=0; AMB.last=0; AMB.next=10+Math.random()*18; }
+function drawAmbient(t, dev, vw){
+  if (!qFx()) return;
+  const dt = clamp(t-AMB.last, 0, 0.1); AMB.last = t;
+  // apparition : rare monde sain, fréquente monde mourant
+  if (!AMB.ev && t>AMB.next){
+    const roll = Math.random();
+    if (roll < 0.30+dev*0.55){
+      const kinds = dev>0.3? ['plane','heli','carfire','plane'] : ['plane','heli','carfire'];
+      const k = kinds[(Math.random()*kinds.length)|0];
+      const dir = Math.random()<0.5? 1:-1;
+      AMB.ev = { k, t:0, dir, dur: k==='plane'? 7.5 : k==='heli'? 9 : 0.8,
+                 y: 60+Math.random()*70, cx: WORLD*(0.2+Math.random()*0.6) };
+    }
+    AMB.next = t + lerp(34, 12, dev) + Math.random()*22;
+  }
+  if (AMB.ev){
+    const e=AMB.ev; e.t += dt;
+    if (e.t>=e.dur){
+      // CRASH : flash, débris, et une colonne de fumée persistante à l'horizon
+      if (e.k!=='carfire'){
+        if (AMB.smokes.length<4) AMB.smokes.push({cx:e.cx, t:0, life:50+Math.random()*25});
+        addLight(e.cx, GROUND-140, '#ff9a4a', 130, 0.6);
+      } else if (AMB.fires.length<3) AMB.fires.push({cx:e.cx, t:0, life:26});
+      AMB.ev=null;
+    } else drawAmbEvent(e, vw);
+  }
+  // colonnes de fumée des épaves (parallaxe lointaine 0.55)
+  for (let i=AMB.smokes.length-1;i>=0;i--){
+    const s=AMB.smokes[i]; s.t+=dt;
+    if (s.t>s.life){ AMB.smokes.splice(i,1); continue; }
+    const x=s.cx-camX*0.55, a=clamp(1-s.t/s.life,0,1)*0.5*(1-dev*0.3);
+    if (x<-80||x>vw+80) continue;
+    for (let p2=0;p2<5;p2++){
+      const ph=((t*0.22+p2*0.2+s.cx*0.01)%1), py=GROUND-152-ph*95, drift=Math.sin(t*0.5+p2*2)*8*ph;
+      ctx.fillStyle='rgba(46,40,42,'+(a*(1-ph)).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(x+drift+p2*3, py, 6+ph*17, 0, 6.283); ctx.fill();
+    }
+    if (s.t<7){ ctx.save(); ctx.globalCompositeOperation='lighter';                     // foyer encore incandescent
+      ctx.fillStyle='rgba(255,120,40,'+(0.35*(1-s.t/7)).toFixed(3)+')';
+      ctx.beginPath(); ctx.ellipse(x,GROUND-148,10,4,0,0,6.283); ctx.fill(); ctx.restore(); }
+  }
+  // voitures en feu dans la ville lointaine (parallaxe 0.7)
+  for (let i=AMB.fires.length-1;i>=0;i--){
+    const f=AMB.fires[i]; f.t+=dt;
+    if (f.t>f.life){ AMB.fires.splice(i,1); continue; }
+    const x=f.cx-camX*0.7; if (x<-40||x>vw+40) continue;
+    const a=clamp(1-f.t/f.life,0,1);
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    const fl=Math.abs(Math.sin(t*7+f.cx));
+    ctx.fillStyle='rgba(255,'+(120+60*fl|0)+',50,'+(0.5*a).toFixed(3)+')';
+    ctx.beginPath(); ctx.ellipse(x, GROUND-6, 5, 3+fl*4, 0, 0, 6.283); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle='rgba(40,36,38,'+(0.4*a).toFixed(3)+')';
+    for (let p2=0;p2<3;p2++){ const ph=((t*0.4+p2*0.33)%1);
+      ctx.beginPath(); ctx.arc(x+Math.sin(t+p2)*4*ph, GROUND-10-ph*46, 3+ph*7, 0, 6.283); ctx.fill(); }
+  }
+}
+function drawAmbEvent(e, vw){
+  const k2 = e.t/e.dur, dev=game?game.dev:0;
+  if (e.k==='carfire'){                                       // flash bref dans la ville
+    const x=e.cx-camX*0.7; if (x<-60||x>vw+60) return;
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    ctx.fillStyle='rgba(255,190,110,'+(0.8*(1-k2)).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(x, GROUND-10, 4+k2*22, 0, 6.283); ctx.fill(); ctx.restore();
+    return;
+  }
+  // trajectoire : traversée du ciel puis PIQUÉ final vers l'horizon (à parallaxe 0.55)
+  const cxS = e.cx - camX*0.55;
+  const entry = e.dir>0? -140 : vw+140;
+  const dive = clamp((k2-0.62)/0.38, 0, 1);                  // dernière phase : chute
+  const px = lerp(entry, cxS, clamp(k2/0.9,0,1));
+  const py = lerp(e.y, GROUND-150, dive*dive) + Math.sin(e.t*2.2)*3*(1-dive);
+  const tilt = e.dir*(0.06+dive*0.9);
+  if (px<-160||px>vw+160) return;
+  ctx.save(); ctx.translate(px,py); ctx.rotate(tilt); ctx.scale(e.dir,1);
+  ctx.fillStyle='rgba(30,30,38,0.92)';
+  if (e.k==='plane'){                                         // silhouette d'avion de ligne
+    ctx.beginPath(); ctx.ellipse(0,0,17,3.4,0,0,6.283); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-2,0); ctx.lineTo(-10,7); ctx.lineTo(-5,0); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-2,0); ctx.lineTo(-9,-6); ctx.lineTo(-5,0); ctx.closePath(); ctx.fill();
+    ctx.fillRect(-17,-4.6,4,4);
+  } else {                                                    // hélicoptère
+    ctx.beginPath(); ctx.ellipse(0,0,9,4,0,0,6.283); ctx.fill();
+    ctx.fillRect(-16,-1.4,10,2.4);
+    const r=Math.abs(Math.sin(e.t*14))*14;
+    ctx.strokeStyle='rgba(30,30,38,0.7)'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(-r,-5); ctx.lineTo(r,-5); ctx.stroke();
+  }
+  ctx.restore();
+  // panache de fumée / feu dès que l'appareil est condamné
+  if (k2>0.3){
+    ctx.fillStyle='rgba(50,44,46,'+(0.35*clamp((k2-0.3)*3,0,1)).toFixed(3)+')';
+    for (let i2=1;i2<=4;i2++){ const bx=px-e.dir*i2*13, by=py-i2*2*(1-dive)+dive*i2*6;
+      ctx.beginPath(); ctx.arc(bx, by, 2.5+i2*1.8, 0, 6.283); ctx.fill(); }
+    if (k2>0.55){ ctx.save(); ctx.globalCompositeOperation='lighter';
+      ctx.fillStyle='rgba(255,140,60,0.55)'; ctx.beginPath(); ctx.arc(px-e.dir*6, py, 3.4, 0, 6.283); ctx.fill(); ctx.restore(); }
+  }
+}
+// FISSURES DU SOL : le terrain se craquèle à mesure que le monde meurt (dev) — cosmétique
+function drawCracks(dev, vw){
+  const a = clamp((dev-0.28)*1.3, 0, 0.5); if (a<=0.02) return;
+  ctx.strokeStyle='rgba(16,10,8,'+a.toFixed(3)+')'; ctx.lineWidth=1.6; ctx.lineCap='round';
+  for (let wx=Math.floor(camX/300)*300; wx<camX+vw+300; wx+=300){
+    const h1=Math.abs(Math.sin(wx*0.769))%1; if (h1>0.62) continue;      // toutes les fissures ne « prennent » pas
+    const wx2=wx+h1*160, x=wx2-camX, gy=gY(wx2)+4;
+    ctx.beginPath(); ctx.moveTo(x,gy);
+    let px2=x, py2=gy;
+    for (let s2=0;s2<4;s2++){ px2+=6+h1*14; py2+=5+((h1*97+s2*37)%9); ctx.lineTo(px2,py2); }
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+8,gy+6); ctx.lineTo(x+14+h1*8, gy+2); ctx.stroke();   // ramification
+  }
+}
+// PREMIER PLAN PARALLAXE (profondeur « caméra ») : touffes et gravats sombres qui défilent
+// PLUS VITE que le champ de bataille, légèrement flous — l'œil lit instantanément la 3D.
+function drawForeground(dev, t, vw){
+  if (!qHi()) return;
+  ctx.save();
+  if (CANF) ctx.filter='blur(1.3px)';
+  ctx.fillStyle='rgba(14,10,9,0.85)'; ctx.strokeStyle='rgba(14,10,9,0.85)';
+  const par=1.22;
+  for (let wx=Math.floor(camX*par/230)*230; wx<camX*par+vw+230; wx+=230){
+    const h1=Math.abs(Math.sin(wx*0.417))%1; if (h1>0.55) continue;      // clairsemé
+    const x=wx-camX*par, base=gY(clamp(wx/par,0,WORLD))+26;
+    if (x<-40||x>vw+40) continue;
+    if (h1<0.28){                                                        // touffe d'herbes hautes
+      ctx.lineWidth=2.4; ctx.lineCap='round';
+      for (let b2=0;b2<5;b2++){ const bx=x+b2*4-8, sw=Math.sin(t*1.3+b2+wx)*2.4;
+        ctx.beginPath(); ctx.moveTo(bx,base); ctx.quadraticCurveTo(bx+sw,base-13,bx+sw*1.7,base-21-h1*14); ctx.stroke(); }
+    } else {                                                             // gravats / pierre
+      ctx.beginPath(); ctx.moveTo(x-9,base); ctx.lineTo(x-2,base-8-h1*6); ctx.lineTo(x+7,base-3); ctx.lineTo(x+10,base); ctx.closePath(); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
 /* ---------- écran-titre : dystopie animée ---------- */
 /* ---------- INTRO : le lore en quatre tableaux ---------- */
 function introText(lines, y){
@@ -3112,13 +3286,20 @@ function drawBG(){
       }
     }
   }
-  // MONTAGNES LOINTAINES (parallaxe la plus lente, fortement embrumées) → profondeur du décor
+  // PROFONDEUR DE CHAMP : les plans les plus lointains (montagnes, ville) sont réellement
+  // FLOUS — l'œil fait immédiatement la mise au point sur le champ de bataille.
+  const dof = CANF && qHi();
+  if (dof){ ctx.save(); ctx.filter='blur(1.8px)'; }
   drawFarRange(vw, bot, dev, t);
+  if (dof) ctx.restore();
   // collines avec brume de profondeur (3 plans)
   hill(0.18, GROUND-130, 90, lerpColArr(devLerp(GRASS),bot,0.7), vw);
   hill(0.32, GROUND-95,  70, lerpColArr(devLerp(GRASS),bot,0.5), vw);
   hill(0.5,  GROUND-55,  50, lerpColArr(devLerp(GRASS),bot,0.32), vw);
+  if (dof){ ctx.save(); ctx.filter='blur(1.2px)'; }
   drawCity(dev);
+  if (dof) ctx.restore();
+  drawAmbient(t, dev, vw);       // monde vivant : crashs d'avions/hélicos, incendies, fumées
   // voile de brume à l'horizon
   const haze=ctx.createLinearGradient(0,GROUND-120,0,GROUND);
   haze.addColorStop(0,rgbaC(bot,0)); haze.addColorStop(1,rgbaC(bot,0.4));
@@ -3150,18 +3331,21 @@ function drawBG(){
       ctx.fillRect(sx, gY(wx)+4+h1*18, 5+h1*7, 1.4);
     }
   }
-  // HERBE DYNAMIQUE : touffes qui ondulent au vent et se couchent au passage des unités lourdes.
+  // HERBE DYNAMIQUE : touffes qui ondulent au vent et se COUCHENT au passage de TOUTES les
+  // unités au sol (les lourdes l'écrasent davantage) — le terrain réagit à la bataille.
   if (qFx() && game){
-    const heavies=[];
-    for (const u of game.p.units) if(!u.fly && (u.role==='tank'||u.role==='siege'||u.role==='hero')) heavies.push(u.x);
-    for (const u of game.e.units) if(!u.fly && (u.role==='tank'||u.role==='siege'||u.role==='hero')) heavies.push(u.x);
+    const walkers=[];
+    for (const u of game.p.units) if(!u.fly) walkers.push([u.x, (u.role==='tank'||u.role==='siege'||u.role==='hero')? 0.5 : 0.26]);
+    for (const u of game.e.units) if(!u.fly) walkers.push([u.x, (u.role==='tank'||u.role==='siege'||u.role==='hero')? 0.5 : 0.26]);
     ctx.strokeStyle=rgbaC(shade(grass,1.3),0.45); ctx.lineWidth=1.4;
-    const step = SETTINGS.quality==='ultra'?26 : SETTINGS.quality==='high'?34 : 48;
+    const step = SETTINGS.quality==='ultra'?22 : SETTINGS.quality==='high'?30 : 46;
     for (let sx=10; sx<=vw; sx+=step){
       const wx=sx+camX, by=gY(wx);
-      let bend = Math.sin(wx*0.05+t*1.6)*2;
-      for (const hx of heavies){ const dlt=wx-hx; if (Math.abs(dlt)<34) bend += Math.sign(dlt||1)*(34-Math.abs(dlt))*0.45; }
-      ctx.beginPath(); ctx.moveTo(sx, by); ctx.quadraticCurveTo(sx+bend*0.5, by-7, sx+bend, by-11); ctx.stroke();
+      let bend = Math.sin(wx*0.05+t*1.6)*2, crush = 0;
+      for (const [hx,w2] of walkers){ const dlt=wx-hx, ad=Math.abs(dlt);
+        if (ad<32){ bend += Math.sign(dlt||1)*(32-ad)*w2; crush = Math.max(crush, (1-ad/32)*w2*1.6); } }
+      const hgt = 11*(1-Math.min(0.75,crush));                 // le brin s'ÉCRASE sous le pas
+      ctx.beginPath(); ctx.moveTo(sx, by); ctx.quadraticCurveTo(sx+bend*0.5, by-hgt*0.63, sx+bend, by-hgt); ctx.stroke();
     }
   }
   // rochers sculptés
@@ -3175,6 +3359,7 @@ function drawBG(){
     ctx.strokeStyle='rgba(120,100,80,0.22)'; ctx.lineWidth=1.4;
     ctx.beginPath(); ctx.ellipse(cx,cy,rr*0.9,rr*0.3,0,0,6.28); ctx.stroke();
   }
+  drawCracks(dev, vw);           // le sol se craquèle à mesure que le monde meurt
   for (const z of game.zones) drawZone(z, dev, t, vw);
   drawDecor(dev, t, vw);                 // calque d'habillage cosmétique (épaves, végétation, débris…)
   for (const tr of TREES) drawTree(tr, dev, t, vw);
@@ -3262,6 +3447,25 @@ function hill(par, base, amp, col, vw){
 }
 function drawCity(dev){
   const par=0.7, vw=VW(), t=game?game.t:0;
+  // DÉGRADATION VISIBLE : à mesure que la santé du monde chute, les immeubles s'éventrent
+  // (toits déchiquetés), fument, puis BRÛLENT — la skyline raconte la fin du monde.
+  const ruinBase = clamp((dev-0.3)*1.8, 0, 1);
+  const ruinTop = (bx, topY, bw2, h1)=>{                       // toit déchiqueté + fumée + feu
+    ctx.fillStyle='rgba(12,10,12,0.95)';
+    ctx.beginPath(); ctx.moveTo(bx, topY);
+    ctx.lineTo(bx+bw2*0.22, topY+7+h1*8); ctx.lineTo(bx+bw2*0.44, topY+2);
+    ctx.lineTo(bx+bw2*0.66, topY+9+h1*5); ctx.lineTo(bx+bw2*0.86, topY+3); ctx.lineTo(bx+bw2, topY+8);
+    ctx.lineTo(bx+bw2, topY-1); ctx.lineTo(bx, topY-1); ctx.closePath(); ctx.fill();
+    if (qFx()){
+      ctx.fillStyle='rgba(44,40,42,'+(0.30*ruinBase).toFixed(3)+')';                     // fumée du toit
+      for (let p2=0;p2<3;p2++){ const ph=((t*0.3+p2*0.33+h1)%1);
+        ctx.beginPath(); ctx.arc(bx+bw2*0.4+Math.sin(t*0.6+p2+h1*9)*6*ph, topY-4-ph*38, 3+ph*8, 0, 6.283); ctx.fill(); }
+      if (dev>0.55){ ctx.save(); ctx.globalCompositeOperation='lighter';                 // fenêtres en feu
+        const fl=Math.abs(Math.sin(t*5+h1*20));
+        ctx.fillStyle='rgba(255,'+(110+70*fl|0)+',40,'+(0.35*ruinBase).toFixed(3)+')';
+        ctx.fillRect(bx+bw2*0.28, topY+10, 6, 7); ctx.restore(); }
+    }
+  };
   ctx.save(); ctx.translate(-camX*par,0);
   for (let i=0;i<7;i++){
     const bx=40+i*54, bw=34, bh=60+((i*37)%70); if (bx-camX*par>vw+60||bx-camX*par<-90) continue;
@@ -3270,14 +3474,18 @@ function drawCity(dev){
     ctx.fillStyle=g; ctx.fillRect(bx,GROUND-bh,bw,bh);
     if (dev<0.7){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,210,130,'+(0.5-dev*0.5)+')';
       for(let wy=0;wy<bh-14;wy+=14) for(let wxn=0;wxn<2;wxn++) if((i+wy+wxn)%3) ctx.fillRect(bx+6+wxn*14,GROUND-bh+8+wy,5,6); ctx.restore(); }
+    const h1=((i*2654435)>>>0)%100/100;
+    if (ruinBase > h1*0.9+0.08) ruinTop(bx, GROUND-bh, bw, h1);
   }
   for (let i=0;i<6;i++){
     const bx=WORLD*par-380+i*60, bh=50+((i*53)%60);
     const body=mix([34,44,60],[18,24,36],dev);
     const g=ctx.createLinearGradient(bx,GROUND-bh,bx,GROUND); g.addColorStop(0,shade(body,1.25)); g.addColorStop(1,shade(body,0.7));
     ctx.fillStyle=g; ctx.fillRect(bx,GROUND-bh,40,bh);
-    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(90,208,255,'+(0.35+0.2*Math.sin(t*2+i))+')';
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(90,208,255,'+((0.35+0.2*Math.sin(t*2+i))*(1-ruinBase*0.7)).toFixed(3)+')';
     for(let wy=6;wy<bh-6;wy+=12) ctx.fillRect(bx+5,GROUND-bh+wy,30,2); ctx.restore();
+    const h1=((i*7654321)>>>0)%100/100;
+    if (ruinBase > h1*0.9+0.08) ruinTop(bx, GROUND-bh, 40, h1);
   }
   ctx.restore();
 }
@@ -4584,6 +4792,7 @@ function render(dt){
     ctx.fillText(f.txt, f.x-camX, f.y);
   }
   ctx.globalAlpha=1;
+  drawForeground(game.dev, game.t, VW());   // premier plan parallaxe (profondeur « caméra »)
   ctx.restore(); // fin du monde zoomé
   drawWinter();
   drawCata();
@@ -4594,6 +4803,7 @@ function render(dt){
   if (!VIGN){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
     VIGN.addColorStop(0,'rgba(0,0,0,0)'); VIGN.addColorStop(1,'rgba(8,6,12,0.30)'); }
   ctx.fillStyle=VIGN; ctx.fillRect(0,0,W,H);
+  drawFilmGrade();               // étalonnage cinéma (ombres froides / hautes lumières chaudes) + grain
   drawHUD();
   drawSpeedOverlays();
   ctx.restore();
