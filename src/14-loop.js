@@ -81,6 +81,7 @@ function render(dt){
     ctx.fillText(f.txt, f.x-camX, f.y);
   }
   ctx.globalAlpha=1;
+  drawForeground(game.dev, game.t, VW());   // premier plan parallaxe (profondeur « caméra »)
   ctx.restore(); // fin du monde zoomé
   drawWinter();
   drawCata();
@@ -91,6 +92,7 @@ function render(dt){
   if (!VIGN){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
     VIGN.addColorStop(0,'rgba(0,0,0,0)'); VIGN.addColorStop(1,'rgba(8,6,12,0.30)'); }
   ctx.fillStyle=VIGN; ctx.fillRect(0,0,W,H);
+  drawFilmGrade();               // étalonnage cinéma (ombres froides / hautes lumières chaudes) + grain
   drawHUD();
   drawSpeedOverlays();
   ctx.restore();
