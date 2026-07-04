@@ -84,11 +84,12 @@ function refreshFsBtn(){
   // sur iOS déjà installé en appli, pas besoin de bouton ; sinon on garde le ⛶ comme aide
   if (IS_IOS && IS_STANDALONE){ b.style.display='none'; return; }
   b.textContent = (IS_IOS ? '⤢' : (isFullscreen()? '✕' : '⛶'));
+  b.title = b.ariaLabel = tr('fs_btn');
   b.style.display = IS_TOUCH? 'block' : (isFullscreen()? 'none':'block');
   if (isFullscreen() && !IS_TOUCH) b.style.display='none';
 }
 $('fsBtn').addEventListener('click', ()=>{
-  if (IS_IOS){ iosHint('iOS : pour le plein écran, touchez Partager ⬆️ puis « Sur l\'écran d\'accueil », et lancez le jeu depuis l\'icône.'); return; }
+  if (IS_IOS){ iosHint(tr('ios_fs_hint')); return; }
   if (isFullscreen()) exitFullscreen(); else goFullscreen();
   setTimeout(refreshFsBtn, 60);
 });
@@ -167,7 +168,7 @@ async function refreshLobbies(){
   for (const l of list){
     const row=document.createElement('button'); row.className='pick';
     row.style.cssText='display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;font-size:13px;padding:7px 10px;';
-    const nm = (l.name||('Salon '+l.code)).slice(0,22);
+    const nm = (l.name||fmt('net_room_fallback',{code:l.code})).slice(0,22);
     row.innerHTML = '<span>'+(l.hasPw?'🔒 ':'')+escapeHtml(nm)+'</span>'+
                     '<span style="color:#9dc88a;">×'+(l.speed||1)+' · '+escapeHtml(l.code)+' →</span>';
     row.addEventListener('click', ()=> joinLobby(l));
@@ -245,14 +246,54 @@ function refreshOpts(){
   set('oShake', SETTINGS.shake);
   $('oVol').value = Math.round(SETTINGS.vol*100);
   $('oVolV').textContent = Math.round(SETTINGS.vol*100)+'%';
+  const oq=$('oQuality'); if (oq){ oq.classList.add('on'); oq.textContent = qualityName().toUpperCase(); }
 }
 $('oMusic').addEventListener('click', ()=>{ SETTINGS.music=!SETTINGS.music; saveSettings(); refreshOpts(); });
 $('oSfx').addEventListener('click', ()=>{ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); });
 $('oShake').addEventListener('click', ()=>{ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); });
 $('oVol').addEventListener('input', ()=>{ SETTINGS.vol=clamp($('oVol').value/100,0,1); saveSettings(); refreshOpts(); });
+$('oQuality').addEventListener('click', ()=>{ cycleQuality(); refreshOpts(); });
 $('langSel').addEventListener('change', ()=>{ SETTINGS.lang=$('langSel').value; saveSettings(); applyLang(); });
 applyLang();
 refreshOpts();
+
+/* ---------- CHOIX DE LANGUE AU PREMIER LANCEMENT ---------- */
+// Une seule fois : avant même de voir le menu, on demande la langue (avec une présélection
+// intelligente si la langue du navigateur fait partie des 9 gérées). Reste modifiable à tout
+// moment dans PARAMÈTRES → Langue (select #langSel, inchangé).
+const LANG_NATIVE = { fr:'Français', en:'English', es:'Español', de:'Deutsch', it:'Italiano',
+  pt:'Português', ru:'Русский', zh:'中文', ar:'العربية' };
+// cycle de langue (utilisé par la pause en jeu ⚙, où un <select> n'est pas pratique en canvas)
+function cycleLang(){
+  const codes = Object.keys(LANG_NATIVE), i = codes.indexOf(SETTINGS.lang);
+  SETTINGS.lang = codes[(i+1+codes.length)%codes.length] || codes[0];
+  saveSettings(); applyLang();
+}
+function buildLangPicker(){
+  const grid = $('langPickGrid'); if (!grid) return;
+  grid.innerHTML = '';
+  for (const code in LANG_NATIVE){
+    const b = document.createElement('button');
+    b.className = 'pick'; b.textContent = LANG_NATIVE[code];
+    b.style.cssText = 'font-size:16px;padding:13px 26px;';
+    b.addEventListener('click', ()=>{
+      SETTINGS.lang = code; saveSettings(); applyLang();
+      try { localStorage.setItem('agi_langChosen','1'); } catch(e){}
+      $('langPick').style.display = 'none';
+    });
+    grid.appendChild(b);
+  }
+}
+(function maybeAskLanguage(){
+  let chosen = '1';
+  try { chosen = localStorage.getItem('agi_langChosen'); } catch(e){}
+  if (chosen) return;                                  // déjà choisi (ou relance) : ne redemande jamais
+  buildLangPicker();
+  // présélection : langue du navigateur si elle fait partie des 9 gérées, sinon FR par défaut
+  const nav = ((navigator.language||'fr').slice(0,2)).toLowerCase();
+  if (LANG_NATIVE[nav]){ SETTINGS.lang = nav; saveSettings(); applyLang(); }
+  $('langPick').style.display = 'flex';
+})();
 
 /* ---------- À PROPOS : avis (étoiles + texte) et rapport de bug ---------- */
 // Tout passe par l'application e-mail de l'utilisateur (mailto préréempli) : fonctionne
@@ -291,16 +332,19 @@ function keyName(code){
   if (!code) return '?';
   if (code.startsWith('Key')) return code.slice(3);
   if (code.startsWith('Digit')) return code.slice(5);
-  const map = {Space:'Espace', Escape:'Échap', ArrowLeft:'←', ArrowRight:'→', ArrowUp:'↑', ArrowDown:'↓',
-    Equal:'+', Minus:'−', NumpadAdd:'Num +', NumpadSubtract:'Num −', ShiftLeft:'Maj G', ShiftRight:'Maj D',
-    ControlLeft:'Ctrl G', ControlRight:'Ctrl D', Tab:'Tab', Enter:'Entrée', Backspace:'Retour'};
-  return map[code] || code;
+  // touches à glyphe universel (flèches, +/−) : jamais traduites, déjà comprises partout
+  const glyph = {ArrowLeft:'←', ArrowRight:'→', ArrowUp:'↑', ArrowDown:'↓', Equal:'+', Minus:'−', Tab:'Tab'};
+  if (glyph[code]) return glyph[code];
+  const map = {Space:'kn_space', Escape:'kn_escape', NumpadAdd:'kn_numadd', NumpadSubtract:'kn_numsub',
+    ShiftLeft:'kn_shiftl', ShiftRight:'kn_shiftr', ControlLeft:'kn_ctrll', ControlRight:'kn_ctrlr',
+    Enter:'kn_enter', Backspace:'kn_backspace'};
+  return map[code]? tr(map[code]) : code;
 }
 function buildKeysBox(){
-  const box = $('keysBox'); box.innerHTML='';
+  const box = $('keysBox'); if (!box) return; box.innerHTML='';
   for (const k in DEFKEYS){
     const row = document.createElement('div'); row.className='setRow';
-    const sp = document.createElement('span'); sp.textContent = KEYLABELS[k];
+    const sp = document.createElement('span'); sp.textContent = keyLabel(k);
     const bt = document.createElement('button'); bt.className='keyBtn';
     bt.textContent = keyName(SETTINGS.keys[k]);
     bt.addEventListener('click', ()=>{
@@ -310,8 +354,8 @@ function buildKeysBox(){
     row.appendChild(sp); row.appendChild(bt); box.appendChild(row);
   }
   const row = document.createElement('div'); row.className='setRow';
-  const sp = document.createElement('span'); sp.textContent='Réinitialiser les touches';
-  const bt = document.createElement('button'); bt.className='keyBtn'; bt.textContent='↺ Défaut';
+  const sp = document.createElement('span'); sp.textContent = tr('keys_reset');
+  const bt = document.createElement('button'); bt.className='keyBtn'; bt.textContent = tr('keys_default');
   bt.addEventListener('click', ()=>{ SETTINGS.keys = Object.assign({},DEFKEYS); saveSettings(); buildKeysBox(); });
   row.appendChild(sp); row.appendChild(bt); box.appendChild(row);
 }

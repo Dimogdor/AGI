@@ -218,7 +218,8 @@ function handleTap(sx, sy, shift, opts){
         saveSettings(); refreshOpts();
       }
       else if (r.key==='shake'){ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); }
-      else if (r.key==='quality'){ cycleQuality(); }
+      else if (r.key==='lang'){ cycleLang(); }
+      else if (r.key==='quality'){ cycleQuality(); refreshOpts(); }
       else if (r.key==='follow') camFollow=!camFollow;
       else if (r.key==='quit'){
         netDisconnect();

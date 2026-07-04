@@ -81,7 +81,6 @@ function render(dt){
     ctx.fillText(f.txt, f.x-camX, f.y);
   }
   ctx.globalAlpha=1;
-  drawForeground(game.dev, game.t, VW());   // premier plan parallaxe (profondeur « caméra »)
   ctx.restore(); // fin du monde zoomé
   drawWinter();
   drawCata();

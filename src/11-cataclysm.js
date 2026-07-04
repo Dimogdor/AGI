@@ -258,6 +258,6 @@ function drawWinter(){
   }
   ctx.globalCompositeOperation='source-over';
   ctx.font='700 12px Arial'; ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
-  ctx.fillText('❄ HIVER NUCLÉAIRE — retour à la normale dans '+Math.ceil((game.winterT||0)/60)+' min', W/2, 78);
+  ctx.fillText(fmt('ev_winter_now',{min:Math.ceil((game.winterT||0)/60)}), W/2, 78);
   ctx.restore();
 }

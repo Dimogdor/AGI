@@ -100,6 +100,10 @@
   body[dir="rtl"] .tuto { text-align:right; }
   .setRow { display:flex; align-items:center; justify-content:space-between; width:min(440px,86vw);
     border-bottom:1px solid #2e2620; padding:10px 4px; font-size:clamp(13px,1.9vw,15px); color:#b8b0a4; }
+  .setH { width:min(440px,86vw); color:#e8a06a; font-weight:700; letter-spacing:.14em; font-size:11.5px;
+    text-transform:uppercase; margin:16px 0 2px; }
+  .setH:first-child { margin-top:2px; }
+  body[dir="rtl"] .setH { text-align:right; }
   .tog { cursor:pointer; border:1px solid #4a3a32; background:none; color:#988e80; border-radius:7px;
     padding:5px 16px; font-family:inherit; font-size:.95em; transition:color .15s, border-color .15s, background .15s; }
   .tog.on { border-color:#a8281e; color:#e8e0d2; background:#2a0e0a; }
@@ -154,6 +158,13 @@
   <div style="font-size:20px;font-weight:700;letter-spacing:.5px;">Tournez votre appareil</div>
   <div style="font-size:15px;color:#b7ad9c;margin-top:6px;">Rotate your device</div>
   <div style="font-size:12.5px;color:#8d8478;margin-top:12px;">Le jeu se joue en paysage · The game plays in landscape</div>
+</div>
+<div id="langPick" class="panel" style="position:fixed;inset:0;z-index:30;display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:24px;
+  background:rgba(9,6,6,0.94);pointer-events:auto;">
+  <div style="font-size:clamp(15px,2.4vw,19px);letter-spacing:.16em;color:#e8d8a0;text-transform:uppercase;text-align:center;">
+    Choisissez votre langue · Choose your language</div>
+  <div id="langPickGrid" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:620px;"></div>
 </div>
 <div id="ui">
   <div id="menu" class="panel">
@@ -269,6 +280,7 @@
       <button class="go" id="tutoStartBtn" style="margin-top:6px;">▶ COMMENCER LE TUTORIEL</button>
     </div>
     <div class="page" id="page-opts">
+      <div class="setH" data-i18n="opts_h_display">AFFICHAGE</div>
       <div class="setRow"><span data-i18n="set_lang">Langue</span>
         <select id="langSel">
           <option value="fr">Français</option>
@@ -282,6 +294,9 @@
           <option value="ar">العربية</option>
         </select>
       </div>
+      <div class="setRow"><span data-i18n="set_quality">Qualité graphique</span><button class="tog on" id="oQuality">ULTRA</button></div>
+      <div class="setRow"><span data-i18n="set_shake">Secousses d'écran</span><button class="tog on" id="oShake">ACTIVES</button></div>
+      <div class="setH" data-i18n="opts_h_audio">AUDIO</div>
       <div class="setRow"><span data-i18n="set_music">Musique</span><button class="tog on" id="oMusic">ACTIVE</button></div>
       <div class="setRow"><span data-i18n="set_sfx">Effets sonores</span><button class="tog on" id="oSfx">ACTIFS</button></div>
       <div class="setRow"><span data-i18n="set_vol">Volume</span>
@@ -291,7 +306,7 @@
           <span id="oVolV" style="min-width:42px;text-align:center">80%</span>
         </div>
       </div>
-      <div class="setRow"><span data-i18n="set_shake">Secousses d'écran</span><button class="tog on" id="oShake">ACTIVES</button></div>
+      <div class="setH" data-i18n="opts_h_controls">COMMANDES</div>
       <div id="keysTitle" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
       <div id="keysBox" style="width:min(440px,86vw)"></div>
     </div>

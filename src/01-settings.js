@@ -3,10 +3,9 @@ const DEFKEYS = { buy1:'Digit1', buy2:'Digit2', buy3:'Digit3', buy4:'Digit4', bu
   evolve:'KeyE', special:'Space', charge:'KeyC', hold:'KeyV', retreat:'KeyB', formation:'KeyG',
   follow:'KeyF', left:'ArrowLeft', right:'ArrowRight', zoomin:'Equal', zoomout:'Minus',
   capup:'KeyU', repairall:'KeyR', pause:'Escape' };
-const KEYLABELS = { buy1:'Unité 1', buy2:'Unité 2', buy3:'Unité 3', buy4:'Unité 4', buy5:'Unité 5', buy6:'Unité 6',
-  evolve:'Évoluer', special:'Pouvoir spécial', charge:'Ordre : charger', hold:'Ordre : tenir', retreat:'Ordre : replier',
-  formation:'Formation auto', follow:'Caméra auto', left:'Caméra ←', right:'Caméra →', zoomin:'Zoom +', zoomout:'Zoom −',
-  capup:'Capacité +10', repairall:'Tout réparer', pause:'Pause' };
+// libellés des touches : traduits (clés key_*, voir 02-i18n.js) — fonction plutôt que
+// table statique pour toujours refléter la langue courante, y compris après un changement.
+function keyLabel(k){ return tr('key_'+k); }
 const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:'ultra', keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
