@@ -5,7 +5,7 @@ function showEnd(){
   et.style.color = game.win? '#e8d8a0' : '#a8281e';
   const mins = Math.floor(game.t/60), secs = ('0'+Math.floor(game.t%60)).slice(-2);
   s.innerHTML =
-    t('end_duration')+' : '+mins+' min '+secs+' s<br>'+
+    t('end_duration')+' : '+mins+' '+t('unit_min')+' '+secs+' '+t('unit_sec')+'<br>'+
     t('end_kills')+' : '+game.kills+' · '+t('end_losses')+' : '+game.eKills+'<br>'+
     t('end_era')+' : '+lEra(game.p.facKey,game.p.era)+(game.p.trans? ' — '+lTransName(game.p.facKey):'')+'<br>'+
     t('end_powers')+' : '+game.specialsUsed+' · '+t('end_world')+' : '+Math.round((1-game.dev)*100)+'%'+

@@ -329,6 +329,10 @@ function startTutorial(){
   // bloqué par la barrière, il vient jusqu'à eux : la tourelle aura toujours des cibles à portée.
   p.slots.push({ x: barrierX - 295, b:null, owner:null });
   p.slots.push({ x: barrierX - 235, b:null, owner:null });
+  // PAS de socles neutres en tuto : le socle neutre par défaut à WORLD*0.33 (≈1188) tombe
+  // PILE entre les deux socles de défense ci-dessus (1155/1215) — un 3e cercle « TERRAIN
+  // LIBRE » s'affichait donc en chevauchement, jamais enseigné et jamais nécessaire.
+  game.neut = [];
   camFollow = false; zoom = 1; camX = 0; camClamp();
   TUT = { i:0, t:0, steps:TUT_STEPS, revealed:[], celebrating:false, celebT:0, confirmSkip:false, freeze:false, uiRects:[], confirmRects:[] };
   tutEnterStep();

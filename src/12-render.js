@@ -253,37 +253,6 @@ function drawCracks(dev, vw){
     ctx.beginPath(); ctx.moveTo(x+8,gy+6); ctx.lineTo(x+14+h1*8, gy+2); ctx.stroke();   // ramification
   }
 }
-// PREMIER PLAN PARALLAXE (profondeur « caméra ») : touffes et gravats sombres qui défilent
-// PLUS VITE que le champ de bataille, légèrement flous — l'œil lit instantanément la 3D.
-// PERF : silhouettes PRÉ-CUITES en sprites (flou appliqué à la cuisson, 3 phases de
-// balancement pour garder l'animation) — par élément il ne reste qu'un drawImage.
-function fgSprite(kind, ph){
-  return sprite('FG'+kind+ph, 52, 60, ()=>{
-    TC.save(); if (CANF) TC.filter='blur(1.1px)';
-    TC.strokeStyle='rgba(14,10,9,0.85)'; TC.fillStyle='rgba(14,10,9,0.85)';
-    if (kind==='g'){
-      TC.lineWidth=2.6; TC.lineCap='round';
-      for (let b2=0;b2<6;b2++){ const bx=13+b2*4.6, sw=Math.sin(ph*2.1+b2)*3.2;
-        TC.beginPath(); TC.moveTo(bx,58); TC.quadraticCurveTo(bx+sw,42,bx+sw*1.8,26+((b2*7)%11)); TC.stroke(); }
-    } else {
-      TC.beginPath(); TC.moveTo(7,58); TC.lineTo(17,40); TC.lineTo(31,49); TC.lineTo(41,58); TC.closePath(); TC.fill();
-      TC.beginPath(); TC.moveTo(30,58); TC.lineTo(37,49); TC.lineTo(46,58); TC.closePath(); TC.fill();
-    }
-    TC.restore();
-  });
-}
-function drawForeground(dev, t, vw){
-  if (!qHi()) return;
-  const par=1.22;
-  for (let wx=Math.floor(camX*par/230)*230; wx<camX*par+vw+230; wx+=230){
-    const h1=Math.abs(Math.sin(wx*0.417))%1; if (h1>0.55) continue;      // clairsemé
-    const x=wx-camX*par, base=gY(clamp(wx/par,0,WORLD))+26;
-    if (x<-50||x>vw+50) continue;
-    if (h1<0.28){ const ph=(((t*1.3+wx*0.01)|0)%3+3)%3;                   // 3 phases pré-cuites
-      ctx.drawImage(fgSprite('g',ph), x-26, base-60, 52, 60);
-    } else ctx.drawImage(fgSprite('r',0), x-26, base-60, 52, 60);
-  }
-}
 /* ---------- écran-titre : dystopie animée ---------- */
 /* ---------- INTRO : le lore en quatre tableaux ---------- */
 function introText(lines, y){
@@ -485,7 +454,7 @@ function drawMenuScene(dt){
   }
   ctx.stroke();
   ctx.fillStyle='rgba(216,72,58,0.85)'; ctx.font='14px Arial';
-  ctx.textAlign='left'; ctx.fillText('▼ HUMANITY −'+(38+Math.floor(8*Math.sin(t*0.7))) +'%', 16, 108);
+  ctx.textAlign='left'; ctx.fillText(fmt('mkt_crash',{pct:38+Math.floor(8*Math.sin(t*0.7))}), 16, 108);
   // pluie de symboles du capital
   ctx.font='15px Georgia'; ctx.textAlign='center';
   const GL = ['$','€','¥','▼','£','◈'];

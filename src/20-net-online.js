@@ -62,7 +62,7 @@ function drawOnlinePause(){
     ctx.font='700 15px Arial'; ctx.fillStyle='#e8e0d2';
     ctx.fillText('⏸  '+t('np_paused_foe'), W/2, by+22);
     ctx.font='700 24px Arial'; ctx.fillStyle='#e8a06a';
-    ctx.fillText(Math.ceil(netPause.timer)+'s', W/2, by+44);
+    ctx.fillText(Math.ceil(netPause.timer)+t('unit_sec'), W/2, by+44);
     onlineVoteRects=null;
   } else {
     // vote de prolongation : on assombrit pour attirer l'attention sur le choix

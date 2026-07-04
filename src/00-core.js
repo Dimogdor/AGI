@@ -7,7 +7,9 @@
 window.addEventListener('error', ev=>{
   const d = document.createElement('div');
   d.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:99;background:#400;color:#fcc;font:11px monospace;padding:4px 8px;max-width:90vw;pointer-events:none';
-  d.textContent = '⚠ '+ev.message+' (ligne '+ev.lineno+')';
+  // fmt()/i18n peuvent ne pas encore exister si l'erreur survient très tôt (repli anglais)
+  try { d.textContent = fmt('err_line', {msg:ev.message, n:ev.lineno}); }
+  catch(e){ d.textContent = '⚠ '+ev.message+' (line '+ev.lineno+')'; }
   document.body.appendChild(d);
   setTimeout(()=>d.remove(), 9000);
 });
