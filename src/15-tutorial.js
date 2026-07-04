@@ -152,6 +152,14 @@ const TUT_STEPS = [
     allow:a=>a.t==='stance',
     done:()=>game.p.stance==='charge'||game.p.units.some(u=>u.ord==='charge'),
   },
+  { // 10b — ORDRE DE POSITION : clic droit (PC) / appui long (mobile)
+    text:{fr:"Ordre de POSITION : CLIC DROIT (PC) ou APPUI LONG (mobile) sur le terrain — vos troupes vont DÉFENDRE ce point exact. Sans sélection, TOUTE l'armée y va ; avec une sélection, elle seule obéit.",
+          en:"POSITION order: RIGHT-CLICK (PC) or LONG-PRESS (mobile) on the ground — your troops go DEFEND that exact spot. With nothing selected the WHOLE army goes; with a selection, only it obeys."},
+    obj:{fr:"Envoyez vos troupes sur un point (clic droit / appui long)",en:"Send troops to a point (right-click / long-press)"},
+    enter:()=>{ camFollow=false; camX=0; game.p.stance='hold'; tutEnsureGround(2); },
+    focus:()=>null,
+    done:()=>game.p.units.some(u=>u.ord==='point'),
+  },
   { // 11 — amélioration de classe
     text:{fr:"Renforcez vos troupes : touchez le petit ⬆ dans le coin du bouton ⚔ MÊLÉE pour AMÉLIORER toute la classe (cumulable ×3).",
           en:"Strengthen your troops: tap the small ⬆ in the corner of the ⚔ MELEE button to UPGRADE the whole class (stacks ×3)."},
