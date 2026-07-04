@@ -59,15 +59,20 @@ function drawOnlinePause(){
     const bw=300, bh=58, bx=W/2-bw/2, by=46;
     ctx.fillStyle='rgba(16,13,12,0.9)'; rr(bx,by,bw,bh,8); ctx.fill();
     ctx.strokeStyle='#e8a06a'; ctx.lineWidth=1.4; rr(bx,by,bw,bh,8); ctx.stroke();
-    ctx.font='700 15px Arial'; ctx.fillStyle='#e8e0d2';
-    ctx.fillText('⏸  '+t('np_paused_foe'), W/2, by+22);
-    ctx.font='700 24px Arial'; ctx.fillStyle='#e8a06a';
-    ctx.fillText(Math.ceil(netPause.timer)+t('unit_sec'), W/2, by+44);
+    ctx.fillStyle='#e8e0d2';
+    const foeTxt = '⏸  '+t('np_paused_foe');
+    fitFont(foeTxt, bw-24, '700 15px Arial', 10);
+    ctx.fillText(foeTxt, W/2, by+22);
+    ctx.fillStyle='#e8a06a';
+    const secTxt = Math.ceil(netPause.timer)+t('unit_sec');
+    fitFont(secTxt, bw-24, '700 24px Arial', 16);
+    ctx.fillText(secTxt, W/2, by+44);
     onlineVoteRects=null;
   } else {
     // vote de prolongation : on assombrit pour attirer l'attention sur le choix
     ctx.fillStyle='rgba(10,8,7,0.55)'; ctx.fillRect(0,0,W,H);
-    ctx.font='16px Arial'; ctx.fillStyle='#b8b0a4';
+    ctx.fillStyle='#b8b0a4';
+    fitFont(t('np_ask'), W-60, '16px Arial', 11);
     ctx.fillText(t('np_ask'), W/2, H/2-20);
     const bw=130, bh=46, gap=24, y=H/2+10;
     const yes={x:W/2-bw-gap/2, y, w:bw, h:bh, ok:true};
@@ -75,8 +80,10 @@ function drawOnlinePause(){
     for (const b of [yes,no]){
       ctx.fillStyle = b.ok? '#1c3a18':'#3c100c'; rr(b.x,b.y,b.w,b.h,5); ctx.fill();
       ctx.strokeStyle = b.ok? '#5aa84a':'#d8483a'; ctx.lineWidth=1; rr(b.x,b.y,b.w,b.h,5); ctx.stroke();
-      ctx.fillStyle='#fff'; ctx.font='700 18px Arial';
-      ctx.fillText(b.ok? t('yes'):t('no'), b.x+b.w/2, b.y+b.h/2+1);
+      ctx.fillStyle='#fff';
+      const yn = b.ok? t('yes'):t('no');
+      fitFont(yn, bw-16, '700 18px Arial', 12);
+      ctx.fillText(yn, b.x+b.w/2, b.y+b.h/2+1);
     }
     onlineVoteRects=[yes,no];
   }
@@ -84,8 +91,9 @@ function drawOnlinePause(){
 // bandeau d'état pour le DEMANDEUR (par-dessus son menu de réglages)
 function drawOnlinePauseInfo(){
   ctx.textAlign='center';
-  const txt = netPause.voting? t('np_wait') : (Math.ceil(netPause.timer)+'s · '+t('np_paused_you'));
-  ctx.font='600 13px Arial'; ctx.fillStyle='#e8a06a';
+  const txt = netPause.voting? t('np_wait') : (Math.ceil(netPause.timer)+t('unit_sec')+' · '+t('np_paused_you'));
+  ctx.fillStyle='#e8a06a';
+  fitFont(txt, W-40, '600 13px Arial', 9.5);
   ctx.fillText(txt, W/2, 24);
 }
 // point d'entrée unique : un appui sur « pause » selon le contexte (solo / en ligne)

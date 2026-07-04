@@ -9,6 +9,26 @@ function lerpColArr(c1,c2,t){ return [lerp(c1[0],c2[0],t),lerp(c1[1],c2[1],t),le
 const colS = c => 'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')';
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
   ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+// ADAPTATIF ANTI-DÉBORDEMENT : ajuste ctx.font pour que `text` tienne dans maxW pixels
+// (indispensable en i18n — une même case doit accueillir 9 langues de longueurs très
+// différentes, ex. l'allemand ou le russe sont souvent 30-50% plus longs que le français).
+// Ne réduit jamais sous minPx. Définit ctx.font en effet de bord ; l'appelant dessine ensuite
+// normalement avec ctx.fillText(text, ...). Retourne la largeur finale mesurée.
+function fitFont(text, maxW, font, minPx){
+  ctx.font = font;
+  let w = ctx.measureText(text).width;
+  if (w <= maxW) return w;
+  const m = font.match(/(\d+(?:\.\d+)?)px/);
+  const px0 = m? parseFloat(m[1]) : 12;
+  minPx = minPx || Math.max(7, px0*0.6);
+  let px = Math.max(minPx, px0 * (maxW / w));
+  ctx.font = font.replace(/(\d+(?:\.\d+)?)px/, px.toFixed(1)+'px');
+  w = ctx.measureText(text).width;
+  if (w > maxW && px > minPx){                 // l'estimation proportionnelle rate parfois (kerning) : 2e passe
+    px = minPx; ctx.font = font.replace(/(\d+(?:\.\d+)?)px/, px+'px'); w = ctx.measureText(text).width;
+  }
+  return w;
+}
 
 /* ================= BOÎTE À OUTILS PIXEL-ART =================
    Tout est dessiné sur une grille de « gros pixels » pour un rendu néo-rétro net.

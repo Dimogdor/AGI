@@ -150,12 +150,19 @@ function drawHUD(){
   ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1;
   ctx.strokeRect(mx + camX/WORLD*mw, my, VW()/WORLD*mw, mh);
   // ---- INDICATEUR DE MOMENTUM : qui prend l'avantage globalement (sous la minimap) ----
-  { const my2=my+mh+4;
+  // RESTYLE : barre plus épaisse et lisible (6px), lueur de la couleur en tête, repère
+  // central en TRIANGLE net au-dessus de la barre (l'ancien tick carré blanc se confondait
+  // avec le remplissage coloré et ressemblait à un point flottant sans signification).
+  { const my2=my+mh+5, barH=6;
     const mom = clamp((p.hp/p.maxhp - game.e.hp/game.e.maxhp)*1.6 + (p.units.length-game.e.units.length)/40, -1, 1);
-    ctx.fillStyle='rgba(0,0,0,0.45)'; rr(mx,my2,mw,4,2); ctx.fill();
-    if (mom>=0){ ctx.fillStyle=p.fac.accent; ctx.fillRect(mx+mw/2, my2, mw/2*mom, 4); }
-    else { ctx.fillStyle=game.e.fac.accent; ctx.fillRect(mx+mw/2+mw/2*mom, my2, -mw/2*mom, 4); }
-    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillRect(mx+mw/2-0.5,my2-1,1,6);
+    ctx.fillStyle='rgba(0,0,0,0.5)'; rr(mx,my2,mw,barH,3); ctx.fill();
+    const leadCol = mom>=0? p.fac.accent : game.e.fac.accent;
+    ctx.save(); ctx.shadowColor=leadCol; ctx.shadowBlur=5;
+    ctx.fillStyle=leadCol;
+    if (mom>=0) rr(mx+mw/2, my2, mw/2*mom, barH, 3); else rr(mx+mw/2+mw/2*mom, my2, -mw/2*mom, barH, 3);
+    ctx.fill(); ctx.restore();
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.moveTo(mx+mw/2, my2-1); ctx.lineTo(mx+mw/2-3.2, my2-5.5); ctx.lineTo(mx+mw/2+3.2, my2-5.5); ctx.closePath(); ctx.fill();
   }
   // ---- ANNEAU DE PROGRESSION D'ÈRE (façon RPG), à gauche de la minimap ----
   { const rx=mx-18, ry=my+7, rad=8;
@@ -349,8 +356,10 @@ function drawBtn(b){
   else { ctx.strokeStyle=ok?col:rgbaC(col,0.55); ctx.lineWidth=ok?1.8:1; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
   ctx.textAlign='center';
   if (small){
-    ctx.font='700 12px Arial'; ctx.fillStyle = col;
-    ctx.fillText(b.label||label, b.x+b.w/2, b.y+b.h/2+1);
+    ctx.fillStyle = col;
+    const smallLbl = b.label||label;
+    fitFont(smallLbl, b.w-8, '700 12px Arial', 8);
+    ctx.fillText(smallLbl, b.x+b.w/2, b.y+b.h/2+1);
   } else {
     ctx.font='700 11px Arial'; ctx.fillStyle = ok?'#fff':'#9a9085';
     ctx.fillText(label, b.x+b.w/2, b.y+16, b.w-8);
@@ -364,8 +373,9 @@ function drawBtn(b){
                  [tr('cat_range'),'#ffd34a'],[tr('cat_air'),'#5ad0ff'],[tr('cat_support'),'#6dff8a']][b.i];
     ctx.fillStyle = CAT[1];
     ctx.fillRect(b.x+4, b.y+2, b.w-8, 2);
-    ctx.font='600 6.5px Arial'; ctx.textAlign='center';
+    ctx.textAlign='center';
     ctx.globalAlpha = 0.85;
+    fitFont(CAT[0], b.w-8, '600 6.5px Arial', 5.5);
     ctx.fillText(CAT[0], b.x+b.w/2, b.y+8);
     ctx.globalAlpha = 1;
   }
@@ -483,13 +493,17 @@ function drawBuildMenu(){
     ctx.fillStyle = cur? rgbaC(p.fac.accent,0.18) : 'rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
     if (cur){ ctx.save(); ctx.strokeStyle=p.fac.accent; ctx.lineWidth=2; ctx.shadowColor=p.fac.accent; ctx.shadowBlur=8;
       rr(bx+4,y,bw-8,30,5); ctx.stroke(); ctx.restore(); }
-    ctx.font='700 11.5px Arial'; ctx.fillStyle = cur? '#fff' : '#e8e0d2';
+    ctx.fillStyle = cur? '#fff' : '#e8e0d2';
+    fitFont(o.label, bw-20, '700 11.5px Arial', 8.5);
     ctx.fillText(o.label, bx+12, y+10);
-    ctx.font='600 10px Arial'; ctx.fillStyle='#e8d8a0';
-    ctx.fillText(free?'—':costStr(p,o.cost), bx+12, y+23);
+    ctx.fillStyle='#e8d8a0';
+    const costTxt = free?'—':costStr(p,o.cost);
+    fitFont(costTxt, bw-20, '600 10px Arial', 7.5);
+    ctx.fillText(costTxt, bx+12, y+23);
     // info de production affichée AVANT la construction (chaque ferme produit X de sa ressource)
     if (o.prod){
       ctx.textAlign='right'; ctx.fillStyle='#9dd88a';
+      fitFont(o.prod, bw*0.4, '600 10px Arial', 7.5);
       ctx.fillText(o.prod, bx+bw-12, y+15);
       ctx.textAlign='left';
     }
@@ -503,13 +517,15 @@ function drawSoftPause(){
   const bw=240, bh=78, bx=W/2-bw/2, by=H/2-bh/2;
   ctx.fillStyle='rgba(16,16,14,0.9)'; rr(bx,by,bw,bh,8); ctx.fill();
   ctx.strokeStyle='#7dd84a'; ctx.lineWidth=1.4; rr(bx,by,bw,bh,8); ctx.stroke();
-  ctx.textAlign='center';
-  ctx.font='800 22px Arial'; ctx.fillStyle='#e8e0d2';
-  ctx.fillText('⏸  '+t('p_title'), W/2, by+26);
+  ctx.textAlign='center'; ctx.fillStyle='#e8e0d2';
+  const softTitle = '⏸  '+t('p_title');
+  fitFont(softTitle, bw-24, '800 22px Arial', 14);
+  ctx.fillText(softTitle, W/2, by+26);
   const rw=bw-44, rh=26, rx=bx+22, ry=by+40;
   ctx.fillStyle='rgba(125,216,74,0.14)'; rr(rx,ry,rw,rh,5); ctx.fill();
   ctx.strokeStyle='#7dd84a'; ctx.lineWidth=1.2; rr(rx,ry,rw,rh,5); ctx.stroke();
-  ctx.font='700 14px Arial'; ctx.fillStyle='#bfe6b0';
+  ctx.fillStyle='#bfe6b0';
+  fitFont(t('p_resume'), rw-12, '700 14px Arial', 10);
   ctx.fillText(t('p_resume'), W/2, ry+rh/2+1);
   pauseRects = [{x:rx,y:ry,w:rw,h:rh,key:'resume'}];
 }
@@ -550,30 +566,38 @@ function drawPause(){
     {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
     {key:'quit',   label:t('p_quit')},
   ];
+  // GÉOMÉTRIE : bh est dérivé des MÊMES constantes que les offsets Y du dessin
+  // (TITLE_H/RESUME_H/GAP0), au lieu d'une constante devinée séparément — c'est cet
+  // écart qui faisait sortir « Abandonner la partie » (dernier item) du cadre du panneau.
+  const TITLE_H=48, RESUME_H=34, GAP0=16, BOTTOM_PAD=14;
   const ih=36, headH=24, gap=6;
-  let bh=64; for (const it of items) bh += (it.head!=null? headH : ih)+gap;
+  let contentH=0; for (const it of items) contentH += (it.head!=null? headH : ih)+gap;
+  const bh = TITLE_H + RESUME_H + GAP0 + contentH + BOTTOM_PAD;
   const by=clamp(H/2-bh/2, 8, H-bh-8);
   ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=22; ctx.shadowOffsetY=6;
   const pg=ctx.createLinearGradient(bx,by,bx,by+bh); pg.addColorStop(0,'rgba(26,18,16,0.95)'); pg.addColorStop(1,'rgba(13,9,8,0.95)');
   ctx.fillStyle=pg; rr(bx,by,bw,bh,14); ctx.fill(); ctx.restore();
   ctx.strokeStyle=rgbaC(acc,0.7); ctx.lineWidth=1.6; rr(bx,by,bw,bh,14); ctx.stroke();
-  ctx.font='700 23px Arial'; ctx.textAlign='center'; ctx.fillStyle='#e8e0d2';
-  ctx.fillText('⚙ '+t('p_title'), W/2, by+34);
+  ctx.textAlign='center'; ctx.fillStyle='#e8e0d2';
+  const pauseTitle = '⚙ '+t('p_title');
+  fitFont(pauseTitle, bw-30, '700 23px Arial', 15);
+  ctx.fillText(pauseTitle, W/2, by+34);
   // bouton REPRENDRE mis en avant, juste sous le titre
-  const rw0=bw-48, rh0=34, rx0=bx+24, ry0=by+48;
+  const rw0=bw-48, rh0=RESUME_H, rx0=bx+24, ry0=by+TITLE_H;
   ctx.save(); ctx.fillStyle=rgbaC('#7dd84a',0.16); rr(rx0,ry0,rw0,rh0,9); ctx.fill();
   ctx.strokeStyle='#7dd84a'; ctx.lineWidth=1.6; ctx.shadowColor='#7dd84a'; ctx.shadowBlur=8;
   rr(rx0,ry0,rw0,rh0,9); ctx.stroke(); ctx.restore();
-  ctx.font='700 15px Arial'; ctx.fillStyle='#bfe6b0';
+  ctx.fillStyle='#bfe6b0';
+  fitFont(t('p_resume'), rw0-20, '700 15px Arial', 11);
   ctx.fillText(t('p_resume'), W/2, ry0+rh0/2+5);
   pauseRects = [{x:rx0,y:ry0,w:rw0,h:rh0,key:'resume'}];
-  ctx.font='13px Arial';
-  let y = ry0+rh0+16;
+  let y = ry0+rh0+GAP0;
   for (const it of items){
     if (it.head!=null){
-      ctx.textAlign='left'; ctx.font='700 10.5px Arial'; ctx.fillStyle='#e8a06a';
+      ctx.textAlign='left'; ctx.fillStyle='#e8a06a';
+      fitFont(it.head, bw-44, '700 10.5px Arial', 8);
       ctx.fillText(it.head, bx+22, y+headH*0.68);
-      ctx.font='13px Arial'; y += headH+gap; continue;
+      y += headH+gap; continue;
     }
     pauseRects.push({x:bx+14,y,w:bw-28,h:ih-6,key:it.key});
     ctx.fillStyle='rgba(255,255,255,0.045)'; rr(bx+14,y,bw-28,ih-6,7); ctx.fill();
@@ -582,18 +606,21 @@ function drawPause(){
     if (it.key==='vol'){
       // slider : cliquer/glisser n'importe où sur la barre règle le volume
       const rx=bx+58, rw2=bw-166, ry=y+(ih-6)/2;
-      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left'; ctx.fillText(t('set_vol'), bx+24, ry+4);
+      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left';
+      fitFont(t('set_vol'), 58, '13px Arial', 8.5);
+      ctx.fillText(t('set_vol'), bx+24, ry+4);
       ctx.textAlign='center';
       ctx.fillStyle='#3a2e28'; rr(rx+28, ry-3, rw2, 6, 3); ctx.fill();
       ctx.fillStyle=acc; rr(rx+28, ry-3, rw2*SETTINGS.vol, 6, 3); ctx.fill();
       ctx.fillStyle='#e8e0d2'; ctx.beginPath(); ctx.arc(rx+28+rw2*SETTINGS.vol, ry, 6, 0, 6.28); ctx.fill();
-      ctx.fillStyle='#b8b0a4'; ctx.font='12px Arial';
+      ctx.fillStyle='#b8b0a4';
+      fitFont(Math.round(SETTINGS.vol*100)+'%', 40, '12px Arial', 9);
       ctx.fillText(Math.round(SETTINGS.vol*100)+'%', bx+bw-30, ry+4);
-      ctx.font='13px Arial';
       pauseRects[pauseRects.length-1].slider = {x:rx+28, w:rw2};
       y += ih+gap; continue;
     }
     ctx.fillStyle = it.key==='quit'? '#e0a09a':'#d8d0c4';
+    fitFont(it.label, bw-44, '13px Arial', 9);
     ctx.fillText(it.label, W/2, y+(ih-6)/2+4);
     y += ih+gap;
   }

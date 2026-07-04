@@ -479,19 +479,25 @@ function drawTut(){
   if (objLine){ ctx.font='700 11px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, Bx+pad, ty+2); ty += 18; }
   const byB = by + bh - pad - btnH, skipW = 124;
   ctx.fillStyle='rgba(255,255,255,0.08)'; rr(Bx+pad, byB, skipW, btnH, 6); ctx.fill();
-  ctx.font='700 11px Arial'; ctx.fillStyle='#d8a0a0'; ctx.textAlign='center';
-  ctx.fillText(tutText({fr:'Passer ✕',en:'Skip ✕'}), Bx+pad+skipW/2, byB+btnH/2+4);
+  ctx.fillStyle='#d8a0a0'; ctx.textAlign='center';
+  const skipTxt = tutText({fr:'Passer ✕',en:'Skip ✕'});
+  fitFont(skipTxt, skipW-14, '700 11px Arial', 8);
+  ctx.fillText(skipTxt, Bx+pad+skipW/2, byB+btnH/2+4);
   TUT.uiRects.push({key:'skip', x:Bx+pad, y:byB, w:skipW, h:btnH});
   if (step.tap){
     const contW = bw - pad*2 - skipW - 8;
     ctx.save(); ctx.fillStyle=rgbaC(acc,0.95); ctx.shadowColor=acc; ctx.shadowBlur=9; rr(Bx+bw-pad-contW, byB, contW, btnH, 6); ctx.fill(); ctx.restore();
-    ctx.fillStyle='#14110f'; ctx.font='700 12px Arial';
-    ctx.fillText(tutText({fr:'Continuer ▸',en:'Continue ▸'}), Bx+bw-pad-contW/2, byB+btnH/2+4);
+    ctx.fillStyle='#14110f';
+    const contTxt = tutText({fr:'Continuer ▸',en:'Continue ▸'});
+    fitFont(contTxt, contW-14, '700 12px Arial', 8.5);
+    ctx.fillText(contTxt, Bx+bw-pad-contW/2, byB+btnH/2+4);
     TUT.uiRects.push({key:'cont', x:Bx+bw-pad-contW, y:byB, w:contW, h:btnH});
   } else {
     const urge = TUT.t>6 ? 1 : 0.6;
-    ctx.font='700 11px Arial'; ctx.fillStyle=rgbaC('#9dd88a', (0.5+0.5*pulse)*urge); ctx.textAlign='right';
-    ctx.fillText(tutText({fr:'▸ à vous de jouer',en:'▸ your turn'}), Bx+bw-pad, byB+btnH/2+4);
+    ctx.fillStyle=rgbaC('#9dd88a', (0.5+0.5*pulse)*urge); ctx.textAlign='right';
+    const turnTxt = tutText({fr:'▸ à vous de jouer',en:'▸ your turn'});
+    fitFont(turnTxt, bw-pad*2-skipW-14, '700 11px Arial', 8);
+    ctx.fillText(turnTxt, Bx+bw-pad, byB+btnH/2+4);
   }
   ctx.textAlign='left';
   if (TUT.confirmSkip) drawTutConfirm();
@@ -510,11 +516,15 @@ function drawTutConfirm(){
   let ty = by+62; for (const ln of lines){ ctx.fillText(ln, W/2, ty); ty += 18; }
   const btnH=34, byB=by+bh-btnH-16, bwB=(bw-44)/2;
   ctx.fillStyle='rgba(168,40,30,0.92)'; rr(bx+16, byB, bwB, btnH, 7); ctx.fill();
-  ctx.font='700 13px Arial'; ctx.fillStyle='#fff';
-  ctx.fillText(tutText({fr:'Continuer le tuto',en:'Keep playing'}), bx+16+bwB/2, byB+btnH/2+5);
+  ctx.fillStyle='#fff';
+  const keepTxt = tutText({fr:'Continuer le tuto',en:'Keep playing'});
+  fitFont(keepTxt, bwB-16, '700 13px Arial', 9.5);
+  ctx.fillText(keepTxt, bx+16+bwB/2, byB+btnH/2+5);
   ctx.fillStyle='rgba(255,255,255,0.1)'; rr(bx+bw-16-bwB, byB, bwB, btnH, 7); ctx.fill();
   ctx.fillStyle='#d8a0a0';
-  ctx.fillText(tutText({fr:'Oui, passer',en:'Yes, skip'}), bx+bw-16-bwB/2, byB+btnH/2+5);
+  const yesSkipTxt = tutText({fr:'Oui, passer',en:'Yes, skip'});
+  fitFont(yesSkipTxt, bwB-16, '700 13px Arial', 9.5);
+  ctx.fillText(yesSkipTxt, bx+bw-16-bwB/2, byB+btnH/2+5);
   ctx.textAlign='left';
   TUT.confirmRects = [ {key:'no', x:bx+16, y:byB, w:bwB, h:btnH},
                        {key:'yes', x:bx+bw-16-bwB, y:byB, w:bwB, h:btnH} ];
