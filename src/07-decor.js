@@ -129,6 +129,10 @@ function newGame(facKey, diff, withTuto, eFacOverride){
   game.e.hp = game.e.maxhp = 1500*game.d.hpMul;
   DECOR = genDecor('default');             // habillage par défaut (escarmouche/online) ; re-thémé par mission
   if (typeof ambReset==='function') ambReset();   // remet à zéro les événements de fond cosmétiques
+  // PERF : synthétise TOUS les sprites d'unités possibles avant que la partie ne soit visible,
+  // pour qu'aucun achat/apparition en cours de jeu ne déclenche de micro-saccade de fabrication
+  // de sprite (payé une seule fois ici plutôt qu'au hasard des premières apparitions).
+  if (typeof prewarmSprites==='function') prewarmSprites();
   particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[];
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;

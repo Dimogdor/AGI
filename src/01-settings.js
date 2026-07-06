@@ -6,7 +6,35 @@ const DEFKEYS = { buy1:'Digit1', buy2:'Digit2', buy3:'Digit3', buy4:'Digit4', bu
 // libellés des touches : traduits (clés key_*, voir 02-i18n.js) — fonction plutôt que
 // table statique pour toujours refléter la langue courante, y compris après un changement.
 function keyLabel(k){ return tr('key_'+k); }
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:'ultra', keys:Object.assign({},DEFKEYS)},
+// AUTO-DÉTECTION DE PERFORMANCE (1x, install neuve UNIQUEMENT — jamais si l'utilisateur a déjà
+// une préférence enregistrée) : mesure un échantillon d'opérations canvas représentatives des
+// plus coûteuses du jeu (ombres portées, dégradés radiaux) pour choisir une qualité de DÉPART
+// adaptée à l'appareil. Sans ça, une tablette démarre en Ultra par défaut et découvre un jeu
+// saccadé sans que son propriétaire sache pourquoi ni qu'un réglage existe pour y remédier.
+function autoDetectQuality(){
+  try {
+    const c = document.createElement('canvas'); c.width=200; c.height=200;
+    const bc = c.getContext('2d');
+    const t0 = performance.now();
+    for (let i=0;i<40;i++){
+      bc.save(); bc.shadowColor='#5ad0ff'; bc.shadowBlur=12; bc.fillStyle='#5ad0ff';
+      bc.beginPath(); bc.arc(100,100,20,0,6.283); bc.fill(); bc.restore();
+      const g=bc.createRadialGradient(100,100,2,100,100,60);
+      g.addColorStop(0,'rgba(255,255,255,0.5)'); g.addColorStop(1,'rgba(255,255,255,0)');
+      bc.fillStyle=g; bc.fillRect(0,0,200,200);
+    }
+    const dt = performance.now()-t0;
+    const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints||0)>0;
+    let q = dt<8?'ultra' : dt<18?'high' : dt<35?'medium' : 'low';
+    // marge de sécurité tactile : un sondage à froid sous-estime souvent l'emballement
+    // thermique d'un GPU mobile en jeu prolongé — on démarre un cran plus bas par précaution.
+    if (touch && q==='ultra') q='high';
+    return q;
+  } catch(e){ return 'high'; }   // repli sûr si le sondage échoue pour une raison quelconque
+}
+let _autoQ = null;
+try { if (!localStorage.getItem('agi_settings')) _autoQ = autoDetectQuality(); } catch(e){}
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:_autoQ||'ultra', keys:Object.assign({},DEFKEYS)},
   JSON.parse(localStorage.getItem('agi_settings')||'{}'));
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
 // PROFILS DE QUALITÉ GRAPHIQUE : densité des particules / lumières. Ultra par défaut.
