@@ -171,4 +171,35 @@ if (haveIcons) {
   console.log('  icônes : placeholders générés (ajoutez resources/icon-192.png & icon-512.png)');
 }
 
+// --- page de politique de confidentialité (URL publique requise par les stores) ---
+// convertit PRIVACY.md en une page HTML autonome, servie sur /privacy.html
+const privacyMd = await readFile(new URL('./PRIVACY.md', ROOT), 'utf8').catch(()=>null);
+if (privacyMd) {
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
+  const lines = privacyMd.split('\n');
+  const out = [];
+  let para = [];
+  const flush = () => { if (para.length){ out.push(`<p>${inline(para.join(' '))}</p>`); para = []; } };
+  for (const raw of lines) {
+    const t = raw.trim();
+    if (!t) { flush(); continue; }
+    if (t.startsWith('# ')) { flush(); out.push(`<h1>${inline(t.slice(2))}</h1>`); }
+    else if (t.startsWith('## ')) { flush(); out.push(`<h2>${inline(t.slice(3))}</h2>`); }
+    else if (t.startsWith('---')) { flush(); out.push('<hr>'); }
+    else para.push(t);
+  }
+  flush();
+  const bodyHtml = out.join('\n');
+  const privacyHtml = `<!doctype html><html lang="fr"><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+    `<title>Politique de confidentialité — AGI : Guerre des Ères</title>` +
+    `<style>body{font:16px/1.6 -apple-system,Arial,sans-serif;max-width:720px;margin:40px auto;` +
+    `padding:0 20px;color:#1a1a1a;background:#fff}h1{font-size:1.6em}h2{font-size:1.2em;margin-top:1.6em}` +
+    `a{color:#0645ad}@media(prefers-color-scheme:dark){body{color:#eee;background:#141414}a{color:#8ab4f8}}</style>` +
+    `</head><body>${bodyHtml}</body></html>`;
+  await writeFile(new URL('./privacy.html', OUT), privacyHtml);
+  console.log('  privacy.html : généré depuis PRIVACY.md');
+}
+
 console.log('✔ www/ prêt');

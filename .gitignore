@@ -14,3 +14,7 @@ ios/
 .DS_Store
 *.log
 .env
+
+# secrets de signature Android — NE JAMAIS committer (perte = ne plus jamais
+# pouvoir publier de mise à jour de l'app sous le même appId)
+android-signing/
