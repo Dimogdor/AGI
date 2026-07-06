@@ -15,7 +15,7 @@ function showEnd(){
 // JOURNAL DE GUERRE : 2-3 lignes générées à partir de l'issue de la partie (récit localisé).
 function warJournal(){
   const o = { era:lEra(game.p.facKey,game.p.era), kills:game.kills, losses:game.eKills,
-              world:Math.round((1-game.dev)*100), fac:game.p.fac.name, foe:game.e.fac.name,
+              world:Math.round((1-game.dev)*100), fac:lFacName(game.p.facKey), foe:lFacName(game.e.facKey),
               brigade:73 + (Math.floor(game.t)%27) };
   return fmt(game.win? 'journal_win' : 'journal_lose', o);
 }

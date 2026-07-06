@@ -961,6 +961,8 @@ const ERA_LORE = {
             "2038 — التفرّد: الآلة تعيد كتابة قوانين العالم."] },
 };
 function lUnit(fk,key,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk][key]; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].names[key][era]; }
+// nom d'affichage de faction : « HUMANITÉ » se traduit (clé fac_hum), « G·P·T » est une marque
+function lFacName(fk){ return fk==='HUM' ? tr('fac_hum') : FACTIONS[fk].name; }
 function lEra(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].eras; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].eras[era].name; }
 function lSpecial(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
 // LORE D'ÈRE : courte phrase historique affichée au passage d'ère (récit, par faction & langue).
@@ -4438,11 +4440,11 @@ function drawHUD(){
   ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), RX, 13);
   // ligne 2 : ennemi (couleur faction) puis difficulté (gris), tous deux calés à droite
   ctx.font='10px Arial'; ctx.fillStyle='#988e80';
-  const diffTxt = DIFFS[game.diff].name;
+  const diffTxt = tr('diff_'+game.diff).toUpperCase();
   ctx.fillText(diffTxt, RX, 29);
   const dw = ctx.measureText(diffTxt).width;
   ctx.font='700 11px Arial'; ctx.fillStyle=game.e.fac.accent;
-  ctx.fillText(game.e.fac.name+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 29);
+  ctx.fillText(lFacName(game.e.facKey)+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 29);
   // ---- minimap (y=42) ----
   const mw=200, mh=13, mx=W/2-mw/2, my=42;
   ctx.fillStyle='rgba(0,0,0,0.5)'; rr(mx-2,my-2,mw+4,mh+4,4); ctx.fill();
@@ -5802,7 +5804,7 @@ function showEnd(){
 // JOURNAL DE GUERRE : 2-3 lignes générées à partir de l'issue de la partie (récit localisé).
 function warJournal(){
   const o = { era:lEra(game.p.facKey,game.p.era), kills:game.kills, losses:game.eKills,
-              world:Math.round((1-game.dev)*100), fac:game.p.fac.name, foe:game.e.fac.name,
+              world:Math.round((1-game.dev)*100), fac:lFacName(game.p.facKey), foe:lFacName(game.e.facKey),
               brigade:73 + (Math.floor(game.t)%27) };
   return fmt(game.win? 'journal_win' : 'journal_lose', o);
 }

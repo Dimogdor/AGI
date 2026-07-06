@@ -226,6 +226,8 @@ const ERA_LORE = {
             "2038 — التفرّد: الآلة تعيد كتابة قوانين العالم."] },
 };
 function lUnit(fk,key,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk][key]; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].names[key][era]; }
+// nom d'affichage de faction : « HUMANITÉ » se traduit (clé fac_hum), « G·P·T » est une marque
+function lFacName(fk){ return fk==='HUM' ? tr('fac_hum') : FACTIONS[fk].name; }
 function lEra(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].eras; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].eras[era].name; }
 function lSpecial(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
 // LORE D'ÈRE : courte phrase historique affichée au passage d'ère (récit, par faction & langue).
