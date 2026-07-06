@@ -157,7 +157,7 @@ function drawHUD(){
     const mom = clamp((p.hp/p.maxhp - game.e.hp/game.e.maxhp)*1.6 + (p.units.length-game.e.units.length)/40, -1, 1);
     ctx.fillStyle='rgba(0,0,0,0.5)'; rr(mx,my2,mw,barH,3); ctx.fill();
     const leadCol = mom>=0? p.fac.accent : game.e.fac.accent;
-    ctx.save(); ctx.shadowColor=leadCol; ctx.shadowBlur=5;
+    ctx.save(); if (qFx()){ ctx.shadowColor=leadCol; ctx.shadowBlur=5; }   // PERF : coupé en Faible
     ctx.fillStyle=leadCol;
     if (mom>=0) rr(mx+mw/2, my2, mw/2*mom, barH, 3); else rr(mx+mw/2+mw/2*mom, my2, -mw/2*mom, barH, 3);
     ctx.fill(); ctx.restore();
@@ -253,7 +253,7 @@ function drawHeroBtn(b, p){
   const col = p.facKey==='HUM'? '#e8c84a' : '#ff4ad0';
   const pulse = 0.55 + 0.45*Math.sin(performance.now()/1000*4.5);  // respiration lumineuse pour attirer l'œil
   ctx.save();
-  ctx.shadowColor = col; ctx.shadowBlur = 10+10*pulse;
+  if (qFx()){ ctx.shadowColor = col; ctx.shadowBlur = 10+10*pulse; }   // PERF : coupé en Faible
   ctx.fillStyle='rgba(20,16,14,0.92)'; rr(b.x,b.y,b.w,b.h,6); ctx.fill();
   ctx.strokeStyle = col; ctx.lineWidth = 1.4+1.4*pulse; rr(b.x,b.y,b.w,b.h,6); ctx.stroke();
   ctx.shadowBlur = 0;
@@ -352,7 +352,8 @@ function drawBtn(b){
   ctx.fillStyle=bg; rr(b.x,b.y,b.w,b.h,7); ctx.fill();
   if (!small && prog<1){ ctx.fillStyle=rgbaC(col,0.22); ctx.save(); rr(b.x,b.y,b.w,b.h,7); ctx.clip();
     ctx.fillRect(b.x,b.y,b.w*prog,b.h); ctx.restore(); }
-  if (ok && !small){ ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=8; ctx.strokeStyle=rgbaC(col,0.95); ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); ctx.restore(); }
+  if (ok && !small){ ctx.save(); if (qFx()){ ctx.shadowColor=col; ctx.shadowBlur=8; }   // PERF : coupé en Faible (jusqu'à 10 boutons/frame)
+    ctx.strokeStyle=rgbaC(col,0.95); ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); ctx.restore(); }
   else { ctx.strokeStyle=ok?col:rgbaC(col,0.55); ctx.lineWidth=ok?1.8:1; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
   ctx.textAlign='center';
   if (small){

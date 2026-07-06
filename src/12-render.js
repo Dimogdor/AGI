@@ -951,8 +951,15 @@ function drawUnitSprite(kind, fac, role, era, trans){
   }
 }
 function attackFX(u, x, bodyY, imp){
+  // PERF : shadowBlur est l'opération canvas la plus coûteuse du jeu, et attackFX est appelée
+  // pour CHAQUE unité en train d'attaquer, CHAQUE frame — en pleine bataille (dizaines d'unités
+  // simultanées) c'était le premier poste de coût de rendu. Coupé en qualité Faible, conservé
+  // dès Moyen pour garder l'effet visuel sur tout appareil un minimum capable.
   imp = (imp==null)?1:imp; const dir=u.side, col=u.fac==='HUM'?'#ffd9a0':'#9fe8ff';
-  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.shadowColor=col; ctx.shadowBlur=14; ctx.lineCap='round';
+  const glow = qFx();
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  if (glow){ ctx.shadowColor=col; ctx.shadowBlur=14; }
+  ctx.lineCap='round';
   if (u.role==='ranged'||u.role==='air'){
     const fx=x+dir*26;
     ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,3+3*imp,0,6.283); ctx.fill();                 // bouche à feu
@@ -1082,6 +1089,25 @@ function heroSprite(fac){
       for(let i=0;i<6;i++){ const a=-Math.PI/2+i*Math.PI/3; TC.beginPath();
         TC.moveTo(cx+Math.cos(a)*12,F-92+Math.sin(a)*8); TC.lineTo(cx+Math.cos(a)*18,F-92+Math.sin(a)*12); TC.stroke(); } });
   }
+}
+// PERF : PRÉCHAUFFE tous les sprites d'unités possibles (2 factions × 5 rôles au sol × 5 ères
+// × transcendé/non, + aériens, + héros) AVANT que la partie ne soit visible. Sans ça, chaque
+// fabrication de sprite (des dizaines d'appels canvas : dégradés, halos bloomT) se produit au
+// hasard de la PREMIÈRE apparition en jeu de chaque combinaison — une saccade perceptible pile
+// au moment où un nouveau type d'unité ou une nouvelle ère apparaît. Coût payé une seule fois,
+// silencieusement, pendant la transition d'ouverture de partie plutôt qu'en pleine bataille.
+let _spritesWarmed = false;
+function prewarmSprites(){
+  if (_spritesWarmed) return; _spritesWarmed = true;
+  const roles = ['melee','tank','ranged','siege','support'];
+  for (const kind of ['hum','bot']){
+    const fac = kind==='hum'? 'HUM':'IA';
+    for (const role of roles) for (let era=0; era<5; era++) for (const trans of [false,true])
+      sprite('S'+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>drawUnitSprite(kind,fac,role,era,trans));
+  }
+  for (const fac of ['HUM','IA']) for (let era=0; era<5; era++) for (const trans of [false,true])
+    sprite('AIR'+fac+era+(trans?'T':''), 64, 44, ()=>airSprite(fac,era,trans));
+  for (const fac of ['HUM','IA']) sprite('HERO'+fac, 64, 100, ()=>heroSprite(fac));
 }
 function drawHero(u, x, gy){
   const t=game.t, col=u.fac==='HUM'?'#ffcf5a':'#ff6ad6', side=u.side===1?game.p:game.e;

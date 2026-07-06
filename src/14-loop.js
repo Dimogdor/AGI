@@ -139,13 +139,23 @@ function drawSpeedOverlays(){
 }
 
 let last = performance.now();
+let lastAutoDowngrade = -999;   // horodatage (game.t) de la dernière baisse auto — évite les à-coups répétés
 function loop(now){
   const dt = Math.min((now-last)/1000, 0.05); last=now;
-  // ALERTE PERF : on lisse le FPS ; s'il reste bas longtemps en jeu et que la qualité
-  // n'est pas déjà au minimum, on invite UNE fois à la réduire dans les paramètres.
+  // AUTO-ADAPTATION DE QUALITÉ : si le FPS reste bas de façon SOUTENUE (moyenne lissée, pas un
+  // pic isolé) pendant une vraie partie, on baisse la qualité d'UN cran automatiquement — sans
+  // ça, un joueur qui ne sait pas qu'un réglage existe (ou ne le remarque pas) reste bloqué avec
+  // un jeu saccadé. Un cran à la fois, avec un temps de repos entre deux baisses pour laisser le
+  // nouveau palier faire ses preuves avant de rebaisser. Au palier Faible, plus rien à faire
+  // automatiquement : un seul message ponctuel l'indique (fpsWarned, inchangé).
   if (dt>0){ fpsAvg += ((1/dt)-fpsAvg)*0.05;
-    if (!fpsWarned && game && !game.over && !paused && SETTINGS.quality!=='low' && game.t>8 && fpsAvg<34){
-      fpsWarned=true; announce(tr('perf_warn'), '#ffcf6a'); }
+    if (game && !game.over && !paused && game.t>6 && (game.t-lastAutoDowngrade)>15 && fpsAvg<28){
+      const qi = QUALITIES.indexOf(SETTINGS.quality);
+      if (qi>0){
+        SETTINGS.quality = QUALITIES[qi-1]; saveSettings(); fpsWarned=false; lastAutoDowngrade=game.t;
+        announce(tr('perf_auto')+' → '+qualityName(), '#ffcf6a');
+      } else if (!fpsWarned){ fpsWarned=true; announce(tr('perf_warn'), '#ffcf6a'); }
+    }
   }
   if (PERF.on){ PERF.fps += ((dt>0?1/dt:60)-PERF.fps)*0.1; PERF.t0 = performance.now(); }
   if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
