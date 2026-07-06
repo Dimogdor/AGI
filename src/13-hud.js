@@ -126,11 +126,11 @@ function drawHUD(){
   ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), RX, 13);
   // ligne 2 : ennemi (couleur faction) puis difficulté (gris), tous deux calés à droite
   ctx.font='10px Arial'; ctx.fillStyle='#988e80';
-  const diffTxt = DIFFS[game.diff].name;
+  const diffTxt = tr('diff_'+game.diff).toUpperCase();
   ctx.fillText(diffTxt, RX, 29);
   const dw = ctx.measureText(diffTxt).width;
   ctx.font='700 11px Arial'; ctx.fillStyle=game.e.fac.accent;
-  ctx.fillText(game.e.fac.name+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 29);
+  ctx.fillText(lFacName(game.e.facKey)+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 29);
   // ---- minimap (y=42) ----
   const mw=200, mh=13, mx=W/2-mw/2, my=42;
   ctx.fillStyle='rgba(0,0,0,0.5)'; rr(mx-2,my-2,mw+4,mh+4,4); ctx.fill();
