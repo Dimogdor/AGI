@@ -1,6 +1,6 @@
 {
-  "appId": "com.agi.guerredeseres",
-  "appName": "AGI — Guerre des Ères",
+  "appId": "com.agi.dernierebataille",
+  "appName": "AGI — La Dernière Bataille de l'Humanité",
   "webDir": "www",
   "server": { "androidScheme": "https" },
   "plugins": {

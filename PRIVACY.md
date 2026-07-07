@@ -1,8 +1,8 @@
-# Politique de confidentialité — AGI : Guerre des Ères
+# Politique de confidentialité — AGI : La Dernière Bataille de l'Humanité
 *Dernière mise à jour : 13 juin 2026*
 
 ## Version courte
-**AGI : Guerre des Ères ne collecte, ne stocke et ne transmet aucune donnée
+**AGI : La Dernière Bataille de l'Humanité ne collecte, ne stocke et ne transmet aucune donnée
 personnelle.** Pas de compte, pas de pistage, pas de publicité, pas d'analytics.
 
 ## Détails
@@ -33,6 +33,6 @@ transmet aucune donnée personnelle.
 Pour toute question : amineelwadi@gmail.com
 
 ---
-*English summary: AGI — War of Eras collects no personal data. Settings are
+*English summary: AGI — Humanity's Last Stand collects no personal data. Settings are
 stored locally on your device. Online 1v1 matches are peer-to-peer (WebRTC);
 no game server stores any data. No accounts, ads, tracking or analytics.*

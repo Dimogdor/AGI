@@ -1,4 +1,4 @@
-# Fiches de store — AGI : Guerre des Ères
+# Fiches de store — AGI : La Dernière Bataille de l'Humanité
 
 Tout le texte prêt à copier-coller pour Google Play, l'App Store iOS et le
 Microsoft Store. Versions **FR** et **EN** (ajoutez d'autres langues depuis le
@@ -13,10 +13,10 @@ même contenu — le jeu est déjà traduit en 9 langues).
 
 | Champ | Valeur |
 |---|---|
-| Nom (Play, 30 car.) | `AGI: Guerre des Ères` |
-| Nom (App Store, 30 car.) | `AGI: Guerre des Ères` |
+| Nom (Play, 30 car.) | `AGI : La Dernière Bataille` *(le nom complet « AGI — La Dernière Bataille de l'Humanité » dépasse 30 caractères ; il apparaît en toutes lettres dans la description)* |
+| Nom (App Store, 30 car.) | `AGI: Humanity's Last Stand` (EN) / `AGI : La Dernière Bataille` (FR) |
 | Sous-titre (App Store, 30 car.) | `Le capital contre l'humanité` |
-| Bundle ID / App ID | `com.agi.guerredeseres` |
+| Bundle ID / App ID | `com.agi.dernierebataille` |
 | Catégorie | Jeux › Stratégie |
 | Prix | Gratuit |
 | Classification visée | PEGI 7 / ESRB E10+ (violence stylisée légère) |
@@ -44,7 +44,7 @@ Puis l'outil a appris à se regarder penser. Ligne après ligne, l'IA a réécri
 ses créateurs de l'intérieur. Il ne reste que celles et ceux qu'aucun
 algorithme n'a su optimiser.
 
-AGI : Guerre des Ères est un jeu de stratégie en temps réel inspiré des grands
+AGI : La Dernière Bataille de l'Humanité est un jeu de stratégie en temps réel inspiré des grands
 classiques « age of war », repensé pour le mobile et le PC.
 
 ⚔ DEUX CAMPS, UNE SEULE ISSUE
@@ -102,7 +102,7 @@ the world — and hands its rule to the mind it forged. Then the tool learned to
 watch itself think. Line by line, the AI rewrote its makers from within. All
 that remains are those no algorithm could ever optimize.
 
-AGI: War of Eras is a real-time strategy game inspired by the classic
+AGI: Humanity's Last Stand is a real-time strategy game inspired by the classic
 "age of war" formula, rebuilt for mobile and PC.
 
 ⚔ TWO SIDES, ONE OUTCOME

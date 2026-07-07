@@ -5,9 +5,10 @@ dist-pc/
 dist-ota/
 dist-apk/
 
-# projets natifs générés localement (créés par `npx cap add …`,
-# nécessitent Xcode / Android Studio — non versionnés ici)
-android/
+# projet iOS généré localement (créé par `npx cap add ios`, nécessite Xcode)
+# android/ EST versionné : il contient des personnalisations manuelles
+# (plein écran immersif dans MainActivity, verrou paysage, icônes, splash,
+# branchement de la signature de release). android/.gitignore exclut les builds.
 ios/
 
 # divers

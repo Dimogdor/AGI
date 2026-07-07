@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AGI</string>
+    <string name="title_activity_main">AGI — La Dernière Bataille de l\'Humanité</string>
+    <string name="package_name">com.agi.dernierebataille</string>
+    <string name="custom_url_scheme">com.agi.dernierebataille</string>
+</resources>

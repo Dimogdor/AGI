@@ -1,6 +1,6 @@
 <div align="center">
 
-# AGI — Guerre des Ères
+# AGI — La Dernière Bataille de l'Humanité
 
 **Le capital contre l'humanité.** Un jeu de stratégie temps réel façon
 « age of war », modernisé pour iOS, Android, PC et le web.
@@ -28,7 +28,7 @@ pair-à-pair (sans serveur).
 ## Structure du projet
 
 ```
-guerre-des-eres.html   ← LE JEU (source unique, lisible — éditez ici)
+la-derniere-bataille.html   ← LE JEU (source unique, lisible — éditez ici)
 build.mjs              ← build : minifie + obfusque → www/
 capacitor.config.json  ← config mobile (iOS/Android + OTA)
 electron/              ← app desktop (PC)
@@ -49,7 +49,7 @@ npm run serve        # aperçu web sur http://localhost:3000
 npm run electron     # lance l'app PC
 ```
 
-Pour développer, ouvrez simplement `guerre-des-eres.html` dans un navigateur.
+Pour développer, ouvrez simplement `la-derniere-bataille.html` dans un navigateur.
 
 ## Publier
 
@@ -67,7 +67,7 @@ Régénérer les visuels : `node tools/gen-assets.mjs` (icônes) et
 
 ## Mettre à jour le jeu
 
-Modifiez `guerre-des-eres.html` → `npm run build` → republiez. Sur mobile, les
+Modifiez `la-derniere-bataille.html` → `npm run build` → republiez. Sur mobile, les
 correctifs de contenu (JS/HTML) peuvent partir en **OTA** (sans repasser par les
 stores) via le plugin Capgo préconfiguré. Voir PACKAGING.md § « Mises à jour ».
 
@@ -76,7 +76,7 @@ stores) via le plugin Capgo préconfiguré. Voir PACKAGING.md § « Mises à jou
 Le 1v1 fonctionne **sans rien configurer** (signalisation PeerJS gratuite + TURN
 public de secours). Pour le rendre fiable partout (4G↔4G) et activer la **liste
 des parties publiques**, renseigne le bloc `NET_CONFIG` en haut de la section
-réseau de `guerre-des-eres.html` :
+réseau de `la-derniere-bataille.html` :
 
 ```js
 const NET_CONFIG = {

@@ -4,7 +4,7 @@
    Lancer : node tools/selftest.mjs   (sort en code 1 si un test échoue) */
 import { createCanvas } from 'canvas';
 import { readFile } from 'node:fs/promises';
-const SRC = new URL('../guerre-des-eres.html', import.meta.url);
+const SRC = new URL('../la-derniere-bataille.html', import.meta.url);
 const js = (await readFile(SRC, 'utf8')).match(/<script>([\s\S]*?)<\/script>/)[1];
 const noop=()=>{}; const W=960,Hh=540;
 const main=createCanvas(W,Hh); const mctx=main.getContext('2d');
