@@ -1,13 +1,13 @@
-# src/ — code source modulaire de « Guerre des Ères »
+# src/ — code source modulaire de « La Dernière Bataille de l'Humanité »
 
-Le jeu était un unique fichier `guerre-des-eres.html` de ~7000 lignes. Il est
-désormais découpé en modules ici. **`guerre-des-eres.html` et `www/` sont
+Le jeu était un unique fichier `la-derniere-bataille.html` de ~7000 lignes. Il est
+désormais découpé en modules ici. **`la-derniere-bataille.html` et `www/` sont
 générés** — on n'édite QUE les fichiers de `src/`.
 
 ## Régénérer
 
 ```bash
-npm run dev     # réassemble guerre-des-eres.html (rapide, lisible, jouable sur file://)
+npm run dev     # réassemble la-derniere-bataille.html (rapide, lisible, jouable sur file://)
 npm run build   # + minification, obfuscation, PWA → www/ (déploiement web/mobile/PC)
 ```
 

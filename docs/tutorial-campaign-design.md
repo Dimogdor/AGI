@@ -1,6 +1,6 @@
 # Tutorial & Solo Campaign — Design Reference (pre-removal snapshot)
 
-> Snapshot of the scripted tutorial and the solo campaign/story systems in "Guerre des Ères" (single-file browser RTS, concatenated `src/*.js` modules + `shell.html`). Captured immediately before deletion so the rewrite can reference the original intent, data shapes, and wiring. All line numbers cite the pre-removal source as recorded in the inventory.
+> Snapshot of the scripted tutorial and the solo campaign/story systems in "La Dernière Bataille de l'Humanité" (single-file browser RTS, concatenated `src/*.js` modules + `shell.html`). Captured immediately before deletion so the rewrite can reference the original intent, data shapes, and wiring. All line numbers cite the pre-removal source as recorded in the inventory.
 
 ---
 

@@ -5,7 +5,7 @@
 import { createCanvas } from 'canvas';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 
-const SRC = new URL('../guerre-des-eres.html', import.meta.url);
+const SRC = new URL('../la-derniere-bataille.html', import.meta.url);
 const OUT = new URL('../resources/screenshots/', import.meta.url);
 await mkdir(OUT, { recursive: true });
 

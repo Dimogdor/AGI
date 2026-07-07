@@ -15,7 +15,11 @@ window.addEventListener('error', ev=>{
 });
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const W = 960, H = 540;
+// RÉSOLUTION LOGIQUE ADAPTATIVE : plus de letterbox. La hauteur logique reste 540
+// (toute l'UI est calibrée dessus) et la largeur épouse le ratio RÉEL de l'écran —
+// téléphone 20:9 comme tablette 4:3 sont remplis bord à bord, sans déformation.
+let W = 960, H = 540;
+let Y_G = 400;             // position écran de la ligne du sol (recalée par resize : H-140)
 const WORLD = 3600, GROUND = 414;
 let SCALE = 1, zoom = 1;
 const ZMIN = 0.55, ZMAX = 1.25;
@@ -27,9 +31,15 @@ function resize() {
   const vv = window.visualViewport;
   const ww = Math.round(vv ? vv.width  : window.innerWidth);
   const wh = Math.round(vv ? vv.height : window.innerHeight);
-  const ratio = 16/9;
-  let cw = ww, ch = ww/ratio;
-  if (ch > wh) { ch = wh; cw = wh*ratio; }
+  // ratio logique = ratio écran, borné : 4:3 (tablettes) à 21:9 (ultra-larges).
+  // Écran plus large que 16:9 → largeur logique étendue (plus de monde visible) ;
+  // plus haut (4:3) → hauteur logique étendue (plus de ciel, sol plus bas).
+  const a = Math.min(Math.max(ww/Math.max(1,wh), 4/3), 21/9);   // clamp() n'existe pas encore au 1er appel
+  if (a >= 16/9){ H = 540; W = Math.round(540*a); }
+  else          { W = 960; H = Math.round(960/a); }
+  Y_G = H - 140;                       // la ligne du sol garde 140 px pour le HUD bas
+  let cw = ww, ch = ww/a;
+  if (ch > wh) { ch = wh; cw = wh*a; } // hors bornes (ex. >21:9) : léger letterbox résiduel
   // le conteneur épouse la zone visible : le canvas centré reste toujours entièrement à l'écran
   const wrap = document.getElementById('wrap');
   if (wrap){ wrap.style.height = wh+'px'; wrap.style.width = ww+'px'; }
@@ -40,6 +50,10 @@ function resize() {
   ctx.setTransform(SCALE,0,0,SCALE,0,0);
   // rendu lissé pour les dégradés sculptés (style relief)
   ctx.imageSmoothingEnabled = true;
+  // re-cale HUD + caméra sur les nouvelles dimensions logiques. try/catch : au tout
+  // premier appel (chargement), les modules suivants ne sont pas encore initialisés
+  // (TDZ dans le script concaténé) — 13-hud.js fait son propre layoutHUD() au chargement.
+  try { layoutHUD(); camClamp(); } catch(e){}
   // mobile-first : en portrait, le 16:9 deviendrait une bande illisible → on invite à pivoter
   const rot = document.getElementById('rotate');
   if (rot) rot.style.display = (wh > ww*1.02 && ww < 820) ? 'flex' : 'none';
@@ -54,7 +68,6 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t;
 function lerpCol(c1,c2,t){ return 'rgb('+Math.round(lerp(c1[0],c2[0],t))+','+Math.round(lerp(c1[1],c2[1],t))+','+Math.round(lerp(c1[2],c2[2],t))+')'; }
 // vue zoomée : largeur visible en unités monde, conversions écran<->monde
 const VW = ()=> W/zoom;
-const Y_G = 400;                          // position écran fixe de la ligne du sol (au-dessus du HUD)
 const zTY = ()=> Y_G - GROUND*zoom;       // translation verticale du monde zoomé
 const s2wX = x => x/zoom + camX;
 const s2wY = y => (y - zTY())/zoom;

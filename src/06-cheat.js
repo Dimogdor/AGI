@@ -28,7 +28,7 @@ function cheatAction(k){
   if (typeof sfx==='function') sfx('cap');
 }
 let intro = -1, introT = 0, pendingStart = null;   // cinématique d'ouverture
-const INTRO_SKIP = {x:W-116, y:10, w:104, h:28};
+const INTRO_SKIP = ()=>({x:W-116, y:10, w:104, h:28});   // fonction : W est adaptatif (ratio écran)
 const TREES=[], ROCKS=[];
 // ZONES À GARDER DÉGAGÉES par l'habillage (arbres, rochers, épaves…) : bases et leurs abords,
 // socles de construction, socles neutres, lacs, zones ◈ et socles de défense du tutoriel.

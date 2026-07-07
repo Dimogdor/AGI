@@ -416,10 +416,11 @@ function drawIntro(dt){
   if (fade<1){ ctx.fillStyle='rgba(8,6,10,'+(1-fade)+')'; ctx.fillRect(0,0,W,H); }   // fondu d'entrée par tableau
   introFrame();
   // bouton PASSER + indication
-  ctx.fillStyle='rgba(16,13,12,0.85)'; rr(INTRO_SKIP.x,INTRO_SKIP.y,INTRO_SKIP.w,INTRO_SKIP.h,5); ctx.fill();
-  ctx.strokeStyle='#4a3a32'; ctx.lineWidth=1; rr(INTRO_SKIP.x,INTRO_SKIP.y,INTRO_SKIP.w,INTRO_SKIP.h,5); ctx.stroke();
+  const isr = INTRO_SKIP();
+  ctx.fillStyle='rgba(16,13,12,0.85)'; rr(isr.x,isr.y,isr.w,isr.h,5); ctx.fill();
+  ctx.strokeStyle='#4a3a32'; ctx.lineWidth=1; rr(isr.x,isr.y,isr.w,isr.h,5); ctx.stroke();
   ctx.font='700 12px Arial'; ctx.textAlign='center'; ctx.fillStyle='#b8b0a4';
-  ctx.fillText(_t('skip')+' ▸', INTRO_SKIP.x+INTRO_SKIP.w/2, INTRO_SKIP.y+INTRO_SKIP.h/2+1);
+  ctx.fillText(_t('skip')+' ▸', isr.x+isr.w/2, isr.y+isr.h/2+1);
   if (intro<3){ ctx.font='11px Arial'; ctx.fillStyle='rgba(184,176,164,0.6)';
     ctx.fillText('▸ '+_t('tap_continue')+'  ·  '+(intro+1)+' / 4', W/2, H-14); }
 }

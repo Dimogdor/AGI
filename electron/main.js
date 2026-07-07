@@ -10,7 +10,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280, height: 720, minWidth: 854, minHeight: 480,
     backgroundColor: '#0d0a0a', autoHideMenuBar: true, fullscreenable: true,
-    title: 'AGI — Guerre des Ères',
+    title: 'AGI — La Dernière Bataille de l'Humanité',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

@@ -1,10 +1,10 @@
-# Empaqueter AGI — Guerre des Ères (iOS · Android · PC · Web)
+# Empaqueter AGI — La Dernière Bataille de l'Humanité (iOS · Android · PC · Web)
 
-Le jeu reste **un seul fichier source lisible** : `guerre-des-eres.html`.
+Le jeu reste **un seul fichier source lisible** : `la-derniere-bataille.html`.
 Tout le reste est généré. Le principe :
 
 ```
-guerre-des-eres.html   (source que vous éditez)
+la-derniere-bataille.html   (source que vous éditez)
         │  npm run build   →  minifie + obfusque le code
         ▼
        www/              (bundle web prêt, code caché)
@@ -14,7 +14,7 @@ guerre-des-eres.html   (source que vous éditez)
 ```
 
 **Vous n'éditez jamais `www/`** : il est régénéré à chaque build. Pour mettre
-le jeu à jour, vous modifiez `guerre-des-eres.html`, relancez `npm run build`,
+le jeu à jour, vous modifiez `la-derniere-bataille.html`, relancez `npm run build`,
 et republiez (voir « Mises à jour faciles »).
 
 ---

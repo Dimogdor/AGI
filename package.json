@@ -1,7 +1,7 @@
 {
-  "name": "agi-guerre-des-eres",
+  "name": "agi-la-derniere-bataille",
   "version": "1.5.0",
-  "description": "AGI — Guerre des Ères : jeu de stratégie style Age of War (web, iOS, Android, PC).",
+  "description": "AGI — La Dernière Bataille de l'Humanité : jeu de stratégie style Age of War (web, iOS, Android, PC).",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -16,8 +16,8 @@
     "ota:bundle": "node build.mjs && cd www && zip -r ../dist-ota/bundle-$npm_package_version.zip . && cd .."
   },
   "build": {
-    "appId": "com.agi.guerredeseres",
-    "productName": "AGI — Guerre des Ères",
+    "appId": "com.agi.dernierebataille",
+    "productName": "AGI — La Dernière Bataille de l'Humanité",
     "directories": {
       "output": "dist-pc"
     },

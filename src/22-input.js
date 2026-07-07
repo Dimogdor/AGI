@@ -146,7 +146,7 @@ function endPointer(e){
   const tap = !pdown.moved;
   if (intro>=0){
     pdown = null; dragging = false;
-    if (tap){ if (inRect(sx,sy,INTRO_SKIP)) finishIntro(); else advanceIntro(); }
+    if (tap){ if (inRect(sx,sy,INTRO_SKIP())) finishIntro(); else advanceIntro(); }
     return;
   }
   const lasso = pdown.lasso;

@@ -1,6 +1,6 @@
 /* =====================================================================
    build.mjs — pipeline de build « cache le code source »
-   Lit guerre-des-eres.html (source lisible), minifie (terser) puis
+   Lit la-derniere-bataille.html (source lisible), minifie (terser) puis
    obfusque (javascript-obfuscator) le script, et écrit un bundle
    web prêt à l'emploi dans www/ :
      www/index.html   — jeu, script minifié + obfusqué
@@ -15,7 +15,7 @@ import { minify } from 'terser';
 import JsObf from 'javascript-obfuscator';
 
 const ROOT = new URL('./', import.meta.url);
-const SRC  = new URL('./guerre-des-eres.html', import.meta.url);
+const SRC  = new URL('./la-derniere-bataille.html', import.meta.url);
 const OUT  = new URL('./www/', import.meta.url);
 const pkg  = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'));
 const VERSION = pkg.version;
@@ -27,7 +27,7 @@ const exists = async p => { try { await access(p, constants.F_OK); return true; 
 
 // --- assemblage : src/*.js concaténés (ordre alphabétique des préfixes 00..22) injectés
 //     dans src/shell.html à la place du marqueur. Le jeu est ÉCRIT en modules dans src/ ;
-//     guerre-des-eres.html est un ARTEFACT régénéré (jouable sur file://, lisible). ---
+//     la-derniere-bataille.html est un ARTEFACT régénéré (jouable sur file://, lisible). ---
 const SRCDIR = new URL('./src/', import.meta.url);
 async function assemble(){
   const shell = await readFile(new URL('shell.html', SRCDIR), 'utf8');
@@ -38,10 +38,10 @@ async function assemble(){
 
 const DEV = process.argv.includes('dev');
 console.log(`▶ build v${VERSION}${DEV?' (dev)':''}`);
-// régénère guerre-des-eres.html (lisible + jouable sur file://) à partir des modules src/
+// régénère la-derniere-bataille.html (lisible + jouable sur file://) à partir des modules src/
 const html = await assemble();
 await writeFile(SRC, html);
-console.log(`  guerre-des-eres.html régénéré depuis src/ (${(html.length/1024)|0} Ko)`);
+console.log(`  la-derniere-bataille.html régénéré depuis src/ (${(html.length/1024)|0} Ko)`);
 // mode dev : on s'arrête là (pas de minif/obfuscation/PWA) — itération rapide
 if (DEV){ console.log('✔ dev prêt (sans obfuscation)'); process.exit(0); }
 
@@ -113,7 +113,7 @@ await writeFile(new URL('./index.html', OUT), outHtml);
 
 // --- manifest PWA ---
 const manifest = {
-  name: "AGI — Guerre des Ères", short_name: "AGI", description: pkg.description,
+  name: "AGI — La Dernière Bataille de l'Humanité", short_name: "AGI", description: pkg.description,
   start_url: ".", scope: ".", display: "fullscreen", orientation: "landscape",
   background_color: "#0d0a0a", theme_color: "#0d0a0a",
   icons: [
@@ -193,7 +193,7 @@ if (privacyMd) {
   const bodyHtml = out.join('\n');
   const privacyHtml = `<!doctype html><html lang="fr"><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width,initial-scale=1">` +
-    `<title>Politique de confidentialité — AGI : Guerre des Ères</title>` +
+    `<title>Politique de confidentialité — AGI : La Dernière Bataille de l'Humanité</title>` +
     `<style>body{font:16px/1.6 -apple-system,Arial,sans-serif;max-width:720px;margin:40px auto;` +
     `padding:0 20px;color:#1a1a1a;background:#fff}h1{font-size:1.6em}h2{font-size:1.2em;margin-top:1.6em}` +
     `a{color:#0645ad}@media(prefers-color-scheme:dark){body{color:#eee;background:#141414}a{color:#8ab4f8}}</style>` +
