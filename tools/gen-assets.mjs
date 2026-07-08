@@ -31,7 +31,7 @@ const icon = (S) => `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height
   <text x="512" y="584" font-family="${FONT}" font-size="370" font-weight="bold" fill="url(#ink)" text-anchor="middle" letter-spacing="-6">AGI</text>
   <!-- filet + accroche -->
   <rect x="312" y="676" width="400" height="6" fill="#a8281e"/>
-  <text x="512" y="752" font-family="${FONT}" font-size="58" font-weight="bold" fill="#b89a7a" text-anchor="middle" letter-spacing="8">GUERRE DES ÈRES</text>
+  <text x="512" y="752" font-family="${FONT}" font-size="46" font-weight="bold" fill="#b89a7a" text-anchor="middle" letter-spacing="4">LA DERNIÈRE BATAILLE</text>
 </svg>`;
 
 await writeFile(new URL('icon.svg', R), icon(1024));
@@ -49,7 +49,7 @@ const feature = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="50
   <g opacity="0.05" fill="#9ad1d4">${Array.from({length:16},(_,i)=>`<rect x="0" y="${i*32}" width="1024" height="2"/>`).join('')}</g>
   <text x="64" y="232" font-family="${FONT}" font-size="180" font-weight="bold" fill="#a8281e">AGI</text>
   <text x="58" y="226" font-family="${FONT}" font-size="180" font-weight="bold" fill="#f2ead9">AGI</text>
-  <text x="64" y="300" font-family="${FONT}" font-size="40" font-weight="bold" fill="#b89a7a" letter-spacing="6">GUERRE DES ÈRES</text>
+  <text x="64" y="300" font-family="${FONT}" font-size="34" font-weight="bold" fill="#b89a7a" letter-spacing="2">LA DERNIÈRE BATAILLE DE L'HUMANITÉ</text>
   <text x="64" y="372" font-family="${FONT}" font-size="34" fill="#c4bcb0">Le capital contre l'humanité — stratégie temps réel.</text>
   <text x="64" y="418" font-family="${FONT}" font-size="34" fill="#c4bcb0">Évoluez à travers les ères. Survivez à un monde qui s'effondre.</text>
   <text x="760" y="300" font-family="${FONT}" font-size="300" font-weight="bold" fill="#a8281e" opacity="0.12" text-anchor="middle">&#937;</text>
@@ -61,7 +61,7 @@ const splash = `<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="273
   <rect width="2732" height="2732" fill="#0d0a0a"/>
   <text x="1372" y="1380" font-family="${FONT}" font-size="520" font-weight="bold" fill="#a8281e" text-anchor="middle">AGI</text>
   <text x="1366" y="1360" font-family="${FONT}" font-size="520" font-weight="bold" fill="#f2ead9" text-anchor="middle">AGI</text>
-  <text x="1366" y="1520" font-family="${FONT}" font-size="84" font-weight="bold" fill="#b89a7a" text-anchor="middle" letter-spacing="12">GUERRE DES ÈRES</text>
+  <text x="1366" y="1520" font-family="${FONT}" font-size="64" font-weight="bold" fill="#b89a7a" text-anchor="middle" letter-spacing="4">LA DERNIÈRE BATAILLE</text>
 </svg>`;
 await sharp(Buffer.from(splash)).png().flatten({ background: '#0d0a0a' }).toFile(new URL('splash.png', R).pathname);
 
