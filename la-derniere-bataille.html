@@ -5096,20 +5096,42 @@ function drawSpeedOverlays(){
 }
 
 let last = performance.now();
-let lastAutoDowngrade = -999;   // horodatage (game.t) de la dernière baisse auto — évite les à-coups répétés
+let lastAutoDowngrade = -999;   // horodatage (perfT, temps RÉEL) de la dernière baisse auto — évite les à-coups répétés
+let perfGame = null, perfT = 0; // temps RÉEL écoulé dans la partie en cours (remis à zéro à chaque nouvelle partie)
+let perfSkip = 0;               // frames à ignorer dans la mesure de FPS (retour d'arrière-plan)
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) perfSkip = 2; });
 function loop(now){
-  const dt = Math.min((now-last)/1000, 0.05); last=now;
+  const raw = (now-last)/1000;              // pas de temps RÉEL, non borné
+  const dt = Math.min(raw, 0.05); last=now;
+  // L'adaptation de qualité se mesure en temps RÉEL, jamais en temps de JEU : `game.t` n'avance
+  // que de `dt` borné à 0,05 s par frame, donc sur un appareil qui rame il défile au ralenti et
+  // le garde « 6 s de partie » mettait des minutes à s'ouvrir — le filet se déclenchait d'autant
+  // PLUS TARD que l'appareil était lent, soit l'inverse exact du besoin. Même raison pour fpsAvg :
+  // calculé sur `dt` borné, il ne pouvait jamais descendre sous 20 fps (1/0,05).
+  if (game !== perfGame){ perfGame = game; perfT = 0; lastAutoDowngrade = -999; }
   // AUTO-ADAPTATION DE QUALITÉ : si le FPS reste bas de façon SOUTENUE (moyenne lissée, pas un
   // pic isolé) pendant une vraie partie, on baisse la qualité d'UN cran automatiquement — sans
   // ça, un joueur qui ne sait pas qu'un réglage existe (ou ne le remarque pas) reste bloqué avec
   // un jeu saccadé. Un cran à la fois, avec un temps de repos entre deux baisses pour laisser le
   // nouveau palier faire ses preuves avant de rebaisser. Au palier Faible, plus rien à faire
   // automatiquement : un seul message ponctuel l'indique (fpsWarned, inchangé).
-  if (dt>0){ fpsAvg += ((1/dt)-fpsAvg)*0.05;
-    if (game && !game.over && !paused && game.t>6 && (game.t-lastAutoDowngrade)>15 && fpsAvg<28){
+  // Un onglet remis au premier plan produit un `raw` énorme qui n'est PAS un FPS réel : on saute
+  // ces frames-là explicitement (visibilitychange) plutôt que par un seuil de durée, sinon un
+  // appareil vraiment à genoux (>2 s/frame) serait exclu de la mesure et ne baisserait jamais.
+  // Ailleurs on plafonne à 1 s : plancher de mesure à 1 fps, largement sous le seuil de 28.
+  if (perfSkip>0){ perfSkip--; }
+  else if (raw>0){
+    // délai d'attente compté en temps réel, borné à 1 s/frame comme la mesure de FPS
+    if (game && !game.over && !paused) perfT += Math.min(raw, 1);
+    // Lissage pondéré par le TEMPS, pas par le nombre de frames : à 60 fps le facteur vaut ~0,05
+    // (comportement d'origine), mais quand les frames se raréfient chacune pèse davantage, sinon
+    // la moyenne mettait d'autant plus de frames à réagir que l'appareil en produisait peu.
+    // Plafond à 0,35 : il faut plusieurs frames lentes d'affilée, un à-coup isolé ne suffit pas.
+    fpsAvg += ((1/Math.min(raw,1))-fpsAvg) * Math.min(0.35, raw*3);
+    if (game && !game.over && !paused && perfT>6 && (perfT-lastAutoDowngrade)>15 && fpsAvg<28){
       const qi = QUALITIES.indexOf(SETTINGS.quality);
       if (qi>0){
-        SETTINGS.quality = QUALITIES[qi-1]; saveSettings(); fpsWarned=false; lastAutoDowngrade=game.t;
+        SETTINGS.quality = QUALITIES[qi-1]; saveSettings(); fpsWarned=false; lastAutoDowngrade=perfT;
         announce(tr('perf_auto')+' → '+qualityName(), '#ffcf6a');
       } else if (!fpsWarned){ fpsWarned=true; announce(tr('perf_warn'), '#ffcf6a'); }
     }
