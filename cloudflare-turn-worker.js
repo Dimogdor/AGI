@@ -24,6 +24,13 @@
 
 const ALLOWED_ORIGINS = [
   "https://dimogdor.github.io",   // GitHub Pages du jeu
+  // APPLI MOBILE : Capacitor sert le jeu depuis une origine locale, PAS depuis GitHub Pages.
+  // Sans ces deux lignes, le relais renvoie 403 dans l'APK et le 1v1 retombe en silence sur le
+  // TURN public OpenRelay — peu fiable entre deux téléphones en 4G, où un relais est souvent
+  // indispensable. (La vérification d'Origin ne bloque que les autres SITES web ; elle n'a
+  // jamais été une barrière contre un client hors navigateur, qui peut forger cet en-tête.)
+  "https://localhost",            // Android (capacitor.config.json : androidScheme "https")
+  "capacitor://localhost",        // iOS
   // "https://ton-domaine-perso.fr",  // ajoute ici un domaine custom si besoin
 ];
 

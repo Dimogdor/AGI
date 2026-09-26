@@ -64,14 +64,17 @@ function render(dt){
   // ===== LUMIÈRES DYNAMIQUES (RTX simulé) : nappes additives qui éclairent la scène =====
   // En qualité Faible, on saute les dégradés radiaux (coûteux) mais on continue de faire
   // expirer les lumières pour ne pas les accumuler (évite la surcharge sur GPU/extensions lourdes).
+  // Intensité réduite (0,55/0,22 → 0,34/0,12) et au plus 24 lumières DESSINÉES par frame (les
+  // plus récentes) : en grande bataille jusqu'à 60 dégradés radiaux additifs s'empilaient,
+  // blanchissant la mêlée ET coûtant cher. Toutes continuent d'expirer normalement.
   if (LIGHTS.length){
-    const drawLights = qFx();
+    const drawLights = qFx(), firstDrawn = LIGHTS.length-24;
     if (drawLights){ ctx.save(); ctx.globalCompositeOperation='lighter'; }
     for (let i=LIGHTS.length-1;i>=0;i--){ const L=LIGHTS[i]; L.t+=dt; if(L.t>=L.life){ LIGHTS.splice(i,1); continue; }
-      if (!drawLights) continue;
+      if (!drawLights || i<firstDrawn) continue;
       const a=1-L.t/L.life, lx=L.x-camX;
       const g=ctx.createRadialGradient(lx,L.y,1,lx,L.y,L.r);
-      g.addColorStop(0,rgbaC(L.col,0.55*a)); g.addColorStop(0.5,rgbaC(L.col,0.22*a)); g.addColorStop(1,rgbaC(L.col,0));
+      g.addColorStop(0,rgbaC(L.col,0.34*a)); g.addColorStop(0.5,rgbaC(L.col,0.12*a)); g.addColorStop(1,rgbaC(L.col,0));
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(lx,L.y,L.r,0,6.283); ctx.fill(); }
     if (drawLights) ctx.restore(); }
   ctx.textAlign='center';

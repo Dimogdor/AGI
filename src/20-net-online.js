@@ -346,6 +346,17 @@ async function lobbyList(){
     if (!r.ok) return [];
     const j = (await r.json()) || {};
     const now = Date.now();
+    // AUTO-NETTOYAGE : un salon dont l'appli a été tuée ou a planté ne passe jamais par
+    // lobbyRemove() — son entrée (nom saisi compris) restait stockée indéfiniment. Chaque
+    // consultation de la liste supprime donc les entrées mortes depuis plus de 5 min (l'hôte
+    // vivant republie toutes les 20 s, aucun risque d'effacer un salon actif). Plafonné à
+    // quelques suppressions par appel pour ne pas bombarder la base.
+    let purged = 0;
+    for (const [k, l] of Object.entries(j)){
+      if (purged >= 5) break;
+      if (!l || !l.code || now - (l.ts||0) > 300000){ purged++;
+        fetch(fbUrl('/lobbies/'+encodeURIComponent(k)), { method:'DELETE' }).catch(()=>{}); }
+    }
     return Object.values(j).filter(l => l && l.code && (now - (l.ts||0) < 60000))   // ignore les périmés (>60 s)
                            .sort((a,b)=> (b.ts||0)-(a.ts||0));
   } catch(e){ return []; }

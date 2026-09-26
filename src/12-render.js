@@ -1,5 +1,8 @@
 /* ================= RENDU ================= */
-const SKY_T=[[126,190,228],[224,138,78],[42,36,48]], SKY_B=[[235,222,180],[120,70,60],[24,20,26]];
+// CIEL À TROIS TEINTES (zénith / mi-hauteur / horizon), pour chaque état du monde :
+// sain (jour bleu), agonisant (crépuscule violet et braise), mort (nuit de cendres rougeoyante).
+const SKY_T=[[74,134,206],[70,52,96],[22,18,28]], SKY_M=[[150,196,228],[214,112,80],[46,34,40]],
+      SKY_B=[[240,220,178],[250,170,100],[72,52,46]];
 const GRASS=[[116,160,82],[150,120,60],[70,58,50]], DIRT=[[92,74,52],[80,60,44],[48,40,36]];
 function devLerp(arr){
   const d=game?game.dev:0;
@@ -56,12 +59,37 @@ function pbo(x,y,w,h,col,line){ x=qz(x); y=qz(y); w=Math.max(PX,qz(w)); h=Math.m
 // agrandi et flou. SS dépend de SCALE (densité réelle) ; la clé l'inclut → recuisson au resize.
 const SPR = new Map();
 const spriteSS = ()=> Math.max(2, Math.min(4, Math.ceil(SCALE||2)));
+// CONTOUR SOMBRE cuit dans chaque sprite d'unité : sur le champ de bataille clair, les
+// silhouettes se détachent enfin (surtout dans les mêlées). La silhouette vient d'un second
+// rendu SANS halos néon (BLOOM_OFF) : dilater la version avec halos aurait laissé des bavures
+// sombres autour de chaque lueur. Coût payé UNE fois à la cuisson (préchauffée au lancement),
+// zéro par frame.
+let BLOOM_OFF = false;
+const SPR_SCRATCH = new Map();   // toiles de travail réutilisées pour les silhouettes (une par taille)
 function sprite(key, w, h, draw){
   const SS = spriteSS(), k = key+'@'+SS;
   let s = SPR.get(k);
-  if (!s){ s=document.createElement('canvas'); s.width=Math.ceil(w*SS); s.height=Math.ceil(h*SS);
-    const c=s.getContext('2d'); c.imageSmoothingEnabled=true; c.scale(SS,SS);
-    const prev=TC; TC=c; draw(c, s); TC=prev; SPR.set(k,s); }
+  if (!s){
+    const cw = Math.ceil(w*SS), ch = Math.ceil(h*SS);
+    // dessine le sprite dans une toile donnée (état remis à neuf avant/après : draw() peut
+    // laisser l'état déséquilibré sans polluer la suite)
+    const into = cv => { const c=cv.getContext('2d'); c.save(); c.imageSmoothingEnabled=true; c.setTransform(SS,0,0,SS,0,0);
+      const prev=TC; TC=c; try { draw(c, cv); } finally { TC=prev; c.restore(); } };
+    // 1) silhouette sans halos, dans une toile de travail RÉUTILISÉE (pas d'allocation par sprite)
+    const sk = cw+'x'+ch; let sil = SPR_SCRATCH.get(sk);
+    if (!sil){ sil=document.createElement('canvas'); sil.width=cw; sil.height=ch; SPR_SCRATCH.set(sk, sil); }
+    else sil.getContext('2d').clearRect(0,0,cw,ch);
+    BLOOM_OFF = true; try { into(sil); } finally { BLOOM_OFF = false; }
+    // 2) contour : silhouette dilatée puis teintée, dans la toile finale
+    s = document.createElement('canvas'); s.width = cw; s.height = ch;
+    const oc = s.getContext('2d'), d = Math.max(1, Math.round(SS*0.9));
+    for (const [dx,dy] of [[-d,0],[d,0],[0,-d],[0,d],[-d,-d],[d,-d],[-d,d],[d,d]]) oc.drawImage(sil, dx, dy);
+    oc.globalCompositeOperation='source-in'; oc.fillStyle='rgba(12,8,16,0.8)'; oc.fillRect(0,0,cw,ch);
+    oc.globalCompositeOperation='source-over';
+    // 3) sprite complet (halos compris) par-dessus, directement dans la toile finale
+    into(s);
+    SPR.set(k,s);
+  }
   return s;
 }
 
@@ -505,19 +533,26 @@ function drawMenuScene(dt){
 
 function drawBG(){
   const dev = game? game.dev:0, t = game? game.t:0, vw = VW();
-  const top=devLerp(SKY_T), bot=devLerp(SKY_B);
-  // ciel dégradé
-  const sky=ctx.createLinearGradient(0,-H,0,GROUND); sky.addColorStop(0,colS(top)); sky.addColorStop(1,colS(bot));
-  ctx.fillStyle=sky; ctx.fillRect(0,-H,vw,GROUND+H);
+  const top=devLerp(SKY_T), mid=devLerp(SKY_M), bot=devLerp(SKY_B);
+  // CIEL ANCRÉ SUR LE HAUT RÉEL DE L'ÉCRAN. L'ancien dégradé partait de y=-H (monde), bien
+  // au-dessus de l'écran : à zoom 1 le haut visible tombait déjà à ~58 % du trajet vers
+  // l'horizon, si bien que le bleu du zénith n'apparaissait JAMAIS et que toute la scène
+  // baignait dans le crème de l'horizon. On part désormais du haut de l'écran courant
+  // (quel que soit le zoom), avec une marge pour la secousse de caméra.
+  const yTop = -zTY()/zoom - 24;
+  const sky=ctx.createLinearGradient(0,yTop,0,GROUND);
+  sky.addColorStop(0,colS(top)); sky.addColorStop(0.58,colS(mid)); sky.addColorStop(1,colS(bot));
+  ctx.fillStyle=sky; ctx.fillRect(0,yTop,vw,GROUND-yTop);
+  // PERSPECTIVE AÉRIENNE : les plans lointains se fondent vers une brume légèrement bleutée
+  // (comme le vrai ciel), et non plus vers le crème de l'horizon qui délavait tout.
+  const haze = lerpColArr(bot, mid, 0.75);
   // (Anciens « éclairs d'ambiance » retirés : ils provoquaient un scintillement intempestif
   //  de l'arrière-plan pendant les batailles. Le ciel reste désormais stable.)
-  // astres / cendres (additif)
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  if (dev>0.4){ ctx.fillStyle='rgba(255,90,60,0.5)';
-    for (let i=0;i<30;i++){ const ax=(i*173+t*14+i*i*7)%vw, ay=(t*30+i*97)%GROUND; ctx.fillRect(ax,ay,2,2); } }
-  else { ctx.fillStyle='rgba(255,255,255,0.7)';
-    for (let i=0;i<16;i++){ const sx=(i*257)%vw, sy=(i*113)%150; ctx.beginPath(); ctx.arc(sx,sy,1.2,0,6.283); ctx.fill(); } }
-  ctx.restore();
+  // cendres rougeoyantes quand le monde agonise (additif). Plus d'« étoiles » en plein jour :
+  // des points blancs dans un ciel diurne se lisaient comme des pixels morts.
+  if (dev>0.4){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,90,60,0.5)';
+    for (let i=0;i<30;i++){ const ax=(i*173+t*14+i*i*7)%vw, ay=(t*30+i*97)%GROUND; ctx.fillRect(ax,ay,2,2); }
+    ctx.restore(); }
   // PARTICULES D'AMBIANCE selon la faction/ère du joueur (décor pur, additif). Les cendres
   // (monde mourant) sont déjà gérées plus haut ; ici : pétales humains, étincelles GPT.
   if (game && game.p && dev<0.45){
@@ -536,13 +571,15 @@ function drawBG(){
   const sunX=vw*0.5-(camX/(WORLD-vw||1)-0.5)*120, sunY=80+dev*46;
   const sunC = dev<0.5? lerpCol([255,244,210],[255,150,80],dev*2) : lerpCol([255,150,80],[150,80,80],(dev-0.5)*2);
   ctx.save(); ctx.globalCompositeOperation='lighter';
+  // halo plus contenu qu'avant (0,9 → 0,6) : sur le nouveau ciel bleu, l'ancien blanchissait
+  // tout le tiers central de l'écran.
   const sg=ctx.createRadialGradient(sunX,sunY,4,sunX,sunY,130);
-  sg.addColorStop(0,rgbaC(sunC,0.9)); sg.addColorStop(0.18,rgbaC(sunC,0.5)); sg.addColorStop(1,rgbaC(sunC,0));
+  sg.addColorStop(0,rgbaC(sunC,0.6)); sg.addColorStop(0.18,rgbaC(sunC,0.28)); sg.addColorStop(1,rgbaC(sunC,0));
   ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sunX,sunY,130,0,6.283); ctx.fill();
-  ctx.fillStyle=rgbaC(sunC,1); ctx.beginPath(); ctx.arc(sunX,sunY,26,0,6.283); ctx.fill();
+  ctx.fillStyle=rgbaC(sunC,1); ctx.beginPath(); ctx.arc(sunX,sunY,22,0,6.283); ctx.fill();
   // rayons divins : faisceaux doux descendant du soleil, animés lentement (s'estompent
   // quand le monde agonise). Restent dans le bloc additif « lighter ».
-  const rayA = 0.085*(1-dev*0.55);
+  const rayA = 0.055*(1-dev*0.55);
   if (rayA>0.004) for (let i=0;i<6;i++){
     const a = 0.9 + i*0.17 + Math.sin(t*0.1+i)*0.02;     // éventail orienté vers le bas
     const len=420, w=20+i*5, ex=sunX+Math.cos(a)*len, ey=sunY+Math.sin(a)*len;
@@ -554,15 +591,19 @@ function drawBG(){
     ctx.lineTo(ex-px*w,ey-py*w); ctx.lineTo(ex+px*w,ey+py*w); ctx.closePath(); ctx.fill();
   }
   ctx.restore();
-  // nuages dérivants (parallaxe douce) — profondeur du ciel ; cendres si le monde agonise
-  ctx.save(); ctx.globalCompositeOperation = dev>0.55? 'source-over':'lighter';
-  for (let i=0;i<5;i++){
-    const cw=120+i*46, drift=(t*(6+i*3)+i*900) % (vw+cw*2)-cw, cx=drift - (camX*0.08)%(vw+cw*2);
-    const cy=46+((i*53)%70), al=(dev>0.55? 0.12+dev*0.12 : 0.10)*(1-i*0.07);
-    const col = dev>0.55? '50,46,54' : '255,255,255';
-    const g=ctx.createRadialGradient(cx,cy,4,cx,cy,cw*0.6);
-    g.addColorStop(0,'rgba('+col+','+al+')'); g.addColorStop(1,'rgba('+col+',0)');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx,cy,cw*0.6,cw*0.22,0,0,6.283); ctx.fill();
+  // NUAGES en volume (sommet éclairé, base ombrée), cuits en cache et blittés : 7 drawImage
+  // par frame au lieu des 5 dégradés radiaux d'avant — plus beaux ET moins coûteux. Trois
+  // plans de parallaxe (les lointains plus petits, plus lents, plus pâles). Blancs le jour,
+  // rosés au crépuscule, fumées sombres quand le monde est mort.
+  const cl = cloudSprites(dev);
+  ctx.save();
+  for (let i=0;i<7;i++){
+    const k = cl[i%cl.length], layer = i%3;
+    const sc = 0.62+layer*0.22, par = 0.03+layer*0.035, cw = k.w*sc, ch = k.h*sc;
+    const span = vw + cw*2;
+    const x = ((t*(3+layer*2.2) + i*611 - camX*par) % span + span) % span - cw;
+    ctx.globalAlpha = (dev>0.55? 0.62 : 0.8) * (0.62+layer*0.19);
+    ctx.drawImage(k.c, x, 12+((i*47)%96)-layer*6, cw, ch);
   }
   ctx.restore();
   // VIE AMBIANTE : vols d'oiseaux traversant lentement le ciel tant que le monde est sain
@@ -582,16 +623,19 @@ function drawBG(){
   // PROFONDEUR DE CHAMP : le flou des montagnes est PRÉ-CUIT dans drawFarRange (cache
   // offscreen) — plus aucun ctx.filter par frame, la mise au point reste sur la bataille.
   drawFarRange(vw, bot, dev, t);
-  // collines avec brume de profondeur (3 plans)
-  hill(0.18, GROUND-130, 90, lerpColArr(devLerp(GRASS),bot,0.7), vw);
-  hill(0.32, GROUND-95,  70, lerpColArr(devLerp(GRASS),bot,0.5), vw);
-  hill(0.5,  GROUND-55,  50, lerpColArr(devLerp(GRASS),bot,0.32), vw);
+  // collines avec brume de profondeur (3 plans). Mélanges allégés (0,7/0,5/0,32 → 0,52/0,36/0,2)
+  // vers la brume bleutée : chaque plan garde sa couleur et la profondeur se LIT au lieu de
+  // s'effacer dans le crème.
+  const grassC = devLerp(GRASS);
+  hill(0.18, GROUND-130, 90, lerpColArr(grassC,haze,0.52), vw);
+  hill(0.32, GROUND-95,  70, lerpColArr(grassC,haze,0.36), vw);
+  hill(0.5,  GROUND-55,  50, lerpColArr(grassC,haze,0.2), vw);
   drawCity(dev);
   drawAmbient(t, dev, vw);       // monde vivant : crashs, incendies, fumées, jets, vols d'oiseaux…
-  // voile de brume à l'horizon
-  const haze=ctx.createLinearGradient(0,GROUND-120,0,GROUND);
-  haze.addColorStop(0,rgbaC(bot,0)); haze.addColorStop(1,rgbaC(bot,0.4));
-  ctx.fillStyle=haze; ctx.fillRect(0,GROUND-120,vw,120);
+  // voile de brume à l'horizon (plus léger qu'avant : 0,4 → 0,26)
+  const hz=ctx.createLinearGradient(0,GROUND-120,0,GROUND);
+  hz.addColorStop(0,rgbaC(haze,0)); hz.addColorStop(1,rgbaC(haze,0.26));
+  ctx.fillStyle=hz; ctx.fillRect(0,GROUND-120,vw,120);
   // terrain (dégradé sculpté) + bande d'herbe
   const dirt=devLerp(DIRT), grass=devLerp(GRASS), yBot=(H-zTY())/zoom+60;
   ctx.beginPath(); ctx.moveTo(0,yBot); for(let sx=0;sx<=vw;sx+=8) ctx.lineTo(sx,gY(sx+camX)); ctx.lineTo(vw,yBot); ctx.closePath();
@@ -723,11 +767,44 @@ function drawZone(z, dev, t, vw){
 function devLerpAt(arr, d){
   return d<0.5? lerpColArr(arr[0],arr[1],d*2) : lerpColArr(arr[1],arr[2],(d-0.5)*2);
 }
+// NUAGES : 5 silhouettes cuites une fois par état du monde (quantifié au dixième) puis
+// réutilisées. Amas de bulles déterministe (même ciel d'une partie à l'autre), dégradé
+// sommet éclairé → base ombrée, base aplatie, flou doux si le navigateur le supporte.
+let CLOUDS = null;
+function cloudSprites(dev){
+  const dq = Math.round(dev*10)/10, SS = Math.min(2, spriteSS()), key = dq+'|'+SS+'|'+(CANF?1:0);
+  if (CLOUDS && CLOUDS.key===key) return CLOUDS.list;
+  const lit = devLerpAt([[255,255,255],[255,196,150],[96,84,88]], dq);
+  const shd = devLerpAt([[176,196,222],[122,72,92],[34,28,32]], dq);
+  const list = [];
+  for (let n=0;n<5;n++){
+    const w = 150+n*38, h = w*0.5;
+    const cv = document.createElement('canvas'); cv.width = Math.ceil(w*SS); cv.height = Math.ceil(h*SS);
+    const g = cv.getContext('2d'); g.scale(SS,SS);
+    if (CANF) g.filter = 'blur(1.6px)';
+    let s = n*9301+49297; const rnd = ()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+    const gr = g.createLinearGradient(0,h*0.08,0,h*0.8);
+    gr.addColorStop(0,colS(lit)); gr.addColorStop(0.55,colS(lerpColArr(lit,shd,0.35))); gr.addColorStop(1,colS(shd));
+    g.fillStyle = gr; g.beginPath();
+    for (let i=0;i<7;i++){
+      const r = h*(0.16+0.14*rnd()+0.1*Math.sin(i/6*Math.PI));          // bosses plus hautes au centre
+      const px = w*(0.17+0.66*i/6)+(rnd()-0.5)*w*0.07, py = h*0.66-r*0.5;
+      g.moveTo(px+r,py); g.arc(px,py,r,0,6.283);
+    }
+    g.rect(w*0.13, h*0.58, w*0.74, h*0.18);                               // base aplatie
+    g.fill();
+    list.push({ c:cv, w, h });
+  }
+  CLOUDS = { key, list };
+  return list;
+}
 let FARC = null;
 function drawFarRange(vw, bot, dev, t){
   const devQ = Math.round(dev*20)/20;
   const key = devQ+'|'+Math.ceil(vw)+'|'+spriteSS()+'|'+((CANF&&qHi())?1:0);
-  const base = GROUND-150, amp = 150, topY = base-amp*1.55;
+  // chaîne abaissée (amplitude 150 → 110) : ses sommets montaient jusqu'en haut de l'écran et
+  // recouvraient presque tout le ciel — c'est elle qu'on prenait pour un « ciel délavé »
+  const base = GROUND-140, amp = 110, topY = base-amp*1.55;
   if (!FARC || FARC.key!==key){
     const wpx = Math.ceil(vw) + Math.ceil(WORLD*0.04) + 40;
     const SS = Math.min(2, spriteSS());
@@ -735,8 +812,11 @@ function drawFarRange(vw, bot, dev, t){
     cv.width = Math.ceil(wpx*SS); cv.height = Math.ceil((GROUND-topY+6)*SS);
     const c = cv.getContext('2d'); c.scale(SS,SS); c.translate(0,-topY);
     if (CANF && qHi()) c.filter = 'blur(1.8px)';
-    const bot2 = devLerpAt(SKY_B, devQ);
-    const col = lerpColArr(devLerpAt(GRASS, devQ), bot2, 0.86);
+    // PERSPECTIVE AÉRIENNE : les montagnes lointaines prennent la teinte du HAUT du ciel
+    // (bleu-gris le jour), pas celle de l'herbe ni du crème de l'horizon — silhouette bleutée
+    // qui se détache du ciel sans s'y dissoudre ni former un mur vert pâle.
+    const far = lerpColArr(devLerpAt(SKY_M, devQ), devLerpAt(SKY_T, devQ), 0.4);
+    const col = lerpColArr(devLerpAt(GRASS, devQ), far, 0.8);
     c.beginPath(); const pts=[];
     for (let x=0;x<=wpx;x+=24){
       const h = (Math.abs(Math.sin(x*0.0016))*amp + Math.abs(Math.sin(x*0.0041+1.7))*amp*0.5);
@@ -873,7 +953,7 @@ function lgrad(x0,y0,x1,y1,st){ const g=TC.createLinearGradient(x0,y0,x1,y1); fo
 function rgrad(x,y,r,st){ const g=TC.createRadialGradient(x,y,1,x,y,Math.max(2,r)); for(const s of st) g.addColorStop(s[0],s[1]); return g; }
 function rrectT(x,y,w,h,r){ r=Math.min(r,Math.abs(w)/2,Math.abs(h)/2); TC.beginPath(); TC.moveTo(x+r,y);
   TC.arcTo(x+w,y,x+w,y+h,r); TC.arcTo(x+w,y+h,x,y+h,r); TC.arcTo(x,y+h,x,y,r); TC.arcTo(x,y,x+w,y,r); TC.closePath(); }
-function bloomT(col,b,fn){ TC.save(); TC.globalCompositeOperation='lighter'; TC.shadowColor=col; TC.shadowBlur=b; fn(); TC.restore(); }
+function bloomT(col,b,fn){ TC.save(); if (!BLOOM_OFF){ TC.globalCompositeOperation='lighter'; TC.shadowColor=col; TC.shadowBlur=b; } fn(); TC.restore(); }
 // pièce sculptée : dégradé directionnel + occlusion basse + arête de lumière (+ liseré néon optionnel)
 function sculptT(x,y,w,h,r,base,rim){
   TC.fillStyle=lgrad(x,y,x+w,y+h,[[0,shade(base,1.5)],[0.45,base],[1,shade(base,0.42)]]); rrectT(x,y,w,h,r); TC.fill();
@@ -959,7 +1039,7 @@ function attackFX(u, x, bodyY, imp){
   imp = (imp==null)?1:imp; const dir=u.side, col=u.fac==='HUM'?'#ffd9a0':'#9fe8ff';
   const glow = qFx();
   ctx.save(); ctx.globalCompositeOperation='lighter';
-  if (glow){ ctx.shadowColor=col; ctx.shadowBlur=14; }
+  if (glow){ ctx.shadowColor=col; ctx.shadowBlur=10; }
   ctx.lineCap='round';
   if (u.role==='ranged'||u.role==='air'){
     const fx=x+dir*26;
@@ -974,9 +1054,11 @@ function attackFX(u, x, bodyY, imp){
   } else {
     // mêlée : arc tranchant qui balaie devant l'unité
     const cxs=x+dir*6, r=22, a0=dir>0?-1.0:Math.PI+1.0, a1=dir>0?1.0:Math.PI-1.0;
-    ctx.strokeStyle=rgbaC('#ffffff',0.2+0.8*imp); ctx.lineWidth=3.2;
+    // arc plus fin et moins blanc qu'avant (0,2+0,8 → 0,15+0,5) : dans une mêlée dense, les
+    // arcs additifs superposés fusionnaient en une tache blanche qui masquait les unités
+    ctx.strokeStyle=rgbaC('#ffffff',0.15+0.5*imp); ctx.lineWidth=2.6;
     ctx.beginPath(); ctx.arc(cxs,bodyY,r,a0,a1,dir<0); ctx.stroke();
-    ctx.strokeStyle=rgbaC(col,0.5*imp); ctx.lineWidth=6; ctx.beginPath(); ctx.arc(cxs,bodyY,r,a0,a1,dir<0); ctx.stroke();
+    ctx.strokeStyle=rgbaC(col,0.4*imp); ctx.lineWidth=5; ctx.beginPath(); ctx.arc(cxs,bodyY,r,a0,a1,dir<0); ctx.stroke();
   }
   ctx.restore();
   // éclair de lumière dynamique au moment du tir/de la frappe (coords MONDE)
@@ -987,7 +1069,7 @@ function drawGremlin(u, x, gy){
   projShadow(x, gy, 9); const cy=gy-12-b;
   sculptT(x-8, cy-8, 16, 16, 6, body, acc);
   bloomT(acc,8,()=>{ ctx.fillStyle=acc; ctx.beginPath(); ctx.arc(x-3,cy,2,0,6.283); ctx.arc(x+3,cy,2,0,6.283); ctx.fill(); });
-  if (u.flash>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=u.flash; sculptT(x-8,cy-8,16,16,6,'#ffffff'); ctx.restore(); }
+  if (u.flash>0){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.55,u.flash); sculptT(x-8,cy-8,16,16,6,'#ffffff'); ctx.restore(); }
   if (u.atkT>u.rate-0.14) attackFX(u, x, cy);
 }
 function blitHumanoid(u, x, gy, kind){
@@ -1027,7 +1109,7 @@ function blitHumanoid(u, x, gy, kind){
     sg.addColorStop(0,'rgba(220,245,255,0)'); sg.addColorStop(0.5,'rgba(225,248,255,0.40)'); sg.addColorStop(1,'rgba(220,245,255,0)');
     ctx.fillStyle=sg; ctx.fillRect(-14,-USP.foot+14,28,40); ctx.restore();
   }
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H); }
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H); }
   ctx.restore();
   if (atk) attackFX(u, x, gy-26, imp);
 }
@@ -1056,7 +1138,7 @@ function drawAir(u, x, gy){
   const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
   ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-22, 64, 44); }
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
   ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2.5;
@@ -1126,7 +1208,7 @@ function drawHero(u, x, gy){
   const spr = sprite('HERO'+u.fac, 64, 100, ()=>heroSprite(u.fac));
   const atk = u.atkT > u.rate-0.18, imp = atk? clamp((u.atkT-(u.rate-0.18))/0.18,0,1):0, lunge=u.side*9*imp;
   ctx.save(); ctx.translate(x+lunge,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -32, -92, 64, 100);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(1,u.flash*1.4); ctx.drawImage(spr,-32,-92, 64, 100); }
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-92, 64, 100); }
   ctx.restore();
   if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
   ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=6;
