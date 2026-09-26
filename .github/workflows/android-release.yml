@@ -1,0 +1,111 @@
+name: Construire l'appli Android (AAB signé)
+
+# Construit le .aab à téléverser sur Google Play, SIGNÉ avec votre keystore conservé dans les
+# secrets GitHub — jamais dans le dépôt, jamais sur une machine à ne pas perdre. Plus besoin
+# d'Android Studio, d'un JDK ni du SDK Android chez vous.
+#
+# versionCode AUTOMATIQUE = 100 + numéro d'exécution du workflow : il augmente à chaque build,
+# ce qui supprime définitivement l'erreur Play Console « Le code de version X a déjà été utilisé ».
+#
+# SECRETS À CRÉER UNE SEULE FOIS — dépôt GitHub → Settings → Secrets and variables → Actions :
+#   ANDROID_KEYSTORE_BASE64    le fichier agi-release.keystore encodé en base64 (voir PUBLIER.md)
+#   ANDROID_KEYSTORE_PASSWORD  le « store password » de KEYSTORE-SECRETS.txt
+#   ANDROID_KEY_ALIAS          (facultatif) alias de la clé ; défaut : agi-guerre-des-eres
+# Sans ces secrets, le workflow produit un .aab NON SIGNÉ — utile pour vérifier que tout
+# compile, mais Google Play le refusera — et l'indique en clair.
+#
+# Déclencheurs : bouton « Run workflow » (onglet Actions) ou tag v* (ex. v1.6.0).
+# Jamais sur pull_request : un fork ne peut pas faire tourner ce job avec vos secrets.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'        # Android Gradle Plugin 8.x
+
+      # outils de build web + Capacitor, sans les dépendances lourdes inutiles ici (electron, canvas)
+      - run: npm install --no-audit --no-fund --omit=optional
+      - run: npm install --no-audit --no-fund --no-save @capacitor/cli@^6.1.2 @capacitor/core@^6.1.2 @capacitor/android@^6.1.2
+      - run: npm run build
+      - run: npx cap sync android
+
+      - name: Keystore (depuis les secrets)
+        id: sign
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$KS_B64" ] || [ -z "$KS_PW" ]; then
+            echo "::warning title=AAB NON SIGNÉ::Secrets ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD absents : le .aab produit sera REFUSÉ par Google Play. Voir PUBLIER.md."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          ALIAS="${KS_ALIAS:-agi-guerre-des-eres}"
+          mkdir -p android-signing
+          # tolère les retours à la ligne / espaces d'un copier-coller
+          printf '%s' "$KS_B64" | tr -d ' \r\n' | base64 -d > android-signing/agi-release.keystore
+          # vérifie TÔT que fichier, mot de passe et alias concordent — message clair sinon
+          if ! keytool -list -keystore android-signing/agi-release.keystore -storepass "$KS_PW" -alias "$ALIAS" > /dev/null 2>&1; then
+            echo "::error title=Keystore illisible::Le keystore décodé ne s'ouvre pas avec ce mot de passe et l'alias « $ALIAS ». Vérifiez les secrets (base64 complet, bon mot de passe, bon alias)."
+            exit 1
+          fi
+          {
+            echo "storeFile=../android-signing/agi-release.keystore"
+            echo "storePassword=$KS_PW"
+            echo "keyAlias=$ALIAS"
+            echo "keyPassword=$KS_PW"
+          } > android-signing/keystore.properties
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Construire le bundle (.aab)
+        id: build
+        working-directory: android
+        run: |
+          export VERSION_CODE=$((100 + ${{ github.run_number }}))
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+          SUFFIX=$([ "${{ steps.sign.outputs.signed }}" = "true" ] && echo "signe" || echo "NON-SIGNE")
+          echo "vc=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "name=AGI-la-derniere-bataille-vc$VERSION_CODE-$SUFFIX" >> "$GITHUB_OUTPUT"
+
+      - name: Vérifier la signature
+        if: steps.sign.outputs.signed == 'true'
+        run: jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.name }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Résumé
+        run: |
+          {
+            echo "## ${{ steps.build.outputs.name }}"
+            echo ""
+            echo "- versionCode : **${{ steps.build.outputs.vc }}**"
+            if [ "${{ steps.sign.outputs.signed }}" = "true" ]; then
+              echo "- Signé : **oui** — téléchargez l'artefact ci-dessous, décompressez-le, puis téléversez \`app-release.aab\` dans Play Console."
+            else
+              echo "- Signé : **NON** — Google Play refusera ce fichier. Ajoutez les secrets décrits dans PUBLIER.md puis relancez."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Nettoyer le keystore
+        if: always()
+        run: rm -rf android-signing

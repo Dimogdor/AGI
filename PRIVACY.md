@@ -1,5 +1,5 @@
 # Politique de confidentialité — AGI : La Dernière Bataille de l'Humanité
-*Dernière mise à jour : 9 juillet 2026*
+*Dernière mise à jour : 26 septembre 2026*
 
 ## Version courte
 **AGI : La Dernière Bataille de l'Humanité ne collecte, ne stocke et ne transmet aucune donnée
@@ -32,8 +32,10 @@ mise en relation — comme toute communication réseau :
   dans l'UE) : **uniquement si vous choisissez de rendre votre salon public**,
   l'application y publie le code du salon, le nom de salon que vous avez
   éventuellement saisi, le camp choisi, la vitesse de jeu, la présence ou non
-  d'un mot de passe, et un horodatage. Ces entrées sont éphémères (retirées à la
-  fermeture du salon, ignorées après 60 secondes) et ne contiennent aucune donnée
+  d'un mot de passe, et un horodatage. Ces entrées sont éphémères : retirées à la
+  fermeture du salon, ignorées après 60 secondes, et — si l'application a été fermée
+  brutalement — supprimées automatiquement dès la consultation suivante de la liste
+  une fois inactives depuis plus de 5 minutes. Elles ne contiennent aucune donnée
   personnelle — sauf si vous en saisissez une vous-même dans le nom du salon,
   ce que nous vous déconseillons. Un salon privé (par code) ne publie rien.
   Le mot de passe éventuel n'est **jamais** transmis à cette liste.
@@ -59,4 +61,5 @@ relay we operate) and a PeerJS signalling server, which see your IP address for 
 it takes to connect. If — and only if — you choose to make your room public, the room
 code, the optional room name you typed, your chosen side, game speed, whether a password
 is set, and a timestamp are published to a Firebase Realtime Database (Google, EU-hosted);
-these entries are ephemeral and contain no personal data. Room passwords are never sent there.*
+these entries are ephemeral (removed when the room closes, and automatically purged once
+inactive for over 5 minutes if the app was closed abruptly) and contain no personal data. Room passwords are never sent there.*

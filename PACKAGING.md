@@ -125,9 +125,15 @@ Pour **durcir davantage** : passez `renameGlobals: true` dans `build.mjs`
 
 ### OTA mobile sans frais (Capgo)
 
-Le plugin `@capgo/capacitor-updater` est déjà déclaré et configuré
-(`capacitor.config.json` → `autoUpdate`). Le bootstrap `notifyAppReady()` est
-injecté automatiquement par le build. Deux options :
+> ⚠️ **Actuellement INACTIF dans l'APK.** Le plugin figure dans `optionalDependencies`,
+> or Capacitor ne compile que les plugins listés dans `dependencies` : il n'est donc pas
+> intégré à l'application Android (et l'appli ne contacte aucun serveur de mise à jour).
+> Pour l'activer : déplacez `@capgo/capacitor-updater` dans `dependencies`, lancez
+> `npx cap sync android`, **puis mettez à jour la politique de confidentialité et la
+> déclaration « Sécurité des données »** (l'appli contacterait alors un serveur au lancement).
+
+La configuration est prête (`capacitor.config.json` → `autoUpdate`) et le bootstrap
+`notifyAppReady()` est injecté automatiquement par le build. Deux options :
 
 - **Cloud Capgo** : `npx @capgo/cli init` puis `npx @capgo/cli bundle upload`.
 - **Auto-hébergé (gratuit)** : `npm run ota:bundle` crée un zip versionné dans

@@ -155,7 +155,8 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 | Icône (toutes plateformes) | `icon-1024.png`, `icon-512.png`, `icon-192.png` | carré, sans transparence |
 | Feature graphic (Google Play) | `feature-graphic.png` | 1024 × 500 |
 | Écran de démarrage | `splash.png` | 2732 × 2732 |
-| Captures d'écran | `screenshots/01..04.png` | 1920 × 1080 (paysage) |
+| Captures d'écran | `screenshots/01..06.png` | 1920 × 1080 (paysage) — 2 intro + la mort du monde en 4 temps |
+| Présentation Google Play Games sur PC | `pc-presentation.png` | 1920 × 1080, **sans aucun texte** (exigence Google) |
 
 **Captures requises par store :**
 - **Google Play** : 2 à 8 captures, 16:9 ou 9:16 — les fichiers 1920×1080 conviennent directement. Feature graphic 1024×500 obligatoire.
@@ -163,7 +164,9 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
   `npx sharp-cli -i resources/screenshots/03-bataille.png -o out.png resize 2796 1290 --fit contain --background "#0d0a0a"`
 - **Microsoft Store** : 1366×768 min — les 1920×1080 conviennent.
 
-> Les captures de `resources/screenshots/` sont générées par `node tools/gen-screens.mjs`
+> Les captures de jeu (03 à 06) et `pc-presentation.png` sont générées par `node tools/store-screens.mjs`
+> (rendu réel du moteur via Chrome ; voir l'en-tête du script). Les deux captures d'intro (01, 02)
+> viennent de `node tools/gen-screens.mjs`.
 > (rendu réel du jeu). Ce sont d'excellents brouillons ; pour la fiche finale,
 > des captures sur appareil réel donnent le rendu de police/emoji le plus fidèle.
 

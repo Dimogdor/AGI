@@ -291,6 +291,25 @@ function drawCtrl(b){
   }
   ctx.restore();
 }
+// cache des halos de boutons : une toile par (taille, couleur, densité d'écran). Le jeu de
+// couleurs est un petit ensemble de constantes, le cache reste donc minuscule ; il est
+// vidé par sécurité s'il grossit anormalement (changements répétés de résolution).
+const BTN_GLOW = new Map(), BTN_GLOW_PAD = 12;
+function btnGlow(w, h, col){
+  const S = Math.max(1, Math.min(3, SCALE||1)), k = Math.round(w)+'x'+Math.round(h)+col+'@'+S.toFixed(2);
+  let c = BTN_GLOW.get(k);
+  if (!c){
+    if (BTN_GLOW.size > 96) BTN_GLOW.clear();
+    const P = BTN_GLOW_PAD, r = 7;
+    c = document.createElement('canvas'); c.width = Math.ceil((w+P*2)*S); c.height = Math.ceil((h+P*2)*S);
+    const g = c.getContext('2d'); g.scale(S,S);
+    g.shadowColor = col; g.shadowBlur = 8; g.strokeStyle = rgbaC(col,0.95); g.lineWidth = 2;
+    g.beginPath(); g.moveTo(P+r,P); g.arcTo(P+w,P,P+w,P+h,r); g.arcTo(P+w,P+h,P,P+h,r);
+    g.arcTo(P,P+h,P,P,r); g.arcTo(P,P,P+w,P,r); g.closePath(); g.stroke();
+    BTN_GLOW.set(k, c);
+  }
+  return c;
+}
 function drawBtn(b){
   const p=game.p, fac=p.fac;
   if (b.type==='hero'){ drawHeroBtn(b, p); return; }
@@ -352,8 +371,13 @@ function drawBtn(b){
   ctx.fillStyle=bg; rr(b.x,b.y,b.w,b.h,7); ctx.fill();
   if (!small && prog<1){ ctx.fillStyle=rgbaC(col,0.22); ctx.save(); rr(b.x,b.y,b.w,b.h,7); ctx.clip();
     ctx.fillRect(b.x,b.y,b.w*prog,b.h); ctx.restore(); }
-  if (ok && !small){ ctx.save(); if (qFx()){ ctx.shadowColor=col; ctx.shadowBlur=8; }   // PERF : coupé en Faible (jusqu'à 10 boutons/frame)
-    ctx.strokeStyle=rgbaC(col,0.95); ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); ctx.restore(); }
+  if (ok && !small){
+    // Halo PRÉ-CUIT (btnGlow) au lieu d'un shadowBlur par bouton et par frame : profilé à
+    // ~82 % du temps de rendu en qualité Moyenne et au-delà — à lui seul tout l'écart de
+    // coût avec la qualité Faible. Identique à l'œil, un simple blit désormais.
+    if (qFx()) ctx.drawImage(btnGlow(b.w,b.h,col), b.x-BTN_GLOW_PAD, b.y-BTN_GLOW_PAD, b.w+BTN_GLOW_PAD*2, b.h+BTN_GLOW_PAD*2);
+    else { ctx.strokeStyle=rgbaC(col,0.95); ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
+  }
   else { ctx.strokeStyle=ok?col:rgbaC(col,0.55); ctx.lineWidth=ok?1.8:1; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
   ctx.textAlign='center';
   if (small){

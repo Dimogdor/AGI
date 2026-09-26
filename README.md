@@ -32,9 +32,10 @@ la-derniere-bataille.html   ← LE JEU (source unique, lisible — éditez ici)
 build.mjs              ← build : minifie + obfusque → www/
 capacitor.config.json  ← config mobile (iOS/Android + OTA)
 electron/              ← app desktop (PC)
-tools/                 ← gen-assets (icônes/visuels), gen-screens (captures)
+tools/                 ← gen-assets (icônes/visuels), gen-screens (intro), store-screens (captures de store)
 resources/             ← icônes, feature graphic, splash, captures d'écran
 www/                   ← bundle généré (git-ignoré, ne pas éditer)
+PUBLIER.md             ← ★ publier sur Google Play, pas à pas (sans rien installer)
 PACKAGING.md           ← guide complet de publication (stores, PC, web, OTA)
 STORE-LISTING.md       ← textes & visuels prêts pour les stores
 PRIVACY.md             ← politique de confidentialité (URL requise par les stores)
@@ -53,7 +54,10 @@ Pour développer, ouvrez simplement `la-derniere-bataille.html` dans un navigate
 
 ## Publier
 
-Tout est détaillé dans **[PACKAGING.md](PACKAGING.md)** :
+**Google Play : suivez [PUBLIER.md](PUBLIER.md)** — l'appli signée est compilée par
+GitHub Actions, rien à installer sur votre PC.
+
+Les autres cibles sont détaillées dans **[PACKAGING.md](PACKAGING.md)** :
 
 | Cible | Commande | Sortie |
 |---|---|---|
