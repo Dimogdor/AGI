@@ -4999,13 +4999,20 @@ function drawPause(){
     {key:'quality',label:tr('set_quality')+' : '+qualityName()},
     {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
     {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
-    {key:'quit',   label:t('p_quit')},
   ];
+  // plein écran : en partie le bouton flottant ⛶ est masqué (il recouvrait le HUD), on le
+  // propose donc ici — seulement là où l'API existe (ni appli native, ni iOS)
+  if (FS_AVAILABLE) items.push({key:'fs', label:tr('fs_btn')+' : '+(isFullscreen()?t('on'):t('off'))});
+  items.push({key:'quit', label:t('p_quit')});
   // GÉOMÉTRIE : bh est dérivé des MÊMES constantes que les offsets Y du dessin
   // (TITLE_H/RESUME_H/GAP0), au lieu d'une constante devinée séparément — c'est cet
   // écart qui faisait sortir « Abandonner la partie » (dernier item) du cadre du panneau.
   const TITLE_H=48, RESUME_H=34, GAP0=16, BOTTOM_PAD=14;
-  const ih=36, headH=24, gap=6;
+  const headH=24, gap=6;
+  // hauteur de ligne ADAPTATIVE : 36 px par défaut, resserrée si la liste (ex. ligne plein
+  // écran en plus) ne tiendrait plus dans la hauteur logique (540 px en 16:9)
+  const nRows = items.filter(it=>it.head==null).length, nHeads = items.length-nRows;
+  const ih = Math.max(30, Math.min(36, Math.floor((H-16 - TITLE_H-RESUME_H-GAP0-BOTTOM_PAD - nHeads*(headH+gap))/nRows - gap)));
   let contentH=0; for (const it of items) contentH += (it.head!=null? headH : ih)+gap;
   const bh = TITLE_H + RESUME_H + GAP0 + contentH + BOTTOM_PAD;
   const by=clamp(H/2-bh/2, 8, H-bh-8);
@@ -5209,7 +5216,11 @@ let lastAutoDowngrade = -999;   // horodatage (perfT, temps RÉEL) de la derniè
 let perfGame = null, perfT = 0; // temps RÉEL écoulé dans la partie en cours (remis à zéro à chaque nouvelle partie)
 let perfSkip = 0;               // frames à ignorer dans la mesure de FPS (retour d'arrière-plan)
 document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) perfSkip = 2; });
+let lastFsHidden = null;        // dernier état du bouton plein écran flottant (masqué/visible)
 function loop(now){
+  // bouton ⛶ : masqué en partie et pendant l'intro (il chevauchait le HUD) ; on ne touche au
+  // DOM qu'aux transitions (début/fin de partie, intro), pas à chaque frame
+  const fsH = fsBtnHidden(); if (fsH!==lastFsHidden){ lastFsHidden = fsH; refreshFsBtn(); }
   const raw = (now-last)/1000;              // pas de temps RÉEL, non borné
   const dt = Math.min(raw, 0.05); last=now;
   // L'adaptation de qualité se mesure en temps RÉEL, jamais en temps de JEU : `game.t` n'avance
@@ -6690,6 +6701,15 @@ const IS_IOS = /iP(hone|ad|od)/.test(navigator.platform)
 const IS_STANDALONE = (navigator.standalone === true)
   || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
   || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+// APPLI NATIVE (APK Capacitor) : MainActivity met déjà l'écran en immersif plein écran ; le
+// bouton ⛶ y est inutile et, flottant en haut à droite, il recouvrait les boutons vitesse /
+// pause / réglages du HUD. Capacitor sert le jeu depuis https://localhost et injecte
+// window.Capacitor avant nos scripts.
+const IS_NATIVE = !!(window.Capacitor && (typeof window.Capacitor.isNativePlatform==='function'
+  ? window.Capacitor.isNativePlatform() : (window.Capacitor.platform && window.Capacitor.platform!=='web')));
+// plein écran pilotable ? (ni appli native, ni iOS qui n'a pas l'API, ni PWA déjà en plein écran)
+const FS_AVAILABLE = !IS_NATIVE && !IS_IOS && !IS_STANDALONE
+  && !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
 let iosHintEl = null;
 function iosHint(msg){
   if (!iosHintEl){
@@ -6706,7 +6726,7 @@ function iosHint(msg){
   iosHintEl._t = setTimeout(()=>{ if (iosHintEl) iosHintEl.style.display='none'; }, 5200);
 }
 function goFullscreen(){
-  if (IS_IOS) return;                  // API absente sur iOS : on ne tente rien (évite un échec muet)
+  if (IS_IOS || IS_NATIVE) return;     // iOS : API absente ; appli native : déjà immersive
   try {
     const el = document.documentElement;
     const fs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
@@ -6720,10 +6740,18 @@ function isFullscreen(){ return !!(document.fullscreenElement || document.webkit
 function exitFullscreen(){ try { (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); } catch(e){} }
 // le bouton flottant ⛶ n'apparaît que sur tactile et hors plein écran (sinon il encombre)
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+function toggleFullscreen(){ if (isFullscreen()) exitFullscreen(); else goFullscreen(); setTimeout(refreshFsBtn, 60); }
+// le bouton flottant est-il masqué ? Appli native et iOS installé : toujours. En partie et
+// pendant la cinématique : aussi — il chevauchait les commandes du HUD (vitesse, pause,
+// réglages) et le bouton « Passer » de l'intro. En partie, le plein écran reste accessible
+// depuis le menu Pause (ligne « Plein écran »).
+function fsBtnHidden(){
+  if (IS_NATIVE || (IS_IOS && IS_STANDALONE)) return true;
+  return (typeof game!=='undefined' && game && !game.over) || (typeof intro!=='undefined' && intro>=0);
+}
 function refreshFsBtn(){
   const b = $('fsBtn'); if (!b) return;
-  // sur iOS déjà installé en appli, pas besoin de bouton ; sinon on garde le ⛶ comme aide
-  if (IS_IOS && IS_STANDALONE){ b.style.display='none'; return; }
+  if (fsBtnHidden()){ b.style.display='none'; return; }
   b.textContent = (IS_IOS ? '⤢' : (isFullscreen()? '✕' : '⛶'));
   b.title = b.ariaLabel = tr('fs_btn');
   b.style.display = IS_TOUCH? 'block' : (isFullscreen()? 'none':'block');
@@ -6731,8 +6759,7 @@ function refreshFsBtn(){
 }
 $('fsBtn').addEventListener('click', ()=>{
   if (IS_IOS){ iosHint(tr('ios_fs_hint')); return; }
-  if (isFullscreen()) exitFullscreen(); else goFullscreen();
-  setTimeout(refreshFsBtn, 60);
+  toggleFullscreen();
 });
 document.addEventListener('fullscreenchange', ()=>{ resize(); refreshFsBtn(); });
 document.addEventListener('webkitfullscreenchange', ()=>{ resize(); refreshFsBtn(); });
@@ -7225,6 +7252,7 @@ function handleTap(sx, sy, shift, opts){
       else if (r.key==='lang'){ cycleLang(); }
       else if (r.key==='quality'){ cycleQuality(); refreshOpts(); }
       else if (r.key==='follow') camFollow=!camFollow;
+      else if (r.key==='fs') toggleFullscreen();       // geste utilisateur : requête plein écran autorisée
       else if (r.key==='quit'){
         netDisconnect();
         paused=false; settingsOpen=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null;

@@ -49,6 +49,15 @@ const IS_IOS = /iP(hone|ad|od)/.test(navigator.platform)
 const IS_STANDALONE = (navigator.standalone === true)
   || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
   || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+// APPLI NATIVE (APK Capacitor) : MainActivity met déjà l'écran en immersif plein écran ; le
+// bouton ⛶ y est inutile et, flottant en haut à droite, il recouvrait les boutons vitesse /
+// pause / réglages du HUD. Capacitor sert le jeu depuis https://localhost et injecte
+// window.Capacitor avant nos scripts.
+const IS_NATIVE = !!(window.Capacitor && (typeof window.Capacitor.isNativePlatform==='function'
+  ? window.Capacitor.isNativePlatform() : (window.Capacitor.platform && window.Capacitor.platform!=='web')));
+// plein écran pilotable ? (ni appli native, ni iOS qui n'a pas l'API, ni PWA déjà en plein écran)
+const FS_AVAILABLE = !IS_NATIVE && !IS_IOS && !IS_STANDALONE
+  && !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
 let iosHintEl = null;
 function iosHint(msg){
   if (!iosHintEl){
@@ -65,7 +74,7 @@ function iosHint(msg){
   iosHintEl._t = setTimeout(()=>{ if (iosHintEl) iosHintEl.style.display='none'; }, 5200);
 }
 function goFullscreen(){
-  if (IS_IOS) return;                  // API absente sur iOS : on ne tente rien (évite un échec muet)
+  if (IS_IOS || IS_NATIVE) return;     // iOS : API absente ; appli native : déjà immersive
   try {
     const el = document.documentElement;
     const fs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
@@ -79,10 +88,18 @@ function isFullscreen(){ return !!(document.fullscreenElement || document.webkit
 function exitFullscreen(){ try { (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); } catch(e){} }
 // le bouton flottant ⛶ n'apparaît que sur tactile et hors plein écran (sinon il encombre)
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+function toggleFullscreen(){ if (isFullscreen()) exitFullscreen(); else goFullscreen(); setTimeout(refreshFsBtn, 60); }
+// le bouton flottant est-il masqué ? Appli native et iOS installé : toujours. En partie et
+// pendant la cinématique : aussi — il chevauchait les commandes du HUD (vitesse, pause,
+// réglages) et le bouton « Passer » de l'intro. En partie, le plein écran reste accessible
+// depuis le menu Pause (ligne « Plein écran »).
+function fsBtnHidden(){
+  if (IS_NATIVE || (IS_IOS && IS_STANDALONE)) return true;
+  return (typeof game!=='undefined' && game && !game.over) || (typeof intro!=='undefined' && intro>=0);
+}
 function refreshFsBtn(){
   const b = $('fsBtn'); if (!b) return;
-  // sur iOS déjà installé en appli, pas besoin de bouton ; sinon on garde le ⛶ comme aide
-  if (IS_IOS && IS_STANDALONE){ b.style.display='none'; return; }
+  if (fsBtnHidden()){ b.style.display='none'; return; }
   b.textContent = (IS_IOS ? '⤢' : (isFullscreen()? '✕' : '⛶'));
   b.title = b.ariaLabel = tr('fs_btn');
   b.style.display = IS_TOUCH? 'block' : (isFullscreen()? 'none':'block');
@@ -90,8 +107,7 @@ function refreshFsBtn(){
 }
 $('fsBtn').addEventListener('click', ()=>{
   if (IS_IOS){ iosHint(tr('ios_fs_hint')); return; }
-  if (isFullscreen()) exitFullscreen(); else goFullscreen();
-  setTimeout(refreshFsBtn, 60);
+  toggleFullscreen();
 });
 document.addEventListener('fullscreenchange', ()=>{ resize(); refreshFsBtn(); });
 document.addEventListener('webkitfullscreenchange', ()=>{ resize(); refreshFsBtn(); });

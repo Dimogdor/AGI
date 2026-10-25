@@ -221,6 +221,7 @@ function handleTap(sx, sy, shift, opts){
       else if (r.key==='lang'){ cycleLang(); }
       else if (r.key==='quality'){ cycleQuality(); refreshOpts(); }
       else if (r.key==='follow') camFollow=!camFollow;
+      else if (r.key==='fs') toggleFullscreen();       // geste utilisateur : requête plein écran autorisée
       else if (r.key==='quit'){
         netDisconnect();
         paused=false; settingsOpen=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null;

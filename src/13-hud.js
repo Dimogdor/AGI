@@ -589,13 +589,20 @@ function drawPause(){
     {key:'quality',label:tr('set_quality')+' : '+qualityName()},
     {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
     {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
-    {key:'quit',   label:t('p_quit')},
   ];
+  // plein écran : en partie le bouton flottant ⛶ est masqué (il recouvrait le HUD), on le
+  // propose donc ici — seulement là où l'API existe (ni appli native, ni iOS)
+  if (FS_AVAILABLE) items.push({key:'fs', label:tr('fs_btn')+' : '+(isFullscreen()?t('on'):t('off'))});
+  items.push({key:'quit', label:t('p_quit')});
   // GÉOMÉTRIE : bh est dérivé des MÊMES constantes que les offsets Y du dessin
   // (TITLE_H/RESUME_H/GAP0), au lieu d'une constante devinée séparément — c'est cet
   // écart qui faisait sortir « Abandonner la partie » (dernier item) du cadre du panneau.
   const TITLE_H=48, RESUME_H=34, GAP0=16, BOTTOM_PAD=14;
-  const ih=36, headH=24, gap=6;
+  const headH=24, gap=6;
+  // hauteur de ligne ADAPTATIVE : 36 px par défaut, resserrée si la liste (ex. ligne plein
+  // écran en plus) ne tiendrait plus dans la hauteur logique (540 px en 16:9)
+  const nRows = items.filter(it=>it.head==null).length, nHeads = items.length-nRows;
+  const ih = Math.max(30, Math.min(36, Math.floor((H-16 - TITLE_H-RESUME_H-GAP0-BOTTOM_PAD - nHeads*(headH+gap))/nRows - gap)));
   let contentH=0; for (const it of items) contentH += (it.head!=null? headH : ih)+gap;
   const bh = TITLE_H + RESUME_H + GAP0 + contentH + BOTTOM_PAD;
   const by=clamp(H/2-bh/2, 8, H-bh-8);
