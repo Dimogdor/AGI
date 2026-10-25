@@ -90,8 +90,13 @@ function drawHUD(){
   const p = game.p, fac = p.fac;
   const rates = calcRates(p);
   ctx.textBaseline='middle';
-  // ---- bandeau haut (h=38) ----
-  ctx.fillStyle='rgba(16,13,12,0.88)'; ctx.fillRect(0,0,W,38);
+  // ---- bandeau haut (h=38) : dégradé, liseré de faction, pastilles de ressources ----
+  const tg = ctx.createLinearGradient(0,0,0,38); tg.addColorStop(0,'rgba(30,25,22,0.94)'); tg.addColorStop(1,'rgba(12,10,9,0.88)');
+  ctx.fillStyle=tg; ctx.fillRect(0,0,W,38);
+  ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fillRect(0,0,W,1);
+  ctx.fillStyle=rgbaC(fac.accent,0.55); ctx.fillRect(0,37,W,1);
+  ctx.fillStyle='rgba(255,255,255,0.045)';
+  for (const [cx0,cw] of [[3,86],[91,86],[179,76],[257,92]]){ rr(cx0,3,cw,32,6); ctx.fill(); }
   ctx.textAlign='left';
   ctx.font='700 14px Arial';
   ctx.fillStyle='#e8d8a0'; ctx.fillText(fac.icons.f+' '+Math.floor(p.f), 8, 13);
@@ -113,13 +118,12 @@ function drawHUD(){
   ctx.textAlign='center'; ctx.font='700 14px Arial';
   ctx.fillStyle = p.trans? '#ffe9a0' : fac.accent;
   ctx.fillText(p.trans? lTransName(p.facKey) : lEra(p.facKey,p.era), W/2, 11);
-  ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fillRect(W/2-80, 26, 160, 4);
-  ctx.fillStyle = lerpCol([120,200,120],[200,60,40],game.dev);
-  ctx.fillRect(W/2-80, 26, 160*game.dev, 4);
+  ctx.fillStyle='rgba(255,255,255,0.13)'; rr(W/2-80, 25.5, 160, 5, 2.5); ctx.fill();
+  if (game.dev>0.01){ ctx.fillStyle = lerpCol([120,200,120],[200,60,40],game.dev); rr(W/2-80, 25.5, Math.max(5,160*game.dev), 5, 2.5); ctx.fill(); }
   ctx.font='8.5px Arial'; ctx.fillStyle='rgba(255,255,255,0.45)';
   ctx.fillText(tr('world_health'), W/2, 20);
   // droite : effectif + ennemi (calés À GAUCHE du cluster de contrôles → plus de chevauchement)
-  const RX = W-112;
+  const RX = W-120;                                // 8 px d'air avant le bouton de vitesse (x = W-112)
   ctx.textAlign='right'; ctx.font='700 13px Arial';
   ctx.fillStyle = unitTotal(p)>=p.cap? '#ff5a4a':'#d8d0c4';
   const qn = (p.queue && p.queue.length) ? p.queue.length : (p.queueLen||0);

@@ -198,12 +198,15 @@ function updateUnits(side, foe, dt){
             tr(isIA? 'f_overheat':'f_tired'), '#d8a06a', 11);
         }
         const sy0 = gY(u.x)-26-(u.fly? u.flyH:0);
-        const ty0 = gY(target.x)-(target.isBase?56:(target.fly? 24+target.flyH : 24));
+        const ty0 = gY(target.x)-(target.isBase?56:(target.fly? 24+target.flyH : 34));   // impact au torse
         if (u.arc){
-          projectiles.push({sx:u.x, tx:target.x, dmg:dmgOut, aoe:u.aoe, side:u.side, fac:u.fac, t:0, dur:0.7, era:u.era, hb:homeBuff(u), src:u});
+          const mz = muzzleOf(u);   // purement visuel : point de départ de l'obus (ox/oy)
+          projectiles.push({sx:u.x, tx:target.x, dmg:dmgOut, aoe:u.aoe, side:u.side, fac:u.fac, t:0, dur:0.7, era:u.era, hb:homeBuff(u), src:u,
+            ox:u.side*mz[0], oy:mz[1]});
           if (u.side===1) sfx('shoot', 3);
         } else if (u.range>60){
-          shots.push({x:u.x+u.side*10, y:sy0, tx:target.x, ty:ty0, t:0, dur:0.16, fac:u.fac, era:u.era});
+          const mz = muzzleOf(u);   // le trait part de la bouche de l'arme (visuel uniquement)
+          shots.push({x:u.x+u.side*mz[0], y:sy0+26+mz[1], tx:target.x, ty:ty0, t:0, dur:0.16, fac:u.fac, era:u.era});
           dealDmg(target, dmgOut, u);
           if (qFx() && Math.random()<0.55) burst(target.x, ty0, FACTIONS[u.fac].eraCols[u.era], 4, 0.5);  // étincelles d'impact
           if (u.side===1) sfx('shoot', u.era);
@@ -265,7 +268,7 @@ function updateUnits(side, foe, dt){
       burst(u.x, gY(u.x)-22-(u.fly?u.flyH:0), FACTIONS[u.fac].eraCols[u.era], 12);
       // RAGDOLL DE MORT (par rôle) : corps qui bascule / chute en vrille / châssis qui éclate.
       if (qFx() && u.role!=='gremlin' && deaths.length<60)
-        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:0.75});
+        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:0.75, trans:!!u.trans});
       // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
       if (game.killLog){ game.killLog.push({x:u.x, s:u.side}); if (game.killLog.length>140) game.killLog.shift(); }
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;

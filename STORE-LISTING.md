@@ -187,6 +187,22 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 
 ## 7. Notes de version (exemple — « What's new »)
 ```
+v1.7 — Refonte graphique complète.
+• Nouveaux personnages : chaque unité a sa silhouette et son équipement, ère par ère
+• Bases et bâtiments redessinés, qui évoluent avec les ères
+• Mêlées lisibles, tirs qui partent du canon des armes, chutes animées
+• Héros redessinés (le Che et la Singularité)
+• Android : le bouton plein écran ne cache plus la vitesse et la pause
+```
+```
+v1.7 — Complete visual overhaul.
+• New characters: every unit has its own silhouette and gear, era by era
+• Redrawn bases and buildings that evolve with the eras
+• Readable melees, shots fired from the gun barrels, animated deaths
+• Redrawn heroes (Che and the Singularity)
+• Android: the fullscreen button no longer hides speed and pause
+```
+```
 v1.0 — Lancement.
 • Mode en ligne 1v1 en pair-à-pair (code de salon)
 • Cataclysmes naturels (pluie d'acide, canicule, inondation, sable, nucléaire)

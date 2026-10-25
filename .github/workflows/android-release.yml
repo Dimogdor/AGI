@@ -93,6 +93,27 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
+      # APK installable directement sur un téléphone (test avant/sans Google Play) : signé avec
+      # votre keystore si les secrets existent, sinon APK de débogage (installable lui aussi).
+      - name: Construire l'APK installable
+        id: apk
+        working-directory: android
+        run: |
+          export VERSION_CODE=$((100 + ${{ github.run_number }}))
+          if [ "${{ steps.sign.outputs.signed }}" = "true" ]; then
+            ./gradlew assembleRelease --no-daemon
+            echo "path=android/app/build/outputs/apk/release/app-release.apk" >> "$GITHUB_OUTPUT"
+          else
+            ./gradlew assembleDebug --no-daemon
+            echo "path=android/app/build/outputs/apk/debug/app-debug.apk" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.name }}-APK
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
       - name: Résumé
         run: |
           {
@@ -104,6 +125,7 @@ jobs:
             else
               echo "- Signé : **NON** — Google Play refusera ce fichier. Ajoutez les secrets décrits dans PUBLIER.md puis relancez."
             fi
+            echo "- Test direct sur téléphone : artefact **…-APK** (fichier .apk à installer, voir PUBLIER.md)."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Nettoyer le keystore

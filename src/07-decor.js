@@ -143,7 +143,19 @@ function newGame(facKey, diff, withTuto, eFacOverride){
 function netEv(e){ if (game && game.net==='host' && net && net.ev && net.ev.length<160) net.ev.push(e); }
 function announce(txt,color){ game.msg={txt,color}; game.msgT=2.6; netEv({k:'a',t:txt,c:color}); }
 function addFloater(x,y,txt,color,size=13){ floaters.push({x,y,txt,color,size,t:0}); netEv({k:'f',x,y,t:txt,c:color,s:size}); }
-function addLight(x,y,col,r,life){ if(LIGHTS.length>60) LIGHTS.shift(); LIGHTS.push({x,y,col,r,life,t:0}); }  // lumière dynamique (RTX simulé)
+// lumière dynamique (RTX simulé). FUSION : un éclair qui tombe sur une lumière encore vive de
+// taille voisine, au même endroit, la RAVIVE au lieu de s'empiler — en mêlée dense, des dizaines
+// d'éclairs additifs superposés saturaient en une tache blanche qui masquait les combattants.
+function addLight(x,y,col,r,life){
+  for (let i=LIGHTS.length-1, n=0; i>=0 && n<12; i--, n++){
+    const L=LIGHTS[i], dx=L.x-x, dy=L.y-y, m=Math.max(L.r,r)*0.5;
+    if (dx*dx+dy*dy<m*m && r<L.r*2 && L.r<r*2){
+      if (r>=L.r){ L.r=r; L.col=col; L.x=x; L.y=y; }
+      L.life=Math.max(L.life-L.t, life); L.t=0; return;
+    }
+  }
+  if(LIGHTS.length>60) LIGHTS.shift(); LIGHTS.push({x,y,col,r,life,t:0});
+}
 function burst(x,y,color,n=10,pow=1){
   n = Math.max(2, Math.round(n*qMul()));     // densité selon le profil de qualité
   if (particles.length>520) particles.splice(0, particles.length-520);   // borne mémoire (anti-accumulation)
