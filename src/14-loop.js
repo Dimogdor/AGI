@@ -33,7 +33,8 @@ function render(dt){
   if (projGlow){ ctx.save(); ctx.globalCompositeOperation='lighter'; }
   for (const pr of projectiles){
     const k = pr.t/pr.dur;
-    const wx2 = lerp(pr.sx,pr.tx,k), px = wx2-camX, py = gY(wx2)-26 - Math.sin(k*Math.PI)*90;
+    const ox = pr.ox||0, oy = pr.oy!=null? pr.oy : -26;   // départ à la bouche du tube, arrivée au sol
+    const wx2 = lerp(pr.sx+ox,pr.tx,k), px = wx2-camX, py = gY(wx2) + oy + (-26-oy)*k - Math.sin(k*Math.PI)*90;
     const col = FACTIONS[pr.fac].eraCols[pr.era];
     if (projGlow){                                   // traînée + lueur additive (cercles pleins, pas de gradient)
       if (pr._px!=null){ ctx.strokeStyle=rgbaC(col,0.4); ctx.lineWidth=3; ctx.lineCap='round';
@@ -47,13 +48,21 @@ function render(dt){
   if (projGlow) ctx.restore();
   // RAGDOLLS DE MORT (par rôle) : bascule au sol · chute en vrille (volants) · effondrement (tanks)
   for (const d of deaths){
-    const x=d.x-camX; if (x<-30||x>VW()+30) continue;
-    const gy=gY(d.x), k=d.t/d.life; ctx.save(); ctx.globalAlpha=Math.max(0,1-k);
-    const col=FACTIONS[d.fac].eraCols[d.era];
-    if (d.fly){ ctx.translate(x, gy-d.flyH*(1-k)-6); ctx.rotate(k*9*d.side); ctx.fillStyle=col; ctx.fillRect(-7,-3,14,6); }
-    else if (d.role==='tank'){ ctx.translate(x, gy-3); ctx.scale(1, Math.max(0.2,1-k*1.1)); ctx.fillStyle=col; ctx.fillRect(-9,-13,18,13); }
-    else { ctx.translate(x, gy-2); ctx.rotate(k*1.5*d.side); ctx.fillStyle=col;
-      ctx.fillRect(-3,-17,6,17); ctx.beginPath(); ctx.arc(0,-20,4,0,6.28); ctx.fill(); }
+    const x=d.x-camX; if (x<-60||x>VW()+60) continue;
+    // le VRAI sprite de l'unité bascule (pivot aux pieds) puis s'efface, au lieu d'un bâtonnet coloré
+    const gy=gY(d.x), k=d.t/d.life; ctx.save(); ctx.globalAlpha=Math.max(0,1-k*k);
+    const e=Math.min(1,k*1.7), fall=e*e*(3-2*e);
+    if (d.fly){ const s=1.5*(1-k*0.25); ctx.translate(x, gy-d.flyH*(1-k*k)-6); ctx.rotate(k*6*d.side); ctx.scale(d.side*s,s);
+      ctx.drawImage(sprite('AIR'+d.fac+d.era+(d.trans?'T':''),64,44,()=>airSprite(d.fac,d.era,d.trans)),-32,-22,64,44); }
+    else if (d.role==='gremlin'){ ctx.translate(x, gy-2); ctx.rotate(k*1.5*d.side); ctx.fillStyle=FACTIONS[d.fac].eraCols[d.era]; ctx.fillRect(-7,-12,14,12); }
+    else if (d.role==='hero'){ ctx.translate(x-d.side*fall*8, gy); ctx.rotate(-d.side*fall*1.4); ctx.scale(d.side,1);
+      ctx.drawImage(sprite('HERO'+d.fac,HERO_SW,100,()=>heroSprite(d.fac)),-HERO_SW/2,-92,HERO_SW,100); }
+    else { const kind=d.fac==='HUM'?'hum':'bot';
+      const spr=sprite('S'+kind+d.role+d.era+(d.trans?'T':''),USP.W,USP.H,()=>drawUnitSprite(kind,d.fac,d.role,d.era,d.trans));
+      ctx.translate(x-d.side*fall*6, gy);
+      if (d.role==='tank'){ ctx.rotate(-d.side*fall*0.35); ctx.scale(d.side, 1-0.5*fall); }   // les lourds s'affaissent
+      else { ctx.rotate(-d.side*fall*1.45); ctx.scale(d.side,1); }
+      ctx.drawImage(spr,-USP.cx,-USP.foot,USP.W,USP.H); }
     ctx.restore(); ctx.globalAlpha=1;
   }
   for (const pt of particles){
@@ -209,6 +218,7 @@ function loop(now){
   catch(err){ ctx.setTransform(SCALE,0,0,SCALE,0,0); console.error(err); }
   if (PERF.on){ PERF.rend += (performance.now()-PERF.t0 - PERF.rend)*0.15; drawPerfHud(); }
   if (CHEAT.unlocked && CHEAT.open && game && !game.over) drawCheatPanel();
+  if (WARMQ.length) warmTick(2);           // préchauffe étalée des sprites (voir prewarmSprites)
   requestAnimationFrame(loop);
 }
 // MODE TRICHE (dev) — panneau d'actions de test, n'apparaît qu'une fois déverrouillé

@@ -62,6 +62,13 @@ l'ancien nom — il est gravé dans la clé et **ne doit pas** changer.)
 Le versionCode augmente tout seul à chaque run : l'erreur *« Le code de version X a déjà
 été utilisé »* ne peut plus se produire.
 
+**Tester sur votre téléphone sans passer par Google Play** : le même run fournit un second
+artefact, `AGI-la-derniere-bataille-vc…-APK`. Décompressez-le sur le téléphone (ou copiez-y
+le `.apk`), ouvrez-le et autorisez l'installation depuis cette source. Si Android refuse
+(« application non installée », conflit de signature), désinstallez d'abord l'ancienne
+version du jeu. Sans les secrets de l'étape 1, c'est un APK de débogage : parfait pour
+tester, mais seul le `.aab` signé va sur Google Play.
+
 > Run rouge avec *« Keystore illisible »* → le base64 est tronqué, ou le mot de passe est
 > faux. Refaites l'étape 1 (recréez les deux secrets), puis relancez.
 
