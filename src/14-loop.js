@@ -146,7 +146,11 @@ let lastAutoDowngrade = -999;   // horodatage (perfT, temps RÉEL) de la derniè
 let perfGame = null, perfT = 0; // temps RÉEL écoulé dans la partie en cours (remis à zéro à chaque nouvelle partie)
 let perfSkip = 0;               // frames à ignorer dans la mesure de FPS (retour d'arrière-plan)
 document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) perfSkip = 2; });
+let lastFsHidden = null;        // dernier état du bouton plein écran flottant (masqué/visible)
 function loop(now){
+  // bouton ⛶ : masqué en partie et pendant l'intro (il chevauchait le HUD) ; on ne touche au
+  // DOM qu'aux transitions (début/fin de partie, intro), pas à chaque frame
+  const fsH = fsBtnHidden(); if (fsH!==lastFsHidden){ lastFsHidden = fsH; refreshFsBtn(); }
   const raw = (now-last)/1000;              // pas de temps RÉEL, non borné
   const dt = Math.min(raw, 0.05); last=now;
   // L'adaptation de qualité se mesure en temps RÉEL, jamais en temps de JEU : `game.t` n'avance
