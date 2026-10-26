@@ -187,6 +187,22 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 
 ## 7. Notes de version (exemple — « What's new »)
 ```
+v1.8 — Paysages vivants et nouveaux effets.
+• Collines habitées : forêts, champs, villages, éoliennes, pylônes — qui se dégradent avec le monde
+• Montagnes enneigées, pins et peupliers sur le champ de bataille
+• Vraies explosions : boule de feu, fumée, débris, onde de choc ; obus avec traînée
+• Champignon atomique, météores incandescents, tempête de sable redessinés
+• Jeu plus fluide (environ 20 % de rendu en moins par image)
+```
+```
+v1.8 — Living landscapes and new effects.
+• Inhabited hills: forests, fields, villages, wind turbines, pylons — decaying with the world
+• Snowy mountains, pines and poplars on the battlefield
+• Real explosions: fireball, smoke, debris, shockwave; shells with smoke trails
+• Redrawn mushroom cloud, blazing meteors and sandstorm
+• Smoother play (about 20% less rendering per frame)
+```
+```
 v1.7 — Refonte graphique complète.
 • Nouveaux personnages : chaque unité a sa silhouette et son équipement, ère par ère
 • Bases et bâtiments redessinés, qui évoluent avec les ères

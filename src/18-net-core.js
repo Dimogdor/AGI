@@ -171,6 +171,7 @@ function applyEvents(ev){
   if (!ev) return;
   for (const e of ev){
     if (e.k==='b') burst(WORLD-e.x, e.y, e.c, e.n, e.p);
+    else if (e.k==='x') explode(WORLD-e.x, e.y, e.p, e.c);
     else if (e.k==='f') addFloater(WORLD-e.x, e.y, e.t, e.c, e.s);
     else if (e.k==='a'){ game.msg={txt:e.t, color:e.c}; game.msgT=2.6; }
     else if (e.k==='s') sfx(e.n, e.p);
@@ -191,8 +192,7 @@ function netGuestTick(dt){
   }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
-  for (let i=particles.length-1;i>=0;i--){ const pt=particles[i]; pt.t+=dt;
-    pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=220*dt; if (pt.t>pt.life) particles.splice(i,1); }
+  stepParticles(dt);
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if (f.t>1.6) floaters.splice(i,1); }
   if (game.msgT>0) game.msgT-=dt;
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);

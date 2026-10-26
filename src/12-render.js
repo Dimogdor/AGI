@@ -623,18 +623,13 @@ function drawBG(){
   // PROFONDEUR DE CHAMP : le flou des montagnes est PRÉ-CUIT dans drawFarRange (cache
   // offscreen) — plus aucun ctx.filter par frame, la mise au point reste sur la bataille.
   drawFarRange(vw, bot, dev, t);
-  // collines avec brume de profondeur (3 plans). Mélanges allégés (0,7/0,5/0,32 → 0,52/0,36/0,2)
-  // vers la brume bleutée : chaque plan garde sa couleur et la profondeur se LIT au lieu de
-  // s'effacer dans le crème.
-  const grassC = devLerp(GRASS);
-  hill(0.18, GROUND-130, 90, lerpColArr(grassC,haze,0.52), vw);
-  hill(0.32, GROUND-95,  70, lerpColArr(grassC,haze,0.36), vw);
-  hill(0.5,  GROUND-55,  50, lerpColArr(grassC,haze,0.2), vw);
+  // collines habitées en 3 plans de parallaxe (forêts, champs, villages…), cuites par tuiles
+  drawLand(dev);
   drawCity(dev);
   drawAmbient(t, dev, vw);       // monde vivant : crashs, incendies, fumées, jets, vols d'oiseaux…
   // voile de brume à l'horizon (plus léger qu'avant : 0,4 → 0,26)
   const hz=ctx.createLinearGradient(0,GROUND-120,0,GROUND);
-  hz.addColorStop(0,rgbaC(haze,0)); hz.addColorStop(1,rgbaC(haze,0.26));
+  hz.addColorStop(0,rgbaC(haze,0)); hz.addColorStop(1,rgbaC(haze,0.16));
   ctx.fillStyle=hz; ctx.fillRect(0,GROUND-120,vw,120);
   // terrain (dégradé sculpté) + bande d'herbe
   const dirt=devLerp(DIRT), grass=devLerp(GRASS), yBot=(H-zTY())/zoom+60;
@@ -648,6 +643,11 @@ function drawBG(){
   ctx.fillStyle=gg; ctx.fill();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle=rgbaC(shade(grass,1.4),0.5); ctx.lineWidth=2;
   ctx.beginPath(); for(let sx=0;sx<=vw;sx+=8){ const y=gY(sx+camX); sx?ctx.lineTo(sx,y):ctx.moveTo(sx,y);} ctx.stroke(); ctx.restore();
+  // STRATES : veines plus sombres parallèles à la surface — la terre a de la profondeur
+  ctx.strokeStyle=rgbaC(shade(dirt,0.62),0.32); ctx.lineWidth=2.2;
+  for (const d of [24, 46, 78]){ ctx.beginPath();
+    for (let sx=0; sx<=vw+16; sx+=16){ const wx=sx+camX, y=gY(wx)+d+Math.sin(wx*0.011+d)*4; sx? ctx.lineTo(sx,y) : ctx.moveTo(sx,y); }
+    ctx.stroke(); }
   // TEXTURE DU SOL : cailloux et mottes déterministes (hachage de la coordonnée monde) +
   // éclats de lumière rasante — la bande de terre n'est plus un simple aplat.
   if (qFx()){
@@ -801,47 +801,294 @@ function cloudSprites(dev){
 let FARC = null;
 function drawFarRange(vw, bot, dev, t){
   const devQ = Math.round(dev*20)/20;
-  const key = devQ+'|'+Math.ceil(vw)+'|'+spriteSS()+'|'+((CANF&&qHi())?1:0);
+  // cuite pour la largeur visible MAXIMALE (zoom mini) : l'ancienne clé dépendait de la largeur
+  // courante, donc chaque cran de zoom recuisait toute la chaîne (flou compris) — saccade.
+  const maxVW = Math.ceil(W/ZMIN);
+  const key = devQ+'|'+maxVW;
   // chaîne abaissée (amplitude 150 → 110) : ses sommets montaient jusqu'en haut de l'écran et
   // recouvraient presque tout le ciel — c'est elle qu'on prenait pour un « ciel délavé »
-  const base = GROUND-140, amp = 110, topY = base-amp*1.55;
+  const base = GROUND-140, amp = 110, topY = base-amp*1.62;
   if (!FARC || FARC.key!==key){
-    const wpx = Math.ceil(vw) + Math.ceil(WORLD*0.04) + 40;
-    const SS = Math.min(2, spriteSS());
+    const wpx = maxVW + Math.ceil(WORLD*0.04) + 40;
+    // PERF + PROFONDEUR DE CHAMP : cuite en BASSE résolution (0,6) puis agrandie — le lissage de
+    // l'agrandissement fait le flou de lointain. L'ancien filtre blur pleine résolution coûtait
+    // ~80 ms à chaque palier de santé du monde (saccade toutes les ~48 s) ; ici quelques ms.
+    const SS = 0.6;
     const cv = document.createElement('canvas');
     cv.width = Math.ceil(wpx*SS); cv.height = Math.ceil((GROUND-topY+6)*SS);
     const c = cv.getContext('2d'); c.scale(SS,SS); c.translate(0,-topY);
-    if (CANF && qHi()) c.filter = 'blur(1.8px)';
     // PERSPECTIVE AÉRIENNE : les montagnes lointaines prennent la teinte du HAUT du ciel
-    // (bleu-gris le jour), pas celle de l'herbe ni du crème de l'horizon — silhouette bleutée
-    // qui se détache du ciel sans s'y dissoudre ni former un mur vert pâle.
+    // (bleu-gris le jour), pas celle de l'herbe ni du crème de l'horizon.
     const far = lerpColArr(devLerpAt(SKY_M, devQ), devLerpAt(SKY_T, devQ), 0.4);
     const col = lerpColArr(devLerpAt(GRASS, devQ), far, 0.8);
-    c.beginPath(); const pts=[];
-    for (let x=0;x<=wpx;x+=24){
-      const h = (Math.abs(Math.sin(x*0.0016))*amp + Math.abs(Math.sin(x*0.0041+1.7))*amp*0.5);
-      const y = base-h; pts.push([x,y]); x===0? c.moveTo(0,y) : c.lineTo(x,y);
+    const pts = [];
+    for (let x=0; x<=wpx+12; x+=12){
+      const h = Math.abs(Math.sin(x*0.0016))*amp + Math.abs(Math.sin(x*0.0041+1.7))*amp*0.5 + Math.abs(Math.sin(x*0.013+0.4))*amp*0.09;
+      pts.push([x, base-h, h]);
     }
-    c.lineTo(wpx,GROUND+6); c.lineTo(0,GROUND+6); c.closePath();
+    const ridge = () => { c.beginPath(); pts.forEach((p,i)=> i? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1])); };
+    ridge(); c.lineTo(wpx+12,GROUND+6); c.lineTo(0,GROUND+6); c.closePath();
     const g=c.createLinearGradient(0,base-amp,0,base+30);
-    g.addColorStop(0,shade('rgb('+(col[0]|0)+','+(col[1]|0)+','+(col[2]|0)+')',1.16));
-    g.addColorStop(1,colS(col));
+    g.addColorStop(0,shade(col,1.18)); g.addColorStop(1,colS(col));
     c.fillStyle=g; c.fill();
-    if (devQ<0.55){ c.save(); c.globalAlpha=0.5*Math.max(0,1-devQ*1.6);   // neige des crêtes
-      c.strokeStyle='rgba(236,244,255,0.9)'; c.lineWidth=2;
-      c.beginPath(); for(let i=0;i<pts.length;i++){ const p=pts[i]; i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]); } c.stroke(); c.restore(); }
+    c.save(); c.clip();
+    // NEIGES ÉTERNELLES sur les plus hauts sommets (fondent puis disparaissent avec le monde)
+    const snowA = 0.82*Math.max(0, 1-devQ*1.7), snowH = amp*1.18;
+    if (snowA>0.02){
+      c.fillStyle = 'rgba(240,246,255,'+snowA.toFixed(3)+')'; c.beginPath();
+      let open = false;
+      const back = i => { for (let j=i-1; j>=0 && pts[j][2]>snowH; j--) c.lineTo(pts[j][0], pts[j][1]+pts[j].th*(0.55+0.45*Math.abs(Math.sin(j*2.3)*Math.cos(j*0.9)))); c.closePath(); open = false; };
+      for (let i=0;i<pts.length;i++){ const p = pts[i];
+        if (p[2]>snowH){ p.th = 2+(p[2]-snowH)*0.95;
+          if (!open){ c.moveTo(p[0],p[1]); open = true; }
+          c.lineTo(p[0],p[1]); }
+        else if (open) back(i);
+      }
+      if (open) back(pts.length);
+      c.fill();
+    }
+    // MODELÉ DU RELIEF (lumière haut-gauche) : chaque bande verticale est assombrie selon la
+    // pente qui descend vers la droite, éclaircie si elle monte. Pente LISSÉE sur une large
+    // fenêtre (±40 u) : sinon un trait vertical tombait sous chaque sommet, là où l'ombre et
+    // la lumière se rencontrent. Bandes jointives (un recouvrement doublait l'alpha → stries).
+    const hf = x => Math.abs(Math.sin(x*0.0016))*amp + Math.abs(Math.sin(x*0.0041+1.7))*amp*0.5 + Math.abs(Math.sin(x*0.013+0.4))*amp*0.09;
+    const sc = lerpColArr(col,[20,24,40],0.55);
+    const sg = c.createLinearGradient(0, base-amp*1.6, 0, base+10);
+    sg.addColorStop(0, rgbaC(sc,1)); sg.addColorStop(0.55, rgbaC(sc,0.55)); sg.addColorStop(1, rgbaC(sc,0));
+    const lg = c.createLinearGradient(0, base-amp*1.6, 0, base);
+    lg.addColorStop(0, 'rgba(255,248,236,1)'); lg.addColorStop(1, 'rgba(255,248,236,0)');
+    for (let x=0; x<=wpx; x+=5){ let dy=0; for (const o of [10,20,30,40]) dy += -(hf(x+o)-hf(x-o))*12/(2*o); dy/=4;
+      const y0 = base-hf(x)-2;
+      if (dy>0){ c.globalAlpha = Math.min(0.36, dy/12*0.5); c.fillStyle = sg; }
+      else { c.globalAlpha = Math.min(0.16, -dy/12*0.22); c.fillStyle = lg; }
+      c.fillRect(x, y0, 5, base+10-y0); }
+    c.globalAlpha = 1;
+    c.restore();
     FARC = {key, cv, wpx, SS, topY};
   }
   const off = camX*0.04;
   ctx.drawImage(FARC.cv, -off, FARC.topY, FARC.wpx, GROUND-FARC.topY+6);
 }
-function hill(par, base, amp, col, vw){
-  const off = camX*par;
-  ctx.beginPath(); ctx.moveTo(0,GROUND);
-  for (let x=0;x<=vw;x+=18){ const wx=x+off; ctx.lineTo(x, base-Math.abs(Math.sin(wx*0.004))*amp-Math.sin(wx*0.011)*amp*0.3); }
-  ctx.lineTo(vw,GROUND); ctx.closePath();
-  const g=ctx.createLinearGradient(0,base-amp,0,GROUND); g.addColorStop(0,shade(col,1.14)); g.addColorStop(1,colS(col));
-  ctx.fillStyle=g; ctx.fill();
+/* ===== PAYSAGE HABITÉ EN TUILES (v1.8) ===== */
+// Les trois collines étaient de simples vagues lisses et vides. Ce sont désormais des plans
+// habités — lisière de forêts et éoliennes au loin, champs, villages, pylônes et route au
+// milieu, gros arbres, haies et clôtures devant — qui se dégradent avec la santé du monde :
+// blé → chaume, forêts qui roussissent puis meurent, villages éventrés aux fenêtres en feu,
+// éoliennes aux pales arrachées. Chaque plan est CUIT par tuiles de 512 unités et par palier
+// de santé du monde (0,05) : par frame, il ne reste que quelques drawImage (moins coûteux que
+// les trois dégradés d'avant). Les tuiles d'un nouveau palier se cuisent UNE par frame en
+// tâche de fond ; d'ici là, la tuile du palier précédent reste affichée (aucune saccade).
+const LAND_TW = 512;
+const LAND_L = [
+  { par:0.18, base:GROUND-124, amp:60, haze:0.56, seed:1.7, top:GROUND-236 },
+  { par:0.32, base:GROUND-90,  amp:46, haze:0.34, seed:4.3, top:GROUND-182 },
+  { par:0.50, base:GROUND-50,  amp:32, haze:0.12, seed:7.9, top:GROUND-136 },
+];
+const LANDT = new Map();
+let landBudget = 0, landTick = 0;
+const lhash = (n, s) => { const v = Math.sin(n*12.9898 + s*78.233)*43758.5453; return v - Math.floor(v); };
+const csc = (c, f) => [c[0]*f, c[1]*f, c[2]*f];
+function landY(L, x){
+  return L.base - Math.abs(Math.sin(x*0.0042 + L.seed))*L.amp*0.78
+                - Math.sin(x*0.0113 + L.seed*2.1)*L.amp*0.3
+                - Math.sin(x*0.037 + L.seed*0.7)*L.amp*0.06;
+}
+const landWood = (L, x) => Math.sin(x*0.0061 + L.seed*3.1) + Math.sin(x*0.0173 + L.seed)*0.55 - 0.15;  // > 0 = boisé
+function landPal(dq){
+  const mid = devLerpAt(SKY_M, dq), bot = devLerpAt(SKY_B, dq);
+  return { grass: devLerpAt(GRASS, dq), haze: lerpColArr(bot, mid, 0.75) };
+}
+function landBake(li, idx, dq){
+  const L = LAND_L[li], SS = Math.min(1.25, spriteSS()), h = GROUND-L.top+2;
+  const cv = document.createElement('canvas'); cv.width = Math.ceil(LAND_TW*SS); cv.height = Math.ceil(h*SS);
+  const c = cv.getContext('2d'); c.scale(SS,SS); c.translate(-idx*LAND_TW, -L.top);
+  const prev = TC; TC = c;
+  try { paintLand(c, L, li, idx*LAND_TW, (idx+1)*LAND_TW, dq); } finally { TC = prev; }
+  return cv;
+}
+// tuile du palier demandé ; sinon la plus proche déjà cuite (et cuisson différée)
+function landTile(li, idx, dq){
+  const SS = Math.min(1.25, spriteSS()), key = li+'|'+idx+'|'+dq+'|'+SS;
+  let e = LANDT.get(key);
+  if (e){ e.used = landTick; return e.cv; }
+  let best = null, bd = 9;
+  for (const [k,v] of LANDT){ const p = k.split('|');
+    if (+p[0]===li && +p[1]===idx && +p[3]===SS){ const d = Math.abs(+p[2]-dq); if (d<bd){ bd=d; best=v; } } }
+  if (best && bd<=0.101 && landBudget<=0){ best.used = landTick; return best.cv; }
+  landBudget--;
+  e = { cv: landBake(li, idx, dq), used: landTick };
+  LANDT.set(key, e);
+  if (LANDT.size > 42){                                     // éviction des tuiles les moins récentes
+    const old = [...LANDT.entries()].sort((a,b)=>a[1].used-b[1].used);
+    for (let i=0; i<LANDT.size-36; i++) LANDT.delete(old[i][0]);
+  }
+  return e.cv;
+}
+function drawLand(dev){
+  const dq = Math.round(dev*20)/20, vw = VW();
+  landTick++; landBudget = 1;
+  for (let li=0; li<LAND_L.length; li++){
+    const L = LAND_L[li], off = camX*L.par, h = GROUND-L.top+2;
+    for (let i=Math.floor(off/LAND_TW), i1=Math.floor((off+vw)/LAND_TW); i<=i1; i++)
+      ctx.drawImage(landTile(li, i, dq), i*LAND_TW-off, L.top, LAND_TW, h);
+    if (li===1) landSmoke(L, off, vw, dev);
+  }
+}
+// fumées des villages en ruine (en direct, quelques volutes)
+function landSmoke(L, off, vw, dev){
+  const dead = clamp((dev-0.55)/0.35, 0, 1);
+  if (dead<=0.05 || !qFx()) return;
+  const t = game? game.t : 0;
+  ctx.save();
+  for (let k=Math.floor((off-200)/560); k*560<off+vw+200; k++){
+    if (lhash(k, L.seed+20)>0.62) continue;
+    const vx = k*560 + lhash(k, L.seed+21)*200 + 18, sx = vx-off; if (sx<-60||sx>vw+60) continue;
+    const sy = landY(L, vx)+2;
+    for (let i=0;i<4;i++){ const ph = (t*0.12 + i*0.25 + k*0.37)%1;
+      ctx.fillStyle = 'rgba(40,36,38,'+(0.26*dead*(1-ph)).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(sx + Math.sin(t*0.4+i+k)*4*ph + ph*14, sy - ph*60, 3+ph*11, 0, 6.283); ctx.fill(); }
+  }
+  ctx.restore();
+}
+function paintLand(c, L, li, xa, xb, dq){
+  const P = landPal(dq), hz = P.haze, dead = clamp((dq-0.55)/0.35, 0, 1), dry = clamp(dq*1.6, 0, 1);
+  const fog = (col, k) => colS(lerpColArr(col, hz, k===undefined? L.haze : k));
+  const m = 46, yTop = L.base - L.amp*1.15;
+  const lay = (x, d) => landY(L, x) + d;
+  // 1) la colline : dégradé crête éclairée → pied embrumé + liseré de lumière sur la crête
+  c.beginPath(); c.moveTo(xa-m, GROUND+2);
+  for (let x=xa-m; x<=xb+m; x+=6) c.lineTo(x, landY(L,x));
+  c.lineTo(xb+m, GROUND+2); c.closePath();
+  const g = c.createLinearGradient(0, yTop, 0, GROUND);
+  g.addColorStop(0, fog(csc(P.grass,1.2))); g.addColorStop(0.45, fog(P.grass)); g.addColorStop(1, fog(P.grass, Math.min(1, L.haze+0.3)));
+  c.fillStyle = g; c.fill();
+  c.strokeStyle = fog(csc(P.grass,1.45), L.haze*0.8); c.globalAlpha = 0.5; c.lineWidth = 1.2;
+  c.beginPath(); for (let x=xa-m; x<=xb+m; x+=6){ const y=landY(L,x)+0.6; x===xa-m? c.moveTo(x,y) : c.lineTo(x,y); } c.stroke();
+  c.globalAlpha = 1;
+  // 2) champs en pente (plans lointain et moyen) : blé doré → chaume brun
+  if (li<2){
+    const FS = li===0? 150 : 210, fc = lerpColArr(lerpColArr([200,184,98],[146,110,64],dry), [92,80,66], dead*0.6);
+    for (let k=Math.floor((xa-140)/FS); k*FS<xb+140; k++){
+      if (lhash(k, L.seed+5)>0.55) continue;
+      const fx = k*FS + lhash(k,L.seed+6)*FS*0.4, fw = 46+lhash(k,L.seed+7)*64;
+      const d0 = 9+lhash(k,L.seed+8)*16, fh = 9+lhash(k,L.seed+9)*11;
+      c.beginPath();
+      for (let x=fx; x<=fx+fw; x+=6) x===fx? c.moveTo(x, lay(x,d0)) : c.lineTo(x, lay(x,d0));
+      for (let x=fx+fw; x>=fx; x-=6) c.lineTo(x, lay(x,d0+fh));
+      c.closePath(); c.fillStyle = fog(fc); c.fill();
+      c.strokeStyle = fog(csc(fc,0.78)); c.lineWidth = 0.7;
+      for (let s=1;s<4;s++){ c.beginPath(); for (let x=fx+2; x<=fx+fw-2; x+=6){ const y=lay(x, d0+fh*s/4); x===fx+2? c.moveTo(x,y) : c.lineTo(x,y); } c.stroke(); }
+    }
+  }
+  // 3) route (plan moyen) : ruban clair qui serpente à flanc de colline
+  if (li===1){
+    c.strokeStyle = fog(lerpColArr([206,196,174],[90,84,80],dead)); c.lineWidth = 2.6; c.lineCap = 'round';
+    c.beginPath(); for (let x=xa-m; x<=xb+m; x+=8){ const y=lay(x, 22+Math.sin(x*0.008+L.seed)*6); x===xa-m? c.moveTo(x,y) : c.lineTo(x,y); } c.stroke();
+  }
+  // 4) éoliennes (plan lointain) : pales arrachées quand le monde meurt
+  if (li===0){
+    const tw = fog([238,242,246], L.haze*0.7);
+    for (let k=Math.floor((xa-60)/270); k*270<xb+60; k++){
+      if (lhash(k, L.seed+12)>0.42) continue;
+      const x = k*270 + lhash(k,L.seed+13)*120, y = landY(L,x)+1, H = 28+lhash(k,L.seed+14)*9;
+      c.strokeStyle = tw; c.fillStyle = tw; c.lineWidth = 1.1; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(x,y); c.lineTo(x,y-H); c.stroke();
+      const nb = dead>0.3? (lhash(k,L.seed+15)<0.5? 1 : 2) : 3, a0 = lhash(k,L.seed+16)*6.283;
+      c.lineWidth = 1.3; c.beginPath();
+      for (let b=0;b<nb;b++){ const a=a0+b*2.094; c.moveTo(x,y-H); c.lineTo(x+Math.cos(a)*11, y-H+Math.sin(a)*11); }
+      c.stroke(); c.beginPath(); c.arc(x, y-H, 1.3, 0, 6.283); c.fill();
+    }
+  }
+  // 5) pylônes et lignes électriques (plan moyen)
+  if (li===1){
+    const pc = fog([58,60,66], L.haze*0.9), PS = 300;
+    const pyl = k => lhash(k, L.seed+17)<0.72 ? k*PS + lhash(k,L.seed+18)*50 : null;
+    c.strokeStyle = pc; c.lineWidth = 0.9;
+    for (let k=Math.floor((xa-PS)/PS); k*PS<xb+PS; k++){
+      const x = pyl(k); if (x===null) continue; const y = lay(x,3);
+      c.beginPath(); c.moveTo(x-4,y); c.lineTo(x,y-26); c.lineTo(x+4,y); c.moveTo(x-2.6,y-9); c.lineTo(x+2.6,y-9);
+      c.moveTo(x-6,y-22); c.lineTo(x+6,y-22); c.stroke();
+      const x2 = pyl(k+1); if (x2===null) continue; const y2 = lay(x2,3);
+      c.beginPath(); c.moveTo(x+5,y-22); c.quadraticCurveTo((x+x2)/2, (y+y2)/2-12, x2+5, y2-22); c.stroke();
+      c.beginPath(); c.moveTo(x-5,y-22); c.quadraticCurveTo((x+x2)/2, (y+y2)/2-12, x2-5, y2-22); c.stroke();
+    }
+  }
+  // 6) villages (plan moyen) : maisons, clocher, fenêtres allumées au crépuscule, ruines en feu
+  if (li===1){
+    const dusk = clamp((dq-0.18)*3, 0, 1)*(1-dead*0.6);
+    for (let k=Math.floor((xa-140)/560); k*560<xb+140; k++){
+      if (lhash(k, L.seed+20)>0.62) continue;
+      const vx = k*560 + lhash(k,L.seed+21)*200, n = 3 + Math.floor(lhash(k,L.seed+22)*3);
+      for (let j=0;j<n;j++){
+        const s = k*17+j, hx = vx + j*15 + lhash(s,L.seed+23)*4, w = 10+lhash(s,L.seed+24)*4, hh = 7+lhash(s,L.seed+25)*4;
+        const y = lay(hx+w/2, 6), ruined = lhash(s, L.seed+26) < dead;
+        const church = j===1 && lhash(k,L.seed+27)<0.5;
+        const wall = fog(ruined? [70,64,62] : lerpColArr([222,208,186],[150,136,118],dry*0.5));
+        const roof = fog(ruined? [38,34,34] : (lhash(s,L.seed+28)<0.6? [158,74,54] : [96,100,110]));
+        c.fillStyle = wall; c.fillRect(hx, y-hh, w, hh);
+        if (church){ c.fillRect(hx+w-5, y-hh-11, 5, 11); c.fillStyle = roof; c.beginPath(); c.moveTo(hx+w-6, y-hh-11); c.lineTo(hx+w-2.5, y-hh-19); c.lineTo(hx+w+1, y-hh-11); c.fill(); }
+        c.fillStyle = roof;
+        if (ruined){ c.beginPath(); c.moveTo(hx, y-hh); c.lineTo(hx+w*0.3, y-hh-3); c.lineTo(hx+w*0.5, y-hh+1); c.lineTo(hx+w*0.8, y-hh-2); c.lineTo(hx+w, y-hh); c.closePath(); c.fill(); }
+        else { c.beginPath(); c.moveTo(hx-1.2, y-hh); c.lineTo(hx+w/2, y-hh-5.5); c.lineTo(hx+w+1.2, y-hh); c.closePath(); c.fill(); }
+        const burning = ruined && dead<0.92 && lhash(s,L.seed+29)<0.6;
+        const wc = burning? 'rgba(255,128,48,0.95)' : dusk>0.05? 'rgba(255,214,140,'+(0.35+0.6*dusk).toFixed(2)+')' : fog([60,58,64], L.haze*0.6);
+        c.fillStyle = wc; c.fillRect(hx+w*0.25, y-hh*0.62, 2.2, 2.2); if (w>12) c.fillRect(hx+w*0.62, y-hh*0.62, 2.2, 2.2);
+      }
+    }
+  }
+  // 7) arbres : lisières denses au loin, bosquets au milieu, gros arbres devant ; roussis puis morts
+  const TS = li===0? 6 : li===1? 10 : 26;
+  const tree = lerpColArr(lerpColArr(csc(P.grass,0.58),[84,66,40],dry*0.55), [52,44,40], dead*0.5);
+  const treeL = lerpColArr(lerpColArr(csc(P.grass,0.92),[140,108,58],dry*0.55), [72,62,56], dead*0.5);
+  const tk = L.haze*0.8, cTree = fog(tree, tk), cTreeL = fog(treeL, tk), cTrunk = fog([74,56,40], tk), cDead = fog([46,40,38], tk);
+  for (let k=Math.floor((xa-m)/TS); k*TS<xb+m; k++){
+    const x = k*TS + lhash(k,L.seed+1)*TS*0.8;
+    if (landWood(L,x)<0 && lhash(k,L.seed+2)>(li===2? 0.25 : 0.07)) continue;   // clairières, arbres isolés
+    const r = (li===0? 2.7 : li===1? 4.6 : 9.5)*(0.75+lhash(k,L.seed+3)*0.6);
+    const depth = li===2? 3+lhash(k,L.seed+4)*5 : (lhash(k,L.seed+4)<0.6? 1.5 : 5+lhash(k,L.seed+4)*20);
+    const y = lay(x, depth);
+    if (dead>0.5 && lhash(k,L.seed+11)<dead){                                    // arbre mort
+      c.strokeStyle = cDead; c.lineWidth = Math.max(0.8, r*0.22); c.lineCap = 'round';
+      c.beginPath(); c.moveTo(x,y); c.lineTo(x,y-r*2.6); c.moveTo(x,y-r*1.6); c.lineTo(x+r*0.8,y-r*2.3); c.moveTo(x,y-r*1.2); c.lineTo(x-r*0.7,y-r*1.8); c.stroke();
+    } else if (lhash(k,L.seed+10) < (li===0? 0.5 : 0.32)){                       // conifère
+      const hgt = r*3.1;
+      c.fillStyle = cTree; c.beginPath(); c.moveTo(x-r, y); c.lineTo(x, y-hgt); c.lineTo(x+r, y); c.closePath(); c.fill();
+      c.fillStyle = cTreeL; c.beginPath(); c.moveTo(x-r, y); c.lineTo(x, y-hgt); c.lineTo(x-r*0.1, y); c.closePath(); c.fill();
+      if (li===2){ c.fillStyle = cTree; c.beginPath(); c.moveTo(x-r*1.2, y-hgt*0.3); c.lineTo(x, y-hgt*0.75); c.lineTo(x+r*1.2, y-hgt*0.3); c.closePath(); c.fill(); }
+    } else {                                                                      // feuillu
+      if (li===2){ c.fillStyle = cTrunk; c.fillRect(x-r*0.14, y-r*1.2, r*0.28, r*1.2); }
+      const cy = y - r*(li===2? 1.9 : 0.9);
+      c.fillStyle = cTree; c.beginPath(); c.arc(x, cy, r, 0, 6.283); if (li>0) c.arc(x+r*0.7, cy+r*0.3, r*0.7, 0, 6.283); c.fill();
+      c.fillStyle = cTreeL; c.beginPath(); c.arc(x-r*0.32, cy-r*0.3, r*0.55, 0, 6.283); c.fill();
+    }
+  }
+  // 8) premier plan des collines : haies, clôtures, bottes de foin, rochers
+  if (li===2){
+    // haies : rangées continues de buissons qui suivent la pente (et non des boules isolées)
+    const bush = lerpColArr(csc(tree,1.1), [70,60,50], dead*0.4), cB = fog(bush, tk), cBL = fog(csc(bush,1.3), tk);
+    for (let k=Math.floor((xa-200)/170); k*170<xb+200; k++){
+      if (lhash(k,L.seed+30)>0.55) continue;
+      const hx = k*170 + lhash(k,L.seed+31)*60, len = 50+lhash(k,L.seed+32)*90, d = 11+lhash(k,L.seed+33)*7;
+      for (let x=hx; x<=hx+len; x+=4.5){ const r = 3+Math.abs(Math.sin(x*0.7))*1.6, y = lay(x,d);
+        c.fillStyle = cB; c.beginPath(); c.arc(x, y-r*0.5, r, 0, 6.283); c.fill(); }
+      for (let x=hx; x<=hx+len; x+=9){ const r = 1.6+Math.abs(Math.sin(x*0.7))*0.8, y = lay(x,d);
+        c.fillStyle = cBL; c.beginPath(); c.arc(x-1.2, y-r-2.4, r, 0, 6.283); c.fill(); }
+    }
+    if (dead<0.5){ c.strokeStyle = fog([120,96,70], tk); c.lineWidth = 0.9;                // clôtures
+      for (let k=Math.floor((xa-120)/240); k*240<xb+120; k++){ if (lhash(k,L.seed+34)>0.5) continue;
+        const fx = k*240 + lhash(k,L.seed+35)*80;
+        c.beginPath(); for (let x=fx; x<=fx+60; x+=12){ const y=lay(x,9); c.moveTo(x,y); c.lineTo(x,y-5); }
+        for (const d of [6.5, 8.5]){ for (let x=fx; x<=fx+60; x+=6){ const y=lay(x,d); x===fx? c.moveTo(x,y) : c.lineTo(x,y); } }
+        c.stroke(); } }
+    if (dq<0.45){ for (let k=Math.floor((xa-60)/190); k*190<xb+60; k++){ if (lhash(k,L.seed+36)>0.35) continue;   // bottes de foin
+        const x = k*190 + lhash(k,L.seed+37)*90, y = lay(x,14);
+        c.fillStyle = fog([214,184,104], tk); c.beginPath(); c.ellipse(x, y-3, 4.2, 3.4, 0, 0, 6.283); c.fill();
+        c.fillStyle = fog([170,140,74], tk); c.beginPath(); c.ellipse(x+2.6, y-3, 1.6, 3.2, 0, 0, 6.283); c.fill(); } }
+    for (let k=Math.floor((xa-40)/130); k*130<xb+40; k++){ if (lhash(k,L.seed+38)>0.4) continue;                  // rochers
+      const x = k*130 + lhash(k,L.seed+39)*70, y = lay(x,16), r = 3+lhash(k,L.seed+40)*4;
+      c.fillStyle = fog([120,116,112], tk); c.beginPath(); c.ellipse(x, y-r*0.4, r, r*0.7, 0, 0, 6.283); c.fill();
+      c.fillStyle = fog([160,156,150], tk); c.beginPath(); c.ellipse(x-r*0.3, y-r*0.65, r*0.45, r*0.3, 0, 0, 6.283); c.fill(); }
+  }
 }
 function drawCity(dev){
   const par=0.7, vw=VW(), t=game?game.t:0;
@@ -906,6 +1153,9 @@ function drawTree(tr, dev, t, vw){
   const x=tr.x-camX; if (x<-50||x>vw+50) return;
   const y=gY(tr.x), s=tr.s, sway=Math.sin(t*0.8+tr.ph)*2*s*(1-dev), bark=mix([96,70,46],[50,42,38],dev);
   if (dev<0.78) projShadow(x, y, 16*s);          // ombre portée de l'arbre
+  // ESSENCES VARIÉES (v1.8) : pins et peupliers parmi les feuillus, choisis par la position
+  const sp = lhash(Math.round(tr.x), 3.3);
+  if (sp<0.3 || sp>0.86){ treeAlt(sp<0.3? 'pine' : 'poplar', x, y, s, sway, dev, bark, tr); return; }
   // TRONC détaillé : évasement de racines, fût à deux tons, branche maîtresse
   ctx.fillStyle=shade(bark,0.8);
   ctx.beginPath(); ctx.moveTo(x-6*s,y+3); ctx.quadraticCurveTo(x-2*s,y-4*s,x-2.6*s,y-12*s);
@@ -933,6 +1183,31 @@ function drawTree(tr, dev, t, vw){
         ctx.fillRect(lx, ly, 2.2*s, 2.2*s); } }
   } else { ctx.lineWidth=3*s; ctx.beginPath(); ctx.moveTo(x+sway,y-62*s); ctx.lineTo(x+sway-13*s,y-76*s);
     ctx.moveTo(x+sway,y-54*s); ctx.lineTo(x+sway+14*s,y-70*s); ctx.stroke(); }
+}
+function treeAlt(kind, x, y, s, sway, dev, bark, tr){
+  const dead = dev>=0.78;
+  ctx.strokeStyle=bark; ctx.lineCap='round';
+  if (kind==='pine'){
+    ctx.lineWidth=4.4*s; ctx.beginPath(); ctx.moveTo(x,y+2); ctx.lineTo(x+sway*0.6,y-70*s); ctx.stroke();
+    if (dead){ ctx.lineWidth=1.8*s; ctx.beginPath();
+      for (let i=0;i<4;i++){ const yy=y-22*s-i*12*s, d=(i%2?1:-1); ctx.moveTo(x+sway*0.3*(i/4),yy); ctx.lineTo(x+d*(9-i*1.6)*s,yy-5*s); } ctx.stroke(); return; }
+    const pine = lerpColArr([52,96,70],[96,90,52],dev*0.9);
+    for (let i=0;i<3;i++){                                   // trois étages d'aiguilles, ombre à droite
+      const by=y-(16+i*17)*s, w=(19-i*4.6)*s, h=(30-i*4)*s, tx=x+sway*(0.4+i*0.25);
+      ctx.fillStyle=shade(pine,0.72); ctx.beginPath(); ctx.moveTo(x-w,by); ctx.lineTo(tx,by-h); ctx.lineTo(x+w,by); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=shade(pine,1.12); ctx.beginPath(); ctx.moveTo(x-w,by); ctx.lineTo(tx,by-h); ctx.lineTo(x-w*0.05,by-1.5*s); ctx.closePath(); ctx.fill();
+    }
+  } else {
+    ctx.lineWidth=4*s; ctx.beginPath(); ctx.moveTo(x,y+2); ctx.lineTo(x+sway*0.5,y-40*s); ctx.stroke();
+    if (dead){ ctx.lineWidth=1.8*s; ctx.beginPath(); ctx.moveTo(x+sway*0.5,y-40*s); ctx.lineTo(x+sway,y-72*s);
+      ctx.moveTo(x,y-34*s); ctx.lineTo(x-7*s,y-52*s); ctx.moveTo(x,y-44*s); ctx.lineTo(x+8*s,y-60*s); ctx.stroke(); return; }
+    const leaf = lerpColArr(lerpColArr(devLerp(GRASS),[150,170,80],0.25),[170,120,50],dev*0.8), cx=x+sway, cy=y-62*s;
+    ctx.fillStyle=shade(leaf,0.62); ctx.beginPath(); ctx.ellipse(cx+2*s,cy+3*s,11*s,30*s,0,0,6.283); ctx.fill();
+    const g=ctx.createLinearGradient(cx-11*s,cy-30*s,cx+11*s,cy+20*s); g.addColorStop(0,shade(leaf,1.35)); g.addColorStop(1,shade(leaf,0.7));
+    ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx,cy,10*s,28*s,0,0,6.283); ctx.fill();
+    if (qHi()){ ctx.fillStyle=rgbaC(shade(leaf,1.6),0.75);
+      for (let i=0;i<5;i++){ const a=tr.ph+i*1.3; ctx.fillRect(cx-4*s+Math.cos(a)*4*s, cy-18*s+i*7*s, 2*s, 2*s); } }
+  }
 }
 function drawNode(n){
   const x=n.x-camX; if (x<-110||x>VW()+110) return;
@@ -1439,20 +1714,26 @@ function attackFX(u, x, bodyY, imp, mx){
   // simultanées) c'était le premier poste de coût de rendu. Coupé en qualité Faible, conservé
   // dès Moyen pour garder l'effet visuel sur tout appareil un minimum capable.
   imp = (imp==null)?1:imp; const dir=u.side, col=u.fac==='HUM'?'#ffd9a0':'#9fe8ff';
-  const glow = qFx();
+  // v1.8 : le halo vient de la bouffée de feu CUITE (drawImage) — plus aucun shadowBlur ici
+  const glow = qFx(), PF = puffSprites();
   ctx.save(); ctx.globalCompositeOperation='lighter';
-  if (glow){ ctx.shadowColor=col; ctx.shadowBlur=10; }
   ctx.lineCap='round';
   if (u.role==='ranged'||u.role==='air'){
     const fx=x+dir*(mx!=null?mx:26);
-    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,3+3*imp,0,6.283); ctx.fill();                 // bouche à feu
+    if (glow){ const r=4+5*imp; ctx.globalAlpha=Math.min(1,0.35+imp); ctx.drawImage(PF.fire, fx-r, bodyY-r, r*2, r*2); ctx.globalAlpha=1;
+      ctx.strokeStyle=rgbaC(col,0.8*imp); ctx.lineWidth=1.4; ctx.beginPath();                            // éclat en étoile
+      ctx.moveTo(fx,bodyY); ctx.lineTo(fx+dir*(8+7*imp),bodyY); ctx.moveTo(fx+dir*3,bodyY-4*imp); ctx.lineTo(fx+dir*3,bodyY+4*imp); ctx.stroke(); }
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,2+2*imp,0,6.283); ctx.fill();                 // bouche à feu
     ctx.strokeStyle=rgbaC(col,0.65*imp); ctx.lineWidth=2; ctx.beginPath();                              // traceur nerveux
     ctx.moveTo(fx,bodyY); ctx.lineTo(fx+dir*(46+u.range*0.12), bodyY-2); ctx.stroke();
     ctx.fillStyle=rgbaC('#ffcf8a',0.8*imp); ctx.beginPath(); ctx.arc(x+dir*14, bodyY+3, 1.6, 0,6.283); ctx.fill(); // douille
   } else if (u.role==='siege'){
     const fx=x+dir*(mx!=null?mx:24), fy=mx!=null? bodyY : bodyY-4;
-    ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.arc(fx,fy,5+7*imp,0,6.283); ctx.fill();
+    const r=7+10*imp; ctx.globalAlpha=Math.min(1,0.3+imp); ctx.drawImage(PF.fire, fx-r, fy-r, r*2, r*2); ctx.globalAlpha=1;
     ctx.strokeStyle=rgbaC('#ff9d45',0.5*imp); ctx.lineWidth=3; ctx.beginPath(); ctx.arc(fx,fy,12+12*imp,0,6.283); ctx.stroke();
+    if (glow && imp>0.85 && u._smk!==u.atkT && particles.length<500){                                   // bouffée de départ
+      u._smk = u.atkT;                                       // une par pas de simulation (rien en pause)
+      particles.push({k:'m', x:fx+camX, y:fy, vx:dir*20, vy:-14, g:-4, dr:1.6, life:0.9, t:0, r:5}); }
   } else {
     // mêlée : arc tranchant qui balaie devant l'unité
     const cxs=x+dir*6, r=22, a0=dir>0?-1.0:Math.PI+1.0, a1=dir>0?1.0:Math.PI-1.0;
@@ -1611,6 +1892,7 @@ function prewarmSprites(){
       for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('AIR'+fac+era+(trans?'T':''), 64, 44, ()=>airSprite(fac,era,trans)) });
       if (!trans) WARMQ.push({ era, trans, fn:()=>sprite('GREM'+era, 28, 24, ()=>gremlinSprite(era)) });
       if (era===1 && !trans) for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)) });
+      if (era===1 && !trans) WARMQ.push({ era, trans, fn:()=>{ mushroomSprite(); puffSprites(); } });   // effets lourds
     }
   }
   while (WARMQ.length && WARMQ[0].era===0 && !WARMQ[0].trans) WARMQ.shift().fn();
@@ -1738,23 +2020,38 @@ function drawRally(r){
 // volutes déterministes (pas de pool de particules) : fumée sous 55 % de PV, flammes sous 30 %.
 function dmgSmoke(x, topY, frac, t, seed){
   if (frac>=0.55 || !qFx()) return;
-  const n = frac<0.3? 3:2;
-  ctx.save();
+  // panache en bouffées cuites (v1.8) : épais, qui s'élargit en montant ; flammes sous 30 %
+  const PF = puffSprites(), n = frac<0.3? 4:3;
   for (let i=0;i<n;i++){
-    const ph = ((t*0.5 + i*0.37 + seed*0.013)%1);
-    const py = topY - ph*28, drift = Math.sin(t*1.3+i*2+seed)*5*ph;
-    ctx.fillStyle='rgba(44,38,40,'+(0.42*(1-ph)).toFixed(3)+')';
-    ctx.beginPath(); ctx.arc(x+drift+(i-1)*4, py, 2.5+ph*5.5, 0, 6.283); ctx.fill();
+    const ph = ((t*0.42 + i/n + seed*0.013)%1), r = 4+ph*13;
+    const px = x + Math.sin(t*1.1+i*2+seed)*6*ph + ph*10 + (i-1)*3, py = topY - ph*40;
+    ctx.globalAlpha = 0.9*(1-ph)*Math.min(1,ph*6);
+    ctx.drawImage(PF.smoke, px-r, py-r, r*2, r*2);
   }
+  ctx.globalAlpha = 1;
   if (frac<0.3){
-    ctx.globalCompositeOperation='lighter';
-    for (let i=0;i<2;i++){
-      const fl=Math.abs(Math.sin(t*7+i*1.9+seed));
-      ctx.fillStyle='rgba(255,'+(140+60*fl|0)+',60,'+(0.30+0.40*fl).toFixed(3)+')';
-      ctx.beginPath(); ctx.ellipse(x-3+i*6, topY+2, 2.2, 3.5+fl*3, 0, 0, 6.283); ctx.fill();
-    }
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for (let i=0;i<2;i++){ const fl=Math.abs(Math.sin(t*7+i*1.9+seed)), r=5+fl*4;
+      ctx.globalAlpha=0.6+0.35*fl; ctx.drawImage(PF.fire, x-3+i*6-r, topY+3-r*1.2, r*2, r*2.4); }
+    ctx.restore(); ctx.globalAlpha=1;
   }
-  ctx.restore();
+}
+// BOUFFÉES CUITES (feu, fumée, poussière) : dégradés radiaux irréguliers rendus UNE fois puis
+// blittés — les explosions deviennent des boules de feu et des panaches au lieu de confettis.
+let PUFFS = null;
+function puffSprites(){
+  if (PUFFS) return PUFFS;
+  const mk = (stops, lumpy) => { const S=64, cv=document.createElement('canvas'); cv.width=cv.height=S; const c=cv.getContext('2d');
+    const blobs = lumpy? [[32,33,29],[22,27,17],[42,25,16],[39,42,17],[24,41,15]] : [[32,32,31]];
+    for (const [x,y,r] of blobs){ const g=c.createRadialGradient(x,y,1,x,y,r); for (const s of stops) g.addColorStop(s[0],s[1]);
+      c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,6.283); c.fill(); }
+    return cv; };
+  PUFFS = {
+    fire:  mk([[0,'rgba(255,250,220,1)'],[0.25,'rgba(255,204,96,0.9)'],[0.6,'rgba(255,112,32,0.45)'],[1,'rgba(200,40,10,0)']], false),
+    smoke: mk([[0,'rgba(66,60,62,0.5)'],[0.6,'rgba(58,52,54,0.3)'],[1,'rgba(50,46,48,0)']], true),
+    dust:  mk([[0,'rgba(200,182,150,0.46)'],[0.6,'rgba(184,164,132,0.26)'],[1,'rgba(170,150,120,0)']], true),
+  };
+  return PUFFS;
 }
 /* ---------- PLUIE FERTILE : averse visible pendant l'événement (écran entier) ---------- */
 function drawRainBoon(t){
