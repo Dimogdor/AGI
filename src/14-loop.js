@@ -29,23 +29,28 @@ function render(dt){
       ctx.beginPath(); ctx.moveTo(s.x-camX,s.y); ctx.lineTo(s.tx-camX,s.ty); ctx.stroke(); }
     ctx.globalAlpha=1;
   }
+  // OBUS (v1.8) : vrai projectile sombre orienté selon sa trajectoire, ogive incandescente de
+  // la couleur de l'ère, traînée de fumée qui s'étire derrière lui (au lieu d'un point lumineux)
   const projGlow = qFx();
-  if (projGlow){ ctx.save(); ctx.globalCompositeOperation='lighter'; }
   for (const pr of projectiles){
     const k = pr.t/pr.dur;
     const ox = pr.ox||0, oy = pr.oy!=null? pr.oy : -26;   // départ à la bouche du tube, arrivée au sol
     const wx2 = lerp(pr.sx+ox,pr.tx,k), px = wx2-camX, py = gY(wx2) + oy + (-26-oy)*k - Math.sin(k*Math.PI)*90;
     const col = FACTIONS[pr.fac].eraCols[pr.era];
-    if (projGlow){                                   // traînée + lueur additive (cercles pleins, pas de gradient)
-      if (pr._px!=null){ ctx.strokeStyle=rgbaC(col,0.4); ctx.lineWidth=3; ctx.lineCap='round';
-        ctx.beginPath(); ctx.moveTo(pr._px,pr._py); ctx.lineTo(px,py); ctx.stroke(); }
-      pr._px=px; pr._py=py;
-      ctx.fillStyle=rgbaC(col,0.28); ctx.beginPath(); ctx.arc(px,py,8,0,6.28); ctx.fill();
-    }
-    ctx.fillStyle=col;
-    ctx.beginPath(); ctx.arc(px,py,3.4,0,6.28); ctx.fill();
+    const pwx = pr._wx!=null? pr._wx : wx2-(pr.tx-pr.sx)*0.01, pwy = pr._wy!=null? pr._wy : py;
+    const ang = Math.atan2(py-pwy, wx2-pwx);
+    // bouffées de fumée laissées en vol (seulement si l'obus a AVANCÉ : rien ne s'accumule en pause)
+    if (projGlow && pr._wx!=null && pr._wx!==wx2 && particles.length<500 && Math.random()<0.55)
+      particles.push({k:'m', x:wx2, y:py, vx:(Math.random()-0.5)*6, vy:-6, g:-2, dr:1, life:0.55+Math.random()*0.3, t:0, r:2.4+Math.random()*1.6});
+    pr._wx = wx2; pr._wy = py;
+    ctx.save(); ctx.translate(px,py); ctx.rotate(ang);
+    ctx.fillStyle='#2c2a28'; ctx.beginPath(); ctx.ellipse(0,0,5.4,2.7,0,0,6.283); ctx.fill();
+    ctx.fillStyle='#5a5652'; ctx.fillRect(-5.4,-0.8,3,1.6);
+    ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(3.6,0,2.2,1.9,0,0,6.283); ctx.fill();
+    ctx.restore();
+    if (projGlow){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=rgbaC(col,0.3);
+      ctx.beginPath(); ctx.arc(px+Math.cos(ang)*3.6, py+Math.sin(ang)*3.6, 6, 0, 6.28); ctx.fill(); ctx.restore(); }
   }
-  if (projGlow) ctx.restore();
   // RAGDOLLS DE MORT (par rôle) : bascule au sol · chute en vrille (volants) · effondrement (tanks)
   for (const d of deaths){
     const x=d.x-camX; if (x<-60||x>VW()+60) continue;
@@ -65,11 +70,31 @@ function render(dt){
       ctx.drawImage(spr,-USP.cx,-USP.foot,USP.W,USP.H); }
     ctx.restore(); ctx.globalAlpha=1;
   }
+  // PARTICULES (v1.8) : passe normale (fumée, poussière, débris, onde de choc, points), puis
+  // passe additive (boules de feu, étincelles) — deux changements d'état seulement par frame
+  const PF = puffSprites(), pvw = VW();
   for (const pt of particles){
-    ctx.globalAlpha=1-pt.t/pt.life;
-    ctx.fillStyle=pt.color; ctx.beginPath(); ctx.arc(pt.x-camX,pt.y,pt.r,0,6.28); ctx.fill();
+    const x=pt.x-camX; if (x<-90||x>pvw+90) continue;
+    const k=pt.t/pt.life;
+    if (!pt.k){ ctx.globalAlpha=1-k; ctx.fillStyle=pt.color; ctx.beginPath(); ctx.arc(x,pt.y,pt.r,0,6.28); ctx.fill(); }
+    else if (pt.k==='m' || pt.k==='u'){ const r=pt.r*(1+k*(pt.k==='m'? 2.2 : 1.4));
+      ctx.globalAlpha=(pt.k==='m'? 0.85 : 0.7)*(1-k)*Math.min(1,k*8); ctx.drawImage(pt.k==='m'? PF.smoke : PF.dust, x-r, pt.y-r, r*2, r*2); }
+    else if (pt.k==='d'){ ctx.globalAlpha=Math.min(1,(1-k)*3); ctx.fillStyle=pt.color;
+      ctx.save(); ctx.translate(x,pt.y); ctx.rotate(pt.rot); ctx.fillRect(-pt.r,-pt.r*0.7,pt.r*2,pt.r*1.4); ctx.restore(); }
+    else if (pt.k==='r'){ const rr=pt.r*(0.25+k); ctx.globalAlpha=0.5*(1-k); ctx.strokeStyle='rgb(235,220,190)'; ctx.lineWidth=0.6+2.4*(1-k);
+      ctx.beginPath(); ctx.ellipse(x,pt.y,rr,rr*0.22,0,0,6.283); ctx.stroke(); }
   }
   ctx.globalAlpha=1;
+  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
+  for (const pt of particles){
+    if (pt.k!=='f' && pt.k!=='s') continue;
+    const x=pt.x-camX; if (x<-90||x>pvw+90) continue;
+    const k=pt.t/pt.life;
+    if (pt.k==='f'){ const r=pt.r*(0.6+k*1.2); ctx.globalAlpha=Math.pow(1-k,1.4); ctx.drawImage(PF.fire, x-r, pt.y-r, r*2, r*2); }
+    else { ctx.globalAlpha=1-k; ctx.strokeStyle=pt.color; ctx.lineWidth=pt.r;
+      ctx.beginPath(); ctx.moveTo(x,pt.y); ctx.lineTo(x-pt.vx*0.035, pt.y-pt.vy*0.035); ctx.stroke(); }
+  }
+  ctx.restore(); ctx.globalAlpha=1;
   // ===== LUMIÈRES DYNAMIQUES (RTX simulé) : nappes additives qui éclairent la scène =====
   // En qualité Faible, on saute les dégradés radiaux (coûteux) mais on continue de faire
   // expirer les lumières pour ne pas les accumuler (évite la surcharge sur GPU/extensions lourdes).

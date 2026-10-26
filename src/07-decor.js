@@ -156,13 +156,62 @@ function addLight(x,y,col,r,life){
   }
   if(LIGHTS.length>60) LIGHTS.shift(); LIGHTS.push({x,y,col,r,life,t:0});
 }
+// PARTICULES TYPÉES (v1.8) — k : 's' étincelle (traînée), 'f' boule de feu (additif),
+// 'm' fumée, 'u' poussière, 'd' débris (rebondit au sol), 'r' onde de choc au sol.
+// Sans k : point coloré (bulles, poussière de pas…). Physique commune : stepParticles.
 function burst(x,y,color,n=10,pow=1){
   n = Math.max(2, Math.round(n*qMul()));     // densité selon le profil de qualité
   if (particles.length>520) particles.splice(0, particles.length-520);   // borne mémoire (anti-accumulation)
-  for(let i=0;i<n;i++){ const a=Math.random()*6.28, s=(30+Math.random()*120)*pow;
-    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-50,life:0.4+Math.random()*0.5,t:0,color,r:1.5+Math.random()*3}); }
+  const ns = Math.max(2, Math.round(n*0.75));
+  for (let i=0;i<ns;i++){ const a=Math.random()*6.28, s=(50+Math.random()*150)*pow;
+    particles.push({k:'s', x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s-60*pow, g:340, dr:1.6,
+      life:0.25+Math.random()*0.35, t:0, color, r:1.3+Math.random()*1.1}); }
+  if (n>=8 && qFx()) for (let i=0;i<2;i++)                                 // petite bouffée de poussière
+    particles.push({k:'u', x:x+(Math.random()-0.5)*10, y:y+4, vx:(Math.random()-0.5)*20, vy:-10-Math.random()*12,
+      g:-4, dr:1.2, life:0.7+Math.random()*0.5, t:0, r:6+Math.random()*4*pow});
+  if (pow>=1.3) explodeParts(x, y, pow*0.6, color, false);                // gros éclat : boule de feu
   addLight(x, y, color, 26+n*1.4*pow, 0.35+0.05*pow);                 // flash lumineux d'impact/explosion
   netEv({k:'b',x,y,c:color,n,p:pow});
+}
+// EXPLOSION (obus, bâtiment détruit, météorite…) : boule de feu, panache de fumée, mottes de
+// terre qui retombent et rebondissent, gerbe d'étincelles, onde de choc et poussière au sol
+function explode(x, y, pow=1, col='#ffb060'){
+  explodeParts(x, y, pow, col, true);
+  addLight(x, y-10, '#ffb060', 70+60*pow, 0.45);
+  netEv({k:'x', x, y, p:pow, c:col});
+}
+function explodeParts(x, y, pow, col, ground){
+  if (particles.length>470) particles.splice(0, particles.length-470);
+  const q = qMul(), rich = qFx();
+  const nf = Math.max(2, Math.round((3+pow*3)*q));
+  for (let i=0;i<nf;i++){ const a=Math.random()*6.28, s=(20+Math.random()*60)*pow;
+    particles.push({k:'f', x:x+Math.cos(a)*4, y:y+Math.sin(a)*3, vx:Math.cos(a)*s, vy:Math.sin(a)*s*0.6-30*pow,
+      g:-30, dr:3, life:0.28+Math.random()*0.25, t:0, r:(9+Math.random()*7)*pow}); }
+  if (rich){ const nm = Math.round((3+pow*4)*q);
+    for (let i=0;i<nm;i++) particles.push({k:'m', x:x+(Math.random()-0.5)*14*pow, y:y-Math.random()*10,
+      vx:(Math.random()-0.5)*26, vy:-18-Math.random()*30*pow, g:-6, dr:1.4, life:1.1+Math.random()+pow*0.3, t:0, r:(8+Math.random()*8)*pow}); }
+  const nd = Math.round((4+pow*4)*q);
+  for (let i=0;i<nd;i++){ const a=-Math.PI*(0.15+Math.random()*0.7), s=(90+Math.random()*160)*Math.sqrt(pow);
+    particles.push({k:'d', x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, g:520, dr:0.4, life:0.9+Math.random()*0.6, t:0,
+      r:1.5+Math.random()*2.3, rot:Math.random()*6.28, vr:(Math.random()-0.5)*16, color: Math.random()<0.6? '#4a3a2c' : '#2a2422'}); }
+  const ns = Math.round((6+pow*6)*q);
+  for (let i=0;i<ns;i++){ const a=-Math.PI*Math.random(), s=(120+Math.random()*220)*pow;
+    particles.push({k:'s', x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, g:380, dr:1.8, life:0.3+Math.random()*0.4, t:0,
+      color: i%3? '#ffd27a' : col, r:1.6}); }
+  if (ground && rich){
+    particles.push({k:'r', x, y:gY(x), vx:0, vy:0, g:0, life:0.45, t:0, r:30+30*pow});
+    for (const sd of [-1,1]) particles.push({k:'u', x:x+sd*6, y:gY(x)-3, vx:sd*(60+40*pow), vy:-6, g:0, dr:2.2, life:0.9, t:0, r:10+6*pow});
+  }
+}
+function stepParticles(dt){
+  for (let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.t+=dt;
+    if (p.t>p.life){ particles.splice(i,1); continue; }
+    if (p.k){
+      if (p.dr){ const f=Math.max(0,1-p.dr*dt); p.vx*=f; p.vy*=f; }
+      p.vy += (p.g||0)*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+      if (p.k==='d'){ p.rot += p.vr*dt; const gy=gY(p.x); if (p.y>gy){ p.y=gy; p.vy*=-0.28; p.vx*=0.55; p.vr*=0.5; } }
+    } else { p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=220*dt; }
+  }
 }
 function sideBuildSlots(side){
   const out = side.slots.slice();

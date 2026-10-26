@@ -353,7 +353,7 @@ function moveToward(u, tx, dt, sp=1){
 function updateBuildings(side, foe, dt){
   for (const s of sideBuildSlots(side)){
     if (!s.b) continue;
-    if (s.b.hp<=0){ burst(s.x, gY(s.x)-30, '#aaa', 14); demolish(s, true); sfx('boom'); continue; }
+    if (s.b.hp<=0){ explode(s.x, gY(s.x)-16, 1.2, '#cfc6b8'); demolish(s, true); sfx('boom'); continue; }
     const b = s.b;
     if (b.type==='site'){
       // chantier derrière les lignes adverses : abandonné, il s'effondre tout seul
@@ -584,7 +584,7 @@ function update(dt){
     const pr=projectiles[i]; pr.t+=dt;
     if (pr.t>=pr.dur){
       const foe = pr.side===1? game.e: game.p;
-      burst(pr.tx, gY(pr.tx)-14, FACTIONS[pr.fac].eraCols[pr.era], qN(14));
+      explode(pr.tx, gY(pr.tx)-8, 0.9, FACTIONS[pr.fac].eraCols[pr.era]);
       sfxAt('boom', pr.tx);
       if (Math.random()<0.45) addCrater(pr.tx, Math.max(20, pr.aoe*0.8));
       let hitAny=false;
@@ -609,8 +609,7 @@ function update(dt){
       projectiles.splice(i,1);
     }
   }
-  for (let i=particles.length-1;i>=0;i--){ const pt=particles[i]; pt.t+=dt;
-    pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=220*dt; if(pt.t>pt.life) particles.splice(i,1); }
+  stepParticles(dt);
   for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if(deaths[i].t>deaths[i].life) deaths.splice(i,1); }
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if(f.t>1.6) floaters.splice(i,1); }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if(shots[i].t>shots[i].dur) shots.splice(i,1); }
@@ -650,7 +649,7 @@ function update(dt){
     } else {
       game.over=true; game.win = e.hp<=0;
       game.shake=20;
-      burst((game.win?e:p).x, gY((game.win?e:p).x)-60, '#fff', 44, 1.6);
+      const fx2=(game.win?e:p).x; explode(fx2, gY(fx2)-40, 2.2, '#fff0c0'); burst(fx2, gY(fx2)-60, '#fff', 30, 1.6);
       sfx(game.win?'evolve':'boom');
       setTimeout(showEnd, 1100);
     }
