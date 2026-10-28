@@ -126,10 +126,17 @@ await writeFile(new URL('./manifest.webmanifest', OUT), JSON.stringify(manifest,
 // --- PeerJS AUTO-HÉBERGÉ : on récupère le bundle UMD au build et on le sert depuis
 //     notre propre origine. Un seul fichier autonome (aucun import externe) qui pose
 //     window.Peer. Évite toute dépendance CDN au runtime pour démarrer une partie en ligne.
+// INTÉGRITÉ : le fichier doit correspondre octet pour octet à l'empreinte connue de
+// peerjs 1.5.4 (la même que celle vérifiée par le navigateur sur les replis CDN, voir
+// PEERJS_SRI dans src/20-net-online.js) — un CDN compromis ne peut rien glisser dans le jeu.
+const PEERJS_SRI = 'sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR';
 async function vendorPeerJS(){
   const SRC = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
-  const js = await fetch(SRC).then(r=>r.ok?r.text():Promise.reject(new Error('peerjs '+r.status)));
-  if (!/Peer/.test(js) || js.length < 10000) throw new Error('contenu PeerJS inattendu');
+  const buf = await fetch(SRC).then(r=>r.ok?r.arrayBuffer():Promise.reject(new Error('peerjs '+r.status)));
+  const { createHash } = await import('node:crypto');
+  const sri = 'sha384-'+createHash('sha384').update(Buffer.from(buf)).digest('base64');
+  if (sri !== PEERJS_SRI) throw new Error('empreinte PeerJS inattendue ('+sri+')');
+  const js = Buffer.from(buf).toString('utf8');
   await writeFile(new URL('./peerjs.min.js', OUT), js);
   console.log(`  réseau  : PeerJS auto-hébergé (${(js.length/1024)|0} Ko)`);
 }
@@ -145,6 +152,7 @@ self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const req=e.request,u=new URL(req.url);
+  if(u.origin!==self.location.origin)return; // autres domaines (liste des salons Firebase…) : réseau direct, jamais de cache
   const isDoc=req.mode==='navigate'||u.pathname==='/'||u.pathname.endsWith('/')||u.pathname.endsWith('index.html');
   if(isDoc){ // réseau d'abord : la page la plus récente quand on est connecté
     e.respondWith(fetch(req).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));

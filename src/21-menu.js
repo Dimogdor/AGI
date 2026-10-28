@@ -185,13 +185,14 @@ async function refreshLobbies(){
     const row=document.createElement('button'); row.className='pick';
     row.style.cssText='display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;font-size:13px;padding:7px 10px;';
     const nm = (l.name||fmt('net_room_fallback',{code:l.code})).slice(0,22);
-    row.innerHTML = '<span>'+(l.hasPw?'🔒 ':'')+escapeHtml(nm)+'</span>'+
-                    '<span style="color:#9dc88a;">×'+(l.speed||1)+' · '+escapeHtml(l.code)+' →</span>';
+    // texte brut uniquement (textContent) : rien de ce qui vient de la base n'est interprété
+    const a=document.createElement('span'); a.textContent=(l.hasPw?'🔒 ':'')+nm;
+    const b=document.createElement('span'); b.style.color='#9dc88a'; b.textContent='×'+l.speed+' · '+l.code+' →';
+    row.append(a, b);
     row.addEventListener('click', ()=> joinLobby(l));
     box.appendChild(row);
   }
 }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function joinLobby(l){
   audioInit();
   let pw = '';

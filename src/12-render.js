@@ -367,10 +367,10 @@ function drawIntro(dt){
       ctx.beginPath(); ctx.moveTo(dx+8,dy); ctx.lineTo(dx,dy-4); ctx.lineTo(dx-8,dy); ctx.lineTo(dx,dy+4); ctx.closePath(); ctx.fill();
       bloomT('#8ad4f0',6,()=>{ ctx.fillStyle='#8ad4f0'; ctx.fillRect(dx-1,dy-1,2,2); }); }
     ctx.restore();
-    // foule soumise
-    ctx.fillStyle='#06060a';
-    for (let i=0;i<10;i++){ const px=110+i*50+Math.sin(t+i)*1.5;
-      ctx.fillRect(px-3, baseY-14, 6, 14); ctx.beginPath(); ctx.arc(px, baseY-17, 3.4, 0, 6.28); ctx.fill(); }
+    // foule soumise : de vrais civils de 2025 en silhouette, éclairés en bleu froid par la tour
+    const crowd = ['support','melee','ranged','siege','tank'];
+    for (let i=0;i<10;i++) drawFigure(menuFigure('hum','HUM',crowd[(i*3)%5],0,'rgba(120,190,230,0.7)',0.93),
+      110+i*50+Math.sin(t+i)*1.5, baseY, 0.62);
     introText(_t('lore0'), 458);
   } else if (intro===1){
     // — 2. l'éveil de l'AGI —
@@ -391,6 +391,11 @@ function drawIntro(dt){
     });
     if (open>0.4){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(255,74,208,0.4)'; ctx.lineWidth=2;
       for (let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(W/2,180,66+i*18+Math.sin(t*2+i)*4,0,6.28); ctx.stroke(); } ctx.restore(); }
+    // les premières machines sortent de l'ombre, tournées vers l'œil qui s'ouvre
+    const rise = clamp(t*0.45-0.3, 0, 1);
+    ['melee','ranged','tank','siege','ranged','melee'].forEach((role,i) => { const left = i<3;
+      drawFigure(menuFigure('bot','IA',role,1+(i%2),'rgba(255,90,210,0.8)',0.9),
+        left? W/2-230+i*46 : W/2+138+(i-3)*46, baseY+(1-rise)*30, left? 0.7 : -0.7); });
     introText(_t('lore1'), 458);
   } else if (intro===2){
     // — 3. la résistance —
@@ -417,11 +422,9 @@ function drawIntro(dt){
       ctx.fillRect(fx+Math.sin(t*2+i)*18, fy-10-ey, 2, 2); }
     ctx.restore();
     ctx.fillStyle='#2c2018'; ctx.fillRect(fx-14,fy-3,28,4);
-    // silhouettes (poing levé)
-    ctx.fillStyle='#0a0808';
-    for (const [px,fist] of [[fx+44,1],[fx+74,0],[fx+100,0.5]]){
-      ctx.fillRect(px-4,baseY-26,8,26); ctx.beginPath(); ctx.arc(px,baseY-31,4.6,0,6.28); ctx.fill();
-      if (fist===1){ ctx.save(); ctx.lineWidth=4; ctx.strokeStyle='#0a0808'; ctx.beginPath(); ctx.moveTo(px+3,baseY-22); ctx.lineTo(px+11,baseY-40); ctx.stroke(); ctx.beginPath(); ctx.arc(px+12,baseY-42,3,0,6.28); ctx.fill(); ctx.restore(); } }
+    // le Che et ses camarades, tournés vers le feu (liseré chaud)
+    for (const [role,px,s] of [['hero',fx+50,-0.62],['ranged',fx+86,-0.58],['support',fx+114,-0.56]])
+      drawFigure(menuFigure('hum','HUM',role,0,'rgba(255,150,70,0.95)',0.9), px, baseY, s);
     // drapeau rouge
     const flx=fx+140; ctx.strokeStyle='#3a2a20'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(flx,baseY); ctx.lineTo(flx,baseY-80); ctx.stroke();
     const wv=Math.sin(t*3)*4; ctx.fillStyle='#d4281e';
@@ -518,6 +521,7 @@ function drawMenuScene(dt){
     const sy2 = 320+i*60+Math.sin(t*0.3+i)*8;
     ctx.beginPath(); ctx.ellipse((t*8+i*340)%(W+400)-200, sy2, 260, 26, 0, 0, 6.28); ctx.fill();
   }
+  drawMenuArmies(t);
   // braises qui montent + étoiles scintillantes : le menu VIT (additif discret)
   ctx.save(); ctx.globalCompositeOperation='lighter';
   for (let i=0;i<18;i++){
@@ -531,6 +535,70 @@ function drawMenuScene(dt){
   ctx.restore(); ctx.globalAlpha=1;
 }
 
+// VITRINE DU MENU (v1.9) : les deux armées se font face au premier plan, à contre-jour du
+// soleil — silhouettes sombres cuites avec un liseré de lumière côté soleil (chaud pour
+// l'Humanité, froid pour GPT). Elles respirent ; le drapeau rouge flotte.
+function menuSilhouette(key, parts, w, h, rim, dark){
+  dark = dark || 0.84;
+  return fxSprite('MS'+key+rim+dark, w, h, g => {
+    const S = g.getTransform().a, cw = g.canvas.width, ch = g.canvas.height;
+    const lay = c => { for (const [cv,x,y,pw,ph] of parts) c.drawImage(cv, x, y, pw, ph); };
+    g.save(); lay(g);
+    g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(14,9,12,'+dark+')'; g.fillRect(0,0,w,h); g.restore();
+    const tmp = document.createElement('canvas'); tmp.width=cw; tmp.height=ch; const t2=tmp.getContext('2d'); t2.scale(S,S);
+    lay(t2); t2.globalCompositeOperation='source-in'; t2.fillStyle=rim; t2.fillRect(0,0,w,h);
+    g.save(); g.setTransform(1,0,0,1,0,0); g.globalCompositeOperation='destination-over';
+    g.drawImage(tmp, Math.round(1.6*S), -Math.round(0.8*S)); g.restore();
+  });
+}
+function menuFigure(kind, fac, role, era, rim, dark){
+  const parts = [];
+  if (role==='hero'){ parts.push([sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)), 0, 0, HERO_SW, 100]);
+    return { cv: menuSilhouette('H'+fac, parts, HERO_SW, 100, rim, dark), w:HERO_SW, h:100, fx:HERO_SW/2, fy:92 }; }
+  if (unitHasBack(kind, role, era)) parts.push([unitPart(kind,fac,role,era,false,'back'), 0, 0, USP.W, USP.H]);
+  parts.push([unitPart(kind,fac,role,era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H]);
+  parts.push([unitPart(kind,fac,role,era,false,'front'), 0, 0, USP.W, USP.H]);
+  return { cv: menuSilhouette(kind+role+era, parts, USP.W, USP.H, rim, dark), w:USP.W, h:USP.H, fx:USP.cx, fy:USP.foot };
+}
+const MENU_ARMY = {
+  hum: [['ranged',1],['siege',0],['hero',0],['tank',1],['melee',0],['support',1]],
+  bot: [['melee',2],['ranged',1],['hero',0],['tank',2],['siege',1],['support',2]],
+};
+// silhouette posée au sol en (x, y), échelle s (négative = tournée vers la gauche)
+function drawFigure(f, x, y, s){ ctx.save(); ctx.translate(x, y); ctx.scale(s, Math.abs(s)); ctx.drawImage(f.cv, -f.fx, -f.fy, f.w, f.h); ctx.restore(); }
+function drawMenuArmies(t){
+  const gy = H - 58, k = 1.12;
+  // crête de gravats au premier plan
+  ctx.fillStyle='#0b0708'; ctx.beginPath(); ctx.moveTo(0,H);
+  for (let x=0; x<=W+20; x+=20) ctx.lineTo(x, gy + 6 + Math.sin(x*0.031)*5 + Math.sin(x*0.11)*2.5);
+  ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+  for (const side of ['hum','bot']){
+    const hum = side==='hum', fac = hum? 'HUM':'IA', rim = hum? 'rgba(255,128,70,0.95)' : 'rgba(110,210,255,0.95)';
+    const list = MENU_ARMY[side];
+    list.forEach(([role, era], i) => {
+      const f = menuFigure(side, fac, role, era, rim);
+      const hero = role==='hero', x0 = hum? W*0.04 + i*Math.min(64, W*0.052) : W*0.96 - i*Math.min(64, W*0.052);
+      const y = gy + 4 + Math.sin(x0*0.031)*5 + (hero? -2 : 0);
+      const br = 1 + 0.012*Math.sin(t*1.7 + i*1.3);                         // respiration
+      ctx.save(); ctx.translate(x0, y); ctx.scale((hum? 1 : -1)*k*(hero? 1.06 : 1), k*br*(hero? 1.06 : 1));
+      ctx.drawImage(f.cv, -f.fx, -f.fy, f.w, f.h); ctx.restore();
+    });
+    // drapeau rouge de la Commune / balise de GPT au-dessus de chaque armée
+    const fx = hum? W*0.04 + 2.5*Math.min(64, W*0.052) + 10 : W*0.96 - 2.5*Math.min(64, W*0.052) - 10, top = gy - 150;
+    ctx.strokeStyle='#120c0e'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(fx, gy); ctx.lineTo(fx, top); ctx.stroke();
+    if (hum){ const wv=Math.sin(t*2.6)*3, wv2=Math.sin(t*2.6+1.2)*3;
+      ctx.fillStyle='rgba(176,30,24,0.95)'; ctx.beginPath(); ctx.moveTo(fx, top);
+      ctx.quadraticCurveTo(fx+16, top-3+wv, fx+34, top+2+wv2); ctx.lineTo(fx+34, top+20+wv2);
+      ctx.quadraticCurveTo(fx+16, top+16+wv, fx, top+20); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,140,80,0.25)';
+      ctx.fillRect(fx+24, top+2+wv2*0.8, 4, 17); ctx.restore(); }
+    else { const pu = 0.5+0.5*Math.sin(t*3);
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      ctx.fillStyle='rgba(110,210,255,'+(0.35+0.4*pu).toFixed(3)+')'; ctx.beginPath(); ctx.arc(fx, top, 4+pu*2, 0, 6.283); ctx.fill();
+      ctx.strokeStyle='rgba(110,210,255,'+(0.25*pu).toFixed(3)+')'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(fx, top, 10+pu*8, 0, 6.283); ctx.stroke();
+      ctx.restore(); }
+  }
+}
 function drawBG(){
   const dev = game? game.dev:0, t = game? game.t:0, vw = VW();
   const top=devLerp(SKY_T), mid=devLerp(SKY_M), bot=devLerp(SKY_B);
@@ -693,11 +761,12 @@ function drawBG(){
   if (game.craters) for (const cr of game.craters){
     const cx=cr.x-camX; if (cx<-80||cx>vw+80) continue;
     const cy=gY(cr.x)+2, rr=cr.r;
-    const cg=ctx.createRadialGradient(cx,cy,1,cx,cy,rr);
-    cg.addColorStop(0,'rgba(18,12,10,0.55)'); cg.addColorStop(0.7,'rgba(30,22,18,0.32)'); cg.addColorStop(1,'rgba(30,22,18,0)');
-    ctx.fillStyle=cg; ctx.beginPath(); ctx.ellipse(cx,cy,rr,rr*0.34,0,0,6.28); ctx.fill();
-    ctx.strokeStyle='rgba(120,100,80,0.22)'; ctx.lineWidth=1.4;
-    ctx.beginPath(); ctx.ellipse(cx,cy,rr*0.9,rr*0.3,0,0,6.28); ctx.stroke();
+    ctx.drawImage(fxSprite('CRATER', 100, 34, g => {                          // texture cuite (étirée au rayon)
+      g.save(); g.translate(50,17); g.scale(1,0.34); const r=g.createRadialGradient(0,0,1,0,0,50);
+      r.addColorStop(0,'rgba(18,12,10,0.55)'); r.addColorStop(0.7,'rgba(30,22,18,0.32)'); r.addColorStop(1,'rgba(30,22,18,0)');
+      g.fillStyle=r; g.beginPath(); g.arc(0,0,50,0,6.283); g.fill(); g.restore();
+      g.strokeStyle='rgba(120,100,80,0.22)'; g.lineWidth=1.4; g.beginPath(); g.ellipse(50,17,45,15,0,0,6.283); g.stroke(); }),
+      cx-rr, cy-rr*0.34, rr*2, rr*0.68);
   }
   drawCracks(dev, vw);           // le sol se craquèle à mesure que le monde meurt
   for (const z of game.zones) drawZone(z, dev, t, vw);
@@ -1212,19 +1281,46 @@ function treeAlt(kind, x, y, s, sway, dev, bark, tr){
 function drawNode(n){
   const x=n.x-camX; if (x<-110||x>VW()+110) return;
   const dev=game.dev, t=game.t, y=gY(n.x), rw=(n.center?54:40)*(1-0.5*dev), rh=rw*0.34;
-  // bassin réfléchissant
+  const R0=(n.center?54:40);
+  // BERGE (v1.9) : vase humide, puis boue craquelée à mesure que l'eau recule (le monde meurt)
+  ctx.fillStyle=lerpCol([92,74,50],[120,100,76],dev); ctx.beginPath(); ctx.ellipse(x,y+6,R0+8,R0*0.34+3.5,0,0,6.283); ctx.fill();
+  ctx.fillStyle=lerpCol([70,56,40],[96,80,62],dev); ctx.beginPath(); ctx.ellipse(x,y+7,rw+4,rh+2,0,0,6.283); ctx.fill();
+  if (dev>0.4){ ctx.strokeStyle='rgba(50,38,28,'+(0.6*(dev-0.4)).toFixed(3)+')'; ctx.lineWidth=0.9; ctx.beginPath();
+    for (let i=0;i<7;i++){ const a=i*0.9+n.x, r1=rw+3, r2=R0+6;
+      ctx.moveTo(x+Math.cos(a)*r1, y+6+Math.sin(a)*r1*0.34); ctx.lineTo(x+Math.cos(a+0.15)*r2, y+6+Math.sin(a+0.15)*r2*0.34); } ctx.stroke(); }
+  // eau : profondeur (bords clairs, centre sombre), reflet du ciel, ronds qui s'élargissent
   ctx.save(); ctx.beginPath(); ctx.ellipse(x,y+6,rw,rh,0,0,6.283); ctx.clip();
   const wg=ctx.createLinearGradient(0,y-rh,0,y+rh*2);
   wg.addColorStop(0,lerpCol([150,215,250],[110,130,130],dev)); wg.addColorStop(1,lerpCol([30,90,120],[40,60,60],dev));
   ctx.fillStyle=wg; ctx.fillRect(x-rw,y-rh,rw*2,rh*3.5);
+  ctx.fillStyle='rgba(10,40,60,0.22)'; ctx.beginPath(); ctx.ellipse(x,y+8,rw*0.6,rh*0.55,0,0,6.283); ctx.fill();
   ctx.save(); ctx.globalCompositeOperation='lighter';
   // les reflets s'agitent quand une explosion proche secoue la scène (flash/secousse globaux)
   const react = clamp((game.flash||0)*1.1 + (game.shake||0)*0.035, 0, 0.5);
   for(let i=0;i<3;i++){ ctx.fillStyle='rgba(220,245,255,'+(0.2-i*0.05+react*0.5)+')'; ctx.fillRect(x-rw, y+2+i*5+Math.sin(t*2+i)*(1.5+react*9), rw*2, 1.6); }
-  ctx.restore(); ctx.restore();
+  ctx.fillStyle='rgba(235,248,255,0.16)'; ctx.beginPath(); ctx.ellipse(x-rw*0.25,y+2,rw*0.55,rh*0.28,0,0,6.283); ctx.fill();
+  for (let i=0;i<2;i++){ const ph=(t*0.35+i*0.5+n.x*0.01)%1, rx=rw*(0.15+ph*0.55);
+    ctx.strokeStyle='rgba(225,245,255,'+(0.35*(1-ph)).toFixed(3)+')'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(x+rw*0.3*(i?-1:1),y+7,rx,rx*0.3,0,0,6.283); ctx.stroke(); }
+  ctx.restore();
+  if (dev<0.45){ for (let i=0;i<3;i++){ const lx=x+Math.sin(n.x+i*2.1)*rw*0.6, ly=y+6+Math.cos(n.x*0.7+i*1.7)*rh*0.5;   // nénuphars
+    ctx.fillStyle='rgba(70,130,60,'+(0.9*(1-dev*2)).toFixed(3)+')'; ctx.beginPath(); ctx.ellipse(lx,ly,4.5,1.8,0,0.3,6.0); ctx.lineTo(lx,ly); ctx.fill();
+    if (i===0){ ctx.fillStyle='rgba(255,200,220,0.9)'; ctx.beginPath(); ctx.arc(lx+1,ly-1.2,1.3,0,6.283); ctx.fill(); } } }
+  ctx.restore();
+  // roseaux aux deux extrémités (cuits ; verts → secs avec le monde), qui ondulent au vent
+  const rq = Math.round(dev*4)/4, reeds = fxSprite('REEDS'+rq, 28, 34, g => {
+    const st = colS(lerpColArr([74,120,58],[150,126,80],rq)), hd = colS(lerpColArr([110,72,40],[90,70,52],rq));
+    g.strokeStyle = st; g.lineCap = 'round';
+    for (let i=0;i<7;i++){ const bx = 4+i*3.2, h = 18+((i*7)%5)*3, lean = (i-3)*1.2;
+      g.lineWidth = 1.4; g.beginPath(); g.moveTo(bx,33); g.quadraticCurveTo(bx+lean*0.5,33-h*0.6,bx+lean,33-h); g.stroke();
+      if (i%2===0){ g.fillStyle = hd; g.beginPath(); g.ellipse(bx+lean, 33-h+3, 1.5, 3.4, lean*0.05, 0, 6.283); g.fill(); } } });
+  for (const sd of [-1,1]){ const rx=x+sd*(R0+2), sw=Math.sin(t*1.3+sd+n.x)*0.08;
+    ctx.save(); ctx.translate(rx, y+8); ctx.transform(1,0,sw,1,0,0); ctx.scale(sd*0.9,0.9); ctx.drawImage(reeds,-14,-33,28,34); ctx.restore(); }
   // rim lumineux
-  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.shadowColor='#bfe6f2'; ctx.shadowBlur=6;
-  ctx.beginPath(); ctx.ellipse(x,y+6,rw,rh,0,Math.PI*0.05,Math.PI*0.95); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation='lighter';                       // (halo en double trait, sans flou)
+  ctx.beginPath(); ctx.ellipse(x,y+6,rw,rh,0,Math.PI*0.05,Math.PI*0.95);
+  ctx.strokeStyle='rgba(191,230,242,0.18)'; ctx.lineWidth=6; ctx.stroke();
+  ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
   // mât + drapeau
   const owner=n.owner, col=owner?(owner==='p'?game.p.fac.accent:game.e.fac.accent):'#9a8a78';
   ctx.strokeStyle='#5a4a3a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,y-2); ctx.lineTo(x,y-46); ctx.stroke();
@@ -1314,6 +1410,31 @@ function muzzleOf(u){
   if (u.role==='siege') return hum? MZ_HS : MZ_BS;
   return MZ_MEL;
 }
+// MARCHE ANIMÉE (v1.9) : chaque personnage est cuit en COUCHES — arrière (cape, paquetages,
+// drone, nacelle), JAMBES (trois poses : debout, foulée avant, foulée arrière) et avant (bras,
+// torse, tête, arme) — et les jambes changent de pose au rythme du pas. Avant, les unités
+// glissaient avec un simple balancement. Les jambes sont de petites toiles (48×40).
+let SPART = 'full', SPOSE = 0;
+const LEGS = { W:48, H:40, ox:-24, oy:-34 };          // position de la toile des jambes / pieds
+const unitHeavy = (kind, role) => role==='tank' || (kind==='bot' && role==='siege');
+const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || (kind==='hum' && era===4);
+function bakePart(kind, fac, role, era, trans, part, pose){
+  SPART = part; SPOSE = pose||0;
+  try { drawUnitSprite(kind, fac, role, era, trans); } finally { SPART = 'full'; SPOSE = 0; }
+}
+function unitPart(kind, fac, role, era, trans, part, pose){
+  if (part==='legs'){ const h = unitHeavy(kind, role);
+    return sprite('SL'+kind+(h?'h':'n')+era+'p'+pose, LEGS.W, LEGS.H, ()=>{ TC.translate(-(USP.cx+LEGS.ox), -(USP.foot+LEGS.oy));
+      bakePart(kind, fac, h? 'tank' : 'melee', era, false, 'legs', pose); }); }
+  return sprite((part==='back'?'SB':'S')+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
+}
+// dessine un personnage complet (couches) au repère courant : pieds en (0,0), tourné vers +x
+function drawUnitLayers(kind, fac, role, era, trans, pose, g){
+  g = g || ctx;
+  if (unitHasBack(kind, role, era)) g.drawImage(unitPart(kind,fac,role,era,trans,'back'), -USP.cx, -USP.foot, USP.W, USP.H);
+  g.drawImage(unitPart(kind,fac,role,era,trans,'legs',pose), LEGS.ox, LEGS.oy, LEGS.W, LEGS.H);
+  g.drawImage(unitPart(kind,fac,role,era,trans,'front'), -USP.cx, -USP.foot, USP.W, USP.H);
+}
 function drawUnitSprite(kind, fac, role, era, trans){
   if (kind==='bot') drawBotSprite(fac, role, era, trans, false); else drawHumSprite(fac, role, era, trans, false);
 }
@@ -1342,10 +1463,22 @@ function drawHumSprite(fac, role, era, trans, hero){
   const lw = tank? 8 : 7, aw = tank? 6.2 : 5.4;
   const P = hero? { b:[cx-3,F-42, cx-5,F-33, cx-2,F-26], f:[cx+2,F-42, cx+10,F-48, cx+12.5,F-60] } : armPose(role, era, cx, F);
   const RED = '#d8282a';
+  // COUCHES (v1.9) : 'back' (cape, paquetages), 'legs' (jambes, pose SPOSE), 'front' (le reste),
+  // ou 'full' (tout, ordre d'origine) — les jambes animées sont blittées entre les deux.
+  const doBack = SPART==='full' || SPART==='back';
+  const rot = (hx,hy,a,fn) => { if (!a) return fn(); TC.save(); TC.translate(hx,hy); TC.rotate(a); TC.translate(-hx,-hy); fn(); TC.restore(); };
+  const legB = () => { limbT([cx-1,F-24, cx-4,F-13, cx-6,F-4], lw-0.5, shade(pants,0.72));
+    TC.fillStyle=shade(boot,0.8); rrectT(cx-10,F-6,10,6,2); TC.fill(); };
+  const legF = () => { limbT([cx+2,F-24, cx+5,F-13, cx+5,F-4], lw, pants);
+    if (era>=3) plateT([cx+2,F-18, cx+8,F-16, cx+7.5,F-9, cx+2,F-10], shade(uni,era===4?1:1.1));
+    TC.fillStyle=lgrad(cx,F-6,cx,F,[[0,shade(boot,1.5)],[1,boot]]); rrectT(cx+1,F-6,11,6,2); TC.fill();
+    TC.fillStyle='rgba(0,0,0,0.35)'; TC.fillRect(cx+1,F-1.4,11,1.4); };
+  if (SPART==='legs'){ const a=SPOSE*0.34; rot(cx-1,F-24,a,legB); rot(cx+2,F-24,-a,legF); return; }
   // --- arrière-plan : cape (ère d'or), paquetage
-  if (era===4){ TC.fillStyle=lgrad(cx-14,F-46,cx-4,F-8,[[0,'#c8402c'],[1,'#661a16']]);
+  if (doBack && era===4){ TC.fillStyle=lgrad(cx-14,F-46,cx-4,F-8,[[0,'#c8402c'],[1,'#661a16']]);
     polyP([cx-6,F-46, cx-1,F-44, cx-7,F-9, cx-19,F-11, cx-14,F-30]); TC.fill(); }
-  if (role==='support'){
+  if (!doBack){}
+  else if (role==='support'){
     const bx=cx-sw-7;
     if (era>=1){ TC.strokeStyle='#2a2a2e'; TC.lineWidth=1.2; strokeP([bx+2,F-45, bx-1,F-60]); TC.stroke(); glowDot(bx-1,F-60,1.2,'#ff5a4a',4); }
     TC.fillStyle=lgrad(bx,F-46,bx+9,F-26,[[0,era===4?'#fff6dc':'#f2f4f0'],[1,era===4?'#c8a860':'#a8aca8']]); rrectT(bx,F-46,9,20,3); TC.fill();
@@ -1356,20 +1489,17 @@ function drawHumSprite(fac, role, era, trans, hero){
       polyP([bx+0.1+i*3.4,F-53, bx+2.9+i*3.4,F-53, bx+1.5+i*3.4,F-57]); TC.fill(); }
     TC.fillStyle=lgrad(bx,F-46,bx+8,F-28,[[0,'#6a5e4c'],[1,'#3a3228']]); rrectT(bx,F-46,8,18,2.5); TC.fill();
   }
-  if (hero){ TC.save(); TC.translate(cx+5,F-24); TC.rotate(-2.06);                                 // fusil dans le dos
+  if (hero && doBack){ TC.save(); TC.translate(cx+5,F-24); TC.rotate(-2.06);                       // fusil dans le dos
     TC.fillStyle=lgrad(0,-2,0,3,[[0,'#9a6034'],[1,'#5a3418']]); polyP([0,-2, 12,-1.4, 12,1.8, 0,2.6]); TC.fill();
     tubeT(11,-0.6,38,-0.6,1.1,'#4a4e54'); TC.restore(); }
+  if (SPART==='back') return;
   // --- jambe arrière (plus sombre : côté opposé à la lumière)
-  limbT([cx-1,F-24, cx-4,F-13, cx-6,F-4], lw-0.5, shade(pants,0.72));
-  TC.fillStyle=shade(boot,0.8); rrectT(cx-10,F-6,10,6,2); TC.fill();
+  if (SPART==='full') legB();
   // --- bras arrière
   limbT(P.b, aw-0.4, shade(uni,0.66));
   TC.fillStyle=shade(glove,0.8); TC.beginPath(); TC.arc(P.b[4],P.b[5],aw*0.45,0,6.283); TC.fill();
   // --- jambe avant + botte
-  limbT([cx+2,F-24, cx+5,F-13, cx+5,F-4], lw, pants);
-  if (era>=3) plateT([cx+2,F-18, cx+8,F-16, cx+7.5,F-9, cx+2,F-10], shade(uni,era===4?1:1.1));
-  TC.fillStyle=lgrad(cx,F-6,cx,F,[[0,shade(boot,1.5)],[1,boot]]); rrectT(cx+1,F-6,11,6,2); TC.fill();
-  TC.fillStyle='rgba(0,0,0,0.35)'; TC.fillRect(cx+1,F-1.4,11,1.4);
+  if (SPART==='full') legF();
   // --- torse
   plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw,F-41, cx+sw-2,F-23, cx-sw+2,F-23, cx-sw,F-41], uni);
   TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=1;
@@ -1561,15 +1691,26 @@ function drawBotSprite(fac, role, era, trans, hero){
   const lw = heavy? 6.4 : 5, hy0 = tank? 4 : 0;
   const P = armPose(hero?'hero':role, era, cx, F);
   if (!hero){ P.f[0]+=1; P.f[1]-=2; P.b[1]-=2; }                       // épaules de châssis plus hautes
+  const doBack = SPART==='full' || SPART==='back';
+  const rot = (hx,hy,a,fn) => { if (!a) return fn(); TC.save(); TC.translate(hx,hy); TC.rotate(a); TC.translate(-hx,-hy); fn(); TC.restore(); };
+  const lb = shade(frame,0.8);
+  const legB = () => { limbT([cx-2,F-25, cx+1,F-15], lw+0.6, lb); limbT([cx+1,F-15, cx-4,F-5], lw-0.4, lb);
+    plateT([cx-8,F, cx+2,F, cx,F-4, cx-5,F-5], shade(plate,0.65)); };
+  const legF = () => { limbT([cx+2,F-25, cx+7,F-15], lw+0.6, frame); limbT([cx+7,F-15, cx+2,F-5], lw-0.4, frame);
+    TC.strokeStyle='#8a929c'; TC.lineWidth=1.1; strokeP([cx+3,F-21, cx+4,F-9]); TC.stroke();
+    plateT([cx+1,F-28, cx+8.5,F-25, cx+8.5,F-18, cx+3,F-16.5], plate);
+    TC.fillStyle=joint; TC.beginPath(); TC.arc(cx+7,F-15,2.4,0,6.283); TC.fill();
+    plateT([cx-2,F, cx+11,F, cx+8.5,F-4, cx+1,F-5], shade(plate,0.9)); };
+  if (SPART==='legs'){ const a=SPOSE*0.3; rot(cx-2,F-25,a,legB); rot(cx+2,F-25,-a,legF); return; }
   // --- drone de réparation (soutien), derrière
-  if (role==='support'){
+  if (doBack && role==='support'){
     TC.fillStyle=lgrad(cx-16,F-66,cx-4,F-60,[[0,shade(plate,1.4)],[1,shade(plate,0.6)]]);
     TC.beginPath(); TC.ellipse(cx-10,F-63,6,2.4,0,0,6.283); TC.fill();
     TC.fillStyle=frame; TC.fillRect(cx-17,F-66,14,1.2);
     glowDot(cx-10,F-60.6,1.4,lite,5);
   }
   // --- nacelle lance-missiles (siège), sur l'épaule arrière
-  if (role==='siege'){
+  if (doBack && role==='siege'){
     plateT([cx-14,F-55, cx+2,F-60, cx+4,F-49, cx-12,F-45], plate);
     TC.fillStyle=frame; polyP([cx+2,F-60, cx+5,F-61, cx+7,F-50, cx+4,F-49]); TC.fill();
     const n = 2 + Math.min(era,2);
@@ -1578,19 +1719,14 @@ function drawBotSprite(fac, role, era, trans, hero){
       TC.fillStyle=era>=2? lite : '#e04a3a'; TC.beginPath(); TC.arc(x+0.3,y,1.2,0,6.283); TC.fill(); }
     TC.fillStyle=joint; TC.fillRect(cx-6,F-47,4,4);
   }
+  if (SPART==='back') return;
   // --- jambe arrière (digitigrade)
-  const lb = shade(frame,0.8);
-  limbT([cx-2,F-25, cx+1,F-15], lw+0.6, lb); limbT([cx+1,F-15, cx-4,F-5], lw-0.4, lb);
-  plateT([cx-8,F, cx+2,F, cx,F-4, cx-5,F-5], shade(plate,0.65));
+  if (SPART==='full') legB();
   // --- bras arrière
   limbT(P.b, 4.4, shade(frame,0.85));
   TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill();
   // --- jambe avant : cuisse blindée, genou articulé, vérin
-  limbT([cx+2,F-25, cx+7,F-15], lw+0.6, frame); limbT([cx+7,F-15, cx+2,F-5], lw-0.4, frame);
-  TC.strokeStyle='#8a929c'; TC.lineWidth=1.1; strokeP([cx+3,F-21, cx+4,F-9]); TC.stroke();
-  plateT([cx+1,F-28, cx+8.5,F-25, cx+8.5,F-18, cx+3,F-16.5], plate);
-  TC.fillStyle=joint; TC.beginPath(); TC.arc(cx+7,F-15,2.4,0,6.283); TC.fill();
-  plateT([cx-2,F, cx+11,F, cx+8.5,F-4, cx+1,F-5], shade(plate,0.9));
+  if (SPART==='full') legF();
   // --- bassin + colonne
   plateT([cx-6,F-30, cx+6,F-30, cx+5,F-23, cx-5,F-23], frame);
   TC.fillStyle=joint; TC.fillRect(cx-3,F-33,6,4);
@@ -1758,8 +1894,7 @@ function drawGremlin(u, x, gy){
 }
 function blitHumanoid(u, x, gy, kind){
   if (u.role==='gremlin'){ drawGremlin(u,x,gy); return; }
-  const fac = kind==='hum'? 'HUM':'IA', key='S'+kind+u.role+u.era+(u.trans?'T':'');
-  const spr = sprite(key, USP.W, USP.H, ()=>drawUnitSprite(kind,fac,u.role,u.era,u.trans));
+  const fac = kind==='hum'? 'HUM':'IA';
   const t=u.bob, dir=u.side;
   // DÉMARCHE : balancement + foulée quand l'unité avance (détectée via le delta de position monde)
   const mv = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
@@ -1767,7 +1902,9 @@ function blitHumanoid(u, x, gy, kind){
   const gAmp = (u.role==='tank'||u.role==='siege')? 0.5 : 1;        // les lourds se dandinent moins
   const ph = t*1.5;
   const stepBob = moving ? -Math.abs(Math.sin(ph))*2.6*gAmp : 0;    // le corps s'élève à chaque pas
-  const stepSkew = moving ? Math.sin(ph)*0.06*gAmp : 0;            // foulée (cisaillement horizontal)
+  const stepSkew = moving ? Math.sin(ph)*0.025*gAmp : 0;           // léger cisaillement (les jambes font la foulée)
+  // pose des jambes : foulée avant → jambes réunies (corps au plus haut) → foulée arrière → …
+  const sp = Math.sin(ph), pose = (!moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);
   let sy = 1 + 0.03*Math.sin(t*2.6);                               // léger tassement, PIEDS ANCRÉS au sol
   if (u.flash>0) sy *= 0.86;                                       // ÉCRASEMENT bref à l'impact (feedback)
   const atk = u.atkT > u.rate-0.16;
@@ -1784,8 +1921,8 @@ function blitHumanoid(u, x, gy, kind){
   ctx.save(); ctx.translate(x+lunge, gy+stepBob); ctx.rotate(tilt);
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
-  ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr, -USP.cx, -USP.foot, USP.W, USP.H); }
+  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose);
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose); }
   ctx.restore();
   if (atk){ const m=muzzleOf(u); attackFX(u, x+lunge, gy+m[1], imp, m[0]); }
 }
@@ -1888,7 +2025,10 @@ function prewarmSprites(){
     const roles = ['melee','tank','ranged','siege','support'];
     for (let era=0; era<5; era++) for (const trans of [false,true]){
       for (const kind of ['hum','bot']){ const fac = kind==='hum'? 'HUM':'IA';
-        for (const role of roles) WARMQ.push({ era, trans, fn:()=>sprite('S'+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>drawUnitSprite(kind,fac,role,era,trans)) }); }
+        for (const role of roles) WARMQ.push({ era, trans, fn:()=>{ unitPart(kind,fac,role,era,trans,'front');
+          if (unitHasBack(kind,role,era)) unitPart(kind,fac,role,era,trans,'back'); } });
+        if (!trans) for (const role of ['melee','tank']) for (const pose of [0,1,-1])
+          WARMQ.push({ era, trans, fn:()=>unitPart(kind,fac,role,era,false,'legs',pose) }); }
       for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('AIR'+fac+era+(trans?'T':''), 64, 44, ()=>airSprite(fac,era,trans)) });
       if (!trans) WARMQ.push({ era, trans, fn:()=>sprite('GREM'+era, 28, 24, ()=>gremlinSprite(era)) });
       if (era===1 && !trans) for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)) });
@@ -1920,8 +2060,9 @@ function drawHero(u, x, gy){
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-HERO_SW/2,-92, HERO_SW, 100); }
   ctx.restore();
   if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
-  ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=6;
-  ctx.fillText(HERO_NAME[u.fac], x, gy-103); ctx.shadowBlur=0;
+  ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.lineJoin='round';
+  ctx.strokeStyle='rgba(12,8,16,0.75)'; ctx.lineWidth=3; ctx.strokeText(HERO_NAME[u.fac], x, gy-103);
+  ctx.fillStyle=col; ctx.fillText(HERO_NAME[u.fac], x, gy-103);
 }
 function drawUnit(u){
   const x = u.x-camX;
@@ -2035,6 +2176,26 @@ function dmgSmoke(x, topY, frac, t, seed){
       ctx.globalAlpha=0.6+0.35*fl; ctx.drawImage(PF.fire, x-3+i*6-r, topY+3-r*1.2, r*2, r*2.4); }
     ctx.restore(); ctx.globalAlpha=1;
   }
+}
+// EFFETS CUITS SANS CONTOUR (v1.9) : halos, marqueurs, lumières, cratères. Le flou (shadowBlur)
+// et les dégradés radiaux recréés à chaque image étaient les premiers postes de rendu restants
+// (profil : 15 ms/image pour les seuls emplacements vides en Élevé) ; cuits une fois, ils ne
+// coûtent plus qu'un drawImage.
+const FXC = new Map();
+function fxSprite(key, w, h, draw){
+  const SS = spriteSS(), k = key+'@'+SS;
+  let c = FXC.get(k);
+  if (!c){ c = document.createElement('canvas'); c.width = Math.ceil(w*SS); c.height = Math.ceil(h*SS);
+    const g = c.getContext('2d'); g.scale(SS,SS); const prev = TC; TC = g; try { draw(g); } finally { TC = prev; }
+    if (FXC.size > 220) FXC.clear();                         // garde-fou (couleurs de lumière très variées)
+    FXC.set(k, c); }
+  return c;
+}
+// lumière dynamique : même dégradé qu'avant (0,34 → 0,12 → 0), une texture par couleur
+function lightSprite(col){
+  return fxSprite('LT'+col, 64, 64, g => { const r=g.createRadialGradient(32,32,0.5,32,32,32);
+    r.addColorStop(0,rgbaC(col,0.34)); r.addColorStop(0.5,rgbaC(col,0.12)); r.addColorStop(1,rgbaC(col,0));
+    g.fillStyle=r; g.fillRect(0,0,64,64); });
 }
 // BOUFFÉES CUITES (feu, fumée, poussière) : dégradés radiaux irréguliers rendus UNE fois puis
 // blittés — les explosions deviennent des boules de feu et des panaches au lieu de confettis.
@@ -2468,17 +2629,22 @@ function drawSlot(slot, side, neutral){
   if (!slot.b){
     const canB = neutral? true : side===game.p, pulse = 0.5+0.5*Math.sin(t*2.6);
     const ac = neutral? '#e8d8a0' : '#ffd34a';
-    // halo de sol doux + anneau lumineux NET, parfaitement centrés sur le spot (plus de socle/poteau noir)
+    // halo de sol doux + anneau lumineux NET (cuits une fois — plus aucun flou par image)
     ctx.save(); ctx.globalCompositeOperation='lighter';
-    const g=ctx.createRadialGradient(x,gy,2,x,gy,30); g.addColorStop(0,rgbaC(ac,0.16+0.12*pulse)); g.addColorStop(1,rgbaC(ac,0));
-    ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,gy,30,11,0,0,6.283); ctx.fill();
-    if (canB){ ctx.strokeStyle=rgbaC(ac,0.55+0.4*pulse); ctx.lineWidth=2; ctx.shadowColor=ac; ctx.shadowBlur=8;
-      ctx.beginPath(); ctx.ellipse(x,gy,24,9,0,0,6.283); ctx.stroke(); }
+    ctx.globalAlpha=0.55+0.45*pulse;
+    ctx.drawImage(fxSprite('SLH'+ac, 72, 28, g => { g.save(); g.translate(36,14); g.scale(1,11/30);
+      const r=g.createRadialGradient(0,0,2,0,0,30); r.addColorStop(0,rgbaC(ac,0.28)); r.addColorStop(1,rgbaC(ac,0));
+      g.fillStyle=r; g.beginPath(); g.arc(0,0,30,0,6.283); g.fill(); g.restore(); }), x-36, gy-14, 72, 28);
+    if (canB){ ctx.globalAlpha=0.6+0.4*pulse;
+      ctx.drawImage(fxSprite('SLR'+ac, 64, 32, g => { g.strokeStyle=rgbaC(ac,0.95); g.lineWidth=2; g.shadowColor=ac; g.shadowBlur=8;
+        g.beginPath(); g.ellipse(32,16,24,9,0,0,6.283); g.stroke(); }), x-32, gy-16, 64, 32); }
     ctx.restore();
     if (canB){
       const fy=gy-26+Math.sin(t*2.6)*2;     // « + » flottant (aucun support)
-      bloomT(ac,8,()=>{ ctx.strokeStyle=ac; ctx.lineWidth=3; ctx.lineCap='round';
-        ctx.beginPath(); ctx.moveTo(x-6,fy); ctx.lineTo(x+6,fy); ctx.moveTo(x,fy-6); ctx.lineTo(x,fy+6); ctx.stroke(); });
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      ctx.drawImage(fxSprite('SLP'+ac, 28, 28, g => { g.strokeStyle=ac; g.lineWidth=3; g.lineCap='round'; g.shadowColor=ac; g.shadowBlur=8;
+        g.beginPath(); g.moveTo(8,14); g.lineTo(20,14); g.moveTo(14,8); g.lineTo(14,20); g.stroke(); }), x-14, fy-14, 28, 28);
+      ctx.restore();
       // ÉTIQUETTE anti-chevauchement : des socles côte à côte (éco de base, tuto) partageaient
       // le même texte illisible — on n'écrit le libellé que si aucun voisin ne l'a déjà posé.
       if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){

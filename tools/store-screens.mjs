@@ -14,7 +14,9 @@ const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const GAME = new URL('../la-derniere-bataille.html', import.meta.url).href;
 const OUT  = ROOT + 'resources/screenshots/';
 const PC   = ROOT + 'resources/pc-presentation.png';
-const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' });
+// CHROME=chemin explicite ; sinon le Chromium de Playwright ; sinon le Chrome installé
+const browser = process.env.CHROME ? await chromium.launch({ executablePath: process.env.CHROME })
+  : await chromium.launch().catch(() => chromium.launch({ channel: 'chrome' }));
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 const errs=[]; page.on('pageerror', e => errs.push(e.message));
 // boucle du jeu GELÉE : chaque capture est exactement la frame rendue à la main (sinon la boucle

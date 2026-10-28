@@ -147,9 +147,12 @@ const NET_CONFIG = {
   cfTurnToken:  "",   // (vide) — le token reste dans les secrets du Worker, jamais exposé
 };
 let peerObj = null;
-function loadScriptOnce(src, ms){
+// empreinte de peerjs 1.5.4 : un replis CDN altéré est REFUSÉ par le navigateur (SRI)
+const PEERJS_SRI = 'sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR';
+function loadScriptOnce(src, ms, integrity){
   return new Promise((res, rej)=>{
     const s = document.createElement('script'); s.src = src; s.async = true;
+    if (integrity){ s.integrity = integrity; s.crossOrigin = 'anonymous'; }
     const to = setTimeout(()=>{ s.onload=s.onerror=null; rej(new Error('timeout')); }, ms);
     s.onload  = ()=>{ clearTimeout(to); res(); };
     s.onerror = ()=>{ clearTimeout(to); s.remove(); rej(new Error('load error')); };
@@ -164,7 +167,7 @@ async function loadPeerLib(){
     'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
   ];
   for (const src of sources){
-    try { await loadScriptOnce(src, 9000); if (window.Peer) return window.Peer; } catch(e){}
+    try { await loadScriptOnce(src, 9000, /^https:/.test(src)? PEERJS_SRI : null); if (window.Peer) return window.Peer; } catch(e){}
   }
   return null;
 }
@@ -339,6 +342,13 @@ function lobbyRemove(code){
   if (!NET_CONFIG.firebaseDb || !code) return;
   fetch(fbUrl('/lobbies/'+code), { method:'DELETE' }).catch(()=>{});
 }
+function lobbyClean(l){
+  if (!l || typeof l!=='object') return null;
+  const code = String(l.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
+  if (!code) return null;
+  return { code, name: typeof l.name==='string'? l.name.slice(0,40) : '', fac: l.fac==='IA'? 'IA' : 'HUM',
+           speed: [1,2,3].includes(+l.speed)? +l.speed : 1, hasPw: l.hasPw===true, ts: Number.isFinite(+l.ts)? +l.ts : 0 };
+}
 async function lobbyList(){
   if (!NET_CONFIG.firebaseDb) return [];
   try {
@@ -357,7 +367,10 @@ async function lobbyList(){
       if (!l || !l.code || now - (l.ts||0) > 300000){ purged++;
         fetch(fbUrl('/lobbies/'+encodeURIComponent(k)), { method:'DELETE' }).catch(()=>{}); }
     }
-    return Object.values(j).filter(l => l && l.code && (now - (l.ts||0) < 60000))   // ignore les périmés (>60 s)
-                           .sort((a,b)=> (b.ts||0)-(a.ts||0));
+    // SÉCURITÉ : la base est publique en écriture — chaque champ est revalidé ici (type,
+    // longueur, liste blanche) ; plus rien de brut n'atteint l'affichage (faille XSS stockée
+    // possible auparavant via le champ « speed », inséré tel quel dans le HTML de la liste).
+    return Object.values(j).map(lobbyClean).filter(l => l && (now - l.ts < 60000))   // ignore les périmés (>60 s)
+                           .sort((a,b)=> b.ts-a.ts);
   } catch(e){ return []; }
 }

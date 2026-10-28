@@ -63,11 +63,10 @@ function render(dt){
     else if (d.role==='hero'){ ctx.translate(x-d.side*fall*8, gy); ctx.rotate(-d.side*fall*1.4); ctx.scale(d.side,1);
       ctx.drawImage(sprite('HERO'+d.fac,HERO_SW,100,()=>heroSprite(d.fac)),-HERO_SW/2,-92,HERO_SW,100); }
     else { const kind=d.fac==='HUM'?'hum':'bot';
-      const spr=sprite('S'+kind+d.role+d.era+(d.trans?'T':''),USP.W,USP.H,()=>drawUnitSprite(kind,d.fac,d.role,d.era,d.trans));
       ctx.translate(x-d.side*fall*6, gy);
       if (d.role==='tank'){ ctx.rotate(-d.side*fall*0.35); ctx.scale(d.side, 1-0.5*fall); }   // les lourds s'affaissent
       else { ctx.rotate(-d.side*fall*1.45); ctx.scale(d.side,1); }
-      ctx.drawImage(spr,-USP.cx,-USP.foot,USP.W,USP.H); }
+      drawUnitLayers(kind, d.fac, d.role, d.era, d.trans, 0); }
     ctx.restore(); ctx.globalAlpha=1;
   }
   // PARTICULES (v1.8) : passe normale (fumée, poussière, débris, onde de choc, points), puis
@@ -107,9 +106,8 @@ function render(dt){
     for (let i=LIGHTS.length-1;i>=0;i--){ const L=LIGHTS[i]; L.t+=dt; if(L.t>=L.life){ LIGHTS.splice(i,1); continue; }
       if (!drawLights || i<firstDrawn) continue;
       const a=1-L.t/L.life, lx=L.x-camX;
-      const g=ctx.createRadialGradient(lx,L.y,1,lx,L.y,L.r);
-      g.addColorStop(0,rgbaC(L.col,0.34*a)); g.addColorStop(0.5,rgbaC(L.col,0.12*a)); g.addColorStop(1,rgbaC(L.col,0));
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(lx,L.y,L.r,0,6.283); ctx.fill(); }
+      ctx.globalAlpha=a; ctx.drawImage(lightSprite(L.col), lx-L.r, L.y-L.r, L.r*2, L.r*2); }   // texture cuite par couleur
+    ctx.globalAlpha=1;
     if (drawLights) ctx.restore(); }
   ctx.textAlign='center';
   for (const f of floaters){

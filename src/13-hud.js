@@ -76,14 +76,23 @@ function drawUnitTooltip(i){
   ];
   ctx.font='11px Arial'; let tw=ctx.measureText(name).width;
   for (const l of lines) tw=Math.max(tw, ctx.measureText(l).width);
-  const w=tw+20, h=22+lines.length*15, x=clamp(btn.x+btn.w/2-w/2, 4, W-w-4), y=btn.y-h-8;
+  // PORTRAIT (v1.9) : le personnage exact qui sera déployé (ère, faction, transcendance)
+  const PW=62, w=tw+20+PW, h=Math.max(76, 22+lines.length*15), x=clamp(btn.x+btn.w/2-w/2, 4, W-w-4), y=btn.y-h-8;
   ctx.fillStyle='rgba(14,11,10,0.96)'; rr(x,y,w,h,6); ctx.fill();
   ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1; rr(x,y,w,h,6); ctx.stroke();
+  ctx.save(); rr(x+4,y+4,PW-6,h-8,5); ctx.clip();
+  const pg=ctx.createLinearGradient(0,y,0,y+h); pg.addColorStop(0,rgbaC(p.fac.accent,0.16)); pg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=pg; ctx.fillRect(x+4,y+4,PW-6,h-8);
+  if (r.key==='air'){ ctx.translate(x+PW/2+1, y+h/2); ctx.scale(0.85,0.85);
+    ctx.drawImage(sprite('AIR'+p.facKey+p.era+(p.trans?'T':''), 64, 44, ()=>airSprite(p.facKey,p.era,p.trans)), -32, -22, 64, 44); }
+  else { ctx.translate(x+PW/2, y+h-6); const k=Math.min(0.92,(h-12)/70); ctx.scale(k,k);
+    drawUnitLayers(p.facKey==='HUM'?'hum':'bot', p.facKey, r.key, p.era, p.trans, 0); }
+  ctx.restore();
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.fillStyle=p.fac.accent; ctx.font='700 12px Arial';
-  ctx.fillText((ROLE_ICON[r.key]||'')+' '+name, x+10, y+16);
+  ctx.fillText((ROLE_ICON[r.key]||'')+' '+name, x+PW+8, y+16);
   ctx.fillStyle='#cdc4b6'; ctx.font='11px Arial';
-  let yy=y+33; for (const l of lines){ ctx.fillText(l, x+10, yy); yy+=15; }
+  let yy=y+33; for (const l of lines){ ctx.fillText(l, x+PW+8, yy); yy+=15; }
   ctx.textAlign='center';
 }
 function drawHUD(){

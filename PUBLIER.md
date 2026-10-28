@@ -85,6 +85,16 @@ L'audit a trouvé que votre relais TURN Cloudflare **refuse l'application Androi
 
 Rien d'autre à changer : les secrets `TURN_KEY_ID` / `TURN_TOKEN` du Worker restent en place.
 
+**Sécuriser la liste des salons publics (2 min, une seule fois).** Depuis la v1.9 le jeu
+revalide tout ce qu'il lit dans la base Firebase ; pour empêcher en plus qu'on y écrive
+n'importe quoi : [console.firebase.google.com](https://console.firebase.google.com) → projet
+**agi-lobbies** → **Realtime Database** → onglet **Règles** → collez les règles du
+`README.md` (section *Firebase Realtime Database*) → **Publier**.
+
+> Google Play exige depuis le 31 août 2026 que toute nouvelle appli **cible Android 16
+> (API 36)** : c'est le cas depuis la v1.9 (rien à faire de votre côté, la compilation de
+> l'étape 2 s'en charge).
+
 ---
 
 ## 4. Mettre à jour la fiche du store (nouveaux visuels)
