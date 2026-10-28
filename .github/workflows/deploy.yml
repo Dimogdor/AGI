@@ -1,8 +1,8 @@
 name: Déployer le jeu sur GitHub Pages
 
-# Construit le bundle obfusqué (www/) et le publie sur GitHub Pages.
-# Déclencheurs : push sur main (build + déploiement), PR vers main (build de
-# vérification, sans déploiement), et bouton manuel.
+# Construit le bundle obfusqué (www/), joue la suite de non-régression, puis publie sur
+# GitHub Pages. Déclencheurs : push sur main (build + tests + déploiement), PR vers main
+# (build + tests de vérification, sans déploiement), et bouton manuel.
 on:
   push:
     branches:
@@ -40,8 +40,22 @@ jobs:
         with:
           path: www
 
+  # SUITE DE NON-RÉGRESSION (tools/regression.mjs) dans un vrai Chromium : 9 langues, tutoriel,
+  # parties complètes, cataclysmes, rendu à chaque état du monde… Un échec bloque le déploiement.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund --omit=optional
+      - run: npx playwright-core install --with-deps chromium
+      - run: npm run dev
+      - run: npm test
+
   deploy:
-    needs: build
+    needs: [build, test]
     # GitHub Pages n'autorise le déploiement que depuis main : sur une branche de
     # travail on se contente du build (vérification), sans tenter — et échouer — le déploiement.
     if: github.ref == 'refs/heads/main'

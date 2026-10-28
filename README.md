@@ -32,7 +32,8 @@ la-derniere-bataille.html   ← LE JEU (source unique, lisible — éditez ici)
 build.mjs              ← build : minifie + obfusque → www/
 capacitor.config.json  ← config mobile (iOS/Android + OTA)
 electron/              ← app desktop (PC)
-tools/                 ← gen-assets (icônes/visuels), gen-screens (intro), store-screens (captures de store)
+tools/                 ← regression (suite de tests : npm test), gen-assets (icônes/visuels),
+                          gen-screens (intro), store-screens (captures de store)
 resources/             ← icônes, feature graphic, splash, captures d'écran
 www/                   ← bundle généré (git-ignoré, ne pas éditer)
 PUBLIER.md             ← ★ publier sur Google Play, pas à pas (sans rien installer)
@@ -99,10 +100,24 @@ const NET_CONFIG = {
 **Firebase Realtime Database (liste des salons publics)**
 1. Crée un projet sur console.firebase.google.com → *Realtime Database* → copie
    l'URL (`firebaseDb`).
-2. Règles (lecture/écriture publiques, suffisant pour une liste de salons
-   éphémères ; les entrées expirent côté client après 60 s) :
+2. Règles : lecture publique, écriture publique mais **validée champ par champ**
+   (le jeu revalide aussi tout côté client depuis la v1.9 ; ces règles empêchent en
+   plus de remplir la base de données arbitraires). Les entrées expirent côté client
+   après 60 s et sont purgées au bout de 5 min :
    ```json
-   { "rules": { "lobbies": { ".read": true, ".write": true } } }
+   { "rules": { "lobbies": {
+       ".read": true,
+       "$code": {
+         ".write": true,
+         ".validate": "$code.matches(/^[A-Z0-9]{1,12}$/) && newData.hasChildren(['code','ts']) && newData.child('code').val() === $code",
+         "code":  { ".validate": "newData.isString()" },
+         "name":  { ".validate": "newData.isString() && newData.val().length <= 40" },
+         "fac":   { ".validate": "newData.val() === 'HUM' || newData.val() === 'IA'" },
+         "speed": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 3" },
+         "hasPw": { ".validate": "newData.isBoolean()" },
+         "ts":    { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+         "$autre": { ".validate": false }
+   } } } }
    ```
    Sans `firebaseDb`, le navigateur de salons affiche « indisponible » et seul le
    jeu par **code (+ mot de passe)** reste actif.

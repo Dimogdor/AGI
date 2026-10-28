@@ -6,6 +6,7 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "node build.mjs dev",
+    "test": "node tools/regression.mjs",
     "build": "node build.mjs",
     "serve": "node build.mjs && npx --yes serve www",
     "sync": "node build.mjs && cap sync",
@@ -39,17 +40,18 @@
   },
   "devDependencies": {
     "javascript-obfuscator": "^4.1.1",
-    "terser": "^5.31.0",
-    "sharp": "^0.33.0"
+    "playwright-core": "^1.63.0",
+    "sharp": "^0.33.0",
+    "terser": "^5.31.0"
   },
   "optionalDependencies": {
+    "@capacitor/android": "^6.1.2",
     "@capacitor/cli": "^6.1.2",
     "@capacitor/core": "^6.1.2",
-    "@capacitor/android": "^6.1.2",
     "@capacitor/ios": "^6.1.2",
     "@capgo/capacitor-updater": "^6.3.0",
+    "canvas": "^2.11.2",
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3",
-    "canvas": "^2.11.2"
+    "electron-builder": "^24.13.3"
   }
 }

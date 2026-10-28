@@ -151,7 +151,7 @@ function drawCata(){
   ctx.save();
   if (k==='acid'){
     ctx.fillStyle='rgba(120,200,40,0.12)'; ctx.fillRect(0,0,W,H);
-    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(170,240,90,'+(0.6*fade)+')'; ctx.lineWidth=1.6; ctx.shadowColor='#a6f050'; ctx.shadowBlur=4;
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(170,240,90,'+(0.6*fade)+')'; ctx.lineWidth=1.6;
     for (let i=0;i<70;i++){ const x=(i*137+tt*260)%W, y=(i*89+tt*640)%H; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-4,y+15); ctx.stroke(); }
     // éclaboussures qui grésillent au sol (repère monde → écran)
     ctx.shadowBlur=0; ctx.lineWidth=1.2;
@@ -180,7 +180,7 @@ function drawCata(){
     for(let i=0;i<3;i++){ ctx.fillStyle='rgba(190,228,255,'+(0.10-i*0.025)+')'; const yy=ly+8+i*11;
       for(let x=0;x<=W;x+=24) ctx.fillRect(x+Math.sin(x*0.04+tt*3+i)*6, yy, 12, 2); }
     // écume lumineuse en surface
-    ctx.strokeStyle='rgba(205,236,255,'+(0.6*fade)+')'; ctx.lineWidth=2.5; ctx.shadowColor='#bfe6ff'; ctx.shadowBlur=8;
+    ctx.strokeStyle='rgba(205,236,255,'+(0.6*fade)+')'; ctx.lineWidth=2.5;
     ctx.beginPath(); for(let x=0;x<=W;x+=10){ const yy=ly+Math.sin(x*0.05+tt*4)*3; x?ctx.lineTo(x,yy):ctx.moveTo(x,yy);} ctx.stroke();
     ctx.restore();
   } else if (k==='sand'){

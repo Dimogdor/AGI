@@ -19,6 +19,13 @@ function voice(facKey){
     tone(880,t0,.08,'square',.05,-120); tone(660,t0+.09,.08,'square',.05,-90); tone(523,t0+.19,.18,'triangle',.05);
   }
 }
+// APPLI EN ARRIÈRE-PLAN : la musique, programmée 0,35 s à l'avance par une minuterie que le
+// navigateur ralentit (voire gèle) hors écran, continuait de jouer par à-coups une fois
+// l'appli/l'onglet quitté — et de vider la batterie. Le contexte audio est mis en veille.
+document.addEventListener('visibilitychange', ()=>{
+  if (!AC) return;
+  try { if (document.hidden) AC.suspend(); else AC.resume(); } catch(e){}
+});
 function audioInit(){
   if (AC) { if (AC.state==='suspended') AC.resume(); return; }
   AC = new (window.AudioContext||window.webkitAudioContext)();

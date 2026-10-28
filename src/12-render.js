@@ -693,11 +693,12 @@ function drawBG(){
   if (game.craters) for (const cr of game.craters){
     const cx=cr.x-camX; if (cx<-80||cx>vw+80) continue;
     const cy=gY(cr.x)+2, rr=cr.r;
-    const cg=ctx.createRadialGradient(cx,cy,1,cx,cy,rr);
-    cg.addColorStop(0,'rgba(18,12,10,0.55)'); cg.addColorStop(0.7,'rgba(30,22,18,0.32)'); cg.addColorStop(1,'rgba(30,22,18,0)');
-    ctx.fillStyle=cg; ctx.beginPath(); ctx.ellipse(cx,cy,rr,rr*0.34,0,0,6.28); ctx.fill();
-    ctx.strokeStyle='rgba(120,100,80,0.22)'; ctx.lineWidth=1.4;
-    ctx.beginPath(); ctx.ellipse(cx,cy,rr*0.9,rr*0.3,0,0,6.28); ctx.stroke();
+    ctx.drawImage(fxSprite('CRATER', 100, 34, g => {                          // texture cuite (étirée au rayon)
+      g.save(); g.translate(50,17); g.scale(1,0.34); const r=g.createRadialGradient(0,0,1,0,0,50);
+      r.addColorStop(0,'rgba(18,12,10,0.55)'); r.addColorStop(0.7,'rgba(30,22,18,0.32)'); r.addColorStop(1,'rgba(30,22,18,0)');
+      g.fillStyle=r; g.beginPath(); g.arc(0,0,50,0,6.283); g.fill(); g.restore();
+      g.strokeStyle='rgba(120,100,80,0.22)'; g.lineWidth=1.4; g.beginPath(); g.ellipse(50,17,45,15,0,0,6.283); g.stroke(); }),
+      cx-rr, cy-rr*0.34, rr*2, rr*0.68);
   }
   drawCracks(dev, vw);           // le sol se craquèle à mesure que le monde meurt
   for (const z of game.zones) drawZone(z, dev, t, vw);
@@ -1223,8 +1224,10 @@ function drawNode(n){
   for(let i=0;i<3;i++){ ctx.fillStyle='rgba(220,245,255,'+(0.2-i*0.05+react*0.5)+')'; ctx.fillRect(x-rw, y+2+i*5+Math.sin(t*2+i)*(1.5+react*9), rw*2, 1.6); }
   ctx.restore(); ctx.restore();
   // rim lumineux
-  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.shadowColor='#bfe6f2'; ctx.shadowBlur=6;
-  ctx.beginPath(); ctx.ellipse(x,y+6,rw,rh,0,Math.PI*0.05,Math.PI*0.95); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation='lighter';                       // (halo en double trait, sans flou)
+  ctx.beginPath(); ctx.ellipse(x,y+6,rw,rh,0,Math.PI*0.05,Math.PI*0.95);
+  ctx.strokeStyle='rgba(191,230,242,0.18)'; ctx.lineWidth=6; ctx.stroke();
+  ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
   // mât + drapeau
   const owner=n.owner, col=owner?(owner==='p'?game.p.fac.accent:game.e.fac.accent):'#9a8a78';
   ctx.strokeStyle='#5a4a3a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,y-2); ctx.lineTo(x,y-46); ctx.stroke();
@@ -1920,8 +1923,9 @@ function drawHero(u, x, gy){
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-HERO_SW/2,-92, HERO_SW, 100); }
   ctx.restore();
   if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
-  ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=6;
-  ctx.fillText(HERO_NAME[u.fac], x, gy-103); ctx.shadowBlur=0;
+  ctx.font='700 10px Arial'; ctx.textAlign='center'; ctx.lineJoin='round';
+  ctx.strokeStyle='rgba(12,8,16,0.75)'; ctx.lineWidth=3; ctx.strokeText(HERO_NAME[u.fac], x, gy-103);
+  ctx.fillStyle=col; ctx.fillText(HERO_NAME[u.fac], x, gy-103);
 }
 function drawUnit(u){
   const x = u.x-camX;
@@ -2035,6 +2039,26 @@ function dmgSmoke(x, topY, frac, t, seed){
       ctx.globalAlpha=0.6+0.35*fl; ctx.drawImage(PF.fire, x-3+i*6-r, topY+3-r*1.2, r*2, r*2.4); }
     ctx.restore(); ctx.globalAlpha=1;
   }
+}
+// EFFETS CUITS SANS CONTOUR (v1.9) : halos, marqueurs, lumières, cratères. Le flou (shadowBlur)
+// et les dégradés radiaux recréés à chaque image étaient les premiers postes de rendu restants
+// (profil : 15 ms/image pour les seuls emplacements vides en Élevé) ; cuits une fois, ils ne
+// coûtent plus qu'un drawImage.
+const FXC = new Map();
+function fxSprite(key, w, h, draw){
+  const SS = spriteSS(), k = key+'@'+SS;
+  let c = FXC.get(k);
+  if (!c){ c = document.createElement('canvas'); c.width = Math.ceil(w*SS); c.height = Math.ceil(h*SS);
+    const g = c.getContext('2d'); g.scale(SS,SS); const prev = TC; TC = g; try { draw(g); } finally { TC = prev; }
+    if (FXC.size > 120) FXC.clear();                         // garde-fou (couleurs de lumière très variées)
+    FXC.set(k, c); }
+  return c;
+}
+// lumière dynamique : même dégradé qu'avant (0,34 → 0,12 → 0), une texture par couleur
+function lightSprite(col){
+  return fxSprite('LT'+col, 64, 64, g => { const r=g.createRadialGradient(32,32,0.5,32,32,32);
+    r.addColorStop(0,rgbaC(col,0.34)); r.addColorStop(0.5,rgbaC(col,0.12)); r.addColorStop(1,rgbaC(col,0));
+    g.fillStyle=r; g.fillRect(0,0,64,64); });
 }
 // BOUFFÉES CUITES (feu, fumée, poussière) : dégradés radiaux irréguliers rendus UNE fois puis
 // blittés — les explosions deviennent des boules de feu et des panaches au lieu de confettis.
@@ -2468,17 +2492,22 @@ function drawSlot(slot, side, neutral){
   if (!slot.b){
     const canB = neutral? true : side===game.p, pulse = 0.5+0.5*Math.sin(t*2.6);
     const ac = neutral? '#e8d8a0' : '#ffd34a';
-    // halo de sol doux + anneau lumineux NET, parfaitement centrés sur le spot (plus de socle/poteau noir)
+    // halo de sol doux + anneau lumineux NET (cuits une fois — plus aucun flou par image)
     ctx.save(); ctx.globalCompositeOperation='lighter';
-    const g=ctx.createRadialGradient(x,gy,2,x,gy,30); g.addColorStop(0,rgbaC(ac,0.16+0.12*pulse)); g.addColorStop(1,rgbaC(ac,0));
-    ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,gy,30,11,0,0,6.283); ctx.fill();
-    if (canB){ ctx.strokeStyle=rgbaC(ac,0.55+0.4*pulse); ctx.lineWidth=2; ctx.shadowColor=ac; ctx.shadowBlur=8;
-      ctx.beginPath(); ctx.ellipse(x,gy,24,9,0,0,6.283); ctx.stroke(); }
+    ctx.globalAlpha=0.55+0.45*pulse;
+    ctx.drawImage(fxSprite('SLH'+ac, 72, 28, g => { g.save(); g.translate(36,14); g.scale(1,11/30);
+      const r=g.createRadialGradient(0,0,2,0,0,30); r.addColorStop(0,rgbaC(ac,0.28)); r.addColorStop(1,rgbaC(ac,0));
+      g.fillStyle=r; g.beginPath(); g.arc(0,0,30,0,6.283); g.fill(); g.restore(); }), x-36, gy-14, 72, 28);
+    if (canB){ ctx.globalAlpha=0.6+0.4*pulse;
+      ctx.drawImage(fxSprite('SLR'+ac, 64, 32, g => { g.strokeStyle=rgbaC(ac,0.95); g.lineWidth=2; g.shadowColor=ac; g.shadowBlur=8;
+        g.beginPath(); g.ellipse(32,16,24,9,0,0,6.283); g.stroke(); }), x-32, gy-16, 64, 32); }
     ctx.restore();
     if (canB){
       const fy=gy-26+Math.sin(t*2.6)*2;     // « + » flottant (aucun support)
-      bloomT(ac,8,()=>{ ctx.strokeStyle=ac; ctx.lineWidth=3; ctx.lineCap='round';
-        ctx.beginPath(); ctx.moveTo(x-6,fy); ctx.lineTo(x+6,fy); ctx.moveTo(x,fy-6); ctx.lineTo(x,fy+6); ctx.stroke(); });
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      ctx.drawImage(fxSprite('SLP'+ac, 28, 28, g => { g.strokeStyle=ac; g.lineWidth=3; g.lineCap='round'; g.shadowColor=ac; g.shadowBlur=8;
+        g.beginPath(); g.moveTo(8,14); g.lineTo(20,14); g.moveTo(14,8); g.lineTo(14,20); g.stroke(); }), x-14, fy-14, 28, 28);
+      ctx.restore();
       // ÉTIQUETTE anti-chevauchement : des socles côte à côte (éco de base, tuto) partageaient
       // le même texte illisible — on n'écrit le libellé que si aucun voisin ne l'a déjà posé.
       if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){
