@@ -48,6 +48,15 @@ console.log('\nCHARGEMENT + 9 LANGUES');
   else ok('toutes les langues couvrent toutes les clés du français');
 }
 
+{ // réglages sauvegardés corrompus : le jeu doit démarrer quand même (écran noir avant la v1.9)
+  const page = await browser.newPage(); const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.addInitScript(() => { localStorage.setItem('agi_settings', '{corrompu'); localStorage.setItem('agi_langChosen','1'); });
+  await page.goto(GAME); await page.waitForTimeout(400);
+  const okLoad = await page.evaluate(() => typeof newGame==='function' && !!SETTINGS.keys);
+  check(okLoad && !errs.length, 'réglages sauvegardés corrompus : le jeu démarre quand même'+(errs[0]? ' — '+errs[0] : ''));
+  await page.close();
+}
+
 console.log('\nTUTORIEL');
 { const { page, errs } = await open();
   const r = await page.evaluate(() => { startTutorial(); const n = TUT.steps.length; let bad = 0;

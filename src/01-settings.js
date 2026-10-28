@@ -34,8 +34,15 @@ function autoDetectQuality(){
 }
 let _autoQ = null;
 try { if (!localStorage.getItem('agi_settings')) _autoQ = autoDetectQuality(); } catch(e){}
+// lecture TOLÉRANTE : un réglage corrompu (écriture interrompue…) ou un stockage inaccessible
+// (navigation privée stricte, file:// bridé) faisait planter le jeu dès le chargement — écran
+// noir définitif jusqu'à l'effacement manuel des données du site. Repli sur les défauts.
+function readSavedSettings(){
+  try { const v = JSON.parse(localStorage.getItem('agi_settings')||'{}'); return (v && typeof v==='object' && !Array.isArray(v))? v : {}; }
+  catch(e){ return {}; }
+}
 const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:_autoQ||'ultra', keys:Object.assign({},DEFKEYS)},
-  JSON.parse(localStorage.getItem('agi_settings')||'{}'));
+  readSavedSettings());
 SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
 // PROFILS DE QUALITÉ GRAPHIQUE : densité des particules / lumières. Ultra par défaut.
 const QUALITIES = ['low','medium','high','ultra'];
@@ -55,5 +62,5 @@ const PERF = { on:(typeof location!=='undefined' && /[?&]perf\b/.test(location.s
 const SPEEDS = [0.75, 1, 2, 3];
 function clampSpeed(s){ s = +s; return SPEEDS.indexOf(s) >= 0 ? s : 1; }
 SETTINGS.speed = clampSpeed(SETTINGS.speed);
-function saveSettings(){ localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); applyVol(); }
+function saveSettings(){ try { localStorage.setItem('agi_settings', JSON.stringify(SETTINGS)); } catch(e){} applyVol(); }
 function applyVol(){ if (master) master.gain.value = SETTINGS.vol; }

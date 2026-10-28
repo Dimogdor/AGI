@@ -63,11 +63,10 @@ function render(dt){
     else if (d.role==='hero'){ ctx.translate(x-d.side*fall*8, gy); ctx.rotate(-d.side*fall*1.4); ctx.scale(d.side,1);
       ctx.drawImage(sprite('HERO'+d.fac,HERO_SW,100,()=>heroSprite(d.fac)),-HERO_SW/2,-92,HERO_SW,100); }
     else { const kind=d.fac==='HUM'?'hum':'bot';
-      const spr=sprite('S'+kind+d.role+d.era+(d.trans?'T':''),USP.W,USP.H,()=>drawUnitSprite(kind,d.fac,d.role,d.era,d.trans));
       ctx.translate(x-d.side*fall*6, gy);
       if (d.role==='tank'){ ctx.rotate(-d.side*fall*0.35); ctx.scale(d.side, 1-0.5*fall); }   // les lourds s'affaissent
       else { ctx.rotate(-d.side*fall*1.45); ctx.scale(d.side,1); }
-      ctx.drawImage(spr,-USP.cx,-USP.foot,USP.W,USP.H); }
+      drawUnitLayers(kind, d.fac, d.role, d.era, d.trans, 0); }
     ctx.restore(); ctx.globalAlpha=1;
   }
   // PARTICULES (v1.8) : passe normale (fumée, poussière, débris, onde de choc, points), puis

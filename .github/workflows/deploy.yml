@@ -50,6 +50,9 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund --omit=optional
+      # syntaxe des scripts Node hors navigateur (l'appli PC Electron ne démarrait plus depuis le #40
+      # à cause d'une apostrophe dans une chaîne — rien ne le vérifiait)
+      - run: for f in electron/*.js build.mjs tools/*.mjs cloudflare-turn-worker.js; do node --check "$f"; done
       - run: npx playwright-core install --with-deps chromium
       - run: npm run dev
       - run: npm test

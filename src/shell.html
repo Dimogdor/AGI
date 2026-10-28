@@ -145,8 +145,23 @@
   }
   #endtitle { font-size:clamp(38px,8vw,86px); font-weight:800; letter-spacing:.2em;
     text-shadow:0 0 34px rgba(200,53,42,.5), 2px 2px 0 #00000088; }
-  #endstats { color:#a89e90; font-size:clamp(12px,1.9vw,16px); text-align:center; line-height:1.9;
-    background:rgba(10,7,7,0.62); border:1px solid #3a2e28; border-radius:14px; padding:16px 26px; }
+  #endstats { color:#a89e90; font-size:clamp(12px,1.9vw,16px); text-align:center; line-height:1.5;
+    background:rgba(10,7,7,0.62); border:1px solid #3a2e28; border-radius:14px; padding:14px 20px; max-width:min(640px,94vw); }
+  #endart { width:min(520px,88vw); height:auto; margin-bottom:-14px; background:transparent; }
+  .esGrid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+  .esCell { background:rgba(255,255,255,0.04); border:1px solid #33282a; border-radius:10px; padding:6px 8px;
+    display:flex; flex-direction:column; align-items:center; gap:1px; }
+  .esCell b { color:#e8d8a0; font-size:1.15em; }
+  .esWide { grid-column:1 / -1; flex-direction:row; justify-content:center; gap:10px; }
+  .esIco { font-size:1.2em; } .esLbl { font-size:.78em; color:#8d8478; }
+  .esWorld { display:flex; align-items:center; gap:10px; justify-content:center; margin:2px 0 10px; }
+  .esWorld b { color:#e8d8a0; }
+  .esBar { width:min(260px,40vw); height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
+  .esBar i { display:block; height:100%; border-radius:4px; }
+  .esJournal { color:#bcae93; display:block; line-height:1.6; }
+  @media (max-height:520px){ #endscreen { justify-content:flex-start; overflow-y:auto; padding-top:8px; gap:8px; }
+    #endart { width:min(300px,50vw); } #endtitle { font-size:clamp(28px,6vw,48px); }
+    .esGrid { gap:5px; } .esCell { padding:3px 6px; } .esLbl { font-size:.7em; } }
 </style>
 </head>
 <body>
@@ -335,6 +350,7 @@
     <div id="verTag" style="margin-top:10px;color:#6c6478;font-size:11px;text-align:center;letter-spacing:.5px;">AGI v__VERSION__</div>
   </div>
   <div id="endscreen" class="panel">
+    <canvas id="endart" width="1040" height="400" aria-hidden="true"></canvas>
     <div id="endtitle"></div>
     <div id="endstats"></div>
     <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>

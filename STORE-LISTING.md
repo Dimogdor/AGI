@@ -187,6 +187,22 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 
 ## 7. Notes de version (exemple — « What's new »)
 ```
+v1.9 — Des troupes qui marchent, des écrans qui racontent.
+• Les unités marchent vraiment : jambes animées à chaque pas
+• Menu : les deux armées se font face au pied de la ville
+• Écran de fin illustré (héros, escouade, statistiques)
+• Intro avec les vrais personnages ; bassins avec roseaux et nénuphars
+• Plus fluide, et plus sûr (liste des salons en ligne sécurisée)
+```
+```
+v1.9 — Marching troops, screens that tell a story.
+• Units really walk: legs animated with every step
+• Menu: both armies face off below the city
+• Illustrated end screen (hero, squad, stats)
+• Intro with the real characters; ponds with reeds and lilies
+• Smoother, and safer (online room list secured)
+```
+```
 v1.8 — Paysages vivants et nouveaux effets.
 • Collines habitées : forêts, champs, villages, éoliennes, pylônes — qui se dégradent avec le monde
 • Montagnes enneigées, pins et peupliers sur le champ de bataille
