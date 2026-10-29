@@ -3,7 +3,7 @@
      screenshots/03-bataille.png, 04-crepuscule.png, 05-ere-avancee.png, 06-monde-mourant.png
        (HUD visible : on montre le jeu tel qu'on y joue — la mort du monde en 4 temps)
      pc-presentation.png (Google Play Games sur PC : SANS aucun texte ni HUD, exigé par Google)
-   Les captures 01/02 (cinématique d'intro) ne sont pas régénérées ici.
+     screenshots/01-intro-ia.png, 02-intro-resistance.png (cinématique d'intro, tableaux IV et VI)
    Prérequis : npm run dev (régénère la-derniere-bataille.html), puis
      npm i --no-save playwright-core   (aucun téléchargement de navigateur nécessaire)
      CHROME="chemin/vers/chrome"  node tools/store-screens.mjs
@@ -62,5 +62,12 @@ await page.evaluate(() => { window.drawHUD=()=>{}; floaters.length=0; game.zones
   const ds=window.drawSlot; window.drawSlot=(s,side,n)=>{ if (s.b) ds(s,side,n); };   // socles vides = libellés texte
   render(1/60); });
 await page.screenshot({ path: PC }); console.log('✔ présentation PC');
+// cinématique d'intro : « l'éveil » (IV) et « la résistance » (VI), sans bouton PASSER
+for (const [name, idx, tt] of [['01-intro-ia', 3, 3.6], ['02-intro-resistance', 5, 4.4]]){
+  await page.evaluate(([idx, tt]) => { game = null; introChrome = false; intro = idx; introT = 0; introOut = 0;
+    for (let k=0;k<tt*20;k++){ ctx.setTransform(SCALE,0,0,SCALE,0,0); drawIntro(1/20); } }, [idx, tt]);
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: OUT+name+'.png' }); console.log('✔', name);
+}
 console.log(errs.length ? 'ERREURS: '+errs.slice(0,3).join(' | ') : '0 erreur JS');
 await browser.close();

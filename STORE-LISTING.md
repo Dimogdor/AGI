@@ -164,10 +164,9 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
   `npx sharp-cli -i resources/screenshots/03-bataille.png -o out.png resize 2796 1290 --fit contain --background "#0d0a0a"`
 - **Microsoft Store** : 1366×768 min — les 1920×1080 conviennent.
 
-> Les captures de jeu (03 à 06) et `pc-presentation.png` sont générées par `node tools/store-screens.mjs`
-> (rendu réel du moteur via Chrome ; voir l'en-tête du script). Les deux captures d'intro (01, 02)
-> viennent de `node tools/gen-screens.mjs`.
-> (rendu réel du jeu). Ce sont d'excellents brouillons ; pour la fiche finale,
+> Les 6 captures (01-02 : cinématique d'intro, 03 à 06 : la mort du monde en 4 temps) et
+> `pc-presentation.png` sont générées par `node tools/store-screens.mjs` (rendu réel du moteur
+> via Chrome ; voir l'en-tête du script). Ce sont d'excellents brouillons ; pour la fiche finale,
 > des captures sur appareil réel donnent le rendu de police/emoji le plus fidèle.
 
 ---
@@ -186,6 +185,22 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 ---
 
 ## 7. Notes de version (exemple — « What's new »)
+```
+v1.10 — Une histoire plus grande, un monde qui parle.
+• Intro réécrite en 6 chapitres : la fin du travail, la soif des machines, la corporation, l'éveil, le monde « optimisé », la résistance
+• Fil d'actualités du monde en partie, discret et fermable
+• Ambiance sonore : vent, oiseaux, pluie, cœur qui bat quand votre base faiblit ; musique dédiée à l'intro
+• Tutoriel corrigé et enrichi ; nouvelles touches H (héros) et P (pause)
+• 1v1 en ligne nettement plus sûr
+```
+```
+v1.10 — A bigger story, a world that talks.
+• Intro rewritten in 6 chapters: labor goes dark, the thirst of machines, the corporation, the awakening, the "optimized" world, the resistance
+• Discreet in-game world news feed (can be closed)
+• Ambient sound: wind, birds, rain, a heartbeat when your base is failing; a dedicated intro score
+• Tutorial fixed and expanded; new keys H (hero) and P (pause)
+• Much safer online 1v1
+```
 ```
 v1.9 — Des troupes qui marchent, des écrans qui racontent.
 • Les unités marchent vraiment : jambes animées à chaque pas

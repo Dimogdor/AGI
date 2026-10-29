@@ -100,25 +100,31 @@ const NET_CONFIG = {
 **Firebase Realtime Database (liste des salons publics)**
 1. Crée un projet sur console.firebase.google.com → *Realtime Database* → copie
    l'URL (`firebaseDb`).
-2. Règles : lecture publique, écriture publique mais **validée champ par champ**
-   (le jeu revalide aussi tout côté client depuis la v1.9 ; ces règles empêchent en
-   plus de remplir la base de données arbitraires). Les entrées expirent côté client
-   après 60 s et sont purgées au bout de 5 min :
+2. Règles : lecture **bornée** (les 50 salons les plus récents, triés par `ts`), écriture
+   publique mais **validée champ par champ** (le jeu revalide aussi tout côté client depuis
+   la v1.9). Depuis la v1.10 elles empêchent en plus de **détourner un salon actif** (nom ou
+   cadenas modifiés par un tiers : refusé tant que l'hôte republie), d'écrire des horodatages
+   fantaisistes (le jeu envoie désormais l'heure du serveur Firebase), et elles acceptent la vitesse ×0.75 (refusée à tort avant). Les entrées
+   expirent côté client après 60 s et sont purgées au bout de 5 min :
    ```json
    { "rules": { "lobbies": {
-       ".read": true,
+       ".read": "query.orderByChild === 'ts' && query.limitToLast <= 50",
+       ".indexOn": ["ts"],
        "$code": {
-         ".write": true,
+         ".write": "!data.exists() || !newData.exists() || data.child('ts').val() < now - 90000 || (newData.child('name').val() === data.child('name').val() && newData.child('hasPw').val() === data.child('hasPw').val())",
          ".validate": "$code.matches(/^[A-Z0-9]{1,12}$/) && newData.hasChildren(['code','ts']) && newData.child('code').val() === $code",
          "code":  { ".validate": "newData.isString()" },
          "name":  { ".validate": "newData.isString() && newData.val().length <= 40" },
          "fac":   { ".validate": "newData.val() === 'HUM' || newData.val() === 'IA'" },
-         "speed": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 3" },
+         "speed": { ".validate": "newData.isNumber() && newData.val() >= 0.75 && newData.val() <= 3" },
          "hasPw": { ".validate": "newData.isBoolean()" },
-         "ts":    { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+         "ts":    { ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now" },
          "$autre": { ".validate": false }
    } } } }
    ```
+   Limite connue : sans compte, l'écriture reste anonyme — un tiers peut encore *supprimer*
+   un salon (l'hôte le republie dans les 20 s). Pour aller plus loin : activer
+   l'authentification anonyme Firebase et lier chaque salon à l'`uid` de son hôte.
    Sans `firebaseDb`, le navigateur de salons affiche « indisponible » et seul le
    jeu par **code (+ mot de passe)** reste actif.
 

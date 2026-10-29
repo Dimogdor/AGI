@@ -20,6 +20,15 @@ function tutCount(role){ const p=game.p;
 function tutHasBuild(type){ const p=game.p;
   for (const s of sideBuildSlots(p)) if (s.b && (s.b.type===type || s.b.buildType===type)) return true;
   return false; }
+// posture « tenir » AVEC une ligne de tenue : sans holdX (null), « tenir » laissait les troupes
+// marcher jusqu'à la barrière, hors de l'écran pendant les étapes « touchez une unité » / lasso.
+// Par défaut la ligne est visible caméra à gauche (zoom 1) ; les ordres individuels sont effacés.
+function tutHold(x){ const p=game.p; p.stance='hold'; p.holdX = (x!=null)? x : p.x+480; for (const u of p.units) u.ord=null; }
+// LIGNE DE DÉFENSE (vague) : toute l'armée défend un point juste devant la muraille/tourelle.
+// Contre la barrière, les troupes ne pouvaient ni avancer ni être couvertes par la tourelle :
+// un tireur ennemi les décimait une à une hors de portée (vague de 60 s, armée perdue).
+function tutLine(x){ const p=game.p; tutHold(x); game.sel.clear();
+  p.units.forEach((u,i)=>{ if (u.role==='gremlin') return; u.ord='point'; u.task=null; u.px = x - (i%5)*14; }); }
 function tutEmptySlot(){ const p=game.p; return p.slots.find(s=>!s.b) || null; }
 function tutHudRect(match){ for (const b of HUD.btns) if (!btnHidden(b) && match(b)) return {x:b.x,y:b.y,w:b.w,h:b.h}; return null; }
 function tutWorldRect(wx){ const sx=w2sX(wx), gy=w2sY(gY(wx)); return {x:sx-46, y:gy-100, w:92, h:108}; }
@@ -117,11 +126,28 @@ const TUT_STEPS = [
     allow:a=>a.t==='buy'&&a.i===4,
     done:()=>tutCount('air')>=1,
   },
+  { // 6b — artillerie & soutien (info) : les deux dernières classes, révélées sans les imposer
+    tap:true,
+    text:{fr:"Deux autres unités complètent l'armée : 💣 l'ARTILLERIE (portée énorme, dégâts de zone, ×1,6 contre les bâtiments) et ✚ le SOUTIEN (soigne vos troupes ; 1 à la fois, +1 par amélioration).",
+          en:"Two more units round out your army: 💣 ARTILLERY (huge range, splash damage, ×1.6 against buildings) and ✚ SUPPORT (heals your troops; 1 at a time, +1 per upgrade).",
+          es:"Dos unidades más completan tu ejército: 💣 la ARTILLERÍA (alcance enorme, daño en área, ×1,6 contra edificios) y ✚ el APOYO (cura a tus tropas; 1 a la vez, +1 por mejora).",
+          de:"Zwei weitere Einheiten vervollständigen deine Armee: 💣 ARTILLERIE (riesige Reichweite, Flächenschaden, ×1,6 gegen Gebäude) und ✚ UNTERSTÜTZUNG (heilt deine Truppen; 1 gleichzeitig, +1 pro Verbesserung).",
+          it:"Altre due unità completano l'esercito: 💣 l'ARTIGLIERIA (gittata enorme, danni ad area, ×1,6 contro gli edifici) e ✚ il SUPPORTO (cura le truppe; 1 alla volta, +1 per potenziamento).",
+          pt:"Mais duas unidades completam seu exército: 💣 a ARTILHARIA (alcance enorme, dano em área, ×1,6 contra edifícios) e ✚ o SUPORTE (cura suas tropas; 1 por vez, +1 por melhoria).",
+          ru:"Армию дополняют ещё две единицы: 💣 АРТИЛЛЕРИЯ (огромная дальность, урон по площади, ×1,6 по зданиям) и ✚ ПОДДЕРЖКА (лечит войска; по одной, +1 за улучшение).",
+          zh:"另有两种单位完善你的军队：💣 炮兵（射程极远，范围伤害，对建筑 ×1.6）和 ✚ 支援（治疗部队；同时限 1 名，每次升级 +1）。",
+          ar:"وحدتان أخريان تكمّلان جيشك: 💣 المدفعية (مدى هائل، ضرر واسع، ×1.6 ضد المباني) و✚ الدعم (يعالج قواتك؛ واحد في كل مرة، +1 مع كل ترقية)."},
+    enter:()=>{ camFollow=false; camX=0; },
+    focus:()=>{ const a=tutHudRect(b=>b.type==='unit'&&b.i===3), b=tutHudRect(b=>b.type==='unit'&&b.i===5);
+      if (!a||!b) return a||b; const x=Math.min(a.x,b.x), y=Math.min(a.y,b.y);
+      return {x, y, w:Math.max(a.x+a.w,b.x+b.w)-x, h:Math.max(a.y+a.h,b.y+b.h)-y}; },
+    allow:a=>a.t==='buy'&&(a.i===3||a.i===5),
+  },
   { // 7 — sélection
     text:{fr:"Place au CONTRÔLE. Touchez l'une de vos unités sur le terrain pour la SÉLECTIONNER.",
           en:"Time for CONTROL. Tap one of your units on the field to SELECT it.",es:"Turno del CONTROL. Toca una de tus unidades en el terreno para SELECCIONARLA.",de:"Zeit für die STEUERUNG. Tippe auf eine deiner Einheiten im Feld, um sie AUSZUWÄHLEN.",it:"Tocca al CONTROLLO. Tocca una delle tue unità sul campo per SELEZIONARLA.",pt:"Hora do CONTROLE. Toque em uma de suas unidades no campo para SELECIONÁ-LA.",ru:"Время УПРАВЛЕНИЯ. Нажмите на одну из своих единиц на поле, чтобы ВЫДЕЛИТЬ её.",zh:"该学习操控了。点击场上的一个单位以选中它。",ar:"حان وقت التحكم. المس إحدى وحداتك في الميدان لتحديدها."},
     obj:{fr:"Sélectionnez une unité",en:"Select a unit",es:"Selecciona una unidad",de:"Wähle eine Einheit aus",it:"Seleziona un'unità",pt:"Selecione uma unidade",ru:"Выделите одну единицу",zh:"选中一个单位",ar:"حدّد وحدة"},
-    enter:()=>{ camFollow=false; camX=0; game.p.stance='hold'; tutEnsureGround(2); game.sel.clear(); },
+    enter:()=>{ camFollow=false; camX=0; tutHold(); tutEnsureGround(2); game.sel.clear(); },
     focus:()=>{ const u=game.p.units.find(x=>!x.fly)||game.p.units[0]; return u? tutWorldRect(u.x):null; },
     done:()=>game.sel.size>=1,
   },
@@ -156,7 +182,7 @@ const TUT_STEPS = [
     text:{fr:"Ordre de POSITION : CLIC DROIT (PC) ou APPUI LONG (mobile) sur le terrain — vos troupes vont DÉFENDRE ce point exact. Sans sélection, TOUTE l'armée y va ; avec une sélection, elle seule obéit.",
           en:"POSITION order: RIGHT-CLICK (PC) or LONG-PRESS (mobile) on the ground — your troops go DEFEND that exact spot. With nothing selected the WHOLE army goes; with a selection, only it obeys.",es:"Orden de POSICIÓN: CLIC DERECHO (PC) o PULSACIÓN LARGA (móvil) en el terreno — tus tropas van a DEFENDER ese punto exacto. Sin selección, TODO el ejército va; con una selección, solo ella obedece.",de:"POSITIONSBEFEHL: RECHTSKLICK (PC) oder LANGES DRÜCKEN (Mobil) auf das Gelände — deine Truppen VERTEIDIGEN genau diesen Punkt. Ohne Auswahl geht die GANZE Armee hin; mit Auswahl gehorcht nur sie.",it:"Ordine di POSIZIONE: CLIC DESTRO (PC) o PRESSIONE LUNGA (mobile) sul terreno — le tue truppe andranno a DIFENDERE quel punto esatto. Senza selezione, va TUTTO l'esercito; con una selezione, obbedisce solo lei.",pt:"Ordem de POSIÇÃO: CLIQUE DIREITO (PC) ou TOQUE LONGO (celular) no terreno — suas tropas vão DEFENDER esse ponto exato. Sem seleção, TODO o exército vai; com uma seleção, só ela obedece.",ru:"Приказ ПОЗИЦИИ: ПРАВЫЙ КЛИК (ПК) или ДОЛГОЕ НАЖАТИЕ (телефон) по земле — войска пойдут ЗАЩИЩАТЬ именно эту точку. Без выделения идёт ВСЯ армия; с выделением — только оно.",zh:"位置命令：在地面上单击鼠标右键（电脑）或长按（手机）——你的部队会前往驻守那个精确地点。未选中任何单位时，全军都会前往；选中部分单位时，只有它们服从命令。",ar:"أمر الموقع: انقر بالزر الأيمن (حاسوب) أو اضغط مطولاً (جوال) على الأرض — ستذهب قواتك للدفاع عن تلك النقطة بالضبط. بدون تحديد، يذهب الجيش كله؛ ومع التحديد، تطيع الوحدات المحددة فقط."},
     obj:{fr:"Envoyez vos troupes sur un point (clic droit / appui long)",en:"Send troops to a point (right-click / long-press)",es:"Envía tropas a un punto (clic derecho / pulsación larga)",de:"Schicke Truppen zu einem Punkt (Rechtsklick / langes Drücken)",it:"Invia le truppe in un punto (clic destro / pressione lunga)",pt:"Envie tropas a um ponto (clique direito / toque longo)",ru:"Отправьте войска в точку (ПКМ / долгое нажатие)",zh:"派部队前往一个地点（右键/长按）",ar:"أرسل القوات إلى نقطة (نقر أيمن / ضغط مطوّل)"},
-    enter:()=>{ camFollow=false; camX=0; game.p.stance='hold'; tutEnsureGround(2); },
+    enter:()=>{ camFollow=false; camX=0; tutHold(); tutEnsureGround(2); },
     focus:()=>null,
     done:()=>game.p.units.some(u=>u.ord==='point'),
   },
@@ -185,7 +211,7 @@ const TUT_STEPS = [
     tap:true,
     text:{fr:"🛡 Une BARRIÈRE d'énergie bloque le front au milieu de la carte : vos troupes ne peuvent pas avancer pour l'instant. Profitez-en pour FORTIFIER cette ligne. Le combat est automatique : mêlée devant, tireurs derrière.",
           en:"🛡 An energy BARRIER blocks the front at mid-map: your troops can't advance yet. Use this time to FORTIFY the line. Combat is automatic: melee in front, ranged behind.",es:"🛡 Una BARRERA de energía bloquea el frente en medio del mapa: tus tropas no pueden avanzar por ahora. Aprovecha para FORTIFICAR esta línea. El combate es automático: cuerpo a cuerpo delante, tiradores detrás.",de:"🛡 Eine Energie-BARRIERE blockiert die Front in der Kartenmitte: deine Truppen können vorerst nicht vorrücken. Nutze die Zeit, um diese Linie zu BEFESTIGEN. Der Kampf läuft automatisch: Nahkampf vorne, Fernkampf hinten.",it:"🛡 Una BARRIERA di energia blocca il fronte a metà mappa: le tue truppe non possono avanzare per ora. Approfittane per FORTIFICARE questa linea. Il combattimento è automatico: corpo a corpo davanti, tiratori dietro.",pt:"🛡 Uma BARREIRA de energia bloqueia a frente no meio do mapa: suas tropas não podem avançar por enquanto. Aproveite para FORTIFICAR essa linha. O combate é automático: corpo a corpo na frente, atiradores atrás.",ru:"🛡 Энергетический БАРЬЕР блокирует фронт в центре карты: войска пока не могут продвинуться. Используйте это время, чтобы УКРЕПИТЬ линию. Бой идёт автоматически: ближний бой впереди, стрелки сзади.",zh:"🛡 一道能量屏障阻挡了地图中央的战线：你的部队暂时无法前进。趁此机会加固这条防线。战斗是自动进行的：近战在前，射手在后。",ar:"🛡 حاجز طاقة يوقف الجبهة في منتصف الخريطة: لا يمكن لقواتك التقدم الآن. استغل الوقت لتحصين هذا الخط. القتال تلقائي: القتال القريب أمامًا، الرماة خلفًا."},
-    enter:()=>{ camFollow=false; tutCam(game.tutBarrier); },
+    enter:()=>{ camFollow=false; tutCam(game.tutBarrier); tutHold(game.tutBarrier); game.sel.clear(); },   // les troupes rejoignent la ligne
     focus:()=>null,
   },
   { // 14 — muraille (sur la ligne de front, au milieu de la carte)
@@ -218,9 +244,9 @@ const TUT_STEPS = [
     text:{fr:"⚠ Une vague ennemie attaque la LIGNE depuis la droite ! Tenez : muraille, tourelle, garnison et troupes vont la repousser. Regardez le combat.",
           en:"⚠ An enemy wave attacks the LINE from the right! Hold: wall, turret, garrison and troops will repel it. Watch the fight.",es:"⚠ ¡Una oleada enemiga ataca la LÍNEA desde la derecha! Aguanta: muralla, torreta, guarnición y tropas la repelerán. Observa el combate.",de:"⚠ Eine feindliche Welle greift die LINIE von rechts an! Halte stand: Mauer, Turm, Garnison und Truppen werden sie zurückschlagen. Beobachte den Kampf.",it:"⚠ Un'ondata nemica attacca la LINEA da destra! Tieni duro: muro, torretta, guarnigione e truppe la respingeranno. Osserva il combattimento.",pt:"⚠ Uma onda inimiga ataca a LINHA pela direita! Aguente: muralha, torreta, guarnição e tropas vão repeli-la. Observe o combate.",ru:"⚠ Вражеская волна атакует ЛИНИЮ справа! Держитесь: стена, башня, гарнизон и войска отразят её. Наблюдайте за боем.",zh:"⚠ 敌方部队从右侧发起进攻！坚守防线：城墙、炮塔、驻军和部队会击退他们。观看这场战斗吧。",ar:"⚠ موجة عدو تهاجم الخط من اليمين! اصمد: السور والبرج والحامية والقوات ستصدّها. راقب المعركة."},
     obj:{fr:"Repoussez la vague ennemie",en:"Repel the enemy wave",es:"Repele la oleada enemiga",de:"Schlage die feindliche Welle zurück",it:"Respingi l'ondata nemica",pt:"Repila a onda inimiga",ru:"Отразите вражескую волну",zh:"击退敌方进攻",ar:"صدّ موجة العدو"},
-    enter:()=>{ tutSpawnWave(); game.shake=6; sfx('boom'); game.p.stance='hold'; camFollow=false; tutCam(game.tutBarrier);
+    enter:()=>{ tutLine(game.tutBarrier-230); tutSpawnWave(); game.shake=6; sfx('boom'); camFollow=false; tutCam(game.tutBarrier-120);
       announce(tutText({fr:'⚠ VAGUE ENNEMIE',en:'⚠ ENEMY WAVE',es:'⚠ OLEADA ENEMIGA',de:'⚠ FEINDLICHE WELLE',it:'⚠ ONDATA NEMICA',pt:'⚠ ONDA INIMIGA',ru:'⚠ ВРАЖЕСКАЯ ВОЛНА',zh:'⚠ 敌军来袭',ar:'⚠ موجة العدو'}), '#ff5a4a'); },
-    focus:()=>null,
+    focus:()=>null, noReenter:true,       // enter() fait surgir la vague : ne JAMAIS le rejouer
     done:()=>game.e.units.length===0,
   },
   { // 18 — expérience (info)
@@ -229,6 +255,20 @@ const TUT_STEPS = [
           en:"✦ EXPERIENCE comes from fighting, holding zones ◈ and lakes 💧, and fortifying your base. It powers your abilities and evolutions — your engine of progression.",es:"✦ La EXPERIENCIA se gana combatiendo, controlando las zonas ◈ y los lagos 💧, y fortificando tu base. Alimenta tus poderes y evoluciones — tu motor de progreso.",de:"✦ ERFAHRUNG erhältst du durch Kämpfen, das Halten von Zonen ◈ und Seen 💧 sowie durch die Befestigung deiner Basis. Sie treibt deine Fähigkeiten und Entwicklungen an — dein Fortschrittsmotor.",it:"✦ L'ESPERIENZA si guadagna combattendo, tenendo le zone ◈ e i laghi 💧, e fortificando la tua base. Alimenta i tuoi poteri e le tue evoluzioni — il tuo motore di progressione.",pt:"✦ A EXPERIÊNCIA é ganha combatendo, controlando zonas ◈ e lagos 💧, e fortificando sua base. Ela alimenta seus poderes e evoluções — seu motor de progresso.",ru:"✦ ОПЫТ зарабатывается в боях, удержанием зон ◈ и озёр 💧, а также укреплением базы. Он питает ваши способности и эволюции — двигатель вашего развития.",zh:"✦ 经验值 通过战斗、占领 ◈ 区域与 💧 湖泊，以及加固基地来获得。它是你的能力与进化的动力源泉。",ar:"✦ الخبرة تُكتسب بالقتال، والسيطرة على المناطق ◈ والبحيرات 💧، وتحصين قاعدتك. تغذّي قدراتك وتطوراتك — محرك تقدمك."},
     enter:()=>{ camFollow=false; camX=0; },
     focus:()=>({x:248,y:6,w:120,h:34}),   // compteur ✦ dans le bandeau du haut
+  },
+  { // 18b — santé du monde, cataclysmes et fil d'actualités (info, avec une dépêche de démonstration)
+    tap:true,
+    text:{fr:"🌍 SANTÉ DU MONDE (barre en haut) : la planète se dégrade au fil de la guerre. Plus elle baisse, plus les CATACLYSMES frappent les deux camps — pluie d'acide, canicule, crue, tempête de sable… En haut à gauche, un fil discret relate l'état du monde (× pour le masquer).",
+          en:"🌍 WORLD HEALTH (top bar): the planet decays as the war drags on. The lower it gets, the more CATACLYSMS hit both sides — acid rain, heatwave, flood, sandstorm… Top left, a discreet feed reports on the world (× to hide it).",
+          es:"🌍 SALUD DEL MUNDO (barra superior): el planeta se degrada con la guerra. Cuanto más baja, más CATACLISMOS golpean a ambos bandos — lluvia ácida, ola de calor, crecida, tormenta de arena… Arriba a la izquierda, un discreto boletín informa del estado del mundo (× para ocultarlo).",
+          de:"🌍 WELTGESUNDHEIT (obere Leiste): der Planet verfällt, je länger der Krieg dauert. Je tiefer sie sinkt, desto öfter treffen KATAKLYSMEN beide Seiten — saurer Regen, Hitzewelle, Flut, Sandsturm… Oben links berichtet ein dezenter Nachrichtenticker über die Welt (× zum Ausblenden).",
+          it:"🌍 SALUTE DEL MONDO (barra in alto): il pianeta si degrada con il protrarsi della guerra. Più scende, più i CATACLISMI colpiscono entrambe le parti — pioggia acida, canicola, piena, tempesta di sabbia… In alto a sinistra, un discreto notiziario racconta lo stato del mondo (× per nasconderlo).",
+          pt:"🌍 SAÚDE DO MUNDO (barra superior): o planeta se degrada com a guerra. Quanto mais baixa, mais CATACLISMOS atingem os dois lados — chuva ácida, onda de calor, cheia, tempestade de areia… No canto superior esquerdo, um discreto noticiário relata o estado do mundo (× para ocultar).",
+          ru:"🌍 ЗДОРОВЬЕ МИРА (верхняя панель): планета деградирует по ходу войны. Чем ниже показатель, тем чаще КАТАКЛИЗМЫ бьют по обеим сторонам — кислотный дождь, жара, наводнение, песчаная буря… Слева вверху неброская лента новостей рассказывает о мире (× — скрыть).",
+          zh:"🌍 世界健康度（顶部栏）：战争越久，地球越衰败。数值越低，灾变越频繁地袭击双方——酸雨、热浪、洪水、沙尘暴……左上角有低调的新闻快讯播报世界动态（点 × 可隐藏）。",
+          ar:"🌍 صحة العالم (الشريط العلوي): الكوكب يتدهور مع استمرار الحرب. كلما انخفضت، ازدادت الكوارث التي تضرب الطرفين — مطر حمضي، موجة حر، فيضان، عاصفة رملية… في الأعلى يساراً، شريط أخبار هادئ يروي حال العالم (× لإخفائه)."},
+    enter:()=>{ camFollow=false; camX=0; newsDemo(NEWS.t1[0]); },
+    focus:()=>({x:W/2-86, y:15, w:172, h:19}),   // barre « santé du monde »
   },
   { // 19 — pouvoir ultime
     text:{fr:"Votre POUVOIR ULTIME ✸ est alimenté par l'✦. Il est prêt : lancez-le (bouton surligné).",
@@ -269,14 +309,17 @@ const TUT_STEPS = [
     done:()=>game.p.units.some(u=>u.role==='hero'),
   },
   { // 23 — assaut final (la barrière TOMBE, on libère la carte, on détruit la base)
-    text:{fr:"⚔ La BARRIÈRE TOMBE ! La voie est libre. Ordonnez la CHARGE et menez votre armée détruire la base ennemie !",
-          en:"⚔ The BARRIER FALLS! The path is open. Order the CHARGE and lead your army to destroy the enemy base!",es:"⚔ ¡La BARRERA CAE! El camino está libre. Ordena la CARGA y lleva a tu ejército a destruir la base enemiga!",de:"⚔ Die BARRIERE FÄLLT! Der Weg ist frei. Befiehl den ANGRIFF und führe deine Armee zur Zerstörung der feindlichen Basis!",it:"⚔ La BARRIERA CADE! La strada è libera. Ordina la CARICA e guida il tuo esercito a distruggere la base nemica!",pt:"⚔ A BARREIRA CAI! O caminho está livre. Ordene o ATAQUE e leve seu exército para destruir a base inimiga!",ru:"⚔ БАРЬЕР ПАДАЕТ! Путь свободен. Отдайте приказ В АТАКУ и ведите армию уничтожать вражескую базу!",zh:"⚔ 屏障已破！道路已开。下达 冲锋 命令，率领你的军队摧毁敌方基地！",ar:"⚔ الحاجز يسقط! الطريق مفتوح الآن. أصدر أمر الهجوم وقُد جيشك لتدمير قاعدة العدو!"},
+    text:{fr:"⚔ La BARRIÈRE TOMBE ! La voie est libre. Ordonnez la CHARGE et menez votre armée détruire la base ennemie ! ⏩ Temps accéléré ×2 (bouton en haut à droite).",
+          en:"⚔ The BARRIER FALLS! The path is open. Order the CHARGE and lead your army to destroy the enemy base! ⏩ Time sped up ×2 (top-right button).",es:"⚔ ¡La BARRERA CAE! El camino está libre. Ordena la CARGA y lleva a tu ejército a destruir la base enemiga! ⏩ Tiempo acelerado ×2 (botón arriba a la derecha).",de:"⚔ Die BARRIERE FÄLLT! Der Weg ist frei. Befiehl den ANGRIFF und führe deine Armee zur Zerstörung der feindlichen Basis! ⏩ Zeit auf ×2 beschleunigt (Button oben rechts).",it:"⚔ La BARRIERA CADE! La strada è libera. Ordina la CARICA e guida il tuo esercito a distruggere la base nemica! ⏩ Tempo accelerato ×2 (pulsante in alto a destra).",pt:"⚔ A BARREIRA CAI! O caminho está livre. Ordene o ATAQUE e leve seu exército para destruir a base inimiga! ⏩ Tempo acelerado ×2 (botão no canto superior direito).",ru:"⚔ БАРЬЕР ПАДАЕТ! Путь свободен. Отдайте приказ В АТАКУ и ведите армию уничтожать вражескую базу! ⏩ Время ускорено ×2 (кнопка вверху справа).",zh:"⚔ 屏障已破！道路已开。下达 冲锋 命令，率领你的军队摧毁敌方基地！ ⏩ 时间已加速 ×2（右上角按钮）。",ar:"⚔ الحاجز يسقط! الطريق مفتوح الآن. أصدر أمر الهجوم وقُد جيشك لتدمير قاعدة العدو! ⏩ تم تسريع الوقت ×2 (الزر أعلى اليمين)."},
     obj:{fr:"Détruisez la base ennemie",en:"Destroy the enemy base",es:"Destruye la base enemiga",de:"Zerstöre die feindliche Basis",it:"Distruggi la base nemica",pt:"Destrua a base inimiga",ru:"Уничтожьте вражескую базу",zh:"摧毁敌方基地",ar:"دمّر قاعدة العدو"},
     enter:()=>{ const e=game.e; game.tutBarrier=null;        // libère la carte
-      e.hp=e.maxhp=600; e.stance='hold'; game.p.stance='charge'; camFollow=true;
+      // toute l'armée repart (efface les ordres de position / la sélection de la vague)
+      e.hp=e.maxhp=600; e.stance='hold'; game.sel.clear(); for (const u of game.p.units) u.ord=null;
+      game.p.stance='charge'; camFollow=true;
+      game.speed = Math.max(game.speed||1, 2);   // la marche jusqu'à la base adverse (~2000 px) durait 35-40 s
       announce(tutText({fr:'🛡 BARRIÈRE TOMBÉE — À L\'ASSAUT !',en:'🛡 BARRIER DOWN — CHARGE!',es:'🛡 ¡BARRERA CAÍDA — AL ASALTO!',de:'🛡 BARRIERE GEFALLEN — ANGRIFF!',it:'🛡 BARRIERA CADUTA — ALL\'ASSALTO!',pt:'🛡 BARREIRA CAÍDA — AO ATAQUE!',ru:'🛡 БАРЬЕР ПАЛ — В АТАКУ!',zh:'🛡 屏障已破 — 冲锋！',ar:'🛡 سقط الحاجز — إلى الهجوم!'}), '#9dd88a'); },
     focus:()=>tutHudRect(b=>b.type==='stance'&&b.st==='charge'),
-    allow:a=>a.t==='stance',
+    allow:a=>a.t==='stance', noReenter:true,   // enter() remet la base à 600 PV : ne pas le rejouer
     done:()=>game.e.hp<=0,
   },
   { // 24 — fin
@@ -289,7 +332,7 @@ const TUT_STEPS = [
 ];
 // mini-vague ennemie scriptée : 3 unités surgissent À DROITE de la barrière et chargent la ligne
 function tutSpawnWave(){
-  const e = game.e, x = (game.tutBarrier!=null? game.tutBarrier : game.p.x+1150) + 440;
+  const e = game.e, x = (game.tutBarrier!=null? game.tutBarrier : game.p.x+1150) + 320;
   e.stance = 'charge';                   // la vague avance vers la ligne du joueur
   spawnUnit(e, 0, false, x);             // mêlée
   spawnUnit(e, 0, false, x + 44);        // mêlée
@@ -317,7 +360,7 @@ function startTutorial(){
   newGame('HUM', 0, false);
   game.tut = true; game.speed = 1;
   const p = game.p, e = game.e;
-  p.stance = 'hold'; e.stance = 'hold';
+  tutHold(); e.stance = 'hold';
   e.hp = e.maxhp = 9e9;              // base ennemie inattaquable (jusqu'à l'assaut final)
   // BARRIÈRE : bloque le front au milieu de la carte — les troupes du joueur ne la franchissent
   // pas tant qu'elle n'est pas levée (assaut final). Évite que les unités filent trop loin.
@@ -347,6 +390,7 @@ function endTutorial(){
 function tutEnterStep(){
   const step = TUT.steps[TUT.i];
   TUT.t = 0; TUT.uiRects = []; TUT.cardPos = null; TUT.reentered = false;   // chaque étape repart en position auto
+  if (NEWSF.cur && NEWSF.cur.demo) NEWSF.cur = null;                          // dépêche de démo : étape « monde » seulement
   if (step.enter) step.enter();
 }
 function tutBeginAct(){ if (TUT && TUT.steps[TUT.i].tap) tutAdvance(); }   // bouton « Continuer »
@@ -366,9 +410,10 @@ function tutTick(dt){
   const step = TUT.steps[TUT.i];
   // AIDE RENFORCÉE : joueur bloqué ~20 s sur une étape d'ACTION → on rejoue enter() une fois
   // (recentre la caméra sur la cible, régénère les ressources si besoin). Sûr à rejouer : les
-  // enter() de toutes les étapes sont idempotents (tutGrant utilise Math.max, tutCam recentre
-  // sans effet de bord). Le halo devient aussi bien plus visible, voir drawTut().
-  if (!step.tap && !TUT.reentered && TUT.t>20 && step.enter){ TUT.reentered = true; step.enter(); }
+  // enter() des étapes sont idempotents (tutGrant utilise Math.max, tutCam recentre
+  // sans effet de bord) — SAUF ceux marqués noReenter (vague, assaut final). Le halo devient
+  // aussi bien plus visible, voir drawTut().
+  if (!step.tap && !step.noReenter && !TUT.reentered && TUT.t>20 && step.enter){ TUT.reentered = true; step.enter(); }
   if (!step.tap && step.done && step.done()){
     TUT.celebrating = true; TUT.celebT = 0; sfx('cap');
     const cx = s2wX(W/2); addFloater(cx, gY(cx)-150, '✓', '#9dc88a', 22);
@@ -388,15 +433,19 @@ function tutFrozen(){
   return !!(TUT.freeze || (step && step.tap));
 }
 /* ---- visibilité progressive du HUD (appelée par 13-hud.js) ---- */
+// contrôles UTILITAIRES (⚙ réglages, ⏸, vitesse, caméra, zoom) : toujours visibles — ce ne sont pas
+// des leçons, et les masquer empêchait de couper le son ou de quitter le tuto sur mobile.
+const TUT_ALWAYS = {pause:1, softpause:1, speed:1, cam:1, zoom:1};
 function tutBtnHidden(b){            // true = masquer (jamais enseigné)
   if (!game || !game.tut || !TUT) return false;
+  if (TUT_ALWAYS[b.type]) return false;
   const step = TUT.steps[TUT.i], desc = tutDesc(b);
   if (step && step.allow && step.allow(desc)) return false;     // bouton de l'étape
   if (TUT.revealed.some(p => p(desc))) return false;            // déjà enseigné
   return true;
 }
 function tutBtnDim(b){               // true = afficher grisé (acquis, pas l'étape courante)
-  if (!game || !game.tut || !TUT) return false;
+  if (!game || !game.tut || !TUT || TUT_ALWAYS[b.type]) return false;
   const step = TUT.steps[TUT.i], desc = tutDesc(b);
   if (step && step.allow && step.allow(desc)) return false;
   return TUT.revealed.some(p => p(desc));
@@ -493,7 +542,8 @@ function drawTut(){
   ctx.fillStyle=rgbaC(acc,0.5); ctx.font='10px Arial'; ctx.textAlign='center';
   ctx.fillText('⠿', Bx+bw/2-14, by+pad+7);
   ctx.textAlign='left';
-  const dotN=TUT.steps.length, dr=2.2, dgap=6, dtot=dotN*dgap;
+  // points de progression : resserrés s'il y a beaucoup d'étapes (ne chevauchent jamais la poignée ⠿)
+  const dotN=TUT.steps.length, dgap=Math.min(6,(bw*0.5-26)/dotN), dr=Math.min(2.2,dgap*0.38), dtot=dotN*dgap;
   for(let i=0;i<dotN;i++){ ctx.beginPath(); ctx.arc(Bx+bw-pad-dtot+i*dgap, by+pad+4, dr, 0,6.283);
     ctx.fillStyle = i===TUT.i? acc : 'rgba(255,255,255,0.22)'; ctx.fill(); }
   ctx.font='12px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+10;

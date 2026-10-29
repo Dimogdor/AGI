@@ -39,13 +39,13 @@ const save = async (name) => {
   console.log('  ✔', name);
 };
 
-// --- intro : éveil de l'IA (tableau 2) et résistance (tableau 3) ---
+// --- intro : éveil de l'IA (tableau IV) et résistance (tableau VI) ---
 function renderIntro(frame, t){ M.game=null; M.intro=frame;
   // l'intro lit introT interne ; on avance via plusieurs update du temps d'intro
   for (let i=0;i<Math.round(t/0.05);i++) M.render(0.05);
 }
-renderIntro(1, 1.2); await save('01-intro-ia');
-renderIntro(2, 1.0); await save('02-intro-resistance');
+renderIntro(3, 1.2); await save('01-intro-ia');
+renderIntro(5, 1.0); await save('02-intro-resistance');
 
 // --- scène de bataille ---
 M.newGame('HUM', 1, false, 'IA');

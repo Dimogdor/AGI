@@ -36,6 +36,12 @@ function onSpeedMsg(d){
   if (!d || !game) return;
   if (d.act === 'propose'){
     if (speedPending){ net.sendSpeed({ act:'reject', speed:d.speed }); return; } // collision : on refuse poliment
+    // la limite 2 / 7 min vaut AUSSI à la réception : un client modifié ne peut plus noyer
+    // l'adversaire sous les fenêtres de vote (modales, elles bloquaient toute action)
+    const now = performance.now()/1000;
+    speedPropsFoe = speedPropsFoe.filter(ts => now - ts < SPEED_PROP_WINDOW);
+    if (speedVote || speedPropsFoe.length >= SPEED_PROP_MAX){ net.sendSpeed({ act:'reject', speed:clampSpeed(d.speed) }); return; }
+    speedPropsFoe.push(now);
     speedVote = { speed: clampSpeed(d.speed), rects:null };
   } else if (d.act === 'accept'){
     if (speedPending){ setGameSpeed(speedPending.speed); speedAnnounce(speedPending.speed); clearSpeedPending(); }
@@ -52,4 +58,5 @@ function castSpeedVote(ok){
   else   { net.sendSpeed({ act:'reject', speed:s }); announce(t('spd_rejected'), '#ff9d45'); }
   speedVote = null;
 }
-function resetSpeedNet(){ speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[]; }
+let speedPropsFoe = [];
+function resetSpeedNet(){ speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[]; speedPropsFoe=[]; }

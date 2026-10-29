@@ -74,22 +74,34 @@ tester, mais seul le `.aab` signé va sur Google Play.
 
 ---
 
-## 3. Réparer le 1v1 entre téléphones (5 min, une seule fois)
+## 3. Sécuriser le 1v1 : Worker TURN et base des salons (10 min — à refaire pour la v1.10)
 
 L'audit a trouvé que votre relais TURN Cloudflare **refuse l'application Android**
 (il n'acceptait que le site web). Sans lui, deux joueurs en 4G ne se connectent souvent pas.
 
 1. [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **turn-proxy**.
 2. **Edit code** → remplacez **tout** le contenu par celui du fichier
-   `cloudflare-turn-worker.js` du dépôt (version corrigée) → **Deploy**.
+   `cloudflare-turn-worker.js` du dépôt (version v1.10) → **Deploy**.
 
 Rien d'autre à changer : les secrets `TURN_KEY_ID` / `TURN_TOKEN` du Worker restent en place.
+La v1.10 ajoute une **limite de débit par adresse IP** (avant, n'importe qui pouvait générer
+des identifiants TURN à volonté, facturés sur votre compte) et réduit leur durée de vie à 2 h.
+*Recommandé en plus* : onglet **Settings → Bindings → Add → Rate limiting**, nom de variable
+`TURN_RL`, 10 requêtes / 60 s → **Deploy** (le Worker l'utilise automatiquement).
 
-**Sécuriser la liste des salons publics (2 min, une seule fois).** Depuis la v1.9 le jeu
-revalide tout ce qu'il lit dans la base Firebase ; pour empêcher en plus qu'on y écrive
-n'importe quoi : [console.firebase.google.com](https://console.firebase.google.com) → projet
-**agi-lobbies** → **Realtime Database** → onglet **Règles** → collez les règles du
-`README.md` (section *Firebase Realtime Database*) → **Publier**.
+> ⚠️ **À vérifier une fois** : une ancienne clé TURN (Key ID + token) figure dans l'historique
+> git du dépôt (commit `8ec94af`, juin 2026). Si ce n'est pas déjà fait : Cloudflare → **Realtime →
+> TURN** → **régénérez/supprimez** cette clé, puis mettez les nouvelles valeurs dans les secrets
+> `TURN_KEY_ID` / `TURN_TOKEN` du Worker. Tant qu'elle reste valide, quiconque lit l'historique
+> peut s'en servir.
+
+**Sécuriser la liste des salons publics (2 min — nouvelles règles v1.10).** Le jeu revalide
+tout ce qu'il lit dans la base Firebase ; les règles v1.10 empêchent en plus de détourner un
+salon actif, bornent la lecture aux 50 salons récents et acceptent la vitesse ×0.75 :
+[console.firebase.google.com](https://console.firebase.google.com) → projet **agi-lobbies** →
+**Realtime Database** → onglet **Règles** → collez les règles du `README.md` (section
+*Firebase Realtime Database*) → **Publier**. (Le jeu fonctionne avec les anciennes comme avec
+les nouvelles règles.)
 
 > Google Play exige depuis le 31 août 2026 que toute nouvelle appli **cible Android 16
 > (API 36)** : c'est le cas depuis la v1.9 (rien à faire de votre côté, la compilation de
@@ -156,14 +168,14 @@ Menu **Tester et publier** → **Tests** → **Test fermé** → votre piste →
 3. **Notes de version** :
    ```
    <fr-FR>
-   Nouveau ciel, nouvelles couleurs : le monde qui meurt se lit maintenant à l'écran,
-   du jour bleu au crépuscule rouge. Unités plus lisibles en pleine mêlée.
-   Qualité graphique auto-adaptée aux appareils modestes. Corrections du 1v1 mobile.
+   Une histoire plus grande : intro en 6 chapitres. Un fil d'actualités discret raconte
+   le monde pendant la partie. Ambiance sonore vivante (vent, oiseaux, pluie, cœur qui
+   bat). Tutoriel corrigé et enrichi. 1v1 en ligne nettement plus sûr.
    </fr-FR>
    <en-US>
-   New sky, new colors: watch the dying world from blue daylight to red dusk.
-   Clearer units in the thick of battle. Graphics quality auto-adapts on modest
-   devices. Mobile 1v1 connection fixes.
+   A bigger story: a 6-chapter intro. A discreet news feed tells the world's fate
+   during the match. Living ambient sound (wind, birds, rain, heartbeat). Tutorial
+   fixed and expanded. Much safer online 1v1.
    </en-US>
    ```
 4. **Suivant** → corrigez les éventuels avertissements → **Enregistrer** →

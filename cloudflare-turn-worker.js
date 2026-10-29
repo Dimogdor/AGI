@@ -20,6 +20,14 @@
 
    Astuce sécurité : adapte ALLOWED_ORIGINS à ton/tes domaine(s) pour que
    seul ton jeu puisse utiliser ce proxy.
+
+   LIMITE DE DÉBIT (v1.10) : l'en-tête Origin se falsifie hors navigateur (curl…) ;
+   sans limite, n'importe qui pouvait générer des identifiants TURN à volonté, facturés
+   sur ton compte. Le Worker limite donc chaque adresse IP :
+   · automatiquement, en mémoire (garde-fou « au mieux », par instance du Worker) ;
+   · et, si tu ajoutes une liaison « Rate limiting » nommée TURN_RL (Settings →
+     Bindings → Rate limiting, ex. 10 requêtes / 60 s), via la limite globale de
+     Cloudflare — recommandé.
    ════════════════════════════════════════════════════════════════════════════ */
 
 const ALLOWED_ORIGINS = [
@@ -44,6 +52,17 @@ function corsHeaders(origin) {
   };
 }
 
+const TTL = 7200;                       // durée de vie des identifiants TURN (2 h)
+const MEM_LIMIT = 20, MEM_WINDOW = 600e3; // repli mémoire : 20 demandes / 10 min / IP
+const hits = new Map();
+function memLimited(ip) {
+  const now = Date.now();
+  if (hits.size > 5000) hits.clear();      // borne mémoire
+  const h = hits.get(ip);
+  if (!h || now > h.reset) { hits.set(ip, { n: 1, reset: now + MEM_WINDOW }); return false; }
+  h.n++; return h.n > MEM_LIMIT;
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -59,6 +78,15 @@ export default {
     if (request.method !== "POST") {
       return new Response("Method Not Allowed", { status: 405, headers: corsHeaders(origin) });
     }
+    // limite de débit par IP (liaison Cloudflare TURN_RL si configurée, sinon repli mémoire)
+    const ip = request.headers.get("CF-Connecting-IP") || "?";
+    let limited = memLimited(ip);
+    if (!limited && env.TURN_RL && typeof env.TURN_RL.limit === "function") {
+      try { const { success } = await env.TURN_RL.limit({ key: ip }); limited = !success; } catch (e) {}
+    }
+    if (limited) {
+      return new Response("Too Many Requests", { status: 429, headers: { ...corsHeaders(origin), "Retry-After": "60" } });
+    }
 
     const api = "https://rtc.live.cloudflare.com/v1/turn/keys/"
       + encodeURIComponent(env.TURN_KEY_ID) + "/credentials/generate-ice-servers";
@@ -69,13 +97,15 @@ export default {
         "Authorization": "Bearer " + env.TURN_TOKEN,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ttl: 86400 }),
+      body: JSON.stringify({ ttl: TTL }),   // la durée demandée par le client est ignorée
     });
-
+    if (!upstream.ok) {                      // détail de l'erreur amont jamais renvoyé au client
+      return new Response("Upstream error", { status: 502, headers: corsHeaders(origin) });
+    }
     const body = await upstream.text();   // contient SEULEMENT username/credential temporaires
     return new Response(body, {
-      status: upstream.status,
-      headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
+      status: 200,
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
   },
 };

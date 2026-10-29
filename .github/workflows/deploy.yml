@@ -12,10 +12,10 @@ on:
       - main
   workflow_dispatch:
 
+# moindre privilège : build et tests (qui exécutent npm + Playwright, y compris sur les PR)
+# n'ont que la lecture ; seules les permissions de publication vont au job « deploy »
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # une seule publication à la fois ; on n'annule pas un déploiement en cours
 concurrency:
@@ -31,11 +31,8 @@ jobs:
         with:
           node-version: 20
       # seuls terser + javascript-obfuscator sont requis ; on saute les deps lourdes (electron…)
-      - run: npm install --no-audit --no-fund --omit=optional
+      - run: npm ci --no-audit --no-fund --omit=optional
       - run: npm run build
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true        # active Pages automatiquement au 1er run
       - uses: actions/upload-pages-artifact@v3
         with:
           path: www
@@ -49,7 +46,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --no-audit --no-fund --omit=optional
+      - run: npm ci --no-audit --no-fund --omit=optional
       # syntaxe des scripts Node hors navigateur (l'appli PC Electron ne démarrait plus depuis le #40
       # à cause d'une apostrophe dans une chaîne — rien ne le vérifiait)
       - run: for f in electron/*.js build.mjs tools/*.mjs cloudflare-turn-worker.js; do node --check "$f"; done
@@ -63,9 +60,16 @@ jobs:
     # travail on se contente du build (vérification), sans tenter — et échouer — le déploiement.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true        # active Pages automatiquement au 1er run
       - id: deployment
         uses: actions/deploy-pages@v4
