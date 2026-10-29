@@ -19,9 +19,15 @@ function endOnlinePause(broadcast){
   netPause = null; paused = false; settingsOpen = false;
   if (game && !game.over) announce(t('np_resumed'), '#9dc88a');
 }
+const PAUSE_MAX_FOE = 6;               // demandes de pause de l'adversaire acceptées par partie
 function onPauseMsg(d){
   if (!game || game.over) return;
   if (d.act==='req'){
+    // anti-harcèlement : une pause déjà en cours n'est pas relancée, et au-delà de PAUSE_MAX_FOE
+    // demandes on refuse automatiquement (sinon un client modifié figeait la partie à l'infini)
+    if (netPause && netPause.active) return;
+    game.foePauses = (game.foePauses||0) + 1;
+    if (game.foePauses > PAUSE_MAX_FOE){ pauseSend('no'); return; }
     netPause = {active:true, byMe:false, timer:PAUSE_WINDOW, voting:false};
     paused = true; announce(t('np_paused_foe'), '#e8d8a0');
   } else if (d.act==='yes'){       // l'adversaire a accepté de prolonger
@@ -167,7 +173,11 @@ async function loadPeerLib(){
     'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
   ];
   for (const src of sources){
-    try { await loadScriptOnce(src, 9000, /^https:/.test(src)? PEERJS_SRI : null); if (window.Peer) return window.Peer; } catch(e){}
+    // SRI partout où le navigateur sait la vérifier : CDN, et copie auto-hébergée servie en
+    // http(s) (le service worker la met en cache : une copie altérée serait refusée). Sur file://
+    // (appli PC) le fichier fait partie du paquet installé et la vérification n'y est pas possible.
+    const sri = (/^https:/.test(src) || /^https?:$/.test(location.protocol))? PEERJS_SRI : null;
+    try { await loadScriptOnce(src, 9000, sri); if (window.Peer) return window.Peer; } catch(e){}
   }
   return null;
 }
@@ -195,12 +205,12 @@ async function getIceServers(){
       const headers = useProxy
         ? { 'Content-Type':'application/json' }   // pas de token côté client avec le proxy
         : { 'Authorization':'Bearer '+NET_CONFIG.cfTurnToken, 'Content-Type':'application/json' };
-      const r = await fetch(url, { method:'POST', headers, body: JSON.stringify({ ttl: 86400 }) });
+      const r = await fetch(url, { method:'POST', headers, body: JSON.stringify({ ttl: 7200 }) });
       if (r.ok){
         const j = await r.json();
         const turn = (j.iceServers ? (Array.isArray(j.iceServers)? j.iceServers : [j.iceServers]) : []);
         const servers = STUN.concat(turn);
-        cfIceCache = { servers, exp: Date.now() + 80000*1000 };  // ~22 h
+        cfIceCache = { servers, exp: Date.now() + 6600*1000 };   // identifiants valables 2 h : on renouvelle avant
         return { iceServers: servers };
       }
     } catch(e){ /* échec Cloudflare → repli public ci-dessous */ }
@@ -213,16 +223,33 @@ function versionFail(){
   try { iosHint('Versions différentes — rechargez le jeu des deux côtés.'); } catch(e){}
   setTimeout(netDisconnect, 50);
 }
+// SÉCURITÉ : tout message du pair est NON FIABLE (client modifié possible). Corps toujours objet,
+// camps limités à HUM/IA, file de commandes plafonnée, mot de passe protégé contre la force brute.
+const facOk = f => f==='HUM' || f==='IA';
+const PW_MAX_FAILS = 6, PW_LOCK_S = 60;
 function nrecv(msg){
-  if (!msg || !net) return;
-  const t = msg.t, d = msg.d;
+  if (!msg || typeof msg!=='object' || !net) return;
+  const t = msg.t, d = (msg.d && typeof msg.d==='object')? msg.d : {};
+  try {
   if (t==='st'){ if (net.role==='guest') onSnapshot(d); }
-  else if (t==='cm'){ if (net.role==='host') net.cmdQ.push(d); }
+  else if (t==='cm'){ if (net.role==='host' && net.authed && net.cmdQ.length < 64) net.cmdQ.push(d); }
   else if (t==='hi'){                                   // l'hôte reçoit le bonjour de l'invité (version + mot de passe)
     if (net.role==='host' && !game){
       if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); versionFail(); return; }
-      if (net.pw && (d.pw||'') !== net.pw){ nsend('pwko', {}); netStatus(tr('net_badpw_wait')); return; }
-      net.foeFac = d.fac;                                // faction initiale de l'invité
+      const now = performance.now()/1000;
+      if (net.pw){
+        // anti-force-brute : après PW_MAX_FAILS échecs, plus aucun essai accepté pendant PW_LOCK_S
+        if (net.pwLockUntil && now < net.pwLockUntil){ nsend('pwko', {}); return; }
+        if (String(d.pw||'') !== net.pw){
+          net.pwFails = (net.pwFails||0) + 1;
+          if (net.pwFails >= PW_MAX_FAILS){ net.pwFails = 0; net.pwLockUntil = now + PW_LOCK_S; }
+          nsend('pwko', {}); netStatus(tr('net_badpw_wait'));
+          try { if (net.conn) setTimeout(()=>{ try { net && net.conn && net.conn.close(); } catch(e){} }, 300); } catch(e){}
+          return;
+        }
+      }
+      net.pwFails = 0; net.authed = true;
+      net.foeFac = facOk(d.fac)? d.fac : (net.myFac==='HUM'? 'IA':'HUM');   // faction initiale de l'invité
       net.sendLok({ v:NET_PROTO, hostFac:net.myFac, speed:net.speed });  // confirme + partage la faction de l'hôte
       enterLobby();                                      // → écran de lobby commun (choix des camps)
     }
@@ -230,36 +257,43 @@ function nrecv(msg){
   else if (t==='lok'){                                  // l'invité reçoit la confirmation de l'hôte → lobby
     if (net.role==='guest' && !game){
       if (d.v !== NET_PROTO){ versionFail(); return; }
-      net.foeFac = d.hostFac;
+      net.authed = true;
+      net.foeFac = facOk(d.hostFac)? d.hostFac : null;
       if (d.speed) net.speed = clampSpeed(d.speed);
       enterLobby();
     }
   }
   else if (t==='lf'){                                   // l'autre joueur a changé de camp dans le lobby
-    if (net && !game){ net.foeFac = d.fac; refreshLobbyView(); }
+    if (net && net.authed && !game && facOk(d.fac)){ net.foeFac = d.fac; refreshLobbyView(); }
   }
   else if (t==='go'){                                   // l'invité reçoit le départ de l'hôte (avec sa version)
-    if (net.role==='guest' && !game){
+    if (net.role==='guest' && net.authed && !game){
       if (d.v !== NET_PROTO){ versionFail(); return; }
+      if (!facOk(d.guestFac) || !facOk(d.hostFac)) return;
       startGuestGame(d);
     }
   }
   else if (t==='ko'){ versionFail(); }                  // l'autre côté a refusé pour cause de version
-  else if (t==='pwko'){ netBadPw(); }                   // mot de passe refusé par l'hôte
-  else if (t==='pz'){ onPauseMsg(d); }
-  else if (t==='sp'){ onSpeedMsg(d); }                  // vote de changement de vitesse
+  else if (t==='pwko'){ if (net.role==='guest') netBadPw(); }   // mot de passe refusé par l'hôte
+  else if (t==='pz'){ if (net.authed) onPauseMsg(d); }
+  else if (t==='sp'){ if (net.authed) onSpeedMsg(d); }  // vote de changement de vitesse
+  } catch(err){ console.error('nrecv', err); }
 }
 function netBadPw(){ netStatus(t('net_badpw')); setTimeout(netDisconnect, 50); }
 function bindConn(conn){
-  net.conn = conn;
+  net.conn = conn; net.authed = false;
   conn.on('open', ()=>{
+    if (!net || net.conn!==conn) return;
     if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
     net.peer = true; net.peerId = conn.peer;
     if (net.role==='guest'){ netStatus(tr('net_found')); net.sendHello({fac:net.myFac, v:NET_PROTO, pw:net.pw||''}); }
     else netStatus(tr('net_peer_conn'));
   });
-  conn.on('data', nrecv);
-  conn.on('close', ()=>{ if (net){ net.peer=false; } onPeerLeft(); });
+  // seuls les messages de la connexion COURANTE comptent (une connexion remplacée ne parle plus)
+  conn.on('data', msg=>{ if (net && net.conn===conn) nrecv(msg); });
+  conn.on('close', ()=>{ if (!net || net.conn!==conn) return;
+    const was = net.authed; net.peer=false; net.authed=false;
+    if (was || game) onPeerLeft(); });                 // tentative jamais authentifiée : rien à défaire
   conn.on('error', ()=>{});
 }
 async function netConnect(role, code, fac, opts){
@@ -291,7 +325,15 @@ async function netConnect(role, code, fac, opts){
       if (net && net.pub){ lobbyPublish(); net.hbTimer = setInterval(lobbyPublish, 20000); } // heartbeat liste publique
     } else { netStatus(fmt('net_search',{code:code})); tryConnect(); }
   });
-  peerObj.on('connection', conn=>{ if (role==='host') bindConn(conn); });   // invité entrant côté hôte
+  // invité entrant côté hôte. VERROU : une fois un invité authentifié (bon mot de passe, lobby ou
+  // partie en cours), toute autre connexion est refusée — avant, n'importe qui connaissant le code
+  // (liste publique) remplaçait l'adversaire, même en pleine partie, et pilotait son armée.
+  peerObj.on('connection', conn=>{
+    if (role!=='host') { try { conn.close(); } catch(e){} return; }
+    if (net && net.conn && net.authed && net.peer){ conn.on('open', ()=>{ try { conn.close(); } catch(e){} }); return; }
+    if (net && net.conn && net.conn!==conn){ try { net.conn.close(); } catch(e){} }   // tentative non authentifiée remplacée
+    bindConn(conn);
+  });
   peerObj.on('error', err=>{
     const ty = err && err.type;
     if (ty==='unavailable-id'){
@@ -335,7 +377,7 @@ function fbUrl(path){ return NET_CONFIG.firebaseDb.replace(/\/+$/,'') + path + '
 function lobbyPublish(){
   if (!NET_CONFIG.firebaseDb || !net || !net.pub) return;
   const body = JSON.stringify({ code:net.code, name:(net.name||('Salon '+net.code)), fac:net.myFac,
-                                speed:net.speed, hasPw:!!net.pw, ts:Date.now() });
+                                speed:net.speed, hasPw:!!net.pw, ts:{'.sv':'timestamp'} });   // heure du SERVEUR (horloges des téléphones souvent fausses)
   fetch(fbUrl('/lobbies/'+net.code), { method:'PUT', body }).catch(()=>{});
 }
 function lobbyRemove(code){
@@ -347,12 +389,17 @@ function lobbyClean(l){
   const code = String(l.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
   if (!code) return null;
   return { code, name: typeof l.name==='string'? l.name.slice(0,40) : '', fac: l.fac==='IA'? 'IA' : 'HUM',
-           speed: [1,2,3].includes(+l.speed)? +l.speed : 1, hasPw: l.hasPw===true, ts: Number.isFinite(+l.ts)? +l.ts : 0 };
+           speed: SPEEDS.includes(+l.speed)? +l.speed : 1, hasPw: l.hasPw===true, ts: Number.isFinite(+l.ts)? +l.ts : 0 };
 }
 async function lobbyList(){
   if (!NET_CONFIG.firebaseDb) return [];
   try {
-    const r = await fetch(fbUrl('/lobbies'), { cache:'no-store' });
+    // lecture BORNÉE (50 salons les plus récents) : les règles Firebase conseillées (README)
+    // n'autorisent plus que cette requête — une base remplie de salons bidons ne peut plus
+    // faire télécharger des mégaoctets à chaque joueur. Repli sur la lecture simple tant que
+    // les anciennes règles (sans index « ts ») sont en place.
+    let r = await fetch(fbUrl('/lobbies')+'?orderBy=%22ts%22&limitToLast=50', { cache:'no-store' });
+    if (!r.ok) r = await fetch(fbUrl('/lobbies'), { cache:'no-store' });
     if (!r.ok) return [];
     const j = (await r.json()) || {};
     const now = Date.now();

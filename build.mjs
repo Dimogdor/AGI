@@ -36,11 +36,30 @@ async function assemble(){
   return shell.replace('__BUILD_SCRIPT__', () => js);
 }
 
+// --- CONTENT-SECURITY-POLICY (défense en profondeur contre l'injection de script) ---
+// Scripts : uniquement les blocs inline du jeu (empreintes sha256 calculées ICI, sur le contenu
+// final) + même origine (PeerJS auto-hébergé, sw.js) + les deux CDN de repli PeerJS (vérifiés
+// par SRI). Réseau : Firebase (liste des salons), proxy TURN et broker PeerJS — origines lues
+// dans NET_CONFIG pour ne jamais diverger du code. Aucun eval, aucun objet/plugin, pas de <base>.
+async function addCSP(page){
+  const { createHash } = await import('node:crypto');
+  const net = await readFile(new URL('20-net-online.js', SRCDIR), 'utf8');
+  const origin = k => { const m = net.match(new RegExp(k+':\\s*"(https:[^"]+)"')); try { return m? new URL(m[1]).origin : ''; } catch { return ''; } };
+  const hashes = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+    .map(m => `'sha256-${createHash('sha256').update(m[1], 'utf8').digest('base64')}'`).join(' ');
+  const csp = [`default-src 'self'`,
+    `script-src 'self' ${hashes} https://cdn.jsdelivr.net https://unpkg.com`,
+    `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`, `media-src 'self' data: blob:`,
+    `connect-src 'self' ${origin('firebaseDb')} ${origin('cfTurnProxy')} https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com`.replace(/ +/g,' '),
+    `worker-src 'self'`, `manifest-src 'self'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`].join('; ');
+  return page.replace('<meta charset="UTF-8">', () => `<meta charset="UTF-8">\n<meta http-equiv="Content-Security-Policy" content="${csp}">`);
+}
+
 const DEV = process.argv.includes('dev');
 console.log(`▶ build v${VERSION}${DEV?' (dev)':''}`);
 // régénère la-derniere-bataille.html (lisible + jouable sur file://) à partir des modules src/
 const html = await assemble();
-await writeFile(SRC, html);
+await writeFile(SRC, await addCSP(html));
 console.log(`  la-derniere-bataille.html régénéré depuis src/ (${(html.length/1024)|0} Ko)`);
 // mode dev : on s'arrête là (pas de minif/obfuscation/PWA) — itération rapide
 if (DEV){ console.log('✔ dev prêt (sans obfuscation)'); process.exit(0); }
@@ -109,7 +128,7 @@ outHtml = outHtml.replace('</head>', () =>
 // --- (re)création de www/ ---
 await rm(OUT, { recursive: true, force: true });
 await mkdir(new URL('./icons/', OUT), { recursive: true });
-await writeFile(new URL('./index.html', OUT), outHtml);
+await writeFile(new URL('./index.html', OUT), await addCSP(outHtml));
 
 // --- manifest PWA ---
 const manifest = {
@@ -155,11 +174,13 @@ self.addEventListener('fetch',e=>{
   if(u.origin!==self.location.origin)return; // autres domaines (liste des salons Firebase…) : réseau direct, jamais de cache
   const isDoc=req.mode==='navigate'||u.pathname==='/'||u.pathname.endsWith('/')||u.pathname.endsWith('index.html');
   if(isDoc){ // réseau d'abord : la page la plus récente quand on est connecté
-    e.respondWith(fetch(req).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
+    e.respondWith(fetch(req).then(res=>{if(res.ok&&res.type==='basic'){const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));}return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
     return;
   }
   // ressources statiques : cache d'abord + rafraîchissement en arrière-plan
-  e.respondWith(caches.match(req).then(r=>{const net=fetch(req).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(req,cp).catch(()=>{}));return res;}).catch(()=>r);return r||net;}));
+  // (seules les réponses 200 de même origine entrent en cache : une 404 ou une page d'erreur
+  //  ne peut plus remplacer durablement une ressource)
+  e.respondWith(caches.match(req).then(r=>{const net=fetch(req).then(res=>{if(res.ok&&res.type==='basic'){const cp=res.clone();caches.open(C).then(c=>c.put(req,cp).catch(()=>{}));}return res;}).catch(()=>r);return r||net;}));
 });`;
 await writeFile(new URL('./sw.js', OUT), sw);
 

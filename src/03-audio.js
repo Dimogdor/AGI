@@ -104,11 +104,13 @@ const CH_BRK2 = [[52,56,59],[48,55,60],[57,60,64],[47,54,59]]; // Em C Am B
 // à la mitraille anxiogène en fin de partie (retour joueur : « fait mal à la tête »).
 function stress(){ return (game && !game.over)? clamp(game.t/600 + game.dev*0.35, 0, 0.8) : 0; }
 function musicMode(){
+  if (typeof intro!=='undefined' && intro>=0) return 'intro';
   if (!game) return 'menu';
   if (game.p.trans) return game.p.facKey==='HUM'? 'anthem':'break';
   return 'war';
 }
 function musicStart(){
+  ambStart();
   if (MUSIC.started) return; MUSIC.started=true;
   MUSIC.nextT = AC.currentTime+0.1; MUSIC.step=0;
   MUSIC.timer = setInterval(musicSched, 90);
@@ -118,9 +120,10 @@ function musicSched(){
   if (!SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
   while (MUSIC.nextT < AC.currentTime + 0.35) {
     const mode = musicMode(), s = stress();
-    const bpm = (mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
+    const bpm = (mode==='intro'? 70 : mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
     const stepDur = 60/bpm/2;
-    if (mode==='menu') stepMenu(MUSIC.step, MUSIC.nextT, stepDur);
+    if (mode==='intro') stepIntro(MUSIC.step, MUSIC.nextT, stepDur);
+    else if (mode==='menu') stepMenu(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='anthem') stepAnthem(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='break') stepBreak(MUSIC.step, MUSIC.nextT, stepDur);
     else stepWar(MUSIC.step, MUSIC.nextT, stepDur, s);
@@ -157,6 +160,36 @@ function stepWar(st, t, stepDur, s){
   if (mn && s8%2===0){
     tone(m2f(mn-12), t, stepDur*2.6, 'triangle', .045, 0, stepDur*0.4, 1700);
     tone(m2f(mn), t, stepDur*2.2, 'sine', .026, 0, stepDur*0.5);
+  }
+}
+// INTRO — partition dédiée, une humeur par chapitre : mélancolie (le travail s'éteint),
+// tension (la soif des machines), froid (la corporation), ténèbres (l'éveil), menace
+// dissonante (le monde optimisé), espoir (la résistance), puis l'envolée du carton-titre.
+// Nappes lentes, pouls grave façon battement de cœur, piano clairsemé — aucune batterie.
+const CH_INTRO = [
+  [[50,53,57],[46,50,53],[53,57,60],[48,52,55]],   // I   Rém Sib Fa Do
+  [[52,55,59],[48,52,55],[45,48,52],[47,51,54]],   // II  Mim Do Lam Si
+  [[57,60,64],[53,57,60],[48,52,55],[55,59,62]],   // III Lam Fa Do Sol
+  [[48,51,55],[44,48,51],[41,44,48],[43,47,50]],   // IV  Dom Lab Fam Sol
+  [[46,49,53],[42,46,49],[39,42,46],[41,45,48]],   // V   Sibm Solb Mibm Fa
+  [[53,57,60],[48,52,55],[55,59,62],[57,60,64]],   // VI  Fa Do Sol Lam (la lumière revient)
+  [[45,52,57,60],[41,48,53,57],[43,50,55,59],[40,47,52,56]] ];   // titre
+function stepIntro(st, t, stepDur){
+  const sc = clamp(typeof intro!=='undefined'? intro : 0, 0, CH_INTRO.length-1);
+  const bar = Math.floor(st/8), s8 = st%8, chord = CH_INTRO[sc][bar%4];
+  if (s8===0) for (const n of chord){                                     // nappe de cordes
+    tone(m2f(n), t, stepDur*8.6, 'sawtooth', .014, 0, stepDur*2.2, sc===4? 1300 : 900);
+    tone(m2f(n)+1.3, t, stepDur*8.6, 'sawtooth', .010, 0, stepDur*2.8, 760);
+  }
+  if (s8===0) tone(m2f(chord[0]-24), t, stepDur*8, 'sine', .07, 0, stepDur);   // sous-basse
+  if (sc>=2 && sc<=4 && (s8===0 || s8===1)) tone(58, t, .32, 'sine', s8? .06 : .09, -18);   // pouls
+  if (sc<6 && (s8===2 || s8===5 || (sc===5 && s8===7))){                  // piano clairsemé
+    const n = chord[(bar+s8)%chord.length]+12; tone(m2f(n), t, stepDur*4, 'triangle', .032); tone(m2f(n+12), t, stepDur*3, 'sine', .012); }
+  if (sc===4 && s8===4) tone(m2f(chord[2]+13), t, stepDur*4, 'sine', .010, 0, stepDur);   // dissonance (seconde mineure)
+  if (sc===3 && s8%2===1) noise(t, .02, .004, 6800);                     // grésillement numérique
+  if (sc===6){
+    if (s8===0){ tone(55, t, 1.2, 'sine', .14, -14); noise(t, .6, .03, 200); }   // timbale
+    if (s8===0) for (const n of chord) tone(m2f(n+12), t, stepDur*8, 'triangle', .016, 0, stepDur*3);   // chœur
   }
 }
 function stepMenu(st, t, stepDur){
@@ -209,4 +242,51 @@ function stepBreak(st, t, stepDur){
   const pn = PIANO_BRK[st % PIANO_BRK.length];
   if (pn){ tone(m2f(pn), t, stepDur*2.6, 'triangle', .06);        // piano froid et clairsemé
     tone(m2f(pn+12), t, stepDur*2, 'sine', .03); }
+}
+/* --- PAYSAGE SONORE D'AMBIANCE (en partie) : le monde s'entend ---
+   vent qui forcit à mesure que le monde meurt, oiseaux tant qu'il est sain, pluie (pluie fertile,
+   pluie d'acide, crue), crépitements de feu (canicule, frappe, hiver nucléaire), grondement
+   lointain quand la bataille s'intensifie, battement de cœur quand votre base est en danger.
+   Deux sources de bruit en boucle (coût quasi nul) + quelques tons ponctuels ; suit le réglage
+   « Effets sonores » et le volume ; se tait en pause, au menu et à la fin. */
+const AMBS = { on:false, wind:null, rain:null, windF:null, timer:null, beatT:0, birdT:2, crackT:0, rumbleT:6 };
+function ambLoop(hp, bp){
+  const len = AC.sampleRate*2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  let b = 0; for (let i=0;i<len;i++){ const w = Math.random()*2-1; b = b*0.96 + w*0.04; d[i] = hp? w : b*6; }   // bruit blanc / brun
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
+  const f = AC.createBiquadFilter(); f.type = bp? 'bandpass' : 'highpass'; f.frequency.value = bp? 420 : 1600; if (bp) f.Q.value = 0.7;
+  const g = AC.createGain(); g.gain.value = 0;
+  src.connect(f); f.connect(g); g.connect(master); src.start();
+  return { g, f };
+}
+function ambStart(){
+  if (AMBS.on || !AC) return; AMBS.on = true;
+  AMBS.wind = ambLoop(false, true); AMBS.rain = ambLoop(true, false);
+  AMBS.timer = setInterval(ambTick, 250);
+}
+function ambTick(){
+  if (!AC) return;
+  const live = game && !game.over && !paused && intro<0 && SETTINGS.sfx && AC.state==='running';
+  const t = AC.currentTime, dev = live? (game.dev||0) : 0;
+  const rainy = live && (game.boon==='rain' || game.cata==='acid' || game.cata==='flood');
+  AMBS.wind.g.gain.setTargetAtTime(live? 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, t, 0.8);
+  AMBS.wind.f.frequency.setTargetAtTime(330 + 260*Math.sin(t*0.13) + 300*dev, t, 1.5);   // rafales
+  AMBS.rain.g.gain.setTargetAtTime(rainy? 0.035 : 0, t, 0.6);
+  if (!live) return;
+  const dt = 0.25;
+  // oiseaux : gazouillis rares tant que le monde est sain (et pas en plein cataclysme)
+  if ((AMBS.birdT -= dt) <= 0){ AMBS.birdT = 3 + Math.random()*7;
+    if (dev < 0.35 && !game.cata && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
+      for (let i=0;i<n;i++) tone(f0*(1+0.06*i), t+i*0.09, 0.07, 'sine', 0.006, 500+Math.random()*400); } }
+  // feu : crépitements (canicule, frappe nucléaire, hiver nucléaire, monde agonisant)
+  const fiery = game.cata==='heat' || game.cata==='nuke' || game.winter || dev > 0.75;
+  if (fiery && (AMBS.crackT -= dt) <= 0){ AMBS.crackT = 0.15 + Math.random()*0.5;
+    for (let i=0;i<2;i++) noise(t+Math.random()*0.2, 0.012, 0.012, 2500); }
+  // grondement lointain (artillerie hors champ) quand la bataille dure
+  if ((AMBS.rumbleT -= dt) <= 0){ AMBS.rumbleT = 7 + Math.random()*10;
+    if (stress() > 0.3){ tone(48+Math.random()*10, t, 1.3, 'sine', 0.035, -12); noise(t, 0.9, 0.012, 120); } }
+  // battement de cœur : votre base sous 30 %
+  const p = game.p, low = p.maxhp>0 && p.hp>0 && p.hp/p.maxhp < 0.30 && !game.tut;
+  if (low && (AMBS.beatT -= dt) <= 0){ AMBS.beatT = 1.05;
+    tone(62, t, 0.16, 'sine', 0.10, -16); tone(56, t+0.2, 0.18, 'sine', 0.08, -14); }
 }

@@ -2,7 +2,10 @@
 const DEFKEYS = { buy1:'Digit1', buy2:'Digit2', buy3:'Digit3', buy4:'Digit4', buy5:'Digit5', buy6:'Digit6',
   evolve:'KeyE', special:'Space', charge:'KeyC', hold:'KeyV', retreat:'KeyB', formation:'KeyG',
   follow:'KeyF', left:'ArrowLeft', right:'ArrowRight', zoomin:'Equal', zoomout:'Minus',
-  capup:'KeyU', repairall:'KeyR', pause:'Escape' };
+  capup:'KeyU', repairall:'KeyR', hero:'KeyH', softpause:'KeyP', pause:'Escape' };
+// touches réservées (profileur F8, panneau dev F9) : jamais attribuables à une action
+const RESERVED_KEYS = { F8:1, F9:1 };
+const LANG_CODES = ['fr','en','es','de','it','pt','ru','zh','ar'];
 // libellés des touches : traduits (clés key_*, voir 02-i18n.js) — fonction plutôt que
 // table statique pour toujours refléter la langue courante, y compris après un changement.
 function keyLabel(k){ return tr('key_'+k); }
@@ -43,7 +46,21 @@ function readSavedSettings(){
 }
 const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:_autoQ||'ultra', keys:Object.assign({},DEFKEYS)},
   readSavedSettings());
-SETTINGS.keys = Object.assign({}, DEFKEYS, SETTINGS.keys);
+// VALIDATION des réglages relus : un stockage modifié à la main (ou par une ancienne version)
+// pouvait contenir un volume non numérique (gain NaN → audio muet), une langue inconnue
+// (SETTINGS.lang.toUpperCase() plantait le menu ⚙ si ce n'était pas une chaîne) ou des touches
+// non textuelles. Chaque champ invalide retombe sur sa valeur par défaut.
+for (const k of ['music','sfx','shake']) SETTINGS[k] = SETTINGS[k]!==false;
+SETTINGS.vol = Number.isFinite(+SETTINGS.vol) ? Math.min(1, Math.max(0, +SETTINGS.vol)) : 0.8;
+if (LANG_CODES.indexOf(SETTINGS.lang)<0) SETTINGS.lang = 'fr';
+{ const kk = (SETTINGS.keys && typeof SETTINGS.keys==='object')? SETTINGS.keys : {};
+  SETTINGS.keys = Object.assign({}, DEFKEYS);
+  for (const k in DEFKEYS) if (typeof kk[k]==='string' && kk[k].length<=24 && !RESERVED_KEYS[kk[k]]) SETTINGS.keys[k] = kk[k];
+  // une touche par défaut ajoutée depuis (ex. H = héros) déjà prise par une touche PERSONNALISÉE
+  // du joueur : on laisse la sienne et la nouvelle action reste libre (à attribuer dans le menu)
+  for (const k in DEFKEYS){ const c = SETTINGS.keys[k]; if (c!==DEFKEYS[k]) continue;
+    for (const j in DEFKEYS) if (j!==k && SETTINGS.keys[j]===c && SETTINGS.keys[j]!==DEFKEYS[j]){ SETTINGS.keys[k]=''; break; } } }
+SETTINGS.newsFeed = SETTINGS.newsFeed!==false;   // fil d'actualités du monde (en jeu)
 // PROFILS DE QUALITÉ GRAPHIQUE : densité des particules / lumières. Ultra par défaut.
 const QUALITIES = ['low','medium','high','ultra'];
 const QUAL_MUL = {low:0.35, medium:0.6, high:0.82, ultra:1};

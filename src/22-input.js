@@ -1,16 +1,26 @@
 /* ================= CLAVIER ================= */
 const kdown = new Set();
+// attribution d'une touche (menu PARAMÈTRES) : Échap annule (sauf pour l'action « menu ⚙ »
+// elle-même), F8/F9 sont réservées, et une touche déjà utilisée par une autre action est
+// ÉCHANGÉE — avant, deux actions pouvaient partager une touche et la seconde ne marchait plus.
+function assignKey(k, code){
+  if (RESERVED_KEYS[code]) return false;
+  const prev = SETTINGS.keys[k];
+  for (const j in SETTINGS.keys) if (j!==k && SETTINGS.keys[j]===code) SETTINGS.keys[j] = prev;
+  SETTINGS.keys[k] = code; saveSettings(); return true;
+}
 window.addEventListener('keydown', e=>{
+  if (keyWait && $('menu').style.display==='none') keyWait = null;   // attente oubliée en lançant une partie
   if (keyWait){
     e.preventDefault();
-    SETTINGS.keys[keyWait.k] = e.code; saveSettings();
+    if (!(e.code==='Escape' && keyWait.k!=='pause')) assignKey(keyWait.k, e.code);
     keyWait = null; buildKeysBox();
     return;
   }
   kdown.add(e.code);
   cheatFeed(e);                                                         // séquence secrète du mode triche (dev)
   if (e.code==='F8'){ PERF.on=!PERF.on; e.preventDefault(); return; }   // profileur perf (diagnostic)
-  if (e.code==='F9' && CHEAT.unlocked){ CHEAT.open=!CHEAT.open; e.preventDefault(); return; }   // panneau de triche
+  if (e.code==='F9' && CHEAT.unlocked && !(game && game.net)){ CHEAT.open=!CHEAT.open; e.preventDefault(); return; }   // panneau de triche (hors ligne)
   if (intro>=0){
     if (e.code==='Escape') finishIntro(); else advanceIntro();
     e.preventDefault(); return;
@@ -24,26 +34,37 @@ window.addEventListener('keydown', e=>{
   if (e.code==='Space' || e.code===K.special) e.preventDefault();
   // tutoriel : Espace/Entrée valide les étapes d'info (« Continuer »)
   if (game.tut && TUT && (e.code==='Space'||e.code==='Enter') && !TUT.confirmSkip && TUT.steps[TUT.i].tap){ tutBeginAct(); return; }
+  if (e.code===K.softpause){ e.preventDefault(); toggleSoftPause(); return; }
   if (paused || settingsOpen) return;   // réglages ouverts (même hors pause en ligne) : pas d'action de jeu au clavier
-  if (e.code===K.buy1){ tryBuy(p,0); }
-  else if (e.code===K.buy2){ tryBuy(p,1); }
-  else if (e.code===K.buy3){ tryBuy(p,2); }
-  else if (e.code===K.buy4){ tryBuy(p,3); }
-  else if (e.code===K.buy5){ tryBuy(p,4); }
-  else if (e.code===K.buy6){ tryBuy(p,5); }
-  else if (e.code===K.evolve){ tryEvolve(p); }
-  else if (e.code===K.special){ trySpecial(p); }
-  else if (e.code===K.charge){ setStance(p,'charge'); }
-  else if (e.code===K.hold){ setStance(p,'hold'); }
-  else if (e.code===K.retreat){ setStance(p,'retreat'); }
-  else if (e.code===K.formation){ p.formation=!p.formation;
-    announce(tr(p.formation? 'a_form_on':'a_form_off'), '#e8d8a0'); }
-  else if (e.code===K.repairall){ tryRepairAll(p); }
+  // TUTORIEL : le clavier respecte la visibilité progressive (une touche ne déclenche pas une
+  // action dont le bouton n'a pas encore été enseigné — sinon on sautait des leçons)
+  const kb = (b)=> !(game.tut && TUT && tutBtnHidden(b));
+  if (e.code===K.buy1){ if (kb({type:'unit',i:0})) tryBuy(p,0); }
+  else if (e.code===K.buy2){ if (kb({type:'unit',i:1})) tryBuy(p,1); }
+  else if (e.code===K.buy3){ if (kb({type:'unit',i:2})) tryBuy(p,2); }
+  else if (e.code===K.buy4){ if (kb({type:'unit',i:3})) tryBuy(p,3); }
+  else if (e.code===K.buy5){ if (kb({type:'unit',i:4})) tryBuy(p,4); }
+  else if (e.code===K.buy6){ if (kb({type:'unit',i:5})) tryBuy(p,5); }
+  else if (e.code===K.evolve){ if (kb({type:'evolve'})) tryEvolve(p); }
+  else if (e.code===K.special){ if (kb({type:'special'})) trySpecial(p); }
+  else if (e.code===K.charge){ if (kb({type:'stance',st:'charge'})) setStance(p,'charge'); }
+  else if (e.code===K.hold){ if (kb({type:'stance',st:'hold'})) setStance(p,'hold'); }
+  else if (e.code===K.retreat){ if (kb({type:'stance',st:'retreat'})) setStance(p,'retreat'); }
+  else if (e.code===K.formation){ if (kb({type:'formation'})) toggleFormation(p); }
+  else if (e.code===K.repairall){ if (kb({type:'repairall'})) tryRepairAll(p); }
+  else if (e.code===K.hero){ if (kb({type:'hero'}) && heroBtnReady(p)) tryHero(p); }
   else if (e.code===K.follow) camFollow=!camFollow;
-  else if (e.code===K.capup){ tryCapUp(p); }
+  else if (e.code===K.capup){ if (kb({type:'cap'})) tryCapUp(p); }
   else if (e.code===K.zoomin || e.code==='NumpadAdd') setZoom(zoom+0.12);
   else if (e.code===K.zoomout || e.code==='NumpadSubtract') setZoom(zoom-0.12);
 });
+// ⚏ formation : MÊME chemin pour le bouton et la touche (la touche ne relayait pas l'ordre à
+// l'hôte en ligne : côté invité la formation ne basculait que localement, puis était écrasée)
+function toggleFormation(p){
+  if (game.net==='guest'){ guestCmd({c:'form'}); sfx('sel'); return; }
+  p.formation=!p.formation; sfx('sel');
+  announce(p.formation? tr(p.facKey==='HUM'? 'a_form_hum':'a_form_ia') : tr('a_form_off'), '#e8d8a0');
+}
 window.addEventListener('keyup', e=>kdown.delete(e.code));
 // caméra fluide au clavier
 (function camKeys(){
@@ -121,6 +142,10 @@ cv.addEventListener('pointermove', e=>{
     return;
   }
   if (!pdown) return;
+  // ⚙ réglages : glisser sur la barre de volume la règle en continu (avant : un tap par réglage)
+  if (settingsOpen && pauseRects){ const r = pauseRects.find(r=>r.key==='vol' && r.slider);
+    if (r && inRect(pdown.sx, pdown.sy, r)){ pdown.moved = true;
+      SETTINGS.vol = clamp(Math.round(((sx-r.slider.x)/r.slider.w)*20)/20, 0, 1); saveSettings(); refreshOpts(); return; } }
   const dx = sx-prev.sx;
   if (Math.abs(sx-pdown.sx)>6 || Math.abs(sy-pdown.sy)>6) pdown.moved = true;
   if (pdown.lasso){ selBox.x1 = sx; selBox.y1 = sy; return; }
@@ -183,7 +208,7 @@ function handleTap(sx, sy, shift, opts){
   if (!game) return;
   if (game.over) return;
   // MODE TRICHE (dev) : le panneau capte les clics en priorité tant qu'il est ouvert
-  if (CHEAT.unlocked && CHEAT.open && CHEAT.rects){
+  if (CHEAT.unlocked && CHEAT.open && CHEAT.rects && !game.net){
     for (const r of CHEAT.rects) if (inRect(sx,sy,r)){ cheatAction(r.k); return; }
   }
   // proposition de vitesse reçue (en ligne) : modal Oui/Non prioritaire
@@ -218,6 +243,7 @@ function handleTap(sx, sy, shift, opts){
         saveSettings(); refreshOpts();
       }
       else if (r.key==='shake'){ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); }
+      else if (r.key==='news'){ SETTINGS.newsFeed=!SETTINGS.newsFeed; saveSettings(); refreshOpts(); }
       else if (r.key==='lang'){ cycleLang(); }
       else if (r.key==='quality'){ cycleQuality(); refreshOpts(); }
       else if (r.key==='follow') camFollow=!camFollow;
@@ -294,6 +320,8 @@ function handleTap(sx, sy, shift, opts){
     else tryBuild(p, slot, hit);
     return;
   }
+  // fil d'actualités : la croix × le masque
+  if (newsHandleTap(sx,sy)) return;
   // bannière de sélection : ✖
   if (HUD.selRect && inRect(sx,sy,HUD.selRect)){ game.sel.clear(); sfx('sel'); return; }
   // ⬆ d'amélioration de classe (annonce le coût si on ne peut pas payer)
@@ -313,11 +341,7 @@ function handleTap(sx, sy, shift, opts){
     else if (b.type==='cap'){ tryCapUp(p); }
     else if (b.type==='stance'){ setStance(p, b.st); }
     else if (b.type==='lasso'){ selMode=!selMode; sfx('sel'); }
-    else if (b.type==='formation'){
-      if (game.net==='guest'){ guestCmd({c:'form'}); sfx('sel'); return; }
-      p.formation=!p.formation; sfx('sel');
-      announce(p.formation? tr(p.facKey==='HUM'? 'a_form_hum':'a_form_ia') : tr('a_form_off'), '#e8d8a0');
-    }
+    else if (b.type==='formation'){ toggleFormation(p); return; }
     else if (b.type==='repairall'){ tryRepairAll(p); }
     else if (b.type==='cam'){
       if (b.go==='base'){ camFollow=false; camX = clamp(p.x - VW()*0.25, 0, WORLD-VW()); }

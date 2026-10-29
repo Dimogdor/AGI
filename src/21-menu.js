@@ -117,9 +117,17 @@ $('startBtn').addEventListener('click', ()=>{
   goFullscreen();
   $('menu').style.display = 'none';
   pendingStart = {fac:menuFac, diff:menuDiff};
-  intro = 0; introT = 0;
+  // l'histoire complète au premier lancement ; ensuite, directement le carton-titre
+  // (elle reste visible à tout moment via « Revoir l'histoire », onglet TUTORIEL)
+  let seen = null; try { seen = localStorage.getItem('agi_introSeen'); } catch(e){}
+  intro = seen? INTRO_N-1 : 0; introT = 0; introOut = 0;
 });
 $('tutoStartBtn').addEventListener('click', startTutorial);
+$('storyBtn').addEventListener('click', ()=>{
+  audioInit(); musicStart();
+  $('menu').style.display = 'none';
+  pendingStart = null; intro = 0; introT = 0; introOut = 0;
+});
 $('replayBtn').addEventListener('click', ()=>{
   $('endscreen').style.display = 'none';
   $('menu').style.display = 'flex';
@@ -261,6 +269,7 @@ function refreshOpts(){
   set('oMusic', SETTINGS.music);
   set('oSfx', SETTINGS.sfx);
   set('oShake', SETTINGS.shake);
+  set('oNews', SETTINGS.newsFeed);
   $('oVol').value = Math.round(SETTINGS.vol*100);
   $('oVolV').textContent = Math.round(SETTINGS.vol*100)+'%';
   const oq=$('oQuality'); if (oq){ oq.classList.add('on'); oq.textContent = qualityName().toUpperCase(); }
@@ -268,6 +277,7 @@ function refreshOpts(){
 $('oMusic').addEventListener('click', ()=>{ SETTINGS.music=!SETTINGS.music; saveSettings(); refreshOpts(); });
 $('oSfx').addEventListener('click', ()=>{ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); });
 $('oShake').addEventListener('click', ()=>{ SETTINGS.shake=!SETTINGS.shake; saveSettings(); refreshOpts(); });
+$('oNews').addEventListener('click', ()=>{ SETTINGS.newsFeed=!SETTINGS.newsFeed; saveSettings(); refreshOpts(); });
 $('oVol').addEventListener('input', ()=>{ SETTINGS.vol=clamp($('oVol').value/100,0,1); saveSettings(); refreshOpts(); });
 $('oQuality').addEventListener('click', ()=>{ cycleQuality(); refreshOpts(); });
 $('langSel').addEventListener('change', ()=>{ SETTINGS.lang=$('langSel').value; saveSettings(); applyLang(); });

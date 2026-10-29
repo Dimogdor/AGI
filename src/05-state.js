@@ -17,7 +17,7 @@ function slotRef(side, slot){
   i = game.neut.indexOf(slot);     if (i>=0) return {t:'neut',i};
   return null;
 }
-let particles=[], floaters=[], shots=[], projectiles=[], LIGHTS=[], VIGN=null, deaths=[];
+let particles=[], floaters=[], shots=[], projectiles=[], LIGHTS=[], VIGN=null, VIGN_RED=null, deaths=[];
 let camX = 0, camFollow = true;
 let buildMenu = null, pauseRects = null;
 let selMode = false, selBox = null;       // lasso

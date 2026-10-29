@@ -38,8 +38,11 @@ jobs:
           java-version: '17'        # Android Gradle Plugin 8.x
 
       # outils de build web + Capacitor, sans les dépendances lourdes inutiles ici (electron, canvas)
-      - run: npm install --no-audit --no-fund --omit=optional
-      - run: npm install --no-audit --no-fund --no-save @capacitor/cli@^6.1.2 @capacitor/core@^6.1.2 @capacitor/android@^6.1.2
+      # versions FIGÉES (lockfile + Capacitor exact) : le keystore est présent pendant le build Gradle,
+      # qui exécute du code de node_modules — aucune résolution « dernière version » à ce moment-là.
+      # Capacitor ≥ 6.2.2 : corrige GHSA-rvm3-566m-v7fv (contenu distant servi sous l'origine de l'appli).
+      - run: npm ci --no-audit --no-fund --omit=optional
+      - run: npm install --no-audit --no-fund --no-save @capacitor/cli@6.2.3 @capacitor/core@6.2.3 @capacitor/android@6.2.3
       - run: npm run build
       - run: npx cap sync android
 

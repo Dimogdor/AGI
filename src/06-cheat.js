@@ -14,7 +14,9 @@ function cheatFeed(e){
   }
 }
 function cheatAction(k){
-  if (!game || game.over) return;
+  // jamais en ligne : chez l'hôte (autoritaire) ces actions modifiaient la VRAIE partie
+  // (« gagner » = base adverse à 0) — le commentaire d'en-tête promettait l'inverse
+  if (!game || game.over || game.net) return;
   const p=game.p, e=game.e;
   if (k==='res'){ p.f+=10000; p.m+=10000; p.w+=10000; }
   else if (k==='xp'){ p.xp+=2000; }

@@ -209,6 +209,7 @@ function drawHUD(){
     ctx.fillStyle=game.msg.color; ctx.fillText(game.msg.txt, W/2, 100);
     ctx.globalAlpha=1;
   }
+  drawNews();                                      // fil d'actualités du monde (haut gauche, discret)
   // ---- boutons ----
   HUD.upgRects = [];
   for (const b of HUD.btns){
@@ -594,19 +595,26 @@ function drawPause(){
   const acc='#d8483a';
   const items = [
     {key:'h1', head:tr('opts_h_audio')},
-    {key:'music',  label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
-    {key:'sfx',    label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
+    {key:'music',  half:true, label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
+    {key:'sfx',    half:true, label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
     {key:'vol',    label:''},                       // slider de volume
     {key:'h2', head:tr('opts_h_display')},
-    {key:'lang',   label:t('set_lang')+' : '+((typeof LANG_NATIVE!=='undefined'&&LANG_NATIVE[SETTINGS.lang])||SETTINGS.lang.toUpperCase())},
+    {key:'lang',   label:t('set_lang')+' : '+((typeof LANG_NATIVE!=='undefined'&&LANG_NATIVE[SETTINGS.lang])||String(SETTINGS.lang).toUpperCase())},
     {key:'quality',label:tr('set_quality')+' : '+qualityName()},
-    {key:'shake',  label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
-    {key:'follow', label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
+    {key:'shake',  half:true, label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
+    {key:'follow', half:true, label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
+    {key:'news',   half:true, label:tr('set_news')+' : '+(SETTINGS.newsFeed?t('on'):t('off'))},
   ];
   // plein écran : en partie le bouton flottant ⛶ est masqué (il recouvrait le HUD), on le
   // propose donc ici — seulement là où l'API existe (ni appli native, ni iOS)
-  if (FS_AVAILABLE) items.push({key:'fs', label:tr('fs_btn')+' : '+(isFullscreen()?t('on'):t('off'))});
+  if (FS_AVAILABLE) items.push({key:'fs', half:true, label:tr('fs_btn')+' : '+(isFullscreen()?t('on'):t('off'))});
   items.push({key:'quit', label:t('p_quit')});
+  // DEUX réglages par ligne (paires consécutives « half ») : le panneau reste dans les 540 px
+  // logiques même avec le plein écran et le fil d'actualités en plus
+  const rows = [];
+  for (let i=0;i<items.length;i++){ const it = items[i];
+    if (it.half && items[i+1] && items[i+1].half){ rows.push({pair:[it, items[i+1]]}); i++; }
+    else rows.push(it); }
   // GÉOMÉTRIE : bh est dérivé des MÊMES constantes que les offsets Y du dessin
   // (TITLE_H/RESUME_H/GAP0), au lieu d'une constante devinée séparément — c'est cet
   // écart qui faisait sortir « Abandonner la partie » (dernier item) du cadre du panneau.
@@ -614,9 +622,9 @@ function drawPause(){
   const headH=24, gap=6;
   // hauteur de ligne ADAPTATIVE : 36 px par défaut, resserrée si la liste (ex. ligne plein
   // écran en plus) ne tiendrait plus dans la hauteur logique (540 px en 16:9)
-  const nRows = items.filter(it=>it.head==null).length, nHeads = items.length-nRows;
+  const nRows = rows.filter(it=>it.head==null).length, nHeads = rows.length-nRows;
   const ih = Math.max(30, Math.min(36, Math.floor((H-16 - TITLE_H-RESUME_H-GAP0-BOTTOM_PAD - nHeads*(headH+gap))/nRows - gap)));
-  let contentH=0; for (const it of items) contentH += (it.head!=null? headH : ih)+gap;
+  let contentH=0; for (const it of rows) contentH += (it.head!=null? headH : ih)+gap;
   const bh = TITLE_H + RESUME_H + GAP0 + contentH + BOTTOM_PAD;
   const by=clamp(H/2-bh/2, 8, H-bh-8);
   ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=22; ctx.shadowOffsetY=6;
@@ -637,7 +645,17 @@ function drawPause(){
   ctx.fillText(t('p_resume'), W/2, ry0+rh0/2+5);
   pauseRects = [{x:rx0,y:ry0,w:rw0,h:rh0,key:'resume'}];
   let y = ry0+rh0+GAP0;
-  for (const it of items){
+  for (const it of rows){
+    if (it.pair){
+      const hw = (bw-28-6)/2;
+      it.pair.forEach((pi,j)=>{ const px = bx+14+j*(hw+6);
+        pauseRects.push({x:px,y,w:hw,h:ih-6,key:pi.key});
+        ctx.fillStyle='rgba(255,255,255,0.045)'; rr(px,y,hw,ih-6,7); ctx.fill();
+        ctx.textAlign='center'; ctx.fillStyle='#d8d0c4';
+        fitFont(pi.label, hw-12, '12.5px Arial', 8);
+        ctx.fillText(pi.label, px+hw/2, y+(ih-6)/2+4); });
+      y += ih+gap; continue;
+    }
     if (it.head!=null){
       ctx.textAlign='left'; ctx.fillStyle='#e8a06a';
       fitFont(it.head, bw-44, '700 10.5px Arial', 8);

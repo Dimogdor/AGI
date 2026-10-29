@@ -1,23 +1,25 @@
 /* ================= FIN DE PARTIE ================= */
+// échappement HTML : en ligne, une partie des valeurs affichées vient de l'autre joueur
+const escH = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function showEnd(){
   const et = document.getElementById('endtitle'), s = document.getElementById('endstats');
   et.textContent = game.win? t('end_win') : t('end_lose');
   et.style.color = game.win? '#e8d8a0' : '#a8281e';
-  const mins = Math.floor(game.t/60), secs = ('0'+Math.floor(game.t%60)).slice(-2);
+  const gt = Math.max(0, +game.t||0), mins = Math.floor(gt/60), secs = ('0'+Math.floor(gt%60)).slice(-2);
   // v1.9 : cartes de statistiques à icônes + jauge de santé du monde (avant : 4 lignes de texte)
   const cells = [
     ['⏱', t('end_duration'), mins+' '+t('unit_min')+' '+secs+' '+t('unit_sec')],
-    ['⚔', t('end_kills'), game.kills],
-    ['☠', t('end_losses'), game.eKills],
-    ['✸', t('end_powers'), game.specialsUsed],
+    ['⚔', t('end_kills'), (+game.kills||0)|0],
+    ['☠', t('end_losses'), (+game.eKills||0)|0],
+    ['✸', t('end_powers'), (+game.specialsUsed||0)|0],
     ['✦', t('end_era'), lEra(game.p.facKey,game.p.era)+(game.p.trans? ' — '+lTransName(game.p.facKey):'')],
   ];
-  const wh = Math.round((1-game.dev)*100);
+  const wh = clamp(Math.round((1-(+game.dev||0))*100), 0, 100);
   s.innerHTML = '<div class="esGrid">'+cells.map(([ic,l,v],i)=>'<div class="esCell'+(i===4?' esWide':'')+'"><span class="esIco">'+ic+'</span>'+
-      '<span class="esLbl">'+l+'</span><b>'+v+'</b></div>').join('')+'</div>'+
+      '<span class="esLbl">'+escH(l)+'</span><b>'+escH(v)+'</b></div>').join('')+'</div>'+
     '<div class="esWorld"><span>🌍 '+t('end_world')+'</span><div class="esBar"><i style="width:'+wh+'%;background:'+
       (wh>60? '#7dd84a' : wh>30? '#ffd34a' : '#ff5a4a')+'"></i></div><b>'+wh+'%</b></div>'+
-    '<i class="esJournal">'+warJournal()+'</i>';
+    '<i class="esJournal">'+escH(warJournal())+'</i>';
   try { drawEndArt(); } catch(e){}
   document.getElementById('endscreen').style.display = 'flex';
 }

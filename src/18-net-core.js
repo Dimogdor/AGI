@@ -38,10 +38,24 @@ function serialize(){
     proj:projectiles.map(pr=>[Math.round(pr.sx),Math.round(pr.tx),pr.t,pr.dur,pr.fac==='HUM'?0:1,pr.era]),
   };
 }
-/* ---- côté HÔTE : application des commandes de l'invité (sur game.e) ---- */
-function resolveRef(ref){
-  if (!ref) return null;
-  return ref.t==='own'? game.e.slots[ref.i] : ref.t==='neut'? game.neut[ref.i] : null;
+/* ---- côté HÔTE : application des commandes de l'invité (sur game.e) ----
+   SÉCURITÉ : l'hôte fait autorité et ne fait JAMAIS confiance au contenu reçu (un client modifié
+   peut envoyer n'importe quoi). Index entiers bornés, valeurs dans des listes connues, propriété
+   des bâtiments vérifiée. Sans ça : pollution de prototype (ref.i='__proto__' → Array.prototype.b),
+   coordonnées NaN qui contaminaient la simulation, ou vol des troupes en garnison de l'hôte
+   (« ungar » sur un bâtiment neutre qu'il a capturé). */
+const CMD_BUILD_TYPES = ['wall','turret','farmF','farmM','well'];
+const CMD_STANCES = ['charge','hold','retreat'], CMD_GAR_ROLES = ['ranged','siege'];
+const isIdx = (v, n) => Number.isInteger(v) && v>=0 && v<n;
+function cmdIds(ids){ return Array.isArray(ids)? ids.slice(0, 120).filter(v => Number.isFinite(v)) : []; }
+// own=true : un bâtiment EXISTANT doit appartenir à l'invité (game.e) — jamais celui de l'hôte
+function resolveRef(ref, own){
+  if (!ref || typeof ref!=='object') return null;
+  const arr = ref.t==='own'? game.e.slots : ref.t==='neut'? game.neut : null;
+  if (!arr || !isIdx(ref.i, arr.length)) return null;
+  const s = arr[ref.i];
+  if (own && s.b && s.owner!==game.e) return null;
+  return s;
 }
 function applyStanceIds(side, st, ids){
   if (ids && ids.length){
@@ -74,62 +88,80 @@ function applyPointIds(side, x, ids){
 }
 function applyCmd(cmd){
   const e = game.e;
+  if (!cmd || typeof cmd!=='object') return;
   try {
     switch(cmd.c){
-      case 'buy':    tryBuy(e, cmd.ri); break;
+      case 'buy':    if (isIdx(cmd.ri, ROLES.length)) tryBuy(e, cmd.ri); break;
       case 'hero':   tryHero(e); break;
       case 'evo':    tryEvolve(e); break;
       case 'ult':    trySpecial(e); break;
       case 'cap':    tryCapUp(e); break;
-      case 'urole':  tryUpgRole(e, cmd.ri); break;
+      case 'urole':  if (isIdx(cmd.ri, ROLES.length)) tryUpgRole(e, cmd.ri); break;
       case 'repall': tryRepairAll(e); break;
       case 'fort':   tryFortify(e); break;
       case 'autorep':tryAutoRepair(e); break;
       case 'repbase':tryRepairBase(e); break;
       case 'form':   e.formation=!e.formation; break;
-      case 'stance': applyStanceIds(e, cmd.st, cmd.ids); break;
-      case 'point':  applyPointIds(e, cmd.x, cmd.ids); break;
-      case 'build':  { const s=resolveRef(cmd.ref); if (s) tryBuild(e,s,cmd.type); break; }
-      case 'srep':   { const s=resolveRef(cmd.ref); if (s&&s.b) tryRepair(e,s); break; }
-      case 'subg':   { const s=resolveRef(cmd.ref); if (s&&s.b) tryUpgBuild(e,s); break; }
-      case 'gar':    { const s=resolveRef(cmd.ref); if (s) dispatchGarrison(e,s,cmd.role); break; }
-      case 'garsel': { const s=resolveRef(cmd.ref); if (s&&canGar(s.b)) garrisonByIds(e,s,cmd.ids); break; }
-      case 'bgar':   dispatchBaseGarrison(e, cmd.role); break;
-      case 'ungar':  { const s=resolveRef(cmd.ref); if (s&&s.b&&s.b.gar.length){
+      case 'stance': if (CMD_STANCES.includes(cmd.st)) applyStanceIds(e, cmd.st, cmdIds(cmd.ids)); break;
+      case 'point':  if (Number.isFinite(cmd.x)) applyPointIds(e, clamp(cmd.x, 40, WORLD-40), cmdIds(cmd.ids)); break;
+      case 'build':  { const s=resolveRef(cmd.ref, true); if (s && !s.b && CMD_BUILD_TYPES.includes(cmd.type)) tryBuild(e,s,cmd.type); break; }
+      case 'srep':   { const s=resolveRef(cmd.ref, true); if (s&&s.b) tryRepair(e,s); break; }
+      case 'subg':   { const s=resolveRef(cmd.ref, true); if (s&&s.b) tryUpgBuild(e,s); break; }
+      case 'gar':    { const s=resolveRef(cmd.ref, true); if (s&&s.b) dispatchGarrison(e,s,CMD_GAR_ROLES.includes(cmd.role)? cmd.role : 'ranged'); break; }
+      case 'garsel': { const s=resolveRef(cmd.ref, true); if (s&&canGar(s.b)) garrisonByIds(e,s,cmdIds(cmd.ids)); break; }
+      case 'bgar':   if (CMD_GAR_ROLES.includes(cmd.role)) dispatchBaseGarrison(e, cmd.role); break;
+      case 'ungar':  { const s=resolveRef(cmd.ref, true); if (s&&s.b&&s.b.gar.length){
                        for (const g of s.b.gar){ g.x=s.x+(Math.random()*30-15); e.units.push(g); } s.b.gar=[]; } break; }
       case 'bungar': { for (const g of e.gar){ g.x=e.x+e.side*40; e.units.push(g); } e.gar=[]; break; }
-      case 'demo':   { const s=resolveRef(cmd.ref); if (s&&s.b) demolish(s); break; }
+      case 'demo':   { const s=resolveRef(cmd.ref, true); if (s&&s.b) demolish(s); break; }
     }
   } catch(err){ console.error('applyCmd', err); }
 }
 /* ---- côté INVITÉ : reconstruction de la vue miroir depuis un snapshot ---- */
+// SÉCURITÉ (invité) : l'instantané vient de l'hôte, donc potentiellement d'un client modifié.
+// Tout est ramené à des nombres finis bornés / des valeurs connues, et les listes sont plafonnées :
+// sinon une chaîne piégée finissait dans l'écran de fin (innerHTML → exécution de script), un
+// tableau géant ou burst(n=1e7) gelait le jeu, un rôle inconnu faisait planter chaque image.
+const SN = (v, lo, hi, d=0) => { v = +v; return Number.isFinite(v)? (v<lo? lo : v>hi? hi : v) : d; };
+const SA = (a, max) => Array.isArray(a)? (a.length>max? a.slice(0, max) : a) : [];
+const SCOL = c => (typeof c==='string' && c.length<=32 && /^[#a-z0-9(),.\s%]+$/i.test(c))? c : '#e8e0d2';
+const SNAP_WEATHER = ['strike','patch'], SNAP_BOON = ['rain','signal'];
 function deBld(sb, ownerSide){
-  if (!sb || sb===0) return null;
+  if (!Array.isArray(sb) || !isIdx(sb[0], BCODE_TYPE.length) || !sb[0]) return null;
   const type = BCODE_TYPE[sb[0]];
-  const b = { type, hp:sb[1], maxhp:sb[2], lvl:sb[3], atkT:0, gar:[] };
-  if (type==='site') b.buildType = BCODE_TYPE[sb[4]];
-  b.gar = (sb[5]||[]).map(g=>({role:CODE_ROLES[g[0]], era:g[1], fac:g[2]?'IA':'HUM', atkT:0, rate:1, bob:0}));
+  const maxhp = SN(sb[2], 1, 1e6, 100);
+  const b = { type, hp:SN(sb[1], 0, maxhp), maxhp, lvl:SN(sb[3], 1, 3, 1)|0, atkT:0, gar:[] };
+  if (type==='site') b.buildType = BCODE_TYPE[isIdx(sb[4], BCODE_TYPE.length)? sb[4] : 1] || 'wall';
+  b.gar = SA(sb[5], GAR_MAX).filter(g => Array.isArray(g) && CODE_ROLES[g[0]])
+    .map(g=>({role:CODE_ROLES[g[0]], era:SN(g[1],0,4)|0, fac:g[2]?'IA':'HUM', atkT:0, rate:1, bob:0}));
   return b;
 }
 function applySnapshot(snap){
-  if (!game || game.net!=='guest') return;
+  if (!game || game.net!=='guest' || !snap || typeof snap!=='object') return;
   const g = game;
-  g.t = snap.t; g.dev = snap.dev; g.weather = snap.we||null; g.boon = snap.bo||null;
-  g.kills = snap.ekills; g.eKills = snap.kills;
+  g.t = SN(snap.t, 0, 1e7); g.dev = SN(snap.dev, 0, 1);
+  g.weather = SNAP_WEATHER.includes(snap.we)? snap.we : null; g.boon = SNAP_BOON.includes(snap.bo)? snap.bo : null;
+  g.kills = SN(snap.ekills, 0, 1e7)|0; g.eKills = SN(snap.kills, 0, 1e7)|0;
   // cataclysme en cours (vue miroir : x → WORLD-x)
-  const ck = (snap.ca>=0)? CATA_KEYS[snap.ca] : null;
-  g.cata = ck; g.cataT = snap.cat||0; g.cataDur = ck? CATAS[ck].dur : 0;
-  g.cataX = WORLD - (snap.cax||0);
-  g.winter = !!snap.wi; g.winterT = snap.wt||0;
+  const ck = isIdx(snap.ca, CATA_KEYS.length)? CATA_KEYS[snap.ca] : null;
+  g.cata = ck; g.cataT = SN(snap.cat, 0, 600); g.cataDur = ck? CATAS[ck].dur : 0;
+  g.cataX = WORLD - SN(snap.cax, 0, WORLD);
+  g.winter = !!snap.wi; g.winterT = SN(snap.wt, 0, 3600);
   // l'armée de l'invité = canonical 'e' → devient le local p (à gauche) ; mirroir des x
-  const fillSide = (loc, ser, foeWon)=>{
-    loc.hp=ser.hp; loc.maxhp=ser.mh; loc.f=ser.f; loc.m=ser.m; loc.w=ser.w; loc.xp=ser.xp;
-    loc.era=ser.era; loc.trans=!!ser.tr; loc.cap=ser.cap; loc.stance=ser.st; loc.fortLvl=ser.fl;
-    loc.autoRepair=!!ser.ar; loc.specialCd=ser.scd; loc.lastReady=!!ser.lr; loc.lastUsed=!!ser.lu;
-    loc.formation=!!ser.fm; loc.prodMul=ser.pm; loc.upg=ser.upg;
-    loc.heroCd=ser.hcd||0; loc.queueLen=ser.q||0;
-    loc.gar = new Array(ser.gn).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
-    for (let i=0;i<loc.slots.length;i++){ loc.slots[i].b = deBld(ser.slots[i], loc);
+  const fillSide = (loc, ser)=>{
+    if (!ser || typeof ser!=='object') return;
+    loc.maxhp=SN(ser.mh, 1, 1e7, 1000); loc.hp=SN(ser.hp, 0, loc.maxhp);
+    loc.f=SN(ser.f, 0, 1e9); loc.m=SN(ser.m, 0, 1e9); loc.w=SN(ser.w, 0, 1e9); loc.xp=SN(ser.xp, 0, 1e9);
+    loc.era=SN(ser.era, 0, 4)|0; loc.trans=!!ser.tr; loc.cap=SN(ser.cap, 0, 200, 30)|0;
+    loc.stance=CMD_STANCES.includes(ser.st)? ser.st : 'charge'; loc.fortLvl=SN(ser.fl, 1, 3, 1)|0;
+    loc.autoRepair=!!ser.ar; loc.specialCd=SN(ser.scd, 0, 600); loc.lastReady=!!ser.lr; loc.lastUsed=!!ser.lu;
+    loc.formation=!!ser.fm; loc.prodMul=SN(ser.pm, 0, 10, 1);
+    const upg = {}; if (ser.upg && typeof ser.upg==='object') for (const r of ROLES) upg[r.key] = SN(ser.upg[r.key], 0, 3)|0;
+    loc.upg = upg;
+    loc.heroCd=SN(ser.hcd, 0, 1e4); loc.queueLen=SN(ser.q, 0, 99)|0;
+    loc.gar = new Array(SN(ser.gn, 0, 3)|0).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
+    const sl = SA(ser.slots, 64);
+    for (let i=0;i<loc.slots.length;i++){ loc.slots[i].b = deBld(sl[i], loc);
       loc.slots[i].owner = loc.slots[i].b? loc : null; }
   };
   fillSide(g.p, snap.e);   // moi (invité) = canonical e
@@ -138,47 +170,53 @@ function applySnapshot(snap){
   const keep = new Set([...g.sel].map(u=>u.id));
   g.p.units.length = 0; g.e.units.length = 0;
   const addU = (a)=>{
-    const role = CODE_ROLES[a[1]];
+    if (!Array.isArray(a)) return;
+    const role = CODE_ROLES[a[1]]; if (!role) return;
     const cside = a[7];                       // côté canonique (1=hôte, -1=invité)
     const loc = (cside===-1)? g.p : g.e;       // invité→local p, hôte→local e
-    const tx = WORLD - a[2];
-    const id = a[0];
-    const u = { id, role, fac:a[6]?'IA':'HUM', era:a[5], side:(cside===-1?1:-1),
-      tx, x:(GX[id]!==undefined? GX[id]:tx), hp:a[3], maxhp:a[4],
-      fly:!!a[8], flyH:a[9], vet:!!a[10], tiredT:a[11]?1:0, trans:!!a[12],
+    const tx = WORLD - SN(a[2], 0, WORLD);
+    const id = SN(a[0], 0, 1e9, -1); if (id<0) return;
+    const maxhp = SN(a[4], 1, 1e6, 100);
+    const u = { id, role, fac:a[6]?'IA':'HUM', era:SN(a[5],0,4)|0, side:(cside===-1?1:-1),
+      tx, x:(GX[id]!==undefined? GX[id]:tx), hp:SN(a[3], 0, maxhp), maxhp,
+      fly:!!a[8], flyH:SN(a[9], 0, 200)|0, vet:!!a[10], tiredT:a[11]?1:0, trans:!!a[12],
       atkT:a[13]?1:0, rate:1, bob:Math.random()*6.28, flash:0, range:role==='ranged'||role==='siege'||role==='air'?150:16 };
     loc.units.push(u);
   };
-  for (const a of snap.pu) addU(a);
-  for (const a of snap.eu) addU(a);
+  for (const a of SA(snap.pu, 300)) addU(a);
+  for (const a of SA(snap.eu, 300)) addU(a);
   g.sel = new Set(g.p.units.filter(u=>keep.has(u.id)));
   // spots neutres (mirroir owner) et lacs (mirroir prog/owner)
-  for (let i=0;i<g.neut.length;i++){ const ns=snap.neut[i];
+  const sn = SA(snap.neut, 16), sd = SA(snap.nodes, 16), sz = SA(snap.zones, 16);
+  for (let i=0;i<g.neut.length;i++){ const ns=sn[i]; if (!Array.isArray(ns)) continue;
     const own = ns[0]===-1? g.p : ns[0]===1? g.e : null;
     g.neut[i].owner = own; g.neut[i].b = deBld(ns[1], own); }
-  for (let i=0;i<g.nodes.length;i++){ const nd=snap.nodes[i];
+  for (let i=0;i<g.nodes.length;i++){ const nd=sd[i]; if (!Array.isArray(nd)) continue;
     g.nodes[i].owner = nd[0]===-1? 'p' : nd[0]===1? 'e' : null;
-    g.nodes[i].prog = -nd[1]; }
-  if (snap.zones && g.zones) for (let i=0;i<g.zones.length;i++){ const zd=snap.zones[i]; if(!zd) continue;
-    g.zones[i].owner = zd[0]===-1? 'p' : zd[0]===1? 'e' : null; g.zones[i].prog = -zd[1]; }
+    g.nodes[i].prog = -SN(nd[1], -1, 1); }
+  if (g.zones) for (let i=0;i<g.zones.length;i++){ const zd=sz[i]; if (!Array.isArray(zd)) continue;
+    g.zones[i].owner = zd[0]===-1? 'p' : zd[0]===1? 'e' : null; g.zones[i].prog = -SN(zd[1], -1, 1); }
   // tirs & obus (mirroir x)
-  shots = snap.shots.map(s=>({x:WORLD-s[0], y:s[1], tx:WORLD-s[2], ty:s[3], t:s[4], dur:s[5], fac:s[6]?'IA':'HUM', era:s[7]}));
-  projectiles = snap.proj.map(p=>({sx:WORLD-p[0], tx:WORLD-p[1], t:p[2], dur:p[3], fac:p[4]?'IA':'HUM', era:p[5], aoe:44}));
+  shots = SA(snap.shots, 400).filter(Array.isArray).map(s=>({x:WORLD-SN(s[0],0,WORLD), y:SN(s[1],-200,800), tx:WORLD-SN(s[2],0,WORLD), ty:SN(s[3],-200,800),
+    t:SN(s[4],0,5), dur:SN(s[5],0.01,5,0.16), fac:s[6]?'IA':'HUM', era:SN(s[7],0,4)|0}));
+  projectiles = SA(snap.proj, 300).filter(Array.isArray).map(p=>({sx:WORLD-SN(p[0],0,WORLD), tx:WORLD-SN(p[1],0,WORLD), t:SN(p[2],0,5), dur:SN(p[3],0.01,5,0.7),
+    fac:p[4]?'IA':'HUM', era:SN(p[5],0,4)|0, aoe:44}));
   // fin de partie
   if (snap.ov && !g.over){ g.over=true; g.win = !snap.pw; game.shake=18; setTimeout(showEnd, 900); }
 }
 function applyEvents(ev){
-  if (!ev) return;
-  for (const e of ev){
-    if (e.k==='b') burst(WORLD-e.x, e.y, e.c, e.n, e.p);
-    else if (e.k==='x') explode(WORLD-e.x, e.y, e.p, e.c);
-    else if (e.k==='f') addFloater(WORLD-e.x, e.y, e.t, e.c, e.s);
-    else if (e.k==='a'){ game.msg={txt:e.t, color:e.c}; game.msgT=2.6; }
-    else if (e.k==='s') sfx(e.n, e.p);
+  for (const e of SA(ev, 200)){
+    if (!e || typeof e!=='object') continue;
+    const x = WORLD - SN(e.x, 0, WORLD), y = SN(e.y, -300, 900);
+    if (e.k==='b') burst(x, y, SCOL(e.c), SN(e.n, 0, 60)|0, SN(e.p, 0, 3, 1));
+    else if (e.k==='x') explode(x, y, SN(e.p, 0, 3, 1), SCOL(e.c));
+    else if (e.k==='f') addFloater(x, y, String(e.t==null? '' : e.t).slice(0, 48), SCOL(e.c), SN(e.s, 6, 40, 13));
+    else if (e.k==='a'){ game.msg={txt:String(e.t==null? '' : e.t).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
+    else if (e.k==='s' && NET_SFX.has(e.n)) sfx(e.n, SN(e.p, 0, 8));
   }
 }
 function onSnapshot(data){
-  if (!game || game.net!=='guest') return;
+  if (!game || game.net!=='guest' || !data || typeof data!=='object') return;
   applySnapshot(data.s);
   applyEvents(data.ev);
 }
