@@ -123,16 +123,16 @@ function render(dt){
 
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   // étalonnage cinématique : légère vignette pour la profondeur (n'assombrit pas le HUD)
-  // (recréée si la largeur logique change : rotation, plein écran — sinon elle restait décentrée)
-  if (!VIGN || VIGN._w!==W){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
-    VIGN.addColorStop(0,'rgba(0,0,0,0)'); VIGN.addColorStop(1,'rgba(8,6,12,0.30)'); VIGN._w=W; }
+  // (recréée si la taille logique change : rotation, plein écran — sinon elle restait décentrée)
+  if (!VIGN || VIGN._k!==W+'x'+H){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
+    VIGN.addColorStop(0,'rgba(0,0,0,0)'); VIGN.addColorStop(1,'rgba(8,6,12,0.30)'); VIGN._k=W+'x'+H; }
   ctx.fillStyle=VIGN; ctx.fillRect(0,0,W,H);
   // DANGER : votre base sous 30 % → les bords de l'écran pulsent en rouge au rythme du cœur
   // (le battement s'entend aussi, voir ambTick) — on sent l'urgence sans lire une jauge
   const php = game.p.maxhp>0? game.p.hp/game.p.maxhp : 1;
   if (!game.tut && !game.over && php<0.30 && php>0){
-    if (!VIGN_RED || VIGN_RED._w!==W){ VIGN_RED=ctx.createRadialGradient(W/2,H*0.5,H*0.42,W/2,H*0.5,H*1.02);
-      VIGN_RED.addColorStop(0,'rgba(150,0,0,0)'); VIGN_RED.addColorStop(1,'rgba(170,12,0,0.5)'); VIGN_RED._w=W; }
+    if (!VIGN_RED || VIGN_RED._k!==W+'x'+H){ VIGN_RED=ctx.createRadialGradient(W/2,H*0.5,H*0.42,W/2,H*0.5,H*1.02);
+      VIGN_RED.addColorStop(0,'rgba(150,0,0,0)'); VIGN_RED.addColorStop(1,'rgba(170,12,0,0.5)'); VIGN_RED._k=W+'x'+H; }
     const ph=(performance.now()/1050)%1, beat=Math.max(0,1-ph*5)+0.7*Math.max(0,1-Math.abs(ph-0.19)*6);
     ctx.globalAlpha=(0.25+0.3*Math.min(1,beat))*(paused? 0.5 : 1)*(1-php/0.30*0.4); ctx.fillStyle=VIGN_RED; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }

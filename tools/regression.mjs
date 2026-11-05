@@ -293,6 +293,41 @@ for (const d of [0,1,2,3]) await fullGame(d, false);
 for (const d of [1,3]) await fullGame(d, true);
 await fullGame(1, true, 'IA');
 
+console.log('\nCORRECTIFS D\'AUDIT (v1.11)');
+{ const { page, errs } = await open();
+  const r = await page.evaluate(() => { const out = {};
+    const R = () => { ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); };
+    // bombe H : une seule fois par partie, et la sélection morte est vidée
+    newGame('HUM', 1, false); let p = game.p, e = game.e;
+    for (let i=0;i<3;i++) spawnUnit(p, 2); for (const u of p.units) game.sel.add(u);
+    e.hp = 0; update(0.05); out.sel = game.sel.size===0 && game.hbombDone;
+    game.winter = false; game.winterT = 0; for (let i=0;i<4;i++){ spawnUnit(p,0); spawnUnit(e,0); }
+    p.hp = 0; update(0.05); out.once = p.units.length>=4 && e.units.length>=4;
+    // contrôles ⏸ / ⚙ actifs pendant une pause
+    newGame('HUM', 1, false); R();
+    const sp = HUD.btns.find(b=>b.type==='softpause'), gear = HUD.btns.find(b=>b.type==='pause');
+    handleTap(sp.x+sp.w/2, sp.y+sp.h/2); const paused1 = paused;
+    handleTap(sp.x+sp.w/2, sp.y+sp.h/2); out.soft = paused1 && !paused;
+    toggleSoftPause(); handleTap(gear.x+gear.w/2, gear.y+gear.h/2); out.gear = settingsOpen; togglePauseAction();
+    // garnison : 5 taps rapides pour une tourelle à 2 places → pas de surdépense
+    p = game.p; p.f = p.m = p.w = 9999; const s = p.slots[0]; tryBuild(p, s, 'turret'); s.b = { type:'turret', hp:420, maxhp:420, lvl:1, gar:[], atkT:0 }; s.owner = p;
+    const m0 = p.m; for (let i=0;i<5;i++) dispatchGarrison(p, s, 'ranged');
+    out.gar = p.units.filter(u=>u.task && u.task.slot===s).length <= 2 && m0 - p.m <= 2*unitCost(p,2).m;
+    // fil d'actualités sous la file de production
+    p.queue.push(0,0,0); NEWSF.game = game; NEWSF.cur = { txt:'Dépêche de test', ev:false, t:2, dur:9 }; R();
+    out.news = !!NEWSF.rect && NEWSF.rect.y >= 66;
+    // annonces en temps réel à ×3
+    game.speed = 3; announce('test', '#fff'); let real = 0; while (game.msgT > 0 && real < 10){ for (let k=0;k<3;k++) update(1/60); real += 1/60; }
+    out.msg = real > 2.2;
+    return out; });
+  check(r.sel && r.once, 'bombe H : une seule par partie, sélection d\'unités mortes vidée');
+  check(r.soft && r.gear, 'pause : ▶ reprend et ⚙ s\'ouvre même pendant une pause');
+  check(r.gar, 'garnison : des taps rapides ne recrutent pas au-delà des places libres');
+  check(r.news && r.msg, 'fil d\'actualités sous la file de production ; annonces lisibles à ×3');
+  check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
+  await page.close();
+}
+
 console.log('\nCATACLYSMES');
 { const { page, errs } = await open();
   const r = await page.evaluate(() => { const out = [];

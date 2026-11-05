@@ -256,8 +256,10 @@ function assignWorker(side, slot){
 // garnison directe : prend l'unité du pool la plus proche, sinon recrute un tireur
 function dispatchGarrison(side, slot, role){
   if (isGuest(side)){ guestCmd({c:'gar', ref:slotRef(side,slot), role}); return true; }
-  // tourelles et murailles, unités à distance uniquement
-  if (!canGar(slot.b) || slot.b.gar.length>=GAR_MAX) return false;
+  // tourelles et murailles, unités à distance uniquement. Les places déjà PROMISES (unités en
+  // route vers ce bâtiment) comptent : des taps rapides envoyaient 5 recrues vers 2 places libres.
+  const enRoute = side.units.filter(u=>u.task && u.task.kind==='garrison' && u.task.slot===slot).length;
+  if (!canGar(slot.b) || slot.b.gar.length+enRoute>=GAR_MAX) return false;
   if (role!=='ranged' && role!=='siege') role = 'ranged';
   let best=null, bd=1e9;
   for (const u of side.units){
@@ -273,8 +275,8 @@ function dispatchGarrison(side, slot, role){
   // sinon : recrute directement le rôle demandé (tireur par défaut)
   const ri = role? ROLES.findIndex(r=>r.key===role) : 2;
   const cost = unitCost(side, ri);
-  if (ri>=0 && unitTotal(side)<side.cap && canPay(side, cost)){
-    pay(side, cost); spawnUnit(side, ri);
+  if (ri>=0 && side.cd[ri]<=0 && unitTotal(side)<side.cap && canPay(side, cost)){   // même délai qu'un recrutement normal
+    pay(side, cost); side.cd[ri] = 0.5 + ri*0.45; spawnUnit(side, ri);
     side.units[side.units.length-1].task = {kind:'garrison', slot};
     if (side===game.p){ sfx('buy',ri); announce(tr('a_garrecruit'), '#e8d8a0'); }
     return true;
@@ -379,9 +381,11 @@ function tryGarrison(side, slot){
   const eligible = [...game.sel].filter(u=>u.range>60 && !u.fly && u.role!=='support' && Math.abs(u.x-slot.x)<260).slice(0, free);
   if (!eligible.length){ announce(tr('a_nogar'), "#d88"); return false; }
   for (const u of eligible){
-    slot.b.gar.push(u);
-    side.units.splice(side.units.indexOf(u),1);
+    const i = side.units.indexOf(u);
     game.sel.delete(u);
+    if (i<0) continue;                       // unité qui n'existe plus (jamais splice(-1) : ça supprimait la dernière)
+    slot.b.gar.push(u);
+    side.units.splice(i,1);
   }
   announce(fmt('a_garred',{n:eligible.length}), "#e8d8a0");
   sfx('build');

@@ -66,8 +66,12 @@ function aiUpdate(dt){
   if (!e.capUp && unitTotal(e)>=22 && !heroSave) tryCapUp(e);
   // dernier recours : l'IA le joue dès qu'il est débloqué
   if (e.lastReady && !e.lastUsed) trySpecial(e);
-  // ultime : nettoie dès que le joueur masse des troupes ou pousse vers la base
-  if (e.specialCd<=0 && (p.units.length>=5 || pPushing)) trySpecial(e);
+  // ultime : nettoie dès que le joueur masse des troupes ou pousse vers la base — mais l'ultime
+  // coûte de l'✦, la même ressource que l'évolution : hors danger réel (poussée sur la base),
+  // l'IA ne le lance plus s'il la ferait repasser sous le seuil de la prochaine ère (sinon elle
+  // le spammait — 42 lancers en 20 min — et ne dépassait jamais l'ère 3 face à un joueur actif)
+  const saveForEra = e.era<4 && (e.xp - specialXpCost(e)) < EVOLVE_XP[e.era+1]*(1+d.eraLag);
+  if (e.specialCd<=0 && (pPushing || (p.units.length>=5 && !saveForEra))) trySpecial(e);
   // ----- vagues : accumule en défense, puis pousse en masse -----
   const wave = 7 + game.diff*3 + e.era*2;
   const myN = e.units.filter(u=>u.role!=='support').length;
