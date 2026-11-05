@@ -208,31 +208,43 @@ function drawNews(){
   NEWSF.rect = null;
   const closed = NEWSF.closedT > 0;
   if (!game || game.over || (!NEWSF.cur && !closed)) return;
-  const x0 = 6, y0 = 43, maxW = clamp(W/2 - 100 - 34 - x0, 200, 470);
+  // sous la file de production (même coin) quand elle est visible, pour ne jamais la masquer
+  const qn = (game.p && game.p.queue)? game.p.queue.length : 0;
+  const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 100 - 34 - x0, 200, 470);
   let txt, a = 1, ev = false;
   if (closed){ txt = tr('news_closed'); a = Math.min(1, NEWSF.closedT/0.5); }
   else { const c = NEWSF.cur; txt = c.txt; ev = c.ev; a = Math.min(1, c.t/0.45, (c.dur - c.t)/0.7); }
   if (a <= 0) return;
-  const padL = 15, padR = closed? 8 : 22, inner = maxW - padL - padR;
-  let fs = 11; ctx.font = '600 '+fs+'px Arial'; let lines = newsWrap(txt, inner);
-  if (lines.length > 2){ fs = 10; ctx.font = '600 '+fs+'px Arial'; lines = newsWrap(txt, inner); }
+  // COUPURE DE JOURNAL (v1.11) : bord déchiré, titre de presse condensé à l'encre ; listing
+  // d'imprimante en mode G·P·T — même identité papier que le menu et les panneaux
+  const pal = uiPal(), fontK = pal.ia? 'type' : 'cond';
+  const padL = 16, padR = closed? 9 : 22, inner = maxW - padL - padR;
+  let fs = 11.5; ctx.font = uiF(pal, fontK, fs); let lines = newsWrap(txt, inner);
+  if (lines.length > 2){ fs = 10.5; ctx.font = uiF(pal, fontK, fs); lines = newsWrap(txt, inner); }
   if (lines.length > 2){ lines = lines.slice(0,2); let l = lines[1]; while (l.length>1 && ctx.measureText(l+'…').width > inner) l = l.slice(0,-1); lines[1] = l+'…'; }
-  const lh = fs + 3, h = 8 + lines.length*lh;
+  const lh = fs*(pal.ia? 1.15 : 1) + 3.5, h = 9 + lines.length*lh;
   let tw = 0; for (const l of lines) tw = Math.max(tw, ctx.measureText(l).width);
-  const w = Math.min(maxW, padL + tw + padR), slide = (1-a)*-8;
-  ctx.save(); ctx.globalAlpha = a*0.92;
-  ctx.fillStyle = 'rgba(12,10,9,0.62)'; rr(x0+slide, y0, w, h, 6); ctx.fill();
-  ctx.strokeStyle = ev? 'rgba(255,170,110,0.35)' : 'rgba(255,255,255,0.09)'; ctx.lineWidth = 1; rr(x0+slide, y0, w, h, 6); ctx.stroke();
-  // pastille « en direct » (pulse lente — l'œil la remarque sans être agressé)
+  const w = Math.min(maxW, padL + tw + padR), X = x0 + (1-a)*-8, Y = y0;
+  const torn = () => { ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X+w, Y);
+    for (let yy=Y+3, k=0; yy<Y+h; yy+=3, k++) ctx.lineTo(X+w-(k%2? 2.2 : 0), yy);
+    ctx.lineTo(X+w, Y+h); ctx.lineTo(X, Y+h);
+    for (let yy=Y+h-3, k=0; yy>Y; yy-=3, k++) ctx.lineTo(X+(k%2? 2.2 : 0), yy);
+    ctx.closePath(); };
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.save(); ctx.translate(3, 4); torn(); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fill(); ctx.restore();
+  torn(); const g = ctx.createLinearGradient(0, Y, 0, Y+h); g.addColorStop(0, pal.paper); g.addColorStop(1, pal.paper2);
+  ctx.fillStyle = g; ctx.fill();
+  if (!pal.ia){ ctx.save(); ctx.clip(); ctx.fillStyle = paperGrain(); ctx.fillRect(X, Y, w, h); ctx.restore(); }
+  // repère « dépêche » : petit carré d'encre (rouge pour un événement, pulse lente)
   const pul = 0.55 + 0.45*Math.sin(performance.now()/420);
-  ctx.globalAlpha = a*(closed? 0.5 : 0.6+0.4*pul); ctx.fillStyle = ev? '#ff7a4a' : '#d8483a';
-  ctx.beginPath(); ctx.arc(x0+slide+8, y0+4+lh/2, 2.6, 0, 6.283); ctx.fill();
+  ctx.globalAlpha = a*(closed? 0.5 : (ev? 0.6+0.4*pul : 0.85)); ctx.fillStyle = ev? pal.red : pal.ink;
+  ctx.fillRect(X+7, Y+4.5+lh/2-2.5, 5, 5);
   ctx.globalAlpha = a; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = closed? '#b8b0a4' : ev? '#ffd2a8' : '#ddd5c6';
-  for (let i=0;i<lines.length;i++) ctx.fillText(lines[i], x0+slide+padL, y0+4+lh*i+lh/2+0.5);
+  ctx.font = uiF(pal, fontK, fs); ctx.fillStyle = closed? pal.ink2 : ev? pal.red : pal.ink;
+  for (let i=0;i<lines.length;i++) ctx.fillText(lines[i], X+padL, Y+4.5+lh*i+lh/2+0.5);
   if (!closed){
-    ctx.fillStyle = 'rgba(232,224,210,0.55)'; ctx.font = '700 12px Arial'; ctx.textAlign = 'center';
-    ctx.fillText('×', x0+slide+w-11, y0+4+lh/2);
+    ctx.fillStyle = pal.ink2; ctx.font = '700 12px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('×', X+w-11, Y+4.5+lh/2);
     NEWSF.rect = { x:x0+w-26, y:y0-4, w:30, h:Math.max(26, h+6) };   // zone tactile généreuse (mobile)
   }
   ctx.restore(); ctx.textBaseline = 'middle';

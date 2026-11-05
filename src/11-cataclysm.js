@@ -141,8 +141,10 @@ function razeMap(){
     for (const s of side.slots) s.b = null;
   }
   for (const n of g.neut){ n.b=null; n.owner=null; }
-  // les bases (et leur garde) survivent ; tirs/obus en vol sont effacés
-  shots.length = 0; projectiles.length = 0;
+  // les bases (et leur garde) survivent ; tirs/obus en vol sont effacés. La SÉLECTION aussi :
+  // des unités mortes restaient sélectionnées — « garnison de la sélection » les ressuscitait
+  // dans la tourelle en supprimant à leur place les dernières unités vivantes.
+  shots.length = 0; projectiles.length = 0; g.sel.clear();
 }
 function drawCata(){
   if (!game || !game.cata) return;
@@ -290,7 +292,8 @@ let snow = null;
 function drawWinter(){
   if (!game || !game.winter) return;
   const t = game.t;
-  if (!snow){ snow=[]; for (let i=0;i<140;i++) snow.push({x:Math.random()*W, y:Math.random()*H, s:0.5+Math.random()*1.6, d:10+Math.random()*30}); }
+  // positions en FRACTIONS de l'écran : après un passage en 21:9, la neige couvre toute la largeur
+  if (!snow){ snow=[]; for (let i=0;i<140;i++) snow.push({x:Math.random(), y:Math.random(), s:0.5+Math.random()*1.6, d:10+Math.random()*30}); }
   ctx.save();
   const wd = clamp((game.winterT||0)/WINTER_DUR, 0, 1);                 // 1 au déclenchement → 0 à la fin
   // voile froid CLAIR (lisibilité préservée — plus de quasi-noir après la Bombe H)
@@ -303,7 +306,7 @@ function drawWinter(){
   // neige (additive, lumineuse)
   ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(236,244,255,0.92)';
   for (const f of snow){
-    const y=(f.y + t*f.d)%H, x=(f.x + Math.sin(t*0.6+f.y)*12);
+    const y=(f.y*H + t*f.d)%H, x=(f.x*W + Math.sin(t*0.6+f.y*H)*12);
     ctx.beginPath(); ctx.arc(x, y, f.s, 0, 6.28); ctx.fill();
   }
   ctx.globalCompositeOperation='source-over';

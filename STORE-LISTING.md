@@ -186,6 +186,22 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 
 ## 7. Notes de version (exemple — « What's new »)
 ```
+v1.11 — Le menu devient un tract de la Résistance.
+• Nouveau menu : affiche imprimée et fiche de mobilisation, cases à cocher, tampon « Entrer en guerre »
+• En jouant G·P·T, tout bascule en listing d'imprimante et panneau lumineux d'Omnicorp
+• Pause, constructions, tutoriel et fil d'actualités sur papier ; écran de fin en communiqué de guerre
+• Nouvelles polices (pochoir, machine à écrire) ; menu tenant sur un écran de téléphone
+• Corrections issues d'un audit complet
+```
+```
+v1.11 — The menu becomes a Resistance leaflet.
+• New menu: a printed poster and a mobilization form, checkboxes, a "Go to war" rubber stamp
+• Playing G·P·T turns everything into an Omnicorp printout and LED billboard
+• Pause, building, tutorial and news feed on paper; end screen as a war communiqué
+• New typefaces (stencil, typewriter); the menu fits on a phone screen
+• Fixes from a full audit
+```
+```
 v1.10 — Une histoire plus grande, un monde qui parle.
 • Intro réécrite en 6 chapitres : la fin du travail, la soif des machines, la corporation, l'éveil, le monde « optimisé », la résistance
 • Fil d'actualités du monde en partie, discret et fermable

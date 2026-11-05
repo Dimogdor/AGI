@@ -66,6 +66,9 @@ function toggleFormation(p){
   announce(p.formation? tr(p.facKey==='HUM'? 'a_form_hum':'a_form_ia') : tr('a_form_off'), '#e8d8a0');
 }
 window.addEventListener('keyup', e=>kdown.delete(e.code));
+// alt-tab en maintenant une flèche : le « keyup » n'arrive jamais → la caméra défilait seule au retour
+window.addEventListener('blur', ()=>kdown.clear());
+document.addEventListener('visibilitychange', ()=>{ if (document.hidden) kdown.clear(); });
 // caméra fluide au clavier
 (function camKeys(){
   if (game && !paused && !game.over){
@@ -118,7 +121,7 @@ cv.addEventListener('pointerdown', e=>{
     tutDragging = { ox: sx-TUT.cardRect.x, oy: sy-TUT.cardRect.y, sx0:sx, sy0:sy, moved:false };
     pdown = null; return;
   }
-  if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false}; return; }
+  if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false,btn:e.button}; return; }
   const lasso = (selMode || e.shiftKey) && e.button===0 && sy>38 && sy<H-102;
   pdown = {sx, sy, moved:false, lasso, t0:performance.now(), touch:e.pointerType==='touch', btn:e.button};
   if (lasso) selBox = {x0:sx, y0:sy, x1:sx, y1:sy};
@@ -232,6 +235,16 @@ function handleTap(sx, sy, shift, opts){
   // tutoriel : boutons de la carte (Continuer / Passer / confirmation). Renvoie true si le clic
   // est consommé ; sinon il atteint le jeu normalement (construire, sélectionner…).
   if (game.tut && TUT && tutHandleTap(sx,sy)) return;
+  // contrôles du coin haut-droite (⏸ pause terrain · ⚙ réglages · ⏩ vitesse) : TOUJOURS actifs,
+  // y compris en pause ou réglages ouverts — avant, le ▶ dessiné en pause ne reprenait rien et
+  // ⚙ ne s'ouvrait pas pendant une pause (la branche « pause » interceptait tout)
+  for (const b of HUD.btns){
+    if ((b.type!=='softpause' && b.type!=='pause' && b.type!=='speed') || btnHidden(b) || !inRect(sx,sy,b)) continue;
+    if (b.type==='softpause') toggleSoftPause();
+    else if (b.type==='pause') togglePauseAction();
+    else if (!settingsOpen) openSpeedPanel();
+    sfx('sel'); return;
+  }
   // RÉGLAGES ouverts : prioritaires et indépendants de la pause (en ligne, ⚙ ne fige plus le jeu)
   if (settingsOpen){
     if (pauseRects) for (const r of pauseRects) if (inRect(sx,sy,r)){
@@ -354,9 +367,7 @@ function handleTap(sx, sy, shift, opts){
       sfx('sel');
     }
     else if (b.type==='zoom') setZoom(zoom + b.d*0.15, s2wX(W/2));
-    else if (b.type==='softpause') toggleSoftPause();
-    else if (b.type==='pause') togglePauseAction();
-    else if (b.type==='speed') openSpeedPanel();
+    // (⏸ / ⚙ / ⏩ : traités plus haut, avant les branches pause et réglages)
     return;
   }
   if (sy<=38) return; // bandeau de ressources

@@ -611,12 +611,15 @@ function update(dt){
   }
   stepParticles(dt);
   for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if(deaths[i].t>deaths[i].life) deaths.splice(i,1); }
-  for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if(f.t>1.6) floaters.splice(i,1); }
+  // repères d'INTERFACE (textes flottants, annonces, secousse, flash, ⚑) : temps RÉEL. update() est
+  // sous-découpé à ×2/×3 — une annonce de 2,6 s n'en durait plus que 0,9 à ×3, illisible.
+  const uiDt = dt / (game.speed||1);
+  for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=uiDt; f.y-=22*uiDt; if(f.t>1.6) floaters.splice(i,1); }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if(shots[i].t>shots[i].dur) shots.splice(i,1); }
-  if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
-  if (game.flash>0) game.flash-=dt;
-  if (game.msgT>0) game.msgT-=dt;
-  if (game.rally){ game.rally.t+=dt; if (game.rally.t>3) game.rally=null; }   // marqueur ⚑ éphémère
+  if (game.shake>0) game.shake=Math.max(0,game.shake-uiDt*30);
+  if (game.flash>0) game.flash-=uiDt;
+  if (game.msgT>0) game.msgT-=uiDt;
+  if (game.rally){ game.rally.t+=uiDt; if (game.rally.t>3) game.rally=null; }   // marqueur ⚑ éphémère
 
   if (camFollow && !dragging){
     let front = p.units.length? Math.max(...p.units.map(u=>u.x)) : p.x+200;
@@ -638,12 +641,13 @@ function update(dt){
     const faller = p.hp<=0? p : e;
     // SECONDE CHANCE — INDÉPENDANTE PAR CAMP : la 1re fois qu'une base tombe, elle renaît
     // plus solide (phase 2). Chaque base possède donc bien ses deux phases. L'Hiver
-    // nucléaire (Bombe H) ne se déclenche qu'UNE fois, à la 1re base abattue.
+    // nucléaire (Bombe H) ne se déclenche qu'UNE fois, à la 1re base abattue — drapeau dédié :
+    // « !game.winter » redevenait vrai 6 min plus tard et la 2e base abattue rasait tout à nouveau.
     if ((faller.phase||1)<2){
       faller.phase = 2;
       faller.maxhp = Math.round(faller.maxhp*2.2);
       faller.hp = faller.maxhp;
-      if (!game.winter) triggerNuclearWinter();
+      if (!game.hbombDone){ game.hbombDone = true; triggerNuclearWinter(); }
       else { game.flash=Math.max(game.flash||0,1.2); game.shake=Math.max(game.shake,20);
         nukeBlast(faller.x, 220); announce(tr('ev_reborn'), '#bfe6ff'); sfx('boom'); }
     } else {
@@ -655,11 +659,11 @@ function update(dt){
     }
   }
 }
-// Bombe H : rase tout (sauf bases), santé du monde à 0, bascule en Hiver nucléaire
+// Bombe H : rase tout (sauf bases), bascule en Hiver nucléaire (production réduite, neige)
 const WINTER_DUR = 360;   // l'hiver nucléaire dure 6 min puis le monde revient à la normale
 function triggerNuclearWinter(){
   const g=game;
-  g.winter = true; g.winterT = WINTER_DUR; g.dev = 1;
+  g.winter = true; g.winterT = WINTER_DUR;
   g.flash = 1.6; g.shake = Math.max(g.shake,34);
   addLight(WORLD/2, gY(WORLD/2)-80, '#fff4e0', 900, 1.4);          // flash lumineux global de la Bombe H
   razeMap();

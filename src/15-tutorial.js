@@ -501,10 +501,11 @@ function drawTut(){
   }
   // CARTE d'instruction — COMPACTE, déplaçable (glisser) et auto-repositionnée pour ne JAMAIS
   // recouvrir la cible surlignée ni un menu ouvert dessous.
-  const bw = Math.min(326, W-24), pad = 11, titleH = 13, lineH = 16, btnH = 28;
-  const lines = tutWrap(tutText(step.text), bw-pad*2, '12px Arial');
+  const pal = uiPal(), bodyF = uiF(pal, 'type', 12);
+  const bw = Math.min(338, W-24), pad = 12, titleH = 13, lineH = 16, btnH = 28;
+  const lines = tutWrap(tutText(step.text), bw-pad*2, bodyF);
   const objLine = step.obj ? tutText(step.obj) : null;
-  const bh = pad + titleH + 8 + lines.length*lineH + 6 + btnH + pad + (objLine?18:0);
+  const bh = pad + titleH + 12 + lines.length*lineH + 6 + btnH + pad + (objLine?18:0);
   const bx = clamp((W-bw)/2, 10, W-bw-10);
   // obstacles à éviter : la cible surlignée + un éventuel menu de construction
   const obst = [];
@@ -531,68 +532,65 @@ function drawTut(){
   const Bx = cbx;
   // (plus de flèche de guidage : seul le HALO autour de la cible indique où regarder)
   TUT.uiRects = [];
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=16; ctx.shadowOffsetY=4;
-  const pg=ctx.createLinearGradient(Bx,by,Bx,by+bh); pg.addColorStop(0,'rgba(26,22,30,0.93)'); pg.addColorStop(1,'rgba(14,12,18,0.93)');
-  ctx.fillStyle=pg; rr(Bx,by,bw,bh,11); ctx.fill(); ctx.restore();
-  ctx.save(); ctx.strokeStyle=rgbaC(acc,0.9); ctx.lineWidth=1.8; ctx.shadowColor=acc; ctx.shadowBlur=7; rr(Bx,by,bw,bh,11); ctx.stroke(); ctx.restore();
+  // carte = NOTE DE TERRAIN sur papier (même identité que le menu) ; listing pour G·P·T
+  paperPanel(Bx, by, bw, bh, pal, {tape:true, tapeX:0.5});
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
-  ctx.font='700 10px Arial'; ctx.fillStyle=acc;
-  ctx.fillText('✦ '+tutText({fr:'TUTORIEL',en:'TUTORIAL',es:'TUTORIAL',de:'TUTORIAL',it:'TUTORIAL',pt:'TUTORIAL',ru:'ОБУЧЕНИЕ',zh:'教程',ar:'الدرس التعليمي'}), Bx+pad, by+pad+7);
+  ctx.font=uiF(pal,'head',12); ctx.fillStyle=pal.red;
+  ctx.fillText(tutText({fr:'TUTORIEL',en:'TUTORIAL',es:'TUTORIAL',de:'TUTORIAL',it:'TUTORIAL',pt:'TUTORIAL',ru:'ОБУЧЕНИЕ',zh:'教程',ar:'الدرس التعليمي'}), Bx+pad, by+pad+8);
   // poignée de déplacement (indice visuel « glissez-moi ») au centre de l'en-tête
-  ctx.fillStyle=rgbaC(acc,0.5); ctx.font='10px Arial'; ctx.textAlign='center';
+  ctx.fillStyle=rgbaC(pal.ink2,0.6); ctx.font='10px Arial'; ctx.textAlign='center';
   ctx.fillText('⠿', Bx+bw/2-14, by+pad+7);
   ctx.textAlign='left';
   // points de progression : resserrés s'il y a beaucoup d'étapes (ne chevauchent jamais la poignée ⠿)
   const dotN=TUT.steps.length, dgap=Math.min(6,(bw*0.5-26)/dotN), dr=Math.min(2.2,dgap*0.38), dtot=dotN*dgap;
   for(let i=0;i<dotN;i++){ ctx.beginPath(); ctx.arc(Bx+bw-pad-dtot+i*dgap, by+pad+4, dr, 0,6.283);
-    ctx.fillStyle = i===TUT.i? acc : 'rgba(255,255,255,0.22)'; ctx.fill(); }
-  ctx.font='12px Arial'; ctx.fillStyle='#ece6da'; let ty = by+pad+titleH+10;
+    ctx.fillStyle = i===TUT.i? pal.red : i<TUT.i? pal.ink2 : rgbaC(pal.ink2,0.25); ctx.fill(); }
+  ctx.fillStyle=pal.ink; ctx.fillRect(Bx+pad, by+pad+titleH+1, bw-pad*2, 1.2);
+  ctx.font=bodyF; ctx.fillStyle=pal.ink; let ty = by+pad+titleH+14;
   for (const ln of lines){ ctx.fillText(ln, Bx+pad, ty); ty += lineH; }
   if (objLine){
-    // AIDE RENFORCÉE : l'objectif concis reçoit un fond qui pulse pour rappeler PRÉCISÉMENT
+    // AIDE RENFORCÉE : l'objectif concis reçoit un surlignage qui pulse pour rappeler PRÉCISÉMENT
     // quoi faire — sans allonger le texte, juste plus visible.
-    if (stuck>=1){ ctx.fillStyle=rgbaC('#9dd88a',(stuck>=2?0.22:0.12)*(0.6+0.4*pulse)); rr(Bx+pad-4,ty-12,bw-pad*2+8,17,4); ctx.fill(); }
-    ctx.font='700 11px Arial'; ctx.fillStyle='#9dd88a'; ctx.fillText('▸ '+objLine, Bx+pad, ty+2); ty += 18;
+    if (stuck>=1){ ctx.fillStyle=rgbaC(pal.red,(stuck>=2?0.20:0.10)*(0.6+0.4*pulse)); ctx.fillRect(Bx+pad-4,ty-12,bw-pad*2+8,17); }
+    ctx.font=uiF(pal,'head',12); ctx.fillStyle=pal.ok; ctx.fillText('▸ '+objLine, Bx+pad, ty+2); ty += 18;
   }
-  const byB = by + bh - pad - btnH, skipW = 124;
-  ctx.fillStyle='rgba(255,255,255,0.08)'; rr(Bx+pad, byB, skipW, btnH, 6); ctx.fill();
-  ctx.fillStyle='#d8a0a0'; ctx.textAlign='center';
+  const byB = by + bh - pad - btnH, skipW = 118;
+  ctx.textAlign='center';
   const skipTxt = tutText({fr:'Passer ✕',en:'Skip ✕',es:'Saltar ✕',de:'Überspringen ✕',it:'Salta ✕',pt:'Pular ✕',ru:'Пропустить ✕',zh:'跳过 ✕',ar:'تخطّ ✕'});
-  fitFont(skipTxt, skipW-14, '700 11px Arial', 8);
+  ctx.fillStyle=pal.ink2; fitFont(skipTxt, skipW-14, uiF(pal,'type',12), 8);
+  const sw = ctx.measureText(skipTxt).width;
   ctx.fillText(skipTxt, Bx+pad+skipW/2, byB+btnH/2+4);
+  ctx.fillRect(Bx+pad+skipW/2-sw/2, byB+btnH/2+7, sw, 1);
   TUT.uiRects.push({key:'skip', x:Bx+pad, y:byB, w:skipW, h:btnH});
   if (step.tap){
     const contW = bw - pad*2 - skipW - 8;
-    ctx.save(); ctx.fillStyle=rgbaC(acc,0.95); ctx.shadowColor=acc; ctx.shadowBlur=9; rr(Bx+bw-pad-contW, byB, contW, btnH, 6); ctx.fill(); ctx.restore();
-    ctx.fillStyle='#14110f';
     const contTxt = tutText({fr:'Continuer ▸',en:'Continue ▸',es:'Continuar ▸',de:'Weiter ▸',it:'Continua ▸',pt:'Continuar ▸',ru:'Далее ▸',zh:'继续 ▸',ar:'متابعة ▸'});
-    fitFont(contTxt, contW-14, '700 12px Arial', 8.5);
-    ctx.fillText(contTxt, Bx+bw-pad-contW/2, byB+btnH/2+4);
+    inkStamp(Bx+bw-pad-contW, byB, contW, btnH, contTxt, pal, 14);
     TUT.uiRects.push({key:'cont', x:Bx+bw-pad-contW, y:byB, w:contW, h:btnH});
   } else {
-    // AIDE RENFORCÉE (stuck>=2) : message plus direct et plus voyant (couleur d'alerte) au lieu
-    // du discret « à vous de jouer » — remplace, ne s'ajoute pas, pour rester concis.
+    // AIDE RENFORCÉE (stuck>=2) : message plus direct et plus voyant au lieu du discret
+    // « à vous de jouer » — remplace, ne s'ajoute pas, pour rester concis.
     const urge = TUT.t>6 ? 1 : 0.6;
     ctx.textAlign='right';
     const turnTxt = stuck>=2
       ? tutText({fr:'❗ touchez ce qui brille',en:'❗ tap the glowing spot',es:'❗ toca lo que brilla',de:'❗ tippe auf das Leuchtende',it:'❗ tocca ciò che brilla',pt:'❗ toque no que brilha',ru:'❗ нажмите на светящееся',zh:'❗ 点击发光的地方',ar:'❗ المس ما يتوهّج'})
       : tutText({fr:'▸ à vous de jouer',en:'▸ your turn',es:'▸ te toca a ti',de:'▸ du bist dran',it:'▸ tocca a te',pt:'▸ sua vez',ru:'▸ ваш ход',zh:'▸ 该你操作了',ar:'▸ دورك الآن'});
-    ctx.fillStyle = stuck>=2? rgbaC('#ffcf6a',0.7+0.3*pulse) : rgbaC('#9dd88a', (0.5+0.5*pulse)*urge);
-    fitFont(turnTxt, bw-pad*2-skipW-14, '700 11px Arial', 8);
+    ctx.fillStyle = stuck>=2? rgbaC(pal.red,0.7+0.3*pulse) : rgbaC(pal.ok, (0.55+0.45*pulse)*urge);
+    fitFont(turnTxt, bw-pad*2-skipW-14, uiF(pal,'head',12), 8);
     ctx.fillText(turnTxt, Bx+bw-pad, byB+btnH/2+4);
   }
   ctx.textAlign='left';
   if (TUT.confirmSkip) drawTutConfirm();
 }
 function drawTutConfirm(){
-  ctx.fillStyle='rgba(8,6,6,0.72)'; ctx.fillRect(0,0,W,H);
-  const bw=Math.min(460,W-40), bh=176, bx=(W-bw)/2, by=(H-bh)/2;
-  ctx.fillStyle='#16100e'; rr(bx,by,bw,bh,10); ctx.fill();
-  ctx.strokeStyle='#a8281e'; ctx.lineWidth=2; rr(bx,by,bw,bh,10); ctx.stroke();
+  ctx.fillStyle='rgba(8,6,6,0.62)'; ctx.fillRect(0,0,W,H);
+  const pal=uiPal(), bw=Math.min(460,W-40), bh=176, bx=(W-bw)/2, by=(H-bh)/2;
+  paperPanel(bx, by, bw, bh, pal, {tape:true});
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.font='700 16px Arial'; ctx.fillStyle='#e8e0d2';
-  ctx.fillText(tutText({fr:'Passer le tutoriel ?',en:'Skip the tutorial?',es:'¿Saltar el tutorial?',de:'Tutorial überspringen?',it:'Saltare il tutorial?',pt:'Pular o tutorial?',ru:'Пропустить обучение?',zh:'要跳过教程吗？',ar:'هل تريد تخطي الدرس التعليمي؟'}), W/2, by+36);
-  ctx.font='13px Arial'; ctx.fillStyle='#c4bcb0';
+  ctx.fillStyle=pal.ink; fitFont(tutText({fr:'Passer le tutoriel ?',en:'Skip the tutorial?',es:'¿Saltar el tutorial?',de:'Tutorial überspringen?',it:'Saltare il tutorial?',pt:'Pular o tutorial?',ru:'Пропустить обучение?',zh:'要跳过教程吗？',ar:'هل تريد تخطي الدرس التعليمي؟'}), bw-30, uiF(pal,'head',20), 12);
+  ctx.fillText(tutText({fr:'Passer le tutoriel ?',en:'Skip the tutorial?',es:'¿Saltar el tutorial?',de:'Tutorial überspringen?',it:'Saltare il tutorial?',pt:'Pular o tutorial?',ru:'Пропустить обучение?',zh:'要跳过教程吗？',ar:'هل تريد تخطي الدرس التعليمي؟'}), W/2, by+38);
+  const bodyF = uiF(pal,'type',12.5);
+  ctx.font=bodyF; ctx.fillStyle=pal.ink2;
   const lines = tutWrap(tutText({fr:"Vous pourrez le relancer depuis l'onglet TUTORIEL du menu.",
                                  en:"You can restart it from the TUTORIAL tab in the menu.",
                                  es:"Podrás reiniciarlo desde la pestaña TUTORIAL del menú.",
@@ -601,19 +599,17 @@ function drawTutConfirm(){
                                  pt:"Você poderá reiniciá-lo na aba TUTORIAL do menu.",
                                  ru:"Вы сможете перезапустить его на вкладке ОБУЧЕНИЕ в меню.",
                                  zh:"你可以随时在菜单的「教程」标签页重新开始。",
-                                 ar:"يمكنك إعادة تشغيله من تبويب الدرس التعليمي في القائمة."}), bw-50, '13px Arial');
-  let ty = by+62; for (const ln of lines){ ctx.fillText(ln, W/2, ty); ty += 18; }
+                                 ar:"يمكنك إعادة تشغيله من تبويب الدرس التعليمي في القائمة."}), bw-50, bodyF);
+  let ty = by+66; for (const ln of lines){ ctx.fillText(ln, W/2, ty); ty += 18; }
   const btnH=34, byB=by+bh-btnH-16, bwB=(bw-44)/2;
-  ctx.fillStyle='rgba(168,40,30,0.92)'; rr(bx+16, byB, bwB, btnH, 7); ctx.fill();
-  ctx.fillStyle='#fff';
   const keepTxt = tutText({fr:'Continuer le tuto',en:'Keep playing',es:'Seguir con el tutorial',de:'Tutorial fortsetzen',it:'Continua il tutorial',pt:'Continuar o tutorial',ru:'Продолжить обучение',zh:'继续教程',ar:'متابعة الدرس التعليمي'});
-  fitFont(keepTxt, bwB-16, '700 13px Arial', 9.5);
-  ctx.fillText(keepTxt, bx+16+bwB/2, byB+btnH/2+5);
-  ctx.fillStyle='rgba(255,255,255,0.1)'; rr(bx+bw-16-bwB, byB, bwB, btnH, 7); ctx.fill();
-  ctx.fillStyle='#d8a0a0';
+  inkStamp(bx+16, byB, bwB, btnH, keepTxt, pal, 14);
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   const yesSkipTxt = tutText({fr:'Oui, passer',en:'Yes, skip',es:'Sí, saltar',de:'Ja, überspringen',it:'Sì, salta',pt:'Sim, pular',ru:'Да, пропустить',zh:'是的，跳过',ar:'نعم، تخطَّ'});
-  fitFont(yesSkipTxt, bwB-16, '700 13px Arial', 9.5);
+  ctx.fillStyle=pal.ink2; fitFont(yesSkipTxt, bwB-16, uiF(pal,'type',13), 9.5);
+  const yw = ctx.measureText(yesSkipTxt).width;
   ctx.fillText(yesSkipTxt, bx+bw-16-bwB/2, byB+btnH/2+5);
+  ctx.fillRect(bx+bw-16-bwB/2-yw/2, byB+btnH/2+8, yw, 1);
   ctx.textAlign='left';
   TUT.confirmRects = [ {key:'no', x:bx+16, y:byB, w:bwB, h:btnH},
                        {key:'yes', x:bx+bw-16-bwB, y:byB, w:bwB, h:btnH} ];
@@ -657,5 +653,5 @@ function refreshTutoPage(){
     ar:"<h3>تعلّم باللعب</h3>يرشدك برنامج تعليمي تفاعلي خطوة بخطوة عبر مباراة حقيقية: الاقتصاد، التجنيد، التحكم بالقوات، الأوامر، الترقيات، القدرات، التطور والبطل. يمكنك الخروج في أي وقت."
   });
   const btn = document.getElementById('tutoStartBtn');
-  if (btn) btn.textContent = tutText({fr:"▶ COMMENCER LE TUTORIEL", en:"▶ START THE TUTORIAL",es:"▶ EMPEZAR EL TUTORIAL",de:"▶ TUTORIAL STARTEN",it:"▶ AVVIA IL TUTORIAL",pt:"▶ COMEÇAR O TUTORIAL",ru:"▶ НАЧАТЬ ОБУЧЕНИЕ",zh:"▶ 开始教程",ar:"▶ ابدأ الدرس التعليمي"});
+  if (btn) btn.textContent = tutText({fr:"COMMENCER LE TUTORIEL", en:"START THE TUTORIAL",es:"EMPEZAR EL TUTORIAL",de:"TUTORIAL STARTEN",it:"AVVIA IL TUTORIAL",pt:"COMEÇAR O TUTORIAL",ru:"НАЧАТЬ ОБУЧЕНИЕ",zh:"开始教程",ar:"ابدأ الدرس التعليمي"});
 }

@@ -231,7 +231,8 @@ function droneCap(side){ return 5 + side.era*2 + (side.upg.support||0)*2; }
 // garde du château : envoie l'unité à distance la plus proche, ou en recrute une
 function dispatchBaseGarrison(side, role){
   if (isGuest(side)){ guestCmd({c:'bgar', role}); return true; }
-  if (side.gar.length>=3) return false;
+  const enRoute = side.units.filter(u=>u.task && u.task.kind==='gbase').length;   // places déjà promises
+  if (side.gar.length+enRoute>=3) return false;
   if (role!=='ranged' && role!=='siege') role='ranged';
   let best=null, bd=1e9;
   for (const u of side.units){
@@ -245,8 +246,8 @@ function dispatchBaseGarrison(side, role){
     return true;
   }
   const ri = ROLES.findIndex(r=>r.key===role), cost = unitCost(side, ri);
-  if (unitTotal(side)<side.cap && canPay(side, cost)){
-    pay(side, cost); spawnUnit(side, ri);
+  if (side.cd[ri]<=0 && unitTotal(side)<side.cap && canPay(side, cost)){
+    pay(side, cost); side.cd[ri] = 0.5 + ri*0.45; spawnUnit(side, ri);
     side.units[side.units.length-1].task = {kind:'gbase'};
     if (side===game.p){ sfx('buy',ri); announce(tr('a_guard_recruit'), '#e8d8a0'); }
     return true;
@@ -273,6 +274,6 @@ function calcRates(side){
     rw += (n.center? 3.5:2.2)*dwindle;
     if (n.center){ rf += 2*dwindle; rm += 2*dwindle; }
   }
-  const pm = side.prodMul||1, wM = game.winter?0.5:1;
+  const pm = side.prodMul||1, wM = winterMul();   // même malus dégressif que la vraie production
   return {f:rf*pm*wM, m:rm*pm*wM, w:rw*pm};
 }

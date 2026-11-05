@@ -123,16 +123,16 @@ function render(dt){
 
   if (game.flash>0){ ctx.fillStyle='#fff'; ctx.globalAlpha=Math.min(0.4,game.flash*0.3); ctx.fillRect(0,0,W,H); ctx.globalAlpha=1; }
   // étalonnage cinématique : légère vignette pour la profondeur (n'assombrit pas le HUD)
-  // (recréée si la largeur logique change : rotation, plein écran — sinon elle restait décentrée)
-  if (!VIGN || VIGN._w!==W){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
-    VIGN.addColorStop(0,'rgba(0,0,0,0)'); VIGN.addColorStop(1,'rgba(8,6,12,0.30)'); VIGN._w=W; }
+  // (recréée si la taille logique change : rotation, plein écran — sinon elle restait décentrée)
+  if (!VIGN || VIGN._k!==W+'x'+H){ VIGN=ctx.createRadialGradient(W/2,H*0.46,H*0.4,W/2,H*0.5,H*0.95);
+    VIGN.addColorStop(0,'rgba(0,0,0,0)'); VIGN.addColorStop(1,'rgba(8,6,12,0.30)'); VIGN._k=W+'x'+H; }
   ctx.fillStyle=VIGN; ctx.fillRect(0,0,W,H);
   // DANGER : votre base sous 30 % → les bords de l'écran pulsent en rouge au rythme du cœur
   // (le battement s'entend aussi, voir ambTick) — on sent l'urgence sans lire une jauge
   const php = game.p.maxhp>0? game.p.hp/game.p.maxhp : 1;
   if (!game.tut && !game.over && php<0.30 && php>0){
-    if (!VIGN_RED || VIGN_RED._w!==W){ VIGN_RED=ctx.createRadialGradient(W/2,H*0.5,H*0.42,W/2,H*0.5,H*1.02);
-      VIGN_RED.addColorStop(0,'rgba(150,0,0,0)'); VIGN_RED.addColorStop(1,'rgba(170,12,0,0.5)'); VIGN_RED._w=W; }
+    if (!VIGN_RED || VIGN_RED._k!==W+'x'+H){ VIGN_RED=ctx.createRadialGradient(W/2,H*0.5,H*0.42,W/2,H*0.5,H*1.02);
+      VIGN_RED.addColorStop(0,'rgba(150,0,0,0)'); VIGN_RED.addColorStop(1,'rgba(170,12,0,0.5)'); VIGN_RED._k=W+'x'+H; }
     const ph=(performance.now()/1050)%1, beat=Math.max(0,1-ph*5)+0.7*Math.max(0,1-Math.abs(ph-0.19)*6);
     ctx.globalAlpha=(0.25+0.3*Math.min(1,beat))*(paused? 0.5 : 1)*(1-php/0.30*0.4); ctx.fillStyle=VIGN_RED; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }
@@ -143,40 +143,41 @@ function render(dt){
 }
 // sélecteur de vitesse (chooser local) + modal de vote reçu — dessinés par-dessus le HUD
 function drawSpeedOverlays(){
+  const pal = uiPal();
   if (speedPending){                                   // ma proposition en attente
-    ctx.textAlign='center'; ctx.font='700 13px Arial';
-    ctx.fillStyle='rgba(16,13,12,0.9)'; rr(W/2-150,44,300,24,6); ctx.fill();
-    ctx.fillStyle='#e8d8a0'; ctx.fillText(t('spd_proposed')+' ×'+speedPending.speed+' — '+t('spd_waiting'), W/2, 56);
+    const txt = t('spd_proposed')+' ×'+speedPending.speed+' — '+t('spd_waiting');
+    paperPanel(W/2-160, 44, 320, 26, pal);
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink;
+    fitFont(txt, 300, uiF(pal,'type',12), 8); ctx.fillText(txt, W/2, 57);
   }
   if (speedVote){                                      // proposition reçue : Oui / Non
-    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
-    const bw=360, bh=132, bx=W/2-bw/2, by=H/2-bh/2;
-    ctx.fillStyle='rgba(20,16,15,0.97)'; rr(bx,by,bw,bh,10); ctx.fill();
-    ctx.strokeStyle='#7ec8ff'; ctx.lineWidth=1.5; rr(bx,by,bw,bh,10); ctx.stroke();
-    ctx.textAlign='center'; ctx.fillStyle='#e8e0d2'; ctx.font='700 16px Arial';
-    ctx.fillText(t('spd_incoming'), W/2, by+34);
-    ctx.fillStyle='#7ec8ff'; ctx.font='800 26px Arial'; ctx.fillText('×'+speedVote.speed, W/2, by+66);
-    const yes={x:bx+30,y:by+86,w:140,h:32,ok:true}, no={x:bx+bw-170,y:by+86,w:140,h:32,ok:false};
-    for (const r of [yes,no]){
-      ctx.fillStyle = r.ok? 'rgba(60,140,80,0.9)':'rgba(140,60,50,0.9)'; rr(r.x,r.y,r.w,r.h,7); ctx.fill();
-      ctx.fillStyle='#fff'; ctx.font='700 14px Arial'; ctx.fillText(r.ok? '✓ '+t('yes'):'✗ '+t('no'), r.x+r.w/2, r.y+r.h/2);
-    }
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
+    const bw=360, bh=140, bx=W/2-bw/2, by=H/2-bh/2;
+    paperPanel(bx, by, bw, bh, pal, {tape:true});
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink;
+    fitFont(t('spd_incoming'), bw-30, uiF(pal,'type',14), 9); ctx.fillText(t('spd_incoming'), W/2, by+30);
+    ctx.fillStyle=pal.red; ctx.font=uiF(pal,'head',32); ctx.fillText('×'+speedVote.speed, W/2, by+64);
+    const yes={x:bx+30,y:by+94,w:140,h:32,ok:true}, no={x:bx+bw-170,y:by+94,w:140,h:32,ok:false};
+    inkStamp(yes.x, yes.y, yes.w, yes.h, '✓ '+t('yes'), pal, 15);
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink2;
+    const nt='✗ '+t('no'); fitFont(nt, no.w-12, uiF(pal,'type',14), 9);
+    const nw=ctx.measureText(nt).width; ctx.fillText(nt, no.x+no.w/2, no.y+no.h/2); ctx.fillRect(no.x+no.w/2-nw/2, no.y+no.h/2+8, nw, 1);
     speedVote.rects=[yes,no];
   }
   if (speedPanel){                                     // sélecteur des 4 vitesses
-    const opts=SPEEDS, n=opts.length, bw=84, gap=10, totw=n*bw+(n-1)*gap;
-    const bx=W/2-totw/2, by=H/2-70, bh=46;
-    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
-    ctx.textAlign='center'; ctx.fillStyle='#e8e0d2'; ctx.font='700 15px Arial';
-    ctx.fillText(isOnline()? t('spd_pick_online') : t('spd_pick'), W/2, by-18);
-    const rects=[];
+    const opts=SPEEDS, n=opts.length, bw=80, gap=8, totw=n*bw+(n-1)*gap;
+    const px=W/2-totw/2-18, pw=totw+36, py=H/2-104, ph=106;
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(0,0,W,H);
+    paperPanel(px, py, pw, ph, pal, {tape:true});
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink;
+    const lbl = isOnline()? t('spd_pick_online') : t('spd_pick');
+    fitFont(lbl, pw-24, uiF(pal,'type',13), 8.5); ctx.fillText(lbl, W/2, py+22);
+    const bx=W/2-totw/2, by=py+44, bh=46, rects=[];
     for (let i=0;i<n;i++){
       const x=bx+i*(bw+gap), cur=(game.speed||1)===opts[i];
-      ctx.fillStyle = cur? 'rgba(126,200,255,0.92)':'rgba(30,26,24,0.95)';
-      rr(x,by,bw,bh,8); ctx.fill();
-      ctx.strokeStyle = cur? '#fff':'#5a544c'; ctx.lineWidth=1.4; rr(x,by,bw,bh,8); ctx.stroke();
-      ctx.fillStyle = cur? '#06121c':'#e8e0d2'; ctx.font='800 20px Arial';
-      ctx.fillText('×'+opts[i], x+bw/2, by+bh/2);
+      if (cur) inkStamp(x, by, bw, bh, '×'+opts[i], pal, 22);
+      else { ctx.strokeStyle=pal.line; ctx.lineWidth=1.2; ctx.strokeRect(x+0.5, by+0.5, bw-1, bh-1);
+        ctx.fillStyle=pal.ink; ctx.font=uiF(pal,'head',22); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('×'+opts[i], x+bw/2, by+bh/2+1); }
       rects.push({x,y:by,w:bw,h:bh,spd:opts[i]});
     }
     speedPanel.rects=rects;

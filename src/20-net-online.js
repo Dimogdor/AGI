@@ -59,38 +59,34 @@ function castPauseVote(ok){
 // (correctif v1.5 — avant, il avait un écran opaque alors que le demandeur voyait le terrain).
 function drawOnlinePause(){
   ctx.fillStyle='rgba(8,6,7,0.30)'; ctx.fillRect(0,0,W,H);
-  ctx.textAlign='center';
+  const pal = uiPal();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
   if (!netPause.voting){
-    // bandeau compact en haut : décompte visible sans masquer le champ de bataille
-    const bw=300, bh=58, bx=W/2-bw/2, by=46;
-    ctx.fillStyle='rgba(16,13,12,0.9)'; rr(bx,by,bw,bh,8); ctx.fill();
-    ctx.strokeStyle='#e8a06a'; ctx.lineWidth=1.4; rr(bx,by,bw,bh,8); ctx.stroke();
-    ctx.fillStyle='#e8e0d2';
-    const foeTxt = '⏸  '+t('np_paused_foe');
-    fitFont(foeTxt, bw-24, '700 15px Arial', 10);
-    ctx.fillText(foeTxt, W/2, by+22);
-    ctx.fillStyle='#e8a06a';
+    // bandeau compact en haut (papier) : décompte visible sans masquer le champ de bataille
+    const bw=300, bh=62, bx=W/2-bw/2, by=46;
+    paperPanel(bx, by, bw, bh, pal, {tape:true});
+    ctx.fillStyle=pal.ink;
+    const foeTxt = t('np_paused_foe');
+    fitFont(foeTxt, bw-24, uiF(pal,'type',13), 9);
+    ctx.fillText(foeTxt, W/2, by+19);
+    ctx.fillStyle=pal.red;
     const secTxt = Math.ceil(netPause.timer)+t('unit_sec');
-    fitFont(secTxt, bw-24, '700 24px Arial', 16);
+    fitFont(secTxt, bw-24, uiF(pal,'head',26), 16);
     ctx.fillText(secTxt, W/2, by+44);
     onlineVoteRects=null;
   } else {
     // vote de prolongation : on assombrit pour attirer l'attention sur le choix
-    ctx.fillStyle='rgba(10,8,7,0.55)'; ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='#b8b0a4';
-    fitFont(t('np_ask'), W-60, '16px Arial', 11);
-    ctx.fillText(t('np_ask'), W/2, H/2-20);
-    const bw=130, bh=46, gap=24, y=H/2+10;
-    const yes={x:W/2-bw-gap/2, y, w:bw, h:bh, ok:true};
-    const no ={x:W/2+gap/2,    y, w:bw, h:bh, ok:false};
-    for (const b of [yes,no]){
-      ctx.fillStyle = b.ok? '#1c3a18':'#3c100c'; rr(b.x,b.y,b.w,b.h,5); ctx.fill();
-      ctx.strokeStyle = b.ok? '#5aa84a':'#d8483a'; ctx.lineWidth=1; rr(b.x,b.y,b.w,b.h,5); ctx.stroke();
-      ctx.fillStyle='#fff';
-      const yn = b.ok? t('yes'):t('no');
-      fitFont(yn, bw-16, '700 18px Arial', 12);
-      ctx.fillText(yn, b.x+b.w/2, b.y+b.h/2+1);
-    }
+    ctx.fillStyle='rgba(10,8,7,0.5)'; ctx.fillRect(0,0,W,H);
+    const bw=360, bh=128, bx=W/2-bw/2, by=H/2-bh/2;
+    paperPanel(bx, by, bw, bh, pal, {tape:true});
+    ctx.fillStyle=pal.ink;
+    fitFont(t('np_ask'), bw-30, uiF(pal,'type',14), 9);
+    ctx.fillText(t('np_ask'), W/2, by+34);
+    const w=130, h=40, yes={x:W/2-w-12, y:by+66, w, h, ok:true}, no={x:W/2+12, y:by+66, w, h, ok:false};
+    inkStamp(yes.x, yes.y, yes.w, yes.h, t('yes'), pal, 17);
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink2;
+    fitFont(t('no'), w-16, uiF(pal,'type',15), 10);
+    const nw = ctx.measureText(t('no')).width; ctx.fillText(t('no'), no.x+w/2, no.y+h/2); ctx.fillRect(no.x+w/2-nw/2, no.y+h/2+9, nw, 1);
     onlineVoteRects=[yes,no];
   }
 }
@@ -99,7 +95,7 @@ function drawOnlinePauseInfo(){
   ctx.textAlign='center';
   const txt = netPause.voting? t('np_wait') : (Math.ceil(netPause.timer)+t('unit_sec')+' · '+t('np_paused_you'));
   ctx.fillStyle='#e8a06a';
-  fitFont(txt, W-40, '600 13px Arial', 9.5);
+  fitFont(txt, W-40, '600 13px '+UI_COND, 9.5);
   ctx.fillText(txt, W/2, 24);
 }
 // point d'entrée unique : un appui sur « pause » selon le contexte (solo / en ligne)
