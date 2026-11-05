@@ -168,14 +168,14 @@ Menu **Tester et publier** → **Tests** → **Test fermé** → votre piste →
 3. **Notes de version** :
    ```
    <fr-FR>
-   Une histoire plus grande : intro en 6 chapitres. Un fil d'actualités discret raconte
-   le monde pendant la partie. Ambiance sonore vivante (vent, oiseaux, pluie, cœur qui
-   bat). Tutoriel corrigé et enrichi. 1v1 en ligne nettement plus sûr.
+   Nouveau menu : un tract de la Résistance (affiche, fiche de mobilisation, tampon).
+   En jouant G·P·T, tout devient listing d'imprimante. Pause, tutoriel et fin de partie
+   sur papier, nouvelles polices, menu adapté aux téléphones. Corrections d'un audit complet.
    </fr-FR>
    <en-US>
-   A bigger story: a 6-chapter intro. A discreet news feed tells the world's fate
-   during the match. Living ambient sound (wind, birds, rain, heartbeat). Tutorial
-   fixed and expanded. Much safer online 1v1.
+   New menu: a Resistance leaflet (poster, mobilization form, rubber stamp). Playing
+   G·P·T turns everything into a printer listing. Pause, tutorial and end screen on paper,
+   new typefaces, phone-friendly menu. Fixes from a full audit.
    </en-US>
    ```
 4. **Suivant** → corrigez les éventuels avertissements → **Enregistrer** →

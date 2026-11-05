@@ -1,6 +1,6 @@
 {
   "name": "agi-la-derniere-bataille",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "AGI — La Dernière Bataille de l'Humanité : jeu de stratégie style Age of War (web, iOS, Android, PC).",
   "private": true,
   "main": "electron/main.js",
@@ -50,7 +50,6 @@
     "@capacitor/core": "^6.2.3",
     "@capacitor/ios": "^6.2.3",
     "@capgo/capacitor-updater": "^6.3.0",
-    "canvas": "^2.11.2",
     "electron": "^45.1.0",
     "electron-builder": "^26.18.0"
   }

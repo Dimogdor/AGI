@@ -730,7 +730,7 @@ function drawMenuScene(dt){
     x===0? ctx.moveTo(x,yv) : ctx.lineTo(x,yv);
   }
   ctx.stroke();
-  ctx.fillStyle='rgba(216,72,58,0.85)'; ctx.font='14px Arial';
+  ctx.fillStyle='rgba(216,72,58,0.85)'; ctx.font='600 15px '+UI_COND;
   ctx.textAlign='left'; ctx.fillText(fmt('mkt_crash',{pct:38+Math.floor(8*Math.sin(t*0.7))}), 16, 108);
   // pluie de symboles du capital
   ctx.font='15px Georgia'; ctx.textAlign='center';

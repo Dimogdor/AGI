@@ -28,13 +28,15 @@ pair-à-pair (sans serveur).
 ## Structure du projet
 
 ```
-la-derniere-bataille.html   ← LE JEU (source unique, lisible — éditez ici)
-build.mjs              ← build : minifie + obfusque → www/
+src/                   ← LES SOURCES du jeu (modules 00..22 + shell.html) — éditez ici
+la-derniere-bataille.html   ← le jeu assemblé, lisible (GÉNÉRÉ par `npm run dev`, ne pas éditer)
+build.mjs              ← build : assemble src/, minifie + obfusque → www/
 capacitor.config.json  ← config mobile (iOS/Android + OTA)
 electron/              ← app desktop (PC)
 tools/                 ← regression (suite de tests : npm test), gen-assets (icônes/visuels),
-                          gen-screens (intro), store-screens (captures de store)
-resources/             ← icônes, feature graphic, splash, captures d'écran
+                          store-screens (les 6 captures de store, intro comprise)
+resources/             ← icônes, feature graphic, splash, captures d'écran,
+                          fonts/ (polices libres du menu, intégrées au build — voir son README)
 www/                   ← bundle généré (git-ignoré, ne pas éditer)
 PUBLIER.md             ← ★ publier sur Google Play, pas à pas (sans rien installer)
 PACKAGING.md           ← guide complet de publication (stores, PC, web, OTA)
@@ -68,7 +70,7 @@ Les autres cibles sont détaillées dans **[PACKAGING.md](PACKAGING.md)** :
 | Web/PWA | déployer `www/` | site installable, hors-ligne |
 
 Régénérer les visuels : `node tools/gen-assets.mjs` (icônes) et
-`node tools/gen-screens.mjs` (captures).
+`node tools/store-screens.mjs` (captures, rendues par le vrai moteur dans Chromium).
 
 ## Mettre à jour le jeu
 

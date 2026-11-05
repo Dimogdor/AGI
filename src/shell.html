@@ -224,6 +224,15 @@
     padding:1px 8px; min-width:80px; }
   #menu .keyBtn.wait { color:var(--red); border-bottom-color:var(--red); }
   #menu #verTag { margin-top:clamp(6px,1.2vh,10px); font-size:10.5px; letter-spacing:.14em; color:var(--ink2); text-align:end; text-transform:uppercase; opacity:.8; }
+  /* navigation au CLAVIER : focus bien visible (encre rouge en pointillés) */
+  #menu button:focus-visible, #menu select:focus-visible, #menu input:focus-visible, #menu textarea:focus-visible,
+  #langPick button:focus-visible, #endscreen button:focus-visible { outline:2px dashed var(--red,#c42a1c); outline-offset:3px; }
+  #menu .go:focus-visible { outline:3px solid var(--red); outline-offset:6px; }
+  /* « réduire les animations » du système : le papier ne bouge plus, le tampon ne s'abat plus */
+  @media (prefers-reduced-motion: reduce){
+    #menu .page.on, #menu .go.stamped, #menu .pick.sel::after, #endtitle { animation:none !important; }
+    #menu .tab, #menu .go, .go, .pick { transition:none !important; }
+  }
   /* droite-à-gauche (arabe) : on retourne le formulaire, pas les objets du décor */
   body[dir="rtl"] #menu .pick { padding:4px 26px 4px 2px; }
   body[dir="rtl"] #menu .pick::before { left:auto; right:2px; }
