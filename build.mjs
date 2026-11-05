@@ -29,11 +29,26 @@ const exists = async p => { try { await access(p, constants.F_OK); return true; 
 //     dans src/shell.html à la place du marqueur. Le jeu est ÉCRIT en modules dans src/ ;
 //     la-derniere-bataille.html est un ARTEFACT régénéré (jouable sur file://, lisible). ---
 const SRCDIR = new URL('./src/', import.meta.url);
+// polices libres du menu (resources/fonts, voir son README) : intégrées en base64 → fichier unique,
+// jouable hors ligne ; noms internes « AGI … » pour ne jamais dépendre d'une police installée
+const FONT_ALIAS = { 'Big Shoulders Stencil Display':'AGI Stencil', 'Special Elite':'AGI Type', 'Oswald':'AGI Cond', 'VT323':'AGI Term' };
+async function fontFaces(){
+  const dir = new URL('./resources/fonts/', import.meta.url);
+  let list = []; try { list = JSON.parse(await readFile(new URL('fonts.json', dir), 'utf8')); } catch { return ''; }
+  const out = [];
+  for (const f of list){
+    const b64 = (await readFile(new URL(f.file, dir))).toString('base64');
+    out.push(`@font-face{font-family:'${FONT_ALIAS[f.family]||f.family}';font-style:normal;font-weight:${f.weight};font-display:swap;`+
+      `src:url(data:font/woff2;base64,${b64}) format('woff2');unicode-range:${f.range};}`);
+  }
+  return out.join('\n');
+}
 async function assemble(){
   const shell = await readFile(new URL('shell.html', SRCDIR), 'utf8');
   const files = (await readdir(SRCDIR)).filter(f=>f.endsWith('.js')).sort();
   const js = (await Promise.all(files.map(f=>readFile(new URL(f, SRCDIR),'utf8')))).join('\n');
-  return shell.replace('__BUILD_SCRIPT__', () => js);
+  const fonts = await fontFaces();
+  return shell.replace('/*__FONTS__*/', () => fonts).replace('__BUILD_SCRIPT__', () => js);
 }
 
 // --- CONTENT-SECURITY-POLICY (défense en profondeur contre l'injection de script) ---
@@ -49,7 +64,7 @@ async function addCSP(page){
     .map(m => `'sha256-${createHash('sha256').update(m[1], 'utf8').digest('base64')}'`).join(' ');
   const csp = [`default-src 'self'`,
     `script-src 'self' ${hashes} https://cdn.jsdelivr.net https://unpkg.com`,
-    `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`, `media-src 'self' data: blob:`,
+    `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`, `media-src 'self' data: blob:`, `font-src 'self' data:`,
     `connect-src 'self' ${origin('firebaseDb')} ${origin('cfTurnProxy')} https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com`.replace(/ +/g,' '),
     `worker-src 'self'`, `manifest-src 'self'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`].join('; ');
   return page.replace('<meta charset="UTF-8">', () => `<meta charset="UTF-8">\n<meta http-equiv="Content-Security-Policy" content="${csp}">`);

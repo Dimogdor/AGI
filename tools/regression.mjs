@@ -193,6 +193,31 @@ console.log('\nRÉGLAGES, MENUS, TOUCHES');
   await page.close();
 }
 
+console.log('\nMENU « TRACT » (v1.11)');
+for (const [vw, vh] of [[1280,720],[844,390],[1024,768]]){
+  const page = await browser.newPage({ viewport:{ width:vw, height:vh } }); const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.addInitScript(() => { localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1');
+    localStorage.setItem('agi_settings', JSON.stringify({ lang:'de', music:false, sfx:false })); });
+  await page.goto(GAME); await page.waitForTimeout(900);
+  const r = await page.evaluate(async () => {
+    const out = {}, sheet = document.querySelector('#menu .sheet'), vis = el => { const b = el.getBoundingClientRect(); return b.width>0 && b.left>=0 && b.top>=0 && b.right<=innerWidth+1 && b.bottom<=innerHeight+1; };
+    await document.fonts.ready;
+    out.fonts = ['800 20px "AGI Stencil"','20px "AGI Type"'].every(f => document.fonts.check(f));
+    out.fit = sheet.scrollHeight <= sheet.clientHeight + 2 && ['startBtn','onlineBtn','cardHum','cardIA'].every(id => vis(document.getElementById(id))) && vis(document.querySelector('#menu .poster .title'));
+    document.getElementById('cardIA').click(); out.ia = document.getElementById('menu').classList.contains('fac-ia') && getComputedStyle(document.querySelector('.sgIa')).display!=='none';
+    document.getElementById('cardHum').click(); out.hum = !document.getElementById('menu').classList.contains('fac-ia');
+    document.querySelector('.diffBtn[data-diff="3"]').click(); out.diff = menuDiff===3;
+    document.getElementById('startBtn').click(); await new Promise(r => setTimeout(r, 450));
+    out.started = document.getElementById('menu').style.display==='none' && intro===INTRO_N-1 && pendingStart && pendingStart.diff===3;
+    // écran de fin sur cet écran : le bouton Rejouer reste visible sans défiler
+    finishIntro(); game.over = true; game.win = true; showEnd(); await new Promise(r => setTimeout(r, 350));
+    out.end = vis(document.getElementById('replayBtn'));
+    return out; });
+  check(r.fonts && r.fit && r.ia && r.hum && r.diff && r.started && r.end && !errs.length,
+    `${vw}×${vh} (de) : polices chargées, écran Jouer sans défilement, bascule G·P·T, tampon → partie, fin lisible`+(Object.entries(r).filter(([k,v])=>!v).map(([k])=>' ✗'+k).join('')+(errs[0]? ' — '+errs[0] : '')));
+  await page.close();
+}
+
 console.log('\nINTRO + FIL D\'ACTUALITÉS');
 { const langs = ['fr','en','es','de','it','pt','ru','zh','ar']; let bad = [];
   for (const L of langs){

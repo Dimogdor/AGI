@@ -4,21 +4,23 @@ const escH = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>
 function showEnd(){
   const et = document.getElementById('endtitle'), s = document.getElementById('endstats');
   et.textContent = game.win? t('end_win') : t('end_lose');
-  et.style.color = game.win? '#e8d8a0' : '#a8281e';
   const gt = Math.max(0, +game.t||0), mins = Math.floor(gt/60), secs = ('0'+Math.floor(gt%60)).slice(-2);
-  // v1.9 : cartes de statistiques à icônes + jauge de santé du monde (avant : 4 lignes de texte)
   const cells = [
-    ['⏱', t('end_duration'), mins+' '+t('unit_min')+' '+secs+' '+t('unit_sec')],
-    ['⚔', t('end_kills'), (+game.kills||0)|0],
-    ['☠', t('end_losses'), (+game.eKills||0)|0],
-    ['✸', t('end_powers'), (+game.specialsUsed||0)|0],
-    ['✦', t('end_era'), lEra(game.p.facKey,game.p.era)+(game.p.trans? ' — '+lTransName(game.p.facKey):'')],
+    [t('end_duration'), mins+' '+t('unit_min')+' '+secs+' '+t('unit_sec')],
+    [t('end_kills'), (+game.kills||0)|0],
+    [t('end_losses'), (+game.eKills||0)|0],
+    [t('end_powers'), (+game.specialsUsed||0)|0],
+    [t('end_era'), lEra(game.p.facKey,game.p.era)+(game.p.trans? ' — '+lTransName(game.p.facKey):'')],
   ];
   const wh = clamp(Math.round((1-(+game.dev||0))*100), 0, 100);
-  s.innerHTML = '<div class="esGrid">'+cells.map(([ic,l,v],i)=>'<div class="esCell'+(i===4?' esWide':'')+'"><span class="esIco">'+ic+'</span>'+
-      '<span class="esLbl">'+escH(l)+'</span><b>'+escH(v)+'</b></div>').join('')+'</div>'+
-    '<div class="esWorld"><span>🌍 '+t('end_world')+'</span><div class="esBar"><i style="width:'+wh+'%;background:'+
-      (wh>60? '#7dd84a' : wh>30? '#ffd34a' : '#ff5a4a')+'"></i></div><b>'+wh+'%</b></div>'+
+  // v1.11 : COMMUNIQUÉ tapé à la machine (lignes à points de conduite, jauge hachurée), tamponné
+  // du verdict — même papier que le menu ; listing d'imprimante si l'on jouait G·P·T
+  const es = document.getElementById('endscreen');
+  es.classList.toggle('fac-ia', game.p.facKey==='IA');
+  et.style.color = game.win? 'var(--red)' : 'var(--ink)';
+  const no = document.getElementById('endNo'); if (no) no.textContent = '#'+String(73 + (Math.floor(gt)%900)).padStart(4,'0');
+  s.innerHTML = cells.map(([l,v])=>'<div class="esLine"><span>'+escH(l)+'</span><i></i><b>'+escH(v)+'</b></div>').join('')+
+    '<div class="esWorld"><span>'+escH(t('end_world'))+'</span><div class="esBar"><i style="width:'+wh+'%"></i></div><b>'+wh+'%</b></div>'+
     '<i class="esJournal">'+escH(warJournal())+'</i>';
   try { drawEndArt(); } catch(e){}
   document.getElementById('endscreen').style.display = 'flex';

@@ -1,3 +1,73 @@
+/* ---------- PAPIER (v1.11) : les panneaux en jeu reprennent l'identité du menu ----------
+   Fiche imprimée pour l'Humanité, listing d'imprimante zébré et perforé pour G·P·T. Grain cuit
+   une seule fois en motif, ombre portée nette : aucun flou, coût négligeable. */
+const UIPAL = {
+  HUM:{ paper:'#e9e0ca', paper2:'#d8ccb0', ink:'#1f1b17', ink2:'#5a5146', red:'#c42a1c', ok:'#2f6a2a', line:'rgba(31,27,23,0.32)',
+        head:'"AGI Stencil","AGI Cond",Impact,sans-serif', headW:800, type:'"AGI Type","Courier New",monospace', k:1 },
+  IA: { paper:'#eef2ea', paper2:'#dde9da', ink:'#10262d', ink2:'#3d5a62', red:'#0b6fa8', ok:'#0b6fa8', line:'rgba(16,38,45,0.28)',
+        head:'"AGI Term","Courier New",monospace', headW:400, type:'"AGI Term","Courier New",monospace', k:1.3, ia:true },
+};
+const UI_COND = '"AGI Cond","Arial Narrow",Arial,sans-serif';
+// police du HUD : condensée de presse (Oswald 600) — plus typée que l'Arial gras et plus étroite,
+// donc moins de libellés comprimés par fitFont dans les langues longues
+const HF = px => '600 '+px+'px '+UI_COND;
+// les polices embarquées (data: URI) ne se chargent qu'à la première utilisation : on les
+// demande dès le démarrage pour que le canvas ne dessine jamais avec la police de repli
+try { if (document.fonts && document.fonts.load)
+  for (const f of ['800 20px "AGI Stencil"', '20px "AGI Type"', '600 20px "AGI Cond"', '20px "AGI Term"']) document.fonts.load(f).catch(()=>{}); } catch(e){}
+function uiPal(){ return (game && game.p && game.p.facKey==='IA')? UIPAL.IA : UIPAL.HUM; }
+// police d'un rôle de texte : 'head' (pochoir / terminal), 'type' (machine à écrire), 'cond' (titre de presse)
+function uiF(pal, kind, px){
+  if (kind==='cond') return '600 '+px+'px '+UI_COND;
+  return (kind==='head'? pal.headW+' ' : '')+(px*pal.k).toFixed(1)+'px '+(kind==='head'? pal.head : pal.type);
+}
+let _paperGrain = null;
+function paperGrain(){
+  if (!_paperGrain){
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    let s = 4242; const r = () => ((s = (s*16807) % 2147483647) / 2147483647);
+    for (let i=0;i<1400;i++){ g.fillStyle = 'rgba(90,66,36,'+(0.03+r()*0.09).toFixed(3)+')'; g.fillRect(r()*128, r()*128, 0.8+r()*1.6, 0.8+r()*1.6); }
+    for (let i=0;i<10;i++){ g.fillStyle = 'rgba(120,90,50,0.045)'; g.beginPath(); g.arc(r()*128, r()*128, 4+r()*10, 0, 6.283); g.fill(); }
+    _paperGrain = ctx.createPattern(c, 'repeat');
+  }
+  return _paperGrain;
+}
+function paperPanel(x, y, w, h, pal, o){
+  o = o || {};
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.fillRect(x+4, y+6, w, h);                 // ombre nette
+  const g = ctx.createLinearGradient(0, y, 0, y+h); g.addColorStop(0, pal.paper); g.addColorStop(1, pal.paper2);
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  if (pal.ia){                                                                        // listing : bandes + perforations
+    ctx.fillStyle = 'rgba(120,180,125,0.22)';
+    for (let yy=y+18; yy<y+h; yy+=36) ctx.fillRect(x+16, yy, w-32, Math.min(18, y+h-yy));
+    ctx.fillStyle = 'rgba(12,10,10,0.9)';
+    for (let yy=y+10; yy<y+h-5; yy+=18){
+      ctx.beginPath(); ctx.arc(x+8, yy, 3, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w-8, yy, 3, 0, 6.283); ctx.fill(); }
+  } else {
+    ctx.fillStyle = paperGrain(); ctx.fillRect(x, y, w, h);
+    if (o.tape){ ctx.fillStyle = 'rgba(236,226,196,0.72)'; ctx.translate(x+w*(o.tapeX||0.5), y); ctx.rotate(-0.05); ctx.fillRect(-34, -8, 68, 16); }
+  }
+  ctx.restore();
+}
+// bouton d'action principal : TAMPON à double cadre (Humanité) ou touche pleine ombrée (G·P·T)
+function inkStamp(x, y, w, h, txt, pal, px){
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (pal.ia){
+    ctx.fillStyle = pal.ink; ctx.fillRect(x+3, y+3, w, h); ctx.fillStyle = pal.red; ctx.fillRect(x, y, w, h); ctx.fillStyle = '#eaf6ff';
+  } else {
+    ctx.strokeStyle = pal.red; ctx.lineWidth = 2.4; ctx.strokeRect(x+1.5, y+1.5, w-3, h-3);
+    ctx.lineWidth = 1.1; ctx.strokeRect(x+5, y+5, w-10, h-10); ctx.fillStyle = pal.red;
+  }
+  fitFont(txt, w-18, uiF(pal, 'head', px||16), 9);
+  ctx.fillText(txt, x+w/2, y+h/2+1);
+  ctx.restore();
+}
+// ligne pointillée de formulaire
+function inkRule(x1, x2, y, pal){ ctx.save(); ctx.strokeStyle = pal.line; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke(); ctx.restore(); }
+
 /* ---------- HUD (refait : zones fixes, aucun chevauchement) ---------- */
 const HUD = { btns:[], selRect:null, upgRects:[] };
 function layoutHUD(){
@@ -89,7 +159,7 @@ function drawUnitTooltip(i){
     drawUnitLayers(p.facKey==='HUM'?'hum':'bot', p.facKey, r.key, p.era, p.trans, 0); }
   ctx.restore();
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle=p.fac.accent; ctx.font='700 12px Arial';
+  ctx.fillStyle=p.fac.accent; ctx.font=HF(12);
   ctx.fillText((ROLE_ICON[r.key]||'')+' '+name, x+PW+8, y+16);
   ctx.fillStyle='#cdc4b6'; ctx.font='11px Arial';
   let yy=y+33; for (const l of lines){ ctx.fillText(l, x+PW+8, yy); yy+=15; }
@@ -107,7 +177,7 @@ function drawHUD(){
   ctx.fillStyle='rgba(255,255,255,0.045)';
   for (const [cx0,cw] of [[3,86],[91,86],[179,76],[257,92]]){ rr(cx0,3,cw,32,6); ctx.fill(); }
   ctx.textAlign='left';
-  ctx.font='700 14px Arial';
+  ctx.font=HF(14);
   ctx.fillStyle='#e8d8a0'; ctx.fillText(fac.icons.f+' '+Math.floor(p.f), 8, 13);
   ctx.fillStyle='#b8d8e8'; ctx.fillText(fac.icons.m+' '+(p.trans?'∞':Math.floor(p.m)), 96, 13);
   ctx.fillStyle='#6ab0e0'; ctx.fillText('💧 '+Math.floor(p.w), 184, 13);
@@ -124,7 +194,7 @@ function drawHUD(){
   const xpr = 2.2 + ((p.fortLvl||1)-1)*1.3 + (game.nodes.some(n=>n.center&&n.owner==='p')?1.5:0) + 0.5*game.zones.reduce((n,z)=>n+(z.owner==='p'?1:0),0);
   ctx.fillText(fmtRate(xpr)+'/s', 262, 29);
   // ère + santé du monde au centre
-  ctx.textAlign='center'; ctx.font='700 14px Arial';
+  ctx.textAlign='center'; ctx.font=HF(14);
   ctx.fillStyle = p.trans? '#ffe9a0' : fac.accent;
   ctx.fillText(p.trans? lTransName(p.facKey) : lEra(p.facKey,p.era), W/2, 11);
   ctx.fillStyle='rgba(255,255,255,0.13)'; rr(W/2-80, 25.5, 160, 5, 2.5); ctx.fill();
@@ -133,7 +203,7 @@ function drawHUD(){
   ctx.fillText(tr('world_health'), W/2, 20);
   // droite : effectif + ennemi (calés À GAUCHE du cluster de contrôles → plus de chevauchement)
   const RX = W-120;                                // 8 px d'air avant le bouton de vitesse (x = W-112)
-  ctx.textAlign='right'; ctx.font='700 13px Arial';
+  ctx.textAlign='right'; ctx.font=HF(13);
   ctx.fillStyle = unitTotal(p)>=p.cap? '#ff5a4a':'#d8d0c4';
   const qn = (p.queue && p.queue.length) ? p.queue.length : (p.queueLen||0);
   ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), RX, 13);
@@ -142,7 +212,7 @@ function drawHUD(){
   const diffTxt = tr('diff_'+game.diff).toUpperCase();
   ctx.fillText(diffTxt, RX, 29);
   const dw = ctx.measureText(diffTxt).width;
-  ctx.font='700 11px Arial'; ctx.fillStyle=game.e.fac.accent;
+  ctx.font=HF(11); ctx.fillStyle=game.e.fac.accent;
   ctx.fillText(lFacName(game.e.facKey)+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 29);
   // ---- minimap (y=42) ----
   const mw=200, mh=13, mx=W/2-mw/2, my=42;
@@ -186,17 +256,17 @@ function drawHUD(){
     ctx.beginPath(); ctx.arc(rx,ry,rad,0,6.283); ctx.stroke();
     ctx.strokeStyle=p.trans?'#ffe9a0':fac.accent; ctx.lineWidth=3;
     ctx.beginPath(); ctx.arc(rx,ry,rad,-1.5708,-1.5708+6.283*fr); ctx.stroke();
-    ctx.fillStyle=p.trans?'#ffe9a0':fac.accent; ctx.font='700 8px Arial'; ctx.textAlign='center';
+    ctx.fillStyle=p.trans?'#ffe9a0':fac.accent; ctx.font=HF(8); ctx.textAlign='center';
     ctx.fillText(p.era<4?('E'+(p.era+1)):'★', rx, ry+1);
   }
   // ---- chrono de partie (gelé en pause, accéléré/ralenti avec la vitesse de jeu) ----
   ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.font='700 12px Arial'; ctx.fillStyle='#cdbf9a';
+  ctx.font=HF(12); ctx.fillStyle='#cdbf9a';
   ctx.fillText('⏱ '+fmtTime(game.t)+((game.speed&&game.speed!==1)? '  ×'+game.speed : ''), mx+mw+10, my+mh/2);
   drawQueue();
   // ---- météo en cours ----
   if (game.weather){
-    ctx.font='700 10px Arial'; ctx.textAlign='center';
+    ctx.font=HF(10); ctx.textAlign='center';
     ctx.fillStyle = game.weather==='strike'? '#ff9d45':'#5ad0ff';
     ctx.fillText(game.weather==='strike'? tr('ev_strike_short')
                                          : tr('ev_patch_short'), W/2, 66);
@@ -204,7 +274,7 @@ function drawHUD(){
   // ---- annonce (y=100) ----
   if (game.msgT>0 && game.msg){
     ctx.globalAlpha = Math.min(1, game.msgT);
-    ctx.font='800 21px Georgia'; ctx.textAlign='center';
+    ctx.font=uiF(uiPal(),'head',24); ctx.textAlign='center';
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillText(game.msg.txt, W/2+2, 102);
     ctx.fillStyle=game.msg.color; ctx.fillText(game.msg.txt, W/2, 100);
     ctx.globalAlpha=1;
@@ -223,7 +293,7 @@ function drawHUD(){
   HUD.selRect = null;
   if (game.sel.size>0){
     const txt = fmt('hud_sel',{n:game.sel.size});
-    ctx.font='700 12px Arial';
+    ctx.font=HF(12);
     const tw = ctx.measureText(txt).width;
     const bx = W/2-tw/2-26, by = H-132, bw = tw+52;
     ctx.fillStyle='rgba(16,13,12,0.92)'; rr(bx,by,bw,24,5); ctx.fill();
@@ -397,12 +467,12 @@ function drawBtn(b){
   if (small){
     ctx.fillStyle = col;
     const smallLbl = b.label||label;
-    fitFont(smallLbl, b.w-8, '700 12px Arial', 8);
+    fitFont(smallLbl, b.w-8, HF(12), 8);
     ctx.fillText(smallLbl, b.x+b.w/2, b.y+b.h/2+1);
   } else {
-    ctx.font='700 11px Arial'; ctx.fillStyle = ok?'#fff':'#9a9085';
+    ctx.font=HF(11); ctx.fillStyle = ok?'#fff':'#9a9085';
     ctx.fillText(label, b.x+b.w/2, b.y+16, b.w-8);
-    ctx.font='600 10px Arial'; ctx.fillStyle = ok? col:'#6a665e';
+    ctx.font=HF(10); ctx.fillStyle = ok? col:'#6a665e';
     ctx.fillText(sub, b.x+b.w/2, b.y+42, b.w-8);
   }
   ctx.globalAlpha=1;
@@ -414,7 +484,7 @@ function drawBtn(b){
     ctx.fillRect(b.x+4, b.y+2, b.w-8, 2);
     ctx.textAlign='center';
     ctx.globalAlpha = 0.85;
-    fitFont(CAT[0], b.w-8, '600 6.5px Arial', 5.5);
+    fitFont(CAT[0], b.w-8, HF(6.5), 5.5);
     ctx.fillText(CAT[0], b.x+b.w/2, b.y+8);
     ctx.globalAlpha = 1;
   }
@@ -430,12 +500,12 @@ function drawBtn(b){
       const can = lvl<3 && canPay(p,upc);
       ctx.fillStyle = can? '#3a2e14':'#221d18'; rr(r.x,r.y,r.w,r.h,4); ctx.fill();
       ctx.strokeStyle = can? '#e8d8a0':'#4a443c'; ctx.lineWidth=1; rr(r.x,r.y,r.w,r.h,4); ctx.stroke();
-      ctx.font='700 11px Arial'; ctx.textAlign='center';
+      ctx.font=HF(11); ctx.textAlign='center';
       ctx.fillStyle = can? '#e8d8a0':'#6a665e';
       ctx.fillText(lvl>=3?'★':'⬆', r.x+r.w/2, r.y+r.h/2+1);
       // coût d'amélioration affiché sous le bouton (fini le flou)
       if (lvl<3){
-        ctx.font='600 8px Arial';
+        ctx.font=HF(8);
         ctx.fillStyle = can? '#e8d8a0':'#7a7066';
         ctx.fillText('⬆ '+costStr(p,upc), b.x+b.w/2-10, b.y+b.h-8, b.w-26);
       }
@@ -517,10 +587,11 @@ function drawBuildMenu(){
   let by = clamp(w2sY(gY(anchorX))-110-bh, 44, H-bh-150);
   buildMenu.box = {x:bx, y:by, w:bw, h:bh};
   buildMenu.rects=[];
-  ctx.fillStyle='rgba(16,13,12,0.95)'; rr(bx,by,bw,bh,8); ctx.fill();
-  ctx.strokeStyle=p.fac.accent; ctx.lineWidth=1.6; rr(bx,by,bw,bh,8); ctx.stroke();
-  ctx.textAlign='left';
+  const pal = uiPal();
+  paperPanel(bx, by, bw, bh, pal, {tape:true, tapeX:0.78});
+  ctx.textAlign='left'; ctx.textBaseline='middle';
   const inTut = game.tut && TUT && !buildMenu.base && !slot.b;   // surbrillance/grisé : uniquement les constructions sur socle vide
+  const pulse = 0.6 + 0.4*Math.sin(performance.now()/220);
   for (let i=0;i<opts.length;i++){
     const o=opts[i], y=by+8+i*34;
     const free = !Object.keys(o.cost).length;
@@ -528,21 +599,20 @@ function drawBuildMenu(){
     const cur = inTut && tutBuildCurrent(o.key);     // construction demandée à cette étape
     const past = inTut && !cur;                       // déjà enseignée → grisée
     buildMenu.rects.push({x:bx+4,y,w:bw-8,h:30,key:o.key});
+    if (i>0) inkRule(bx+10, bx+bw-10, y-2, pal);
     ctx.globalAlpha = past? 0.4 : (ok?1:0.45);
-    ctx.fillStyle = cur? rgbaC(p.fac.accent,0.18) : 'rgba(255,255,255,0.07)'; rr(bx+4,y,bw-8,30,5); ctx.fill();
-    if (cur){ ctx.save(); ctx.strokeStyle=p.fac.accent; ctx.lineWidth=2; ctx.shadowColor=p.fac.accent; ctx.shadowBlur=8;
-      rr(bx+4,y,bw-8,30,5); ctx.stroke(); ctx.restore(); }
-    ctx.fillStyle = cur? '#fff' : '#e8e0d2';
-    fitFont(o.label, bw-20, '700 11.5px Arial', 8.5);
+    if (cur){ ctx.save(); ctx.strokeStyle=pal.red; ctx.globalAlpha=pulse; ctx.lineWidth=2.2; ctx.strokeRect(bx+5,y+1,bw-10,28); ctx.restore(); }
+    ctx.fillStyle = cur? pal.red : pal.ink;
+    fitFont(o.label, bw-20, uiF(pal,'cond',12.5), 8.5);
     ctx.fillText(o.label, bx+12, y+10);
-    ctx.fillStyle='#e8d8a0';
+    ctx.fillStyle = pal.ink2;
     const costTxt = free?'—':costStr(p,o.cost);
-    fitFont(costTxt, bw-20, '600 10px Arial', 7.5);
+    fitFont(costTxt, bw-20, uiF(pal,'type',10.5), 7.5);
     ctx.fillText(costTxt, bx+12, y+23);
     // info de production affichée AVANT la construction (chaque ferme produit X de sa ressource)
     if (o.prod){
-      ctx.textAlign='right'; ctx.fillStyle='#9dd88a';
-      fitFont(o.prod, bw*0.4, '600 10px Arial', 7.5);
+      ctx.textAlign='right'; ctx.fillStyle=pal.ok;
+      fitFont(o.prod, bw*0.4, uiF(pal,'type',10.5), 7.5);
       ctx.fillText(o.prod, bx+bw-12, y+15);
       ctx.textAlign='left';
     }
@@ -553,19 +623,13 @@ function drawBuildMenu(){
 // + un bandeau discret et un bouton « Reprendre ».
 function drawSoftPause(){
   ctx.fillStyle='rgba(10,8,7,0.28)'; ctx.fillRect(0,0,W,H);
-  const bw=240, bh=78, bx=W/2-bw/2, by=H/2-bh/2;
-  ctx.fillStyle='rgba(16,16,14,0.9)'; rr(bx,by,bw,bh,8); ctx.fill();
-  ctx.strokeStyle='#7dd84a'; ctx.lineWidth=1.4; rr(bx,by,bw,bh,8); ctx.stroke();
-  ctx.textAlign='center'; ctx.fillStyle='#e8e0d2';
-  const softTitle = '⏸  '+t('p_title');
-  fitFont(softTitle, bw-24, '800 22px Arial', 14);
-  ctx.fillText(softTitle, W/2, by+26);
-  const rw=bw-44, rh=26, rx=bx+22, ry=by+40;
-  ctx.fillStyle='rgba(125,216,74,0.14)'; rr(rx,ry,rw,rh,5); ctx.fill();
-  ctx.strokeStyle='#7dd84a'; ctx.lineWidth=1.2; rr(rx,ry,rw,rh,5); ctx.stroke();
-  ctx.fillStyle='#bfe6b0';
-  fitFont(t('p_resume'), rw-12, '700 14px Arial', 10);
-  ctx.fillText(t('p_resume'), W/2, ry+rh/2+1);
+  const pal = uiPal(), bw=240, bh=84, bx=W/2-bw/2, by=H/2-bh/2;
+  paperPanel(bx, by, bw, bh, pal, {tape:true});
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink;
+  fitFont(t('p_title'), bw-24, uiF(pal,'head',24), 14);
+  ctx.fillText(t('p_title'), W/2, by+24);
+  const rw=bw-44, rh=30, rx=bx+22, ry=by+42;
+  inkStamp(rx, ry, rw, rh, t('p_resume'), pal, 15);
   pauseRects = [{x:rx,y:ry,w:rw,h:rh,key:'resume'}];
 }
 const QUAL_KEY = {low:'qual_low', medium:'qual_med', high:'qual_high', ultra:'qual_ultra'};
@@ -575,7 +639,7 @@ function cycleQuality(){ const i=QUALITIES.indexOf(SETTINGS.quality); SETTINGS.q
 // regroupée par section (Audio / Affichage / Partie) pour une lecture logique, avec un
 // bouton Reprendre mis en avant et Quitter clairement isolé en rouge.
 function drawPause(){
-  ctx.fillStyle='rgba(10,8,7,0.78)'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(10,8,7,0.7)'; ctx.fillRect(0,0,W,H);
   // CARTE THERMIQUE des morts (combats récents), visible en pause — nappes additives colorées.
   if (game && !game.over && game.killLog && game.killLog.length){
     ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -592,7 +656,6 @@ function drawPause(){
     ctx.fillText(tr('heatmap_lbl'), W/2, 70);
   }
   const bw=316, bx=W/2-bw/2;
-  const acc='#d8483a';
   const items = [
     {key:'h1', head:tr('opts_h_audio')},
     {key:'music',  half:true, label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
@@ -627,64 +690,58 @@ function drawPause(){
   let contentH=0; for (const it of rows) contentH += (it.head!=null? headH : ih)+gap;
   const bh = TITLE_H + RESUME_H + GAP0 + contentH + BOTTOM_PAD;
   const by=clamp(H/2-bh/2, 8, H-bh-8);
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=22; ctx.shadowOffsetY=6;
-  const pg=ctx.createLinearGradient(bx,by,bx,by+bh); pg.addColorStop(0,'rgba(26,18,16,0.95)'); pg.addColorStop(1,'rgba(13,9,8,0.95)');
-  ctx.fillStyle=pg; rr(bx,by,bw,bh,14); ctx.fill(); ctx.restore();
-  ctx.strokeStyle=rgbaC(acc,0.7); ctx.lineWidth=1.6; rr(bx,by,bw,bh,14); ctx.stroke();
-  ctx.textAlign='center'; ctx.fillStyle='#e8e0d2';
-  const pauseTitle = '⚙ '+t('p_title');
-  fitFont(pauseTitle, bw-30, '700 23px Arial', 15);
-  ctx.fillText(pauseTitle, W/2, by+34);
-  // bouton REPRENDRE mis en avant, juste sous le titre
-  const rw0=bw-48, rh0=RESUME_H, rx0=bx+24, ry0=by+TITLE_H;
-  ctx.save(); ctx.fillStyle=rgbaC('#7dd84a',0.16); rr(rx0,ry0,rw0,rh0,9); ctx.fill();
-  ctx.strokeStyle='#7dd84a'; ctx.lineWidth=1.6; ctx.shadowColor='#7dd84a'; ctx.shadowBlur=8;
-  rr(rx0,ry0,rw0,rh0,9); ctx.stroke(); ctx.restore();
-  ctx.fillStyle='#bfe6b0';
-  fitFont(t('p_resume'), rw0-20, '700 15px Arial', 11);
-  ctx.fillText(t('p_resume'), W/2, ry0+rh0/2+5);
+  const pal = uiPal();
+  paperPanel(bx, by, bw, bh, pal, {tape:true, tapeX:0.3});
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.fillStyle=pal.ink;
+  fitFont(t('p_title'), bw-30, uiF(pal,'head',26), 15);
+  ctx.fillText(t('p_title'), W/2, by+34);
+  ctx.fillStyle=pal.ink; ctx.fillRect(bx+20, by+41, bw-40, 1.5); ctx.fillRect(bx+20, by+44, bw-40, 1.5);   // double filet
+  // bouton REPRENDRE mis en avant, juste sous le titre (tampon)
+  const rw0=bw-48, rh0=RESUME_H, rx0=bx+24, ry0=by+TITLE_H+2;
+  inkStamp(rx0, ry0, rw0, rh0, t('p_resume'), pal, 16);
   pauseRects = [{x:rx0,y:ry0,w:rw0,h:rh0,key:'resume'}];
   let y = ry0+rh0+GAP0;
+  ctx.textBaseline='alphabetic';
   for (const it of rows){
     if (it.pair){
       const hw = (bw-28-6)/2;
       it.pair.forEach((pi,j)=>{ const px = bx+14+j*(hw+6);
         pauseRects.push({x:px,y,w:hw,h:ih-6,key:pi.key});
-        ctx.fillStyle='rgba(255,255,255,0.045)'; rr(px,y,hw,ih-6,7); ctx.fill();
-        ctx.textAlign='center'; ctx.fillStyle='#d8d0c4';
-        fitFont(pi.label, hw-12, '12.5px Arial', 8);
+        ctx.textAlign='center'; ctx.fillStyle=pal.ink;
+        fitFont(pi.label, hw-12, uiF(pal,'type',12), 8);
         ctx.fillText(pi.label, px+hw/2, y+(ih-6)/2+4); });
+      ctx.fillStyle=pal.line; ctx.fillRect(bx+14+(bw-28)/2, y+4, 1, ih-14);
+      inkRule(bx+16, bx+bw-16, y+ih-3, pal);
       y += ih+gap; continue;
     }
     if (it.head!=null){
-      ctx.textAlign='left'; ctx.fillStyle='#e8a06a';
-      fitFont(it.head, bw-44, '700 10.5px Arial', 8);
-      ctx.fillText(it.head, bx+22, y+headH*0.68);
+      ctx.textAlign='left'; ctx.fillStyle=pal.red;
+      fitFont(it.head, bw-44, uiF(pal,'head',13), 8);
+      ctx.fillText(it.head, bx+22, y+headH*0.72);
       y += headH+gap; continue;
     }
     pauseRects.push({x:bx+14,y,w:bw-28,h:ih-6,key:it.key});
-    ctx.fillStyle='rgba(255,255,255,0.045)'; rr(bx+14,y,bw-28,ih-6,7); ctx.fill();
-    if (it.key==='quit'){ ctx.strokeStyle='rgba(200,120,110,0.4)'; ctx.lineWidth=1; rr(bx+14,y,bw-28,ih-6,7); ctx.stroke(); }
     ctx.textAlign='center';
     if (it.key==='vol'){
       // slider : cliquer/glisser n'importe où sur la barre règle le volume
       const rx=bx+58, rw2=bw-166, ry=y+(ih-6)/2;
-      ctx.fillStyle='#b8b0a4'; ctx.textAlign='left';
-      fitFont(t('set_vol'), 58, '13px Arial', 8.5);
+      ctx.fillStyle=pal.ink; ctx.textAlign='left';
+      fitFont(t('set_vol'), 58, uiF(pal,'type',12), 8.5);
       ctx.fillText(t('set_vol'), bx+24, ry+4);
+      ctx.fillStyle=pal.ink2; ctx.fillRect(rx+28, ry-1, rw2, 2);
+      ctx.fillStyle=pal.red; ctx.fillRect(rx+28, ry-2.5, rw2*SETTINGS.vol, 5);
+      ctx.fillStyle=pal.ink; ctx.beginPath(); ctx.arc(rx+28+rw2*SETTINGS.vol, ry, 6, 0, 6.28); ctx.fill();
       ctx.textAlign='center';
-      ctx.fillStyle='#3a2e28'; rr(rx+28, ry-3, rw2, 6, 3); ctx.fill();
-      ctx.fillStyle=acc; rr(rx+28, ry-3, rw2*SETTINGS.vol, 6, 3); ctx.fill();
-      ctx.fillStyle='#e8e0d2'; ctx.beginPath(); ctx.arc(rx+28+rw2*SETTINGS.vol, ry, 6, 0, 6.28); ctx.fill();
-      ctx.fillStyle='#b8b0a4';
-      fitFont(Math.round(SETTINGS.vol*100)+'%', 40, '12px Arial', 9);
+      fitFont(Math.round(SETTINGS.vol*100)+'%', 40, uiF(pal,'type',12), 9);
       ctx.fillText(Math.round(SETTINGS.vol*100)+'%', bx+bw-30, ry+4);
       pauseRects[pauseRects.length-1].slider = {x:rx+28, w:rw2};
+      inkRule(bx+16, bx+bw-16, y+ih-3, pal);
       y += ih+gap; continue;
     }
-    ctx.fillStyle = it.key==='quit'? '#e0a09a':'#d8d0c4';
-    fitFont(it.label, bw-44, '13px Arial', 9);
+    ctx.fillStyle = it.key==='quit'? pal.red : pal.ink;
+    fitFont(it.label, bw-44, uiF(pal, it.key==='quit'? 'head' : 'type', it.key==='quit'? 14 : 12.5), 9);
     ctx.fillText(it.label, W/2, y+(ih-6)/2+4);
+    if (it.key!=='quit') inkRule(bx+16, bx+bw-16, y+ih-3, pal);
     y += ih+gap;
   }
 }

@@ -16,10 +16,12 @@ document.querySelectorAll('.tab').forEach(tb=>{
     if (tb.dataset.page==='tuto') refreshTutoPage();
   });
 });
-$('cardHum').addEventListener('click', ()=>{ menuFac='HUM';
-  $('cardHum').classList.add('sel'); $('cardIA').classList.remove('sel'); });
-$('cardIA').addEventListener('click', ()=>{ menuFac='IA';
-  $('cardIA').classList.add('sel'); $('cardHum').classList.remove('sel'); });
+// choix du camp : le menu entier change d'identité (tract de la Résistance ↔ listing d'Omnicorp)
+function setMenuFac(f){ menuFac = f;
+  $('cardHum').classList.toggle('sel', f==='HUM'); $('cardIA').classList.toggle('sel', f==='IA');
+  $('menu').classList.toggle('fac-ia', f==='IA'); }
+$('cardHum').addEventListener('click', ()=>setMenuFac('HUM'));
+$('cardIA').addEventListener('click', ()=>setMenuFac('IA'));
 document.querySelectorAll('.diffBtn').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.diffBtn').forEach(x=>x.classList.remove('sel'));
@@ -112,10 +114,17 @@ $('fsBtn').addEventListener('click', ()=>{
 document.addEventListener('fullscreenchange', ()=>{ resize(); refreshFsBtn(); });
 document.addEventListener('webkitfullscreenchange', ()=>{ resize(); refreshFsBtn(); });
 refreshFsBtn();
+// le tampon s'abat (animation ~0,26 s) puis la guerre commence. Son, plein écran et départ sont
+// déclenchés DANS le geste (exigence des navigateurs) ; seul l'effacement du menu attend le tampon.
+let stampBusy = false;
 $('startBtn').addEventListener('click', ()=>{
+  if (stampBusy) return;
   audioInit(); musicStart();
   goFullscreen();
-  $('menu').style.display = 'none';
+  const b = $('startBtn'); b.classList.remove('stamped'); void b.offsetWidth; b.classList.add('stamped');
+  if (typeof sfx==='function') sfx('build');
+  stampBusy = true;
+  setTimeout(()=>{ stampBusy = false; b.classList.remove('stamped'); $('menu').style.display = 'none'; }, 260);
   pendingStart = {fac:menuFac, diff:menuDiff};
   // l'histoire complète au premier lancement ; ensuite, directement le carton-titre
   // (elle reste visible à tout moment via « Revoir l'histoire », onglet TUTORIEL)
