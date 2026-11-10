@@ -16,6 +16,7 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
+  if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
   if (game.rally) drawRally(game.rally);                     // fanion ⚑ d'ordre de position
@@ -109,6 +110,7 @@ function render(dt){
       ctx.globalAlpha=a; ctx.drawImage(lightSprite(L.col), lx-L.r, L.y-L.r, L.r*2, L.r*2); }   // texture cuite par couleur
     ctx.globalAlpha=1;
     if (drawLights) ctx.restore(); }
+  drawForeground(VW());                                     // premier plan en parallaxe (herbes, barbelés, gravats)
   ctx.textAlign='center';
   for (const f of floaters){
     ctx.globalAlpha=1-f.t/1.6;

@@ -133,7 +133,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
   // pour qu'aucun achat/apparition en cours de jeu ne déclenche de micro-saccade de fabrication
   // de sprite (payé une seule fois ici plutôt qu'au hasard des premières apparitions).
   if (typeof prewarmSprites==='function') prewarmSprites();
-  particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[];
+  particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[]; wrecks=[];
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;
   selMode = false; selBox = null;

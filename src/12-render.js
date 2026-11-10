@@ -2122,6 +2122,42 @@ function unitShadow(kind, fac, role, era, x, gy, dir){
   ctx.translate(x, gy+1.5); ctx.transform(dir, 0, 0.75+0.9*dev, 0.24+0.1*dev, 0, 0);
   ctx.drawImage(sh, -USP.cx, -USP.foot, USP.W, USP.H); ctx.restore();
 }
+// ÉPAVES (v1.13) : silhouette assombrie de l'unité tombée, couchée au sol, qui s'efface en fin de vie
+function drawWrecks(vw){
+  for (const w of wrecks){
+    const x = w.x-camX; if (x<-60||x>vw+60) continue;
+    const kind = w.fac==='HUM'? 'hum':'bot';
+    const sp = fxSprite('WRK'+kind+w.role+w.era, USP.W, USP.H, g => {
+      g.drawImage(unitPart(kind,w.fac,w.role,w.era,false,'front'), 0, 0, USP.W, USP.H);
+      g.drawImage(unitPart(kind,w.fac,w.role,w.era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H);
+      g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(22,17,20,0.66)'; g.fillRect(0,0,USP.W,USP.H); });
+    ctx.save(); ctx.globalAlpha = clamp((w.t-0.3)/0.45, 0, 1)*clamp((50-w.t)/8, 0, 1)*0.92;
+    ctx.translate(x, gY(w.x)+1);
+    if (w.role==='tank'||w.role==='siege'){ ctx.rotate(-w.side*0.35); ctx.scale(w.side, 0.5); }
+    else { ctx.rotate(-w.side*1.45); ctx.scale(w.side, 1); }
+    ctx.drawImage(sp, -USP.cx, -USP.foot, USP.W, USP.H); ctx.restore();
+  }
+}
+// PREMIER PLAN EN PARALLAXE (v1.13) : herbes, barbelés et gravats sombres, très bas, qui défilent
+// plus vite que le monde — donne de la profondeur sans jamais masquer les unités (≤ 14 px au-dessus du sol)
+function drawForeground(vw){
+  if (!qHi()) return;
+  const par = 1.38, off = camX*par, dev = game.dev||0, y0 = GROUND+24;
+  for (let k=Math.floor((off-120)/230); k*230 < off+vw+120; k++){
+    const h = lhash(k, 91); if (h>0.62) continue;
+    const x = k*230 + lhash(k,92)*120 - off, ty = (h*100|0)%3, type = (ty===0 && dev>0.6)? 2 : ty;
+    const sp = fxSprite('FG'+type, 96, 44, g => { if (CANF) g.filter='blur(1.1px)';
+      g.fillStyle='rgba(13,10,12,0.72)'; g.strokeStyle='rgba(13,10,12,0.8)'; g.lineCap='round';
+      if (type===0){ for (let i=0;i<22;i++){ const bx=10+i*3.5, bh=10+lhash(i,5)*26, bd=(lhash(i,6)-0.5)*14; g.lineWidth=1.6+lhash(i,7)*1.4;
+          g.beginPath(); g.moveTo(bx,44); g.quadraticCurveTo(bx+bd*0.3,44-bh*0.6,bx+bd,44-bh); g.stroke(); } }
+      else if (type===1){ g.lineWidth=3; g.beginPath(); g.moveTo(18,44); g.lineTo(21,8); g.moveTo(76,44); g.lineTo(73,12); g.stroke();
+        g.lineWidth=1.1; for (let r=0;r<2;r++){ g.beginPath(); g.moveTo(0,16+r*11); g.quadraticCurveTo(48,24+r*11,96,15+r*11); g.stroke();
+          for (let i=0;i<7;i++){ const bx=8+i*13, by=17+r*11+Math.sin(i/6*3.14)*4; g.beginPath(); g.moveTo(bx-2,by-2); g.lineTo(bx+2,by+2); g.moveTo(bx+2,by-2); g.lineTo(bx-2,by+2); g.stroke(); } } }
+      else { g.beginPath(); g.moveTo(6,44); g.lineTo(14,26); g.lineTo(30,20); g.lineTo(44,30); g.lineTo(58,22); g.lineTo(72,27); g.lineTo(90,44); g.closePath(); g.fill();
+        g.lineWidth=2.4; g.beginPath(); g.moveTo(36,26); g.lineTo(31,6); g.moveTo(31,6); g.lineTo(40,10); g.stroke(); } });
+    ctx.drawImage(sp, x-48, y0-44, 96, 44);
+  }
+}
 function drawGremlin(u, x, gy){
   const t=u.bob, b=Math.abs(Math.sin(t*2.4))*4;
   projShadow(x, gy, 9); const cy=gy-12-b;
@@ -3008,6 +3044,14 @@ function drawSlot(slot, side, neutral){
     ctx.fillStyle='#fff'; ctx.fillText('🚪'+b.gar.length, x+20, gy-bldH(b)-12);
   }
   const frac = clamp(b.hp/b.maxhp,0,1);
+  // DÉGÂTS VISIBLES (v1.13) : lézardes sous 60 % de PV, davantage sous 30 %, et sol noirci
+  if (frac<0.6 && qFx()){ const bh4 = bldH(b), n = frac<0.3? 4 : 2; ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.strokeStyle='rgba(12,8,10,0.7)'; ctx.lineWidth=1.4;
+    for (let i=0;i<n;i++){ let cx = x-12+i*8+lhash(i,slot.x)*5, cy = gy-3-lhash(i,slot.x+3)*bh4*0.25; ctx.beginPath(); ctx.moveTo(cx,cy);
+      for (let k=0;k<4;k++){ cx += (lhash(i*7+k,slot.x+5)-0.5)*7; cy -= bh4*(0.1+lhash(i*5+k,9)*0.08); ctx.lineTo(cx,cy); }
+      ctx.stroke(); }
+    ctx.fillStyle='rgba(14,10,10,'+(0.28*(1-frac/0.6)).toFixed(3)+')'; ctx.beginPath(); ctx.ellipse(x, gy+1, 26, 4.5, 0, 0, 6.283); ctx.fill();
+    ctx.restore(); }
   dmgSmoke(x, gy-bldH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
   if (frac<1){ const hy = gy-bldH(b)-18;
     ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-16,hy,32,3.4);
