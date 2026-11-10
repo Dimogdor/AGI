@@ -452,6 +452,55 @@ console.log('\nSÉCURITÉ');
   await page.close();
 }
 
+console.log('\nMODE EN LIGNE DE BOUT EN BOUT (deux pages reliées)');
+{ const A = await open(), B = await open();                       // A = hôte (Humanité), B = invité (G·P·T)
+  const link = async (from, to) => from.page.exposeFunction('__wire', msg => to.page.evaluate(m => nrecv(m), msg).catch(()=>{}));
+  await link(A, B); await link(B, A);
+  const mkNet = ([role, fac]) => { net = { role, code:'TEST1', myFac:fac, foeFac:null, speed:1, pw:'', name:'', pub:false, peer:true, cmdQ:[], ev:[], acc:0, tries:0,
+      conn:{ open:true, send:m => window.__wire(JSON.parse(JSON.stringify(m))), close(){} },
+      sendState:o=>nsend('st',o), sendCmd:o=>nsend('cm',o), sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o),
+      sendSpeed:o=>nsend('sp',o), sendLok:o=>nsend('lok',o), sendLF:o=>nsend('lf',o) }; };
+  await A.page.evaluate(mkNet, ['host', 'HUM']); await A.page.evaluate(() => { net.authed = false; });
+  await B.page.evaluate(mkNet, ['guest', 'IA']);
+  await B.page.evaluate(() => net.sendHello({ fac:net.myFac, v:NET_PROTO, pw:'' })); await A.page.waitForTimeout(250);
+  const lobby = [await A.page.evaluate(() => net.authed && net.foeFac), await B.page.evaluate(() => net.authed && net.foeFac)];
+  check(lobby[0]==='IA' && lobby[1]==='HUM', 'salon : poignée de main, chaque joueur voit le camp de l\'autre ('+lobby.join(' / ')+')');
+  await A.page.evaluate(() => startHostGame()); await B.page.waitForTimeout(250);
+  const tick = async n => { for (let i=0;i<n;i++){ await A.page.evaluate(() => { for (let k=0;k<4;k++) update(0.05); net.sendState({ s:serialize(), ev:net.ev }); net.ev = []; });
+      await B.page.evaluate(() => { netGuestTick(0.2); ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); }); } };
+  await tick(5);
+  const st = await B.page.evaluate(() => ({ g: !!game && game.net, fac: game && game.p.facKey, t: game && game.t }));
+  check(st.g==='guest' && st.fac==='IA' && st.t>0, 'lancement : l\'invité reçoit le départ et les instantanés (t='+(st.t||0).toFixed(1)+' s)');
+  // commandes de l'invité : recruter, construire, ordre — appliquées chez l'hôte, visibles chez l'invité
+  await A.page.evaluate(() => { game.e.f = game.e.m = game.e.w = 2000; });                  // de quoi payer les trois ordres
+  await B.page.evaluate(() => { tryBuy(game.p, 0); tryBuy(game.p, 2); tryBuild(game.p, game.p.slots[0], 'farmF'); setStance(game.p, 'hold'); });
+  await tick(40);
+  const cmd = { host: await A.page.evaluate(() => ({ u: game.e.units.length + game.e.queue.length, b: !!game.e.slots[0].b, st: game.e.stance })),
+                guest: await B.page.evaluate(() => ({ u: game.p.units.length + (game.p.queueLen||0), b: !!game.p.slots[0].b, st: game.p.stance })) };
+  check(cmd.host.u>=2 && cmd.host.b && cmd.host.st==='hold' && cmd.guest.u>=2 && cmd.guest.b && cmd.guest.st==='hold',
+    'commandes de l\'invité (recruter, construire, tenir) : appliquées par l\'hôte et reflétées chez l\'invité');
+  // vitesse : proposition de l'invité, acceptée par l'hôte
+  await B.page.evaluate(() => pickSpeed(2)); await A.page.waitForTimeout(200);
+  await A.page.evaluate(() => castSpeedVote(true)); await B.page.waitForTimeout(200);
+  const spd = [await A.page.evaluate(() => game.speed), await B.page.evaluate(() => game.speed)];
+  check(spd[0]===2 && spd[1]===2, 'vote de vitesse ×2 : accepté, appliqué des deux côtés');
+  // pause négociée : demandée par l'hôte, levée par l'hôte
+  await A.page.evaluate(() => toggleSoftPause()); await B.page.waitForTimeout(200);
+  const pz1 = [await A.page.evaluate(() => paused), await B.page.evaluate(() => paused)];
+  await A.page.evaluate(() => toggleSoftPause()); await B.page.waitForTimeout(200);
+  const pz2 = [await A.page.evaluate(() => paused), await B.page.evaluate(() => paused)];
+  check(pz1[0] && pz1[1] && !pz2[0] && !pz2[1], 'pause en ligne : figée puis reprise des deux côtés');
+  // fin de partie : la base de l'invité tombe deux fois (phase 2 puis défaite)
+  await A.page.evaluate(() => { game.e.hp = 0; }); await tick(3); await A.page.evaluate(() => { game.e.hp = 0; }); await tick(3);
+  await A.page.waitForTimeout(1300);
+  const end = [await A.page.evaluate(() => ({ over: game.over, win: game.win, shown: document.getElementById('endscreen').style.display })),
+               await B.page.evaluate(() => ({ over: game.over, win: game.win, shown: document.getElementById('endscreen').style.display }))];
+  check(end[0].over && end[0].win && end[1].over && !end[1].win && end[0].shown==='flex' && end[1].shown==='flex',
+    'fin de partie : victoire chez l\'hôte, défaite chez l\'invité, écran de fin des deux côtés');
+  check(!A.errs.length && !B.errs.length, 'aucune erreur JS chez l\'hôte ni chez l\'invité'+((A.errs[0]||B.errs[0])? ' — '+(A.errs[0]||B.errs[0]) : ''));
+  await A.page.close(); await B.page.close();
+}
+
 await browser.close();
 console.log(`\n${fails? '✗ '+fails+' ÉCHEC(S)' : '✓ TOUT VERT'}${warns? ' ('+warns+' avertissement(s))' : ''} — ${((Date.now()-t0)/1000).toFixed(0)} s`);
 process.exit(fails? 1 : 0);

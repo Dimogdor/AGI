@@ -186,6 +186,20 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 
 ## 7. Notes de version (exemple — « What's new »)
 ```
+v1.12 — Nouvelle console de commandement, camps rééquilibrés.
+• Cartes d'unités avec le portrait du personnage et le coût par ressource
+• Ombres portées des troupes, bases qui se lézardent sous les coups
+• Humanité et G·P·T à égalité (héros rééquilibrés) ; niveau Facile vraiment facile
+• Mode en ligne vérifié de bout en bout
+```
+```
+v1.12 — New command console, rebalanced sides.
+• Unit cards with the character's portrait and per-resource cost
+• Cast shadows for troops, bases that crack under fire
+• Humanity and G·P·T on equal footing (heroes rebalanced); Easy is truly easy
+• Online mode verified end to end
+```
+```
 v1.11 — Le menu devient un tract de la Résistance.
 • Nouveau menu : affiche imprimée et fiche de mobilisation, cases à cocher, tampon « Entrer en guerre »
 • En jouant G·P·T, tout bascule en listing d'imprimante et panneau lumineux d'Omnicorp

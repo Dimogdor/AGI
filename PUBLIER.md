@@ -168,14 +168,14 @@ Menu **Tester et publier** → **Tests** → **Test fermé** → votre piste →
 3. **Notes de version** :
    ```
    <fr-FR>
-   Nouveau menu : un tract de la Résistance (affiche, fiche de mobilisation, tampon).
-   En jouant G·P·T, tout devient listing d'imprimante. Pause, tutoriel et fin de partie
-   sur papier, nouvelles polices, menu adapté aux téléphones. Corrections d'un audit complet.
+   Nouvelle console de commandement : cartes d'unités avec portrait et coûts détaillés.
+   Ombres portées, bases qui se lézardent. Humanité et G·P·T rééquilibrés, niveau Facile
+   plus accessible. Mode en ligne vérifié de bout en bout.
    </fr-FR>
    <en-US>
-   New menu: a Resistance leaflet (poster, mobilization form, rubber stamp). Playing
-   G·P·T turns everything into a printer listing. Pause, tutorial and end screen on paper,
-   new typefaces, phone-friendly menu. Fixes from a full audit.
+   New command console: unit cards with portraits and detailed costs. Cast shadows,
+   bases that crack under fire. Humanity and G·P·T rebalanced, a gentler Easy level.
+   Online mode verified end to end.
    </en-US>
    ```
 4. **Suivant** → corrigez les éventuels avertissements → **Enregistrer** →
