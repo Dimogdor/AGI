@@ -92,8 +92,8 @@ const FACTIONS = {
   },
 };
 const DIFFS = [ // cheat = bonus de production caché de l'IA
-  {name:"FACILE",    inc:0.75, think:2.0,  eraLag:0.25, hpMul:0.9,  cheat:1.05},
-  {name:"NORMAL",    inc:1.0,  think:1.3,  eraLag:0.1,  hpMul:1.05, cheat:1.3},
+  {name:"FACILE",    inc:0.6,  think:2.4,  eraLag:0.5,  hpMul:0.8,  cheat:0.9},
+  {name:"NORMAL",    inc:1.0,  think:1.3,  eraLag:0.1,  hpMul:1.0,  cheat:1.12},
   {name:"DIFFICILE", inc:1.3,  think:0.85, eraLag:0.03, hpMul:1.25, cheat:1.7},
   {name:"BRUTAL",    inc:1.6,  think:0.55, eraLag:0,    hpMul:1.5,  cheat:2.3},
 ];

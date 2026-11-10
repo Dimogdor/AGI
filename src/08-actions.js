@@ -7,8 +7,6 @@ function unitCost(side, ri){
     let v = c[r]*k;
     // PASSIF HUM — ferveur de la révolte : l'infanterie coûte 5 % de moins (production populaire).
     if (side.facKey==='HUM' && inf) v *= 0.95;
-    // PASSIF GPT — châssis gourmands : l'électricité (⚡ = ressource « f ») coûte 5 % de plus.
-    if (side.facKey==='IA' && r==='f') v *= 1.05;
     out[r] = Math.round(v);
   }
   return out;
@@ -157,7 +155,7 @@ function checkTrans(side){
 }
 const SPECIAL_CD = 45;
 // PASSIF HUM — adaptabilité de la résistance : les capacités spéciales se rechargent 10 % plus vite.
-function specialCd(side){ return SPECIAL_CD * (side.facKey==='HUM'? 0.9 : 1); }
+function specialCd(side){ return SPECIAL_CD * 0.95; }
 // l'ultime demande du temps ET de l'XP accumulée ; il ne peut JAMAIS one-shot une unité
 function specialXpCost(side){ return 60 + side.era*40; }
 function trySpecial(side){
@@ -420,9 +418,10 @@ function spawnHero(side, power){
   power = (power>0)? Math.min(power,1) : 1;
   const mm = statMul(side.era), hum = side.facKey==='HUM';
   // profils opposés (le buff d'équipe ×3/×2 reste identique) : Che = meneur tanky avec aura de
-  // soin ; Singularité = glass-cannon. Valeur totale équivalente.
-  const hp = HERO.hp*mm*(hum? 1.45 : 0.7)*power;
-  const dmg = HERO.dmg*mm*(hum? 0.7 : 1.5)*power;
+  // soin ; Singularité = frappeuse. v1.12 : PV alignés (1,45 contre 0,7 donnait 88 % de victoires
+  // au même joueur en Humanité contre 25 % en GPT, mesuré par simulation).
+  const hp = HERO.hp*mm*(hum? 1.2 : 1.2)*power;
+  const dmg = HERO.dmg*mm*(hum? 0.7 : 1.3)*power;
   const u = { role:'hero', hp, maxhp:hp, dmg, spd:HERO.spd,
     range:HERO.range, rate:HERO.rate, fly:false, xpv:Math.round(140*(1+side.era*0.7)) };
   u.x = side.x + side.side*60;

@@ -280,6 +280,11 @@ function drawHUD(){
     ctx.globalAlpha=1;
   }
   drawNews();                                      // fil d'actualités du monde (haut gauche, discret)
+  // ---- console de commandement : fondu sombre + filet, pour que les plaques ne flottent pas sur le décor ----
+  { const dockY = H-64-6-31-3-7;
+    const dg = ctx.createLinearGradient(0, dockY-14, 0, H); dg.addColorStop(0,'rgba(10,8,9,0)'); dg.addColorStop(0.16,'rgba(10,8,9,0.62)'); dg.addColorStop(1,'rgba(8,6,7,0.9)');
+    ctx.fillStyle = dg; ctx.fillRect(0, dockY-14, W, H-dockY+14);
+    ctx.fillStyle = rgbaC(fac.accent, 0.35); ctx.fillRect(0, dockY, W, 1); }
   // ---- boutons ----
   HUD.upgRects = [];
   for (const b of HUD.btns){
@@ -375,62 +380,130 @@ function drawCtrl(b){
   }
   ctx.restore();
 }
-// cache des halos de boutons : une toile par (taille, couleur, densité d'écran). Le jeu de
-// couleurs est un petit ensemble de constantes, le cache reste donc minuscule ; il est
-// vidé par sécurité s'il grossit anormalement (changements répétés de résolution).
-const BTN_GLOW = new Map(), BTN_GLOW_PAD = 12;
-function btnGlow(w, h, col){
-  const S = Math.max(1, Math.min(3, SCALE||1)), k = Math.round(w)+'x'+Math.round(h)+col+'@'+S.toFixed(2);
-  let c = BTN_GLOW.get(k);
-  if (!c){
-    if (BTN_GLOW.size > 96) BTN_GLOW.clear();
-    const P = BTN_GLOW_PAD, r = 7;
-    c = document.createElement('canvas'); c.width = Math.ceil((w+P*2)*S); c.height = Math.ceil((h+P*2)*S);
-    const g = c.getContext('2d'); g.scale(S,S);
-    g.shadowColor = col; g.shadowBlur = 8; g.strokeStyle = rgbaC(col,0.95); g.lineWidth = 2;
-    g.beginPath(); g.moveTo(P+r,P); g.arcTo(P+w,P,P+w,P+h,r); g.arcTo(P+w,P+h,P,P+h,r);
-    g.arcTo(P,P+h,P,P,r); g.arcTo(P,P,P+w,P,r); g.closePath(); g.stroke();
-    BTN_GLOW.set(k, c);
+// ---------- HUD v3 (v1.12) : CONSOLE DE COMMANDEMENT ----------
+// Plaques d'acier sombre posées sur une console unique (plus de boutons néon flottants) :
+// cartes d'unités avec le BUSTE réel du personnage qui sera déployé (ère, camp, transcendance),
+// coût ressource par ressource (en rouge celle qui manque), jauge de recharge sur le portrait,
+// actif = aplat de la couleur + filet, sans aucun halo flou.
+const RES_COL = { f:'#e8d8a0', m:'#b8d8e8', w:'#7ab8e6' };
+const UNIT_CAT_COL = ['#ff7a5a','#ff7a5a','#ffd34a','#ffd34a','#5ad0ff','#6dff8a'];
+function hudPlate(b, r, active, col, dim){
+  const g = ctx.createLinearGradient(0, b.y, 0, b.y+b.h);
+  g.addColorStop(0, active? 'rgba(52,44,40,0.97)' : 'rgba(38,33,36,0.96)'); g.addColorStop(1, 'rgba(15,12,14,0.97)');
+  ctx.fillStyle = g; rr(b.x, b.y, b.w, b.h, r); ctx.fill();
+  if (active){ ctx.fillStyle = rgbaC(col, 0.16); rr(b.x, b.y, b.w, b.h, r); ctx.fill(); }
+  ctx.strokeStyle = active? col : rgbaC(col, dim? 0.28 : 0.5); ctx.lineWidth = active? 1.6 : 1;
+  rr(b.x+0.5, b.y+0.5, b.w-1, b.h-1, r); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(b.x+r, b.y+1, b.w-r*2, 1);   // reflet du haut (plaque)
+}
+// buste du personnage dans un cadre w×h dont le coin haut-gauche est (x, y)
+function hudPortrait(p, role, x, y, w, h, locked){
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  const g = ctx.createLinearGradient(0, y, 0, y+h); g.addColorStop(0, rgbaC(p.fac.accent, 0.22)); g.addColorStop(1, 'rgba(0,0,0,0.25)');
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  if (role.key==='air'){
+    const k = (w-2)/60; ctx.translate(x+w/2, y+h/2+1); ctx.scale(k, k);
+    ctx.drawImage(sprite('AIR'+p.facKey+p.era+(p.trans?'T':''), 64, 44, ()=>airSprite(p.facKey,p.era,p.trans)), -32, -22, 64, 44);
+  } else {
+    // cadrage BUSTE : la bande y ∈ [-60, -22] du personnage (tête + torse + arme) remplit le cadre
+    const k = h/38; ctx.translate(x + w/2 - 3*k, y + h + 22*k); ctx.scale(k, k);
+    drawUnitLayers(p.facKey==='HUM'?'hum':'bot', p.facKey, role.key, role.minEra? Math.max(p.era, role.minEra) : p.era, p.trans, 0);
   }
-  return c;
+  ctx.restore();
+  if (locked){ ctx.fillStyle = 'rgba(10,8,10,0.72)'; ctx.fillRect(x, y, w, h); }
+}
+function drawUnitCard(b){
+  const A0 = ctx.globalAlpha;
+  const p = game.p, role = ROLES[b.i], cat = UNIT_CAT_COL[b.i];
+  const locked = !!(role.minEra && p.era<role.minEra);
+  const cost = unitCost(p, b.i), lvl = p.upg[role.key]||0;
+  const cd = p.cd[b.i]>0? clamp(p.cd[b.i]/(0.5+b.i*0.45), 0, 1) : 0;
+  const full = unitTotal(p)>=p.cap;
+  const ok = !locked && canPay(p, cost) && cd<=0 && !full;
+  hudPlate(b, 5, ok, p.fac.accent, !ok);
+  ctx.fillStyle = rgbaC(cat, ok? 1 : 0.5); ctx.fillRect(b.x+5, b.y+1, b.w-10, 2.5);          // filet de catégorie
+  // nom
+  const name = lUnit(p.facKey, role.key, locked? role.minEra : p.era);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = ok? '#f4eee2' : '#a39a8c';
+  fitFont(name, b.w-8, HF(10.5), 7); ctx.fillText(name, b.x+b.w/2, b.y+10.5);
+  // portrait + recharge
+  const px = b.x+4, py = b.y+17, pw = 33, ph = 31;
+  ctx.globalAlpha = A0*(ok? 1 : locked? 1 : 0.62);
+  hudPortrait(p, role, px, py, pw, ph, locked);
+  ctx.globalAlpha = A0;
+  if (cd>0){ ctx.fillStyle = 'rgba(8,6,8,0.66)'; ctx.fillRect(px, py, pw, ph*cd); }
+  ctx.strokeStyle = rgbaC(cat, ok? 0.75 : 0.3); ctx.lineWidth = 1; ctx.strokeRect(px+0.5, py+0.5, pw-1, ph-1);
+  // raccourci clavier (coin du portrait)
+  ctx.fillStyle = 'rgba(10,8,10,0.78)'; ctx.fillRect(px, py+ph-9, 9, 9);
+  ctx.fillStyle = '#cfc7b8'; ctx.font = HF(7.5); ctx.textAlign = 'center'; ctx.fillText(String(b.i+1), px+4.5, py+ph-4);
+  // colonne de droite : verrou d'ère, ou coût ressource par ressource
+  const cx0 = b.x+41;
+  ctx.textAlign = 'left';
+  if (locked){
+    ctx.font = '13px Arial'; ctx.fillStyle = '#b8b0a4'; ctx.fillText('🔒', cx0+8, b.y+26);
+    ctx.fillStyle = '#a39a8c'; const lk = fmt('hud_era_lock', {n:role.minEra+1});
+    fitFont(lk, b.w-45, HF(9), 6.5); ctx.fillText(lk, cx0, b.y+41);
+  } else {
+    let yy = b.y+22;
+    for (const r in cost){
+      const free = r==='m' && p.trans, have = free || p[r]>=cost[r];
+      ctx.font = '9px Arial'; ctx.globalAlpha = A0*(ok||!have? 1 : 0.7); ctx.fillStyle = '#fff';
+      ctx.fillText(p.fac.icons[r], cx0, yy);
+      ctx.font = HF(10.5); ctx.fillStyle = have? (ok? RES_COL[r] : '#b9b0a2') : '#ff6a5a';
+      ctx.fillText(free? '∞' : String(cost[r]), cx0+13, yy+0.5);
+      ctx.globalAlpha = A0; yy += 10;
+    }
+    if (full){ ctx.font = HF(8); ctx.fillStyle = '#ff6a5a'; ctx.fillText('👥 '+p.cap, cx0, b.y+46); }
+  }
+  // bas de carte : amélioration de classe (coût en chiffres colorés + onglet ⬆ + pastilles de niveau)
+  // (en tuto : masqué tant que l'étape « amélioration » n'est pas atteinte)
+  if (!locked && (!game.tut || !TUT || tutUpgAllowed())){
+    const r = {x:b.x+b.w-22, y:b.y+b.h-17, w:21, h:16, i:b.i};
+    HUD.upgRects.push({x:b.x+b.w-24, y:b.y+b.h-20, w:24, h:20, i:b.i});
+    const upc = {f:90*(lvl+1), m:180*(lvl+1)}, can = lvl<3 && canPay(p, upc);
+    ctx.fillStyle = can? 'rgba(232,216,160,0.20)' : 'rgba(255,255,255,0.05)'; rr(r.x, r.y, r.w, r.h, 3); ctx.fill();
+    ctx.strokeStyle = can? '#e8d8a0' : '#4a443c'; ctx.lineWidth = 1; rr(r.x+0.5, r.y+0.5, r.w-1, r.h-1, 3); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.font = HF(10); ctx.fillStyle = can? '#f0e2b0' : '#6a665e';
+    ctx.fillText(lvl>=3? '★' : '⬆', r.x+r.w/2, r.y+r.h/2+0.5);
+    for (let k=0;k<lvl;k++){ ctx.fillStyle = '#ffd34a'; ctx.fillRect(r.x+3+k*5.5, r.y-3.5, 4, 2.2); }   // niveaux acquis
+    if (lvl<3){
+      ctx.textAlign = 'left'; ctx.font = HF(8);
+      let xx = b.x+5; const yy = b.y+b.h-8.5;
+      for (const k2 of ['f','m']){ const have = (k2==='m' && p.trans) || p[k2]>=upc[k2];
+        ctx.fillStyle = have? rgbaC(RES_COL[k2], can? 1 : 0.6) : 'rgba(255,106,90,0.75)';
+        const tx = (k2==='m' && p.trans)? '∞' : String(upc[k2]); ctx.fillText(tx, xx, yy); xx += ctx.measureText(tx).width+5; }
+    }
+  }
+  ctx.textBaseline = 'middle';
 }
 function drawBtn(b){
+  const A0 = ctx.globalAlpha;
   const p=game.p, fac=p.fac;
   if (b.type==='hero'){ drawHeroBtn(b, p); return; }
   if (b.type==='speed'||b.type==='softpause'||b.type==='pause'){ drawCtrl(b); return; }
-  let label='', sub='', ok=false, col=fac.accent, prog=1, small=b.h<40;
-  if (b.type==='unit'){
-    const role=ROLES[b.i];
-    if (role.minEra && p.era<role.minEra){ label='🔒 '+lUnit(p.facKey, role.key, role.minEra); sub=fmt('hud_era_lock',{n:role.minEra+1}); ok=false; }
-    else {
-      const cost=unitCost(p,b.i);
-      label=lUnit(p.facKey, role.key, p.era);
-      const lvl = p.upg[role.key]||0;
-      sub=costStr(p,cost)+' ['+(b.i+1)+']'+(lvl?' ★'+lvl:'');
-      ok = canPay(p,cost) && p.cd[b.i]<=0 && unitTotal(p)<p.cap;
-      prog = p.cd[b.i]>0? 1-p.cd[b.i]/(0.5+b.i*0.45):1;
-    }
-  } else if (b.type==='special'){
+  if (b.type==='unit'){ drawUnitCard(b); return; }
+  let label='', sub='', ok=false, col=fac.accent, prog=1, small=b.h<40, glyph='';
+  if (b.type==='special'){
     if (p.lastReady && !p.lastUsed){
       label=tr('hud_last'); sub=tr('hud_last_sub'); ok=true; col='#ffd34a'; prog=1;
     } else {
-      label='✸ '+lSpecial(p.facKey, p.era);
+      label=lSpecial(p.facKey, p.era); glyph='✸';
       const xc = specialXpCost(p);
       ok = p.specialCd<=0 && p.xp>=xc;
       sub = (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+' [ESP]';
-      prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc)); col='#c88';
+      prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc)); col='#e08a8a';
     }
   } else if (b.type==='evolve'){
-    label=tr('hud_evolve'); col='#e8d8a0';
+    label=tr('hud_evolve').replace(/^⚡\s*/,''); glyph='⚡'; col='#e8d8a0';
     if (p.era<4){ ok = p.xp>=EVOLVE_XP[p.era+1]; sub='✦'+EVOLVE_XP[p.era+1]+' [E]';
       prog = Math.min(1,p.xp/EVOLVE_XP[p.era+1]); }
     else if (!p.trans){ ok=false; sub='✦'+TRANS_XP+' → '+p.fac.sym; prog=Math.min(1,p.xp/TRANS_XP); }
     else { ok=false; sub=tr('hud_trans'); prog=1; }
   } else if (b.type==='cap'){
-    label=tr('hud_cap'); col='#9dc88a';
+    label=tr('hud_cap').replace(/^👥\s*/,''); glyph='👥'; col='#9dc88a';
     ok = !p.capUp && canPay(p,{m:350,w:100});
     sub = p.capUp? tr('hud_owned'):costStr(p,{m:350,w:100})+' [U]';
-    prog = p.capUp?1:0.5;
+    prog = 1;
   } else if (b.type==='stance'){
     label=b.label;
     const active = game.sel.size? false : p.stance===b.st;
@@ -440,7 +513,7 @@ function drawBtn(b){
   } else if (b.type==='formation'){
     label=b.label; ok=p.formation; col = p.formation? '#9dc88a':'#8a867e';
   } else if (b.type==='repairall'){
-    label=tr('hud_repall'); col='#9dc88a';
+    label=tr('hud_repall').replace(/^🔧\s*/,''); glyph='🔧'; col='#9dc88a';
     const rc = repairAllCost(p);
     ok = rc.f>0 || rc.m>0;
     sub = ok? costStr(p, rc)+' [R]' : tr('hud_norep');
@@ -448,68 +521,30 @@ function drawBtn(b){
     label=b.label; ok = b.go==='follow' && camFollow;
     col = ok? '#9dc88a':'#8a867e';
   } else if (b.type==='zoom'){
-    label=b.label; ok=true; col='#8a867e';
+    label=b.label; ok=false; col='#a8a296';
   }
-  ctx.globalAlpha = small? 0.96 : ok?1:0.5;
-  const bg=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h); bg.addColorStop(0,'rgba(36,30,34,0.95)'); bg.addColorStop(1,'rgba(15,12,16,0.95)');
-  ctx.fillStyle=bg; rr(b.x,b.y,b.w,b.h,7); ctx.fill();
-  if (!small && prog<1){ ctx.fillStyle=rgbaC(col,0.22); ctx.save(); rr(b.x,b.y,b.w,b.h,7); ctx.clip();
-    ctx.fillRect(b.x,b.y,b.w*prog,b.h); ctx.restore(); }
-  if (ok && !small){
-    // Halo PRÉ-CUIT (btnGlow) au lieu d'un shadowBlur par bouton et par frame : profilé à
-    // ~82 % du temps de rendu en qualité Moyenne et au-delà — à lui seul tout l'écart de
-    // coût avec la qualité Faible. Identique à l'œil, un simple blit désormais.
-    if (qFx()) ctx.drawImage(btnGlow(b.w,b.h,col), b.x-BTN_GLOW_PAD, b.y-BTN_GLOW_PAD, b.w+BTN_GLOW_PAD*2, b.h+BTN_GLOW_PAD*2);
-    else { ctx.strokeStyle=rgbaC(col,0.95); ctx.lineWidth=2; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
-  }
-  else { ctx.strokeStyle=ok?col:rgbaC(col,0.55); ctx.lineWidth=ok?1.8:1; rr(b.x,b.y,b.w,b.h,7); ctx.stroke(); }
-  ctx.textAlign='center';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
   if (small){
-    ctx.fillStyle = col;
+    hudPlate(b, 5, ok, col, false);
+    if (ok){ ctx.fillStyle = col; ctx.fillRect(b.x+6, b.y+b.h-3, b.w-12, 2); }                 // filet « enclenché »
+    ctx.fillStyle = ok? '#fff8e6' : (b.type==='stance' && game.sel.size)? '#ffd34a' : '#b6afa2';
     const smallLbl = b.label||label;
     fitFont(smallLbl, b.w-8, HF(12), 8);
-    ctx.fillText(smallLbl, b.x+b.w/2, b.y+b.h/2+1);
-  } else {
-    ctx.font=HF(11); ctx.fillStyle = ok?'#fff':'#9a9085';
-    ctx.fillText(label, b.x+b.w/2, b.y+16, b.w-8);
-    ctx.font=HF(10); ctx.fillStyle = ok? col:'#6a665e';
-    ctx.fillText(sub, b.x+b.w/2, b.y+42, b.w-8);
+    ctx.fillText(smallLbl, b.x+b.w/2, b.y+b.h/2+0.5);
+    return;
   }
-  ctx.globalAlpha=1;
-  // étiquette de catégorie (regroupe les unités par vocation)
-  if (b.type==='unit'){
-    const CAT = [[tr('cat_melee'),'#ff7a5a'],[tr('cat_melee'),'#ff7a5a'],[tr('cat_range'),'#ffd34a'],
-                 [tr('cat_range'),'#ffd34a'],[tr('cat_air'),'#5ad0ff'],[tr('cat_support'),'#6dff8a']][b.i];
-    ctx.fillStyle = CAT[1];
-    ctx.fillRect(b.x+4, b.y+2, b.w-8, 2);
-    ctx.textAlign='center';
-    ctx.globalAlpha = 0.85;
-    fitFont(CAT[0], b.w-8, HF(6.5), 5.5);
-    ctx.fillText(CAT[0], b.x+b.w/2, b.y+8);
-    ctx.globalAlpha = 1;
-  }
-  // onglet ⬆ d'amélioration de classe sur les boutons d'unités
-  // (en tuto : masqué tant que l'étape « amélioration » n'est pas atteinte)
-  if (b.type==='unit' && (!game.tut || !TUT || tutUpgAllowed())){
-    const role=ROLES[b.i];
-    if (!(role.minEra && p.era<role.minEra)){
-      const lvl = p.upg[role.key]||0;
-      const r = {x:b.x+b.w-22, y:b.y+b.h-18, w:22, h:18, i:b.i};
-      HUD.upgRects.push(r);
-      const upc = {f:90*(lvl+1), m:180*(lvl+1)};
-      const can = lvl<3 && canPay(p,upc);
-      ctx.fillStyle = can? '#3a2e14':'#221d18'; rr(r.x,r.y,r.w,r.h,4); ctx.fill();
-      ctx.strokeStyle = can? '#e8d8a0':'#4a443c'; ctx.lineWidth=1; rr(r.x,r.y,r.w,r.h,4); ctx.stroke();
-      ctx.font=HF(11); ctx.textAlign='center';
-      ctx.fillStyle = can? '#e8d8a0':'#6a665e';
-      ctx.fillText(lvl>=3?'★':'⬆', r.x+r.w/2, r.y+r.h/2+1);
-      // coût d'amélioration affiché sous le bouton (fini le flou)
-      if (lvl<3){
-        ctx.font=HF(8);
-        ctx.fillStyle = can? '#e8d8a0':'#7a7066';
-        ctx.fillText('⬆ '+costStr(p,upc), b.x+b.w/2-10, b.y+b.h-8, b.w-26);
-      }
-    }
+  // carte d'action (pouvoir, évolution, capacité, réparation) : pictogramme + libellé + coût + jauge
+  hudPlate(b, 5, ok, col, !ok);
+  ctx.globalAlpha = A0*(ok? 1 : 0.55);
+  if (glyph){ ctx.font = '15px Arial'; ctx.fillStyle = col; ctx.fillText(glyph, b.x+b.w/2, b.y+15); }
+  ctx.fillStyle = ok? '#f4eee2' : '#a39a8c';
+  fitFont(label, b.w-8, HF(glyph? 10.5 : 11.5), 7); ctx.fillText(label, b.x+b.w/2, b.y+(glyph? 31 : 20));
+  ctx.fillStyle = ok? col : '#8a8378';
+  fitFont(sub, b.w-8, HF(9.5), 6.5); ctx.fillText(sub, b.x+b.w/2, b.y+(glyph? 45 : 42));
+  ctx.globalAlpha = A0;
+  if (prog<1 || b.type==='special' || b.type==='evolve'){                                         // jauge de progression
+    ctx.fillStyle = 'rgba(255,255,255,0.09)'; ctx.fillRect(b.x+6, b.y+b.h-7, b.w-12, 3);
+    ctx.fillStyle = prog>=1? col : rgbaC(col, 0.7); ctx.fillRect(b.x+6, b.y+b.h-7, (b.w-12)*clamp(prog,0,1), 3);
   }
 }
 function buildOptions(side, slot){

@@ -2106,7 +2106,21 @@ function attackFX(u, x, bodyY, imp, mx){
   }
   ctx.restore();
   // éclair de lumière dynamique au moment du tir/de la frappe (coords MONDE)
-  if (imp>0.8){ const lc=u.role==='siege'?'#ff9d45':col; addLight(u.x+dir*18, bodyY, lc, u.role==='siege'?78:46, 0.2); }
+  // (halos resserrés en v1.12 : à 46/78 px ils fusionnaient en une nappe qui délavait la mêlée)
+  if (imp>0.8){ const lc=u.role==='siege'?'#ff9d45':col; addLight(u.x+dir*18, bodyY, lc, u.role==='siege'?54:28, 0.16); }
+}
+// OMBRE PORTÉE (v1.12) : silhouette du personnage cuite en noir, couchée au sol et étirée
+// selon la hauteur du soleil (plus le monde décline, plus la lumière est rasante). Un seul
+// drawImage par unité — remplace l'ovale en dégradé recréé à chaque image.
+function unitShadow(kind, fac, role, era, x, gy, dir){
+  const sh = fxSprite('USH'+kind+role+era, USP.W, USP.H, g => {
+    g.drawImage(unitPart(kind,fac,role,era,false,'front'), 0, 0, USP.W, USP.H);
+    g.drawImage(unitPart(kind,fac,role,era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H);
+    g.globalCompositeOperation='source-in'; g.fillStyle='#07060b'; g.fillRect(0,0,USP.W,USP.H); });
+  const dev = game? game.dev : 0;
+  ctx.save(); ctx.globalAlpha = 0.26 - 0.08*dev;
+  ctx.translate(x, gy+1.5); ctx.transform(dir, 0, 0.75+0.9*dev, 0.24+0.1*dev, 0, 0);
+  ctx.drawImage(sh, -USP.cx, -USP.foot, USP.W, USP.H); ctx.restore();
 }
 function drawGremlin(u, x, gy){
   const t=u.bob, b=Math.abs(Math.sin(t*2.4))*4;
@@ -2137,7 +2151,7 @@ function blitHumanoid(u, x, gy, kind){
   const fwd = (u.role==='melee'||u.role==='tank');                  // mêlée : jab avant ; tir/siège : recul
   const lunge = fwd ? dir*9*imp : (atk? -dir*5*imp : 0);
   const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
-  projShadow(x, gy, 15);
+  if (qFx()) unitShadow(kind, fac, u.role, u.era, x, gy, dir); else projShadow(x, gy, 15);
   // POUSSIÈRE DE PAS : petites volutes au sol quand l'unité marche (cosmétique, plafonné)
   if (moving && qFx() && particles.length<440 && Math.random()<0.09){
     particles.push({ x:u.x-dir*7, y:gy-1, vx:-dir*6+(Math.random()*6-3), vy:-8-Math.random()*8,
@@ -2801,6 +2815,20 @@ function drawBase(side){
     for (let i=0;i<4;i++) for (let j=0;j<8;j++){ const on = Math.sin(t*(2.2+i*0.7)+j*1.9+i)>0.2;
       ctx.fillStyle = on? col : 'rgba(90,208,255,0.18)'; ctx.fillRect(-BASP.cx+58+i*17+(j%2)*5, -48+j*5.6, 2.4, 1.6); } }
   ctx.restore();
+  // DÉGÂTS VISIBLES (v1.12) : lézardes sous 66 % de PV, brèches noircies sous 33 %
+  { const fr = side.maxhp>0? side.hp/side.maxhp : 1;
+    if (fr<0.66){ ctx.save(); ctx.translate(x, gy); ctx.scale(d, 1); ctx.lineCap='round'; ctx.lineJoin='round';
+      const n = fr<0.33? 5 : 3;
+      for (let i=0;i<n;i++){ let cx = -34+i*17+(lhash(i,side.x)*8), cy = -22-lhash(i,7)*20;
+        ctx.strokeStyle='rgba(12,8,10,0.75)'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(cx,cy);
+        for (let k=0;k<5;k++){ cx += (lhash(i*7+k,3)-0.5)*9; cy -= 6+lhash(i*5+k,9)*7; ctx.lineTo(cx,cy);
+          if (k===2){ ctx.lineTo(cx+5,cy-3); ctx.moveTo(cx,cy); } }
+        ctx.stroke(); }
+      if (fr<0.33) for (let i=0;i<3;i++){ const bx=-30+i*26+lhash(i,11)*8, by2=-34-lhash(i,13)*30, r=6+lhash(i,17)*4;
+        ctx.fillStyle='rgba(10,7,9,0.82)'; ctx.beginPath();
+        for (let k=0;k<7;k++){ const a=k/7*6.283, rr2=r*(0.6+lhash(i*9+k,5)*0.6); k? ctx.lineTo(bx+Math.cos(a)*rr2, by2+Math.sin(a)*rr2) : ctx.moveTo(bx+rr2, by2); }
+        ctx.closePath(); ctx.fill(); }
+      ctx.restore(); } }
   if (hum){
     // mât + drapeau qui ondule au sommet de la tour
     const px = x - d*31, pb = gy-92-[11,6,0,12,11][era], top = pb-24;

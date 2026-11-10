@@ -53,7 +53,7 @@ function updateUnits(side, foe, dt){
       u.auraT = (u.auraT||0) - dt;
       if (u.auraT<=0){ u.auraT = 1;
         for (const a of side.units) if (a!==u && a.hp<a.maxhp && Math.abs(a.x-u.x)<150){
-          a.hp = Math.min(a.maxhp, a.hp + 28*m);
+          a.hp = Math.min(a.maxhp, a.hp + 14*m);   // v1.12 : 28 → 14 (parité des camps)
           addFloater(a.x, gY(a.x)-50, '+❤', '#6dff8a', 11);
         }
       }
@@ -187,13 +187,15 @@ function updateUnits(side, foe, dt){
         const tired = u.tiredT>0;
         const isIA = u.fac==='IA';
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
-        u.atkT = u.rate * (tired? (isIA?1.8:1.3) : 1);
+        u.atkT = u.rate * (tired? (isIA?1.5:1.3) : 1);
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? (isIA?0.55:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
+        const dmgOut = u.dmg * (tired? (isIA?0.7:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
-        u.heat = (u.heat||0) + (isIA? 0.08 : 0.045);
+        // (v1.12 : surchauffe GPT adoucie — 0,08/6 s/−45 % donnaient ~18 % de DPS soutenu en moins que
+        //  l'Humanité ; le même joueur gagnait 88 % en Humanité contre 25 % en GPT)
+        u.heat = (u.heat||0) + (isIA? 0.065 : 0.045);
         if (u.heat>=1){
-          u.heat = 0; u.tiredT = isIA? 6 : 3;
+          u.heat = 0; u.tiredT = isIA? 4 : 3;
           addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0),
             tr(isIA? 'f_overheat':'f_tired'), '#d8a06a', 11);
         }
