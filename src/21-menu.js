@@ -9,6 +9,7 @@ function randCode(){ const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s='';
 
 document.querySelectorAll('.tab').forEach(tb=>{
   tb.addEventListener('click', ()=>{
+    if (keyWait){ keyWait = null; buildKeysBox(); }      // réassignation en attente abandonnée en changeant d'onglet
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
     tb.classList.add('on');
@@ -119,6 +120,7 @@ refreshFsBtn();
 let stampBusy = false;
 $('startBtn').addEventListener('click', ()=>{
   if (stampBusy) return;
+  if (net && !game) netDisconnect();         // salon en attente abandonné : sinon le départ du pair terminait la partie solo
   audioInit(); musicStart();
   goFullscreen();
   const b = $('startBtn'); b.classList.remove('stamped'); void b.offsetWidth; b.classList.add('stamped');
@@ -212,8 +214,9 @@ async function refreshLobbies(){
 }
 function joinLobby(l){
   audioInit();
-  let pw = '';
-  if (l.hasPw){ pw = (prompt(t('net_askpw'))||'').trim(); if (!pw) return; }
+  // v1.13 : plus de prompt() (inexistant sous Electron) — le mot de passe se saisit dans le champ du formulaire
+  if (l.hasPw){ showNetView('join'); $('joinCode').value = l.code; $('joinPw').value = ''; $('joinPw').focus(); netStatus(t('net_askpw')); return; }
+  const pw = '';
   showNetView('join'); $('joinCode').value = l.code; $('joinPw').value = pw;
   netConnect('guest', l.code, menuFac, { pw });
 }
@@ -222,7 +225,7 @@ $('onlineBtn').addEventListener('click', ()=>{
   const opening = pan.style.display==='none';
   pan.style.display = opening? 'flex':'none';
   netStatus('');
-  if (opening) showNetView('home'); else if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; }
+  if (opening) showNetView('home'); else { if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; } if (net && !game) netDisconnect(); }
 });
 $('goCreate').addEventListener('click', ()=>{ netStatus(''); refreshLobSpeed(); showNetView('create'); });
 $('goJoin').addEventListener('click',  ()=>{ netStatus(''); showNetView('join'); });

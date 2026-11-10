@@ -11,6 +11,7 @@ function assignKey(k, code){
 }
 window.addEventListener('keydown', e=>{
   if (keyWait && $('menu').style.display==='none') keyWait = null;   // attente oubliée en lançant une partie
+  if (keyWait && e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)){ keyWait = null; buildKeysBox(); }
   if (keyWait){
     e.preventDefault();
     if (!(e.code==='Escape' && keyWait.k!=='pause')) assignKey(keyWait.k, e.code);
@@ -28,12 +29,13 @@ window.addEventListener('keydown', e=>{
   if (!game || game.over) return;
   const K = SETTINGS.keys, p = game.p;
   if (e.code===K.pause){ e.preventDefault();
-    togglePauseAction();
+    if (!e.repeat) togglePauseAction();
     return;
   }
   if (e.code==='Space' || e.code===K.special) e.preventDefault();
   // tutoriel : Espace/Entrée valide les étapes d'info (« Continuer »)
   if (game.tut && TUT && (e.code==='Space'||e.code==='Enter') && !TUT.confirmSkip && TUT.steps[TUT.i].tap){ tutBeginAct(); return; }
+  if (e.repeat) return;                 // touche maintenue : jamais de bascule/commande en rafale (pause en ligne, formation…)
   if (e.code===K.softpause){ e.preventDefault(); toggleSoftPause(); return; }
   if (paused || settingsOpen) return;   // réglages ouverts (même hors pause en ligne) : pas d'action de jeu au clavier
   // TUTORIEL : le clavier respecte la visibilité progressive (une touche ne déclenche pas une

@@ -596,7 +596,8 @@ function update(dt){
         if (t.fly) continue; // les obus en cloche n'atteignent pas les volants
         if (Math.abs(t.x-pr.tx) < pr.aoe){
           hitAny=true;
-          if (t.isBase||t.isB) t.hit(pr.dmg*1.6*pr.hb);
+          if (t.isBase||t.isB){ const own = pr.side===1? game.p : game.e;      // v1.13 : le MODE SIÈGE et l'XP de base valent aussi pour les obus
+            t.hit(pr.dmg*1.6*pr.hb*(own.siegeT>0? 1.3 : 1)); if (t.isBase) own.xp += pr.dmg*pr.hb*0.04; }
           else { t.hp -= pr.dmg*pr.hb/homeBuff(t); t.flash=0.2; }
         }
       }

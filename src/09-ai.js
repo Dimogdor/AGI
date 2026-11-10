@@ -15,8 +15,11 @@ function aiUpdate(dt){
   const heroReady = e.heroCd<=0 && !hasHero && e.era>=1;
   // décision « collante » : une fois engagée à économiser, l'IA tient bon malgré
   // les accalmies de la bataille, jusqu'à pouvoir payer (puis invoquer) son héros.
-  if (heroReady && (e.mode==='push' || pPushing)) e.heroSaving = true;
+  // v1.13 : épargne BORNÉE à 40 s — faute d'eau (0,6/s en Facile) l'IA gelait toutes ses dépenses
+  // pendant des minutes, base assiégée ; passé ce délai elle renonce 60 s et se défend.
+  if (heroReady && (e.mode==='push' || pPushing) && !e.heroSaving && !(e.heroSaveCd>game.t)){ e.heroSaving = true; e.heroSaveT0 = game.t; }
   if (!heroReady) e.heroSaving = false;
+  if (e.heroSaving && !canPay(e, HERO_COST) && game.t-(e.heroSaveT0||0) > 40){ e.heroSaving = false; e.heroSaveCd = game.t+60; }
   const heroSave = !!e.heroSaving && !canPay(e, HERO_COST);
   // invocation AVANT toute dépense : sitôt le coût réuni (épargne bouclée) ou une
   // bataille engagée avec les moyens en caisse, le héros entre en scène.

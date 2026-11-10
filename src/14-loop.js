@@ -152,6 +152,7 @@ function drawSpeedOverlays(){
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink;
     fitFont(txt, 300, uiF(pal,'type',12), 8); ctx.fillText(txt, W/2, 57);
   }
+  if (speedVote && performance.now() > speedVote.exp) speedVote = null;   // vote resté sans réponse
   if (speedVote){                                      // proposition reçue : Oui / Non
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
     const bw=360, bh=140, bx=W/2-bw/2, by=H/2-bh/2;
@@ -242,8 +243,11 @@ function loop(now){
   } else update(dt);                                    // menu / intro / pause / fin : logique inchangée
   if (PERF.on){ const n=performance.now(); PERF.upd += (n-PERF.t0 - PERF.upd)*0.15; PERF.t0=n; }
   // l'hôte diffuse l'état ~12 fois/seconde (cadence en temps réel, indépendante de la vitesse de jeu)
-  if (game && game.net==='host' && net && net.peer && !paused && !game.over){
+  // v1.13 : UN dernier état est envoyé à la fin de partie — sans lui l'invité ne recevait jamais
+  // « ov » : champ de bataille figé, puis « défaite » affichée même en cas de victoire.
+  if (game && game.net==='host' && net && net.peer && !paused && (!game.over || !net.finalSent)){
     net.acc += dt;
+    if (game.over){ net.finalSent = true; net.acc = 1; }
     if (net.acc >= 0.08){ net.acc = 0; net.sendState({s:serialize(), ev:net.ev}); net.ev = []; }
   }
   if (game && !paused) newsTick(dt);                   // fil d'actualités (temps réel, figé en pause)

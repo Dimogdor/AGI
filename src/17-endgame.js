@@ -2,6 +2,7 @@
 // échappement HTML : en ligne, une partie des valeurs affichées vient de l'autre joueur
 const escH = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function showEnd(){
+  if (!game || !game.over) return;           // partie quittée/relancée pendant le délai de 1,1 s : rien à afficher
   const et = document.getElementById('endtitle'), s = document.getElementById('endstats');
   et.textContent = game.win? t('end_win') : t('end_lose');
   const gt = Math.max(0, +game.t||0), mins = Math.floor(gt/60), secs = ('0'+Math.floor(gt%60)).slice(-2);
