@@ -123,7 +123,7 @@ const nativeBoot = `window.addEventListener('load',function(){try{var u=window.C
 // + rechargement AUTOMATIQUE quand une nouvelle version prend la main : plus jamais
 //   d'ancienne version coincée en cache chez un joueur de retour.
 const swReg = `if('serviceWorker'in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',function(){`+
-  `var reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded)return;reloaded=true;location.reload();});`+
+  `var reloaded=false,had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded||!had)return;reloaded=true;location.reload();});`+
   `navigator.serviceWorker.register('sw.js').then(function(reg){reg.update();setInterval(function(){reg.update();},60000);}).catch(function(){});`+
   `});}`;
 

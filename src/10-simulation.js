@@ -271,6 +271,8 @@ function updateUnits(side, foe, dt){
       // RAGDOLL DE MORT (par rôle) : corps qui bascule / chute en vrille / châssis qui éclate.
       if (qFx() && u.role!=='gremlin' && deaths.length<60)
         deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:0.75, trans:!!u.trans});
+      // ÉPAVE PERSISTANTE (v1.13, cosmétique) : le corps reste au sol ~50 s, le champ de bataille garde la trace des combats
+      if (qFx() && !u.fly && u.role!=='gremlin' && u.role!=='hero' && !wrecks.some(w=>Math.abs(w.x-(u.x-u.side*6))<16)){ wrecks.push({x:u.x-u.side*6, fac:u.fac, era:u.era, role:u.role, side:u.side, t:0}); if (wrecks.length>26) wrecks.shift(); }
       // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
       if (game.killLog){ game.killLog.push({x:u.x, s:u.side}); if (game.killLog.length>140) game.killLog.shift(); }
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
@@ -594,7 +596,8 @@ function update(dt){
         if (t.fly) continue; // les obus en cloche n'atteignent pas les volants
         if (Math.abs(t.x-pr.tx) < pr.aoe){
           hitAny=true;
-          if (t.isBase||t.isB) t.hit(pr.dmg*1.6*pr.hb);
+          if (t.isBase||t.isB){ const own = pr.side===1? game.p : game.e;      // v1.13 : le MODE SIÈGE et l'XP de base valent aussi pour les obus
+            t.hit(pr.dmg*1.6*pr.hb*(own.siegeT>0? 1.3 : 1)); if (t.isBase) own.xp += pr.dmg*pr.hb*0.04; }
           else { t.hp -= pr.dmg*pr.hb/homeBuff(t); t.flash=0.2; }
         }
       }
@@ -613,6 +616,7 @@ function update(dt){
   }
   stepParticles(dt);
   for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if(deaths[i].t>deaths[i].life) deaths.splice(i,1); }
+  for (let i=wrecks.length-1;i>=0;i--){ wrecks[i].t+=dt; if(wrecks[i].t>50) wrecks.splice(i,1); }
   // repères d'INTERFACE (textes flottants, annonces, secousse, flash, ⚑) : temps RÉEL. update() est
   // sous-découpé à ×2/×3 — une annonce de 2,6 s n'en durait plus que 0,9 à ×3, illisible.
   const uiDt = dt / (game.speed||1);

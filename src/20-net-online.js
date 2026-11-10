@@ -31,7 +31,7 @@ function onPauseMsg(d){
     netPause = {active:true, byMe:false, timer:PAUSE_WINDOW, voting:false};
     paused = true; announce(t('np_paused_foe'), '#e8d8a0');
   } else if (d.act==='yes'){       // l'adversaire a accepté de prolonger
-    if (netPause){ netPause.voting=false; netPause.timer=PAUSE_WINDOW; }
+    if (netPause && netPause.byMe && netPause.voting){ netPause.voting=false; netPause.timer=PAUSE_WINDOW; }
     onlineVoteRects=null;
   } else if (d.act==='no' || d.act==='end'){
     onlineVoteRects=null; netPause=null; paused=false; settingsOpen=false;
@@ -231,7 +231,7 @@ function nrecv(msg){
   else if (t==='cm'){ if (net.role==='host' && net.authed && net.cmdQ.length < 64) net.cmdQ.push(d); }
   else if (t==='hi'){                                   // l'hôte reçoit le bonjour de l'invité (version + mot de passe)
     if (net.role==='host' && !game){
-      if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); versionFail(); return; }
+      if (d.v !== NET_PROTO){ nsend('ko', {v:NET_PROTO}); return; }   // v1.13 : le salon de l'hôte survit à un invité de mauvaise version
       const now = performance.now()/1000;
       if (net.pw){
         // anti-force-brute : après PW_MAX_FAILS échecs, plus aucun essai accepté pendant PW_LOCK_S
@@ -269,7 +269,7 @@ function nrecv(msg){
       startGuestGame(d);
     }
   }
-  else if (t==='ko'){ versionFail(); }                  // l'autre côté a refusé pour cause de version
+  else if (t==='ko'){ if (net.role==='guest' && !game) versionFail(); }                  // l'autre côté a refusé pour cause de version
   else if (t==='pwko'){ if (net.role==='guest') netBadPw(); }   // mot de passe refusé par l'hôte
   else if (t==='pz'){ if (net.authed) onPauseMsg(d); }
   else if (t==='sp'){ if (net.authed) onSpeedMsg(d); }  // vote de changement de vitesse
@@ -281,7 +281,7 @@ function bindConn(conn){
   conn.on('open', ()=>{
     if (!net || net.conn!==conn) return;
     if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
-    net.peer = true; net.peerId = conn.peer;
+    net.peer = true;
     if (net.role==='guest'){ netStatus(tr('net_found')); net.sendHello({fac:net.myFac, v:NET_PROTO, pw:net.pw||''}); }
     else netStatus(tr('net_peer_conn'));
   });
@@ -298,7 +298,10 @@ async function netConnect(role, code, fac, opts){
   const Peer = await loadPeerLib();
   if (!Peer){ netStatus(tr('net_nop2p')); return; }
   netDisconnect();                                        // repart propre si une tentative précédente traîne
-  const RTC = await getIceServers();                      // STUN + TURN (Cloudflare dédié ou repli public)
+  const tok = netConnect._tok = (netConnect._tok||0)+1;   // double clic : seule la dernière demande aboutit
+  const RTC = await getIceServers();
+  if (tok !== netConnect._tok) return;
+  netDisconnect();                      // STUN + TURN (Cloudflare dédié ou repli public)
   const hostId = 'agi-' + code;
   const myId   = role==='host' ? hostId : (hostId + '-g' + Math.random().toString(36).slice(2,8));
   net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'), speed:clampSpeed(opts.speed||menuSpeed),
@@ -307,10 +310,11 @@ async function netConnect(role, code, fac, opts){
           sendState:o=>nsend('st',o), sendCmd:o=>nsend('cm',o),
           sendHello:o=>nsend('hi',o), sendStart:o=>nsend('go',o), sendPause:o=>nsend('pz',o),
           sendSpeed:o=>nsend('sp',o), sendLok:o=>nsend('lok',o), sendLF:o=>nsend('lf',o) };
+  const my = net;                                         // session courante : les rappels d'une session annulée s'ignorent
   try { peerObj = new Peer(myId, { config: RTC, debug: 1 }); }
   catch(err){ netStatus(tr('net_initfail')); return; }
   const tryConnect = ()=>{
-    if (!peerObj || peerObj.destroyed) return;
+    if (net!==my || !peerObj || peerObj.destroyed) return;
     const conn = peerObj.connect(hostId, { reliable:true });
     if (conn) bindConn(conn);
   };
@@ -338,7 +342,7 @@ async function netConnect(role, code, fac, opts){
       // course possible : l'invité arrive avant que l'hôte soit enregistré → on retente
       if (role==='guest' && net && (net.tries = (net.tries||0)+1) <= 6 && !net.peer){
         netStatus(fmt('net_retry',{n:net.tries}));
-        setTimeout(()=>{ if (net && !net.peer) tryConnect(); }, 2500);
+        setTimeout(()=>{ if (net===my && !net.peer) tryConnect(); }, 2500);
       } else {
         netStatus(fmt('net_nohost',{code:code}));
       }

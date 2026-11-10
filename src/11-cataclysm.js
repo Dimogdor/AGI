@@ -262,7 +262,7 @@ function drawCata(){
         ctx.globalAlpha=0.85*da; ctx.drawImage(PF.dust, x-r, gz-r*1.1, r*2, r*1.4); }
       ctx.globalAlpha=1; }
   }
-  ctx.globalAlpha=fade; ctx.font='700 16px Arial'; ctx.textAlign='center';
+  ctx.globalAlpha=fade; ctx.font=HF(16); ctx.textAlign='center';
   ctx.fillStyle=c.col; ctx.fillText(c.icon+'  '+cataName(k)+'  '+c.icon, W/2, 92);
   ctx.restore();
 }
@@ -310,7 +310,7 @@ function drawWinter(){
     ctx.beginPath(); ctx.arc(x, y, f.s, 0, 6.28); ctx.fill();
   }
   ctx.globalCompositeOperation='source-over';
-  ctx.font='700 12px Arial'; ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
+  ctx.font=HF(12); ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
   ctx.fillText(fmt('ev_winter_now',{min:Math.ceil((game.winterT||0)/60)}), W/2, 78);
   ctx.restore();
 }

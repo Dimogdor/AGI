@@ -186,18 +186,18 @@ strategy,war,age,evolution,RTS,AI,battle,real time,1v1,tower,era,multiplayer,age
 
 ## 7. Notes de version (exemple — « What's new »)
 ```
-v1.12 — Nouvelle console de commandement, camps rééquilibrés.
-• Cartes d'unités avec le portrait du personnage et le coût par ressource
-• Ombres portées des troupes, bases qui se lézardent sous les coups
-• Humanité et G·P·T à égalité (héros rééquilibrés) ; niveau Facile vraiment facile
-• Mode en ligne vérifié de bout en bout
+v1.13 — Interface redessinée, champ de bataille marqué par les combats.
+• Pictogrammes dessinés à la main à la place des emoji, une seule famille de polices
+• Épaves des unités tombées, bâtiments qui se lézardent, premier plan en relief
+• En ligne : fin de partie fiable chez l'invité, salons et votes plus robustes
+• IA qui ne se fige plus, mode Siège appliqué à l'artillerie, 17 bugs corrigés
 ```
 ```
-v1.12 — New command console, rebalanced sides.
-• Unit cards with the character's portrait and per-resource cost
-• Cast shadows for troops, bases that crack under fire
-• Humanity and G·P·T on equal footing (heroes rebalanced); Easy is truly easy
-• Online mode verified end to end
+v1.13 — Redrawn interface, a battlefield scarred by combat.
+• Hand-drawn pictograms instead of emoji, one consistent font family
+• Wrecks of fallen units, buildings that crack, layered foreground
+• Online: reliable end of match for the guest, sturdier lobbies and votes
+• AI no longer stalls, Siege mode applies to artillery, 17 bugs fixed
 ```
 ```
 v1.11 — Le menu devient un tract de la Résistance.

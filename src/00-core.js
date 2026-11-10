@@ -76,18 +76,12 @@ const w2sY = y => y*zoom + zTY();
 function camClamp(){ camX = clamp(camX, 0, WORLD - VW()); }
 
 /* ---------- RELIEF ---------- */
-// Profil de terrain par défaut (escarmouche) + presets de campagne pour des cartes variées.
+// Profil du relief (bosses douces, jamais de creux).
 const TERRAIN_DEFAULT = {a:16,f1:0.0042,b:9,f2:0.0113,c:6,f3:0.021,base:10};
-const TERRAINS = {
-  plains: {a:6, f1:0.0040,b:4, f2:0.0100,c:3, f3:0.020, base:6},    // ville : quasi plat
-  hills:  {a:26,f1:0.0050,b:14,f2:0.0120,c:8, f3:0.022, base:14},   // faubourgs vallonnés
-  rugged: {a:34,f1:0.0060,b:18,f2:0.0130,c:11,f3:0.025, base:18},   // insurrection : accidenté
-  waste:  {a:22,f1:0.0045,b:12,f2:0.0110,c:7, f3:0.020, base:12},   // terres dévastées (finale)
-};
 function gY(x){
   const flat = clamp((Math.min(x, WORLD-x)-240)/320, 0, 1);
   // relief uniquement en bosses (jamais de creux : rien ne passe sous la ligne du sol / derrière le HUD)
-  const c = (game && game.terrainCfg) || TERRAIN_DEFAULT;
+  const c = TERRAIN_DEFAULT;
   const h = c.a*Math.sin(x*c.f1) + c.b*Math.sin(x*c.f2+2) + c.c*Math.sin(x*c.f3+5) + c.base;
   return GROUND - Math.max(0, h) * flat;
 }

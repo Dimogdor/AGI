@@ -21,7 +21,6 @@ function costStr(side, cost){
 function tryBuy(side, ri){
   if (isGuest(side)){ guestCmd({c:'buy',ri}); sfx('buy',ri); return true; }
   const role = ROLES[ri];
-  if (role.minEra && side.era < role.minEra) return false;
   // quota strict de SOUTIEN (médic humain ET ruche GPT) : 1, +1 par niveau d'amélioration (max 3)
   if (role.key==='support'){
     const maxS = 1 + Math.min(2, side.upg.support||0);
@@ -241,7 +240,7 @@ function tryBuild(side, slot, type){
 }
 // affecte l'unité libre la plus proche à un chantier
 function assignWorker(side, slot){
-  if (slot._w && slot._w.hp>0 && slot._w.task && slot._w.task.slot===slot) return;
+  if (slot._w && slot._w.hp>0 && slot._w.task && slot._w.task.slot===slot && side.units.includes(slot._w)) return;
   slot._w = null;
   let best=null, bd=1e9;
   for (const u of side.units){
@@ -382,6 +381,7 @@ function tryGarrison(side, slot){
     const i = side.units.indexOf(u);
     game.sel.delete(u);
     if (i<0) continue;                       // unité qui n'existe plus (jamais splice(-1) : ça supprimait la dernière)
+    u.task = null;                           // sinon un chantier restait « réservé » par un ouvrier parti en garnison
     slot.b.gar.push(u);
     side.units.splice(i,1);
   }

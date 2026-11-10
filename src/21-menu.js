@@ -9,6 +9,7 @@ function randCode(){ const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s='';
 
 document.querySelectorAll('.tab').forEach(tb=>{
   tb.addEventListener('click', ()=>{
+    if (keyWait){ keyWait = null; buildKeysBox(); }      // réassignation en attente abandonnée en changeant d'onglet
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
     tb.classList.add('on');
@@ -28,19 +29,6 @@ document.querySelectorAll('.diffBtn').forEach(b=>{
     b.classList.add('sel'); menuDiff = +b.dataset.diff;
   });
 });
-// sélecteur de vitesse du menu : préférence offline + valeur par défaut du lobby en ligne
-function refreshSpeedBtns(){
-  document.querySelectorAll('.spdBtn').forEach(x=>x.classList.toggle('sel', +x.dataset.spd===menuSpeed));
-}
-document.querySelectorAll('.spdBtn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    menuSpeed = clampSpeed(+b.dataset.spd);
-    SETTINGS.speed = menuSpeed; saveSettings();
-    if (game && !game.net && !game.over) game.speed = menuSpeed;  // offline : applique immédiatement à la partie en cours
-    refreshSpeedBtns();
-  });
-});
-refreshSpeedBtns();
 /* ---- plein écran : demande robuste + bascule manuelle (utile sur mobile après une sortie) ----
    iOS (iPhone surtout) n'IMPLÉMENTE PAS l'API Fullscreen : requestFullscreen y est sans effet.
    Le seul vrai plein écran sur iOS est « Ajouter à l'écran d'accueil » (mode standalone PWA).
@@ -66,7 +54,7 @@ function iosHint(msg){
     iosHintEl = document.createElement('div');
     iosHintEl.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:60;'+
       'max-width:88vw;padding:10px 14px;border-radius:8px;background:rgba(16,13,12,0.95);'+
-      'border:1px solid #4a3a32;color:#f0e6d6;font:600 13px/1.4 Arial;text-align:center;'+
+      'border:1px solid #4a3a32;color:#f0e6d6;font:600 13px/1.4 inherit;font-family:inherit;text-align:center;'+
       'box-shadow:0 4px 18px rgba(0,0,0,.5);pointer-events:none;';
     document.body.appendChild(iosHintEl);
   }
@@ -119,6 +107,7 @@ refreshFsBtn();
 let stampBusy = false;
 $('startBtn').addEventListener('click', ()=>{
   if (stampBusy) return;
+  if (net && !game) netDisconnect();         // salon en attente abandonné : sinon le départ du pair terminait la partie solo
   audioInit(); musicStart();
   goFullscreen();
   const b = $('startBtn'); b.classList.remove('stamped'); void b.offsetWidth; b.classList.add('stamped');
@@ -212,8 +201,9 @@ async function refreshLobbies(){
 }
 function joinLobby(l){
   audioInit();
-  let pw = '';
-  if (l.hasPw){ pw = (prompt(t('net_askpw'))||'').trim(); if (!pw) return; }
+  // v1.13 : plus de prompt() (inexistant sous Electron) — le mot de passe se saisit dans le champ du formulaire
+  if (l.hasPw){ showNetView('join'); $('joinCode').value = l.code; $('joinPw').value = ''; $('joinPw').focus(); netStatus(t('net_askpw')); return; }
+  const pw = '';
   showNetView('join'); $('joinCode').value = l.code; $('joinPw').value = pw;
   netConnect('guest', l.code, menuFac, { pw });
 }
@@ -222,7 +212,7 @@ $('onlineBtn').addEventListener('click', ()=>{
   const opening = pan.style.display==='none';
   pan.style.display = opening? 'flex':'none';
   netStatus('');
-  if (opening) showNetView('home'); else if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; }
+  if (opening) showNetView('home'); else { if (lobbyTimer){ clearInterval(lobbyTimer); lobbyTimer=null; } if (net && !game) netDisconnect(); }
 });
 $('goCreate').addEventListener('click', ()=>{ netStatus(''); refreshLobSpeed(); showNetView('create'); });
 $('goJoin').addEventListener('click',  ()=>{ netStatus(''); showNetView('join'); });
@@ -245,7 +235,7 @@ $('lobbyRefresh').addEventListener('click', refreshLobbies);
 function refreshLobSpeed(){ document.querySelectorAll('.lobSpd').forEach(x=>x.classList.toggle('sel', +x.dataset.spd===menuSpeed)); }
 document.querySelectorAll('.lobSpd').forEach(b=>{
   b.addEventListener('click', ()=>{ menuSpeed = clampSpeed(+b.dataset.spd); SETTINGS.speed=menuSpeed; saveSettings();
-    refreshLobSpeed(); refreshSpeedBtns(); });
+    refreshLobSpeed(); });
 });
 $('hostBtn').addEventListener('click', ()=>{
   audioInit();

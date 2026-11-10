@@ -538,7 +538,7 @@ function drawTut(){
   ctx.font=uiF(pal,'head',12); ctx.fillStyle=pal.red;
   ctx.fillText(tutText({fr:'TUTORIEL',en:'TUTORIAL',es:'TUTORIAL',de:'TUTORIAL',it:'TUTORIAL',pt:'TUTORIAL',ru:'ОБУЧЕНИЕ',zh:'教程',ar:'الدرس التعليمي'}), Bx+pad, by+pad+8);
   // poignée de déplacement (indice visuel « glissez-moi ») au centre de l'en-tête
-  ctx.fillStyle=rgbaC(pal.ink2,0.6); ctx.font='10px Arial'; ctx.textAlign='center';
+  ctx.fillStyle=rgbaC(pal.ink2,0.6); ctx.font=HF(10); ctx.textAlign='center';
   ctx.fillText('⠿', Bx+bw/2-14, by+pad+7);
   ctx.textAlign='left';
   // points de progression : resserrés s'il y a beaucoup d'étapes (ne chevauchent jamais la poignée ⠿)

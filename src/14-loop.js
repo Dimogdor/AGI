@@ -16,6 +16,7 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
+  if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
   if (game.rally) drawRally(game.rally);                     // fanion ⚑ d'ordre de position
@@ -109,10 +110,11 @@ function render(dt){
       ctx.globalAlpha=a; ctx.drawImage(lightSprite(L.col), lx-L.r, L.y-L.r, L.r*2, L.r*2); }   // texture cuite par couleur
     ctx.globalAlpha=1;
     if (drawLights) ctx.restore(); }
+  drawForeground(VW());                                     // premier plan en parallaxe (herbes, barbelés, gravats)
   ctx.textAlign='center';
   for (const f of floaters){
     ctx.globalAlpha=1-f.t/1.6;
-    ctx.font='800 '+f.size+'px Georgia'; ctx.fillStyle=f.color;
+    ctx.font=HF(f.size); ctx.fillStyle=f.color;
     ctx.fillText(f.txt, f.x-camX, f.y);
   }
   ctx.globalAlpha=1;
@@ -150,6 +152,7 @@ function drawSpeedOverlays(){
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=pal.ink;
     fitFont(txt, 300, uiF(pal,'type',12), 8); ctx.fillText(txt, W/2, 57);
   }
+  if (speedVote && performance.now() > speedVote.exp) speedVote = null;   // vote resté sans réponse
   if (speedVote){                                      // proposition reçue : Oui / Non
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
     const bw=360, bh=140, bx=W/2-bw/2, by=H/2-bh/2;
@@ -240,8 +243,11 @@ function loop(now){
   } else update(dt);                                    // menu / intro / pause / fin : logique inchangée
   if (PERF.on){ const n=performance.now(); PERF.upd += (n-PERF.t0 - PERF.upd)*0.15; PERF.t0=n; }
   // l'hôte diffuse l'état ~12 fois/seconde (cadence en temps réel, indépendante de la vitesse de jeu)
-  if (game && game.net==='host' && net && net.peer && !paused && !game.over){
+  // v1.13 : UN dernier état est envoyé à la fin de partie — sans lui l'invité ne recevait jamais
+  // « ov » : champ de bataille figé, puis « défaite » affichée même en cas de victoire.
+  if (game && game.net==='host' && net && net.peer && !paused && (!game.over || !net.finalSent)){
     net.acc += dt;
+    if (game.over){ net.finalSent = true; net.acc = 1; }
     if (net.acc >= 0.08){ net.acc = 0; net.sendState({s:serialize(), ev:net.ev}); net.ev = []; }
   }
   if (game && !paused) newsTick(dt);                   // fil d'actualités (temps réel, figé en pause)
@@ -274,7 +280,7 @@ function drawCheatPanel(){
   const px=W-pw-10, py=64;
   ctx.fillStyle='rgba(14,8,16,0.94)'; rr(px,py,pw,ph,7); ctx.fill();
   ctx.strokeStyle='#ff5af0'; ctx.lineWidth=1.4; rr(px,py,pw,ph,7); ctx.stroke();
-  ctx.textAlign='left'; ctx.font='700 11px Arial'; ctx.fillStyle='#ff9bf0';
+  ctx.textAlign='left'; ctx.font=HF(11); ctx.fillStyle='#ff9bf0';
   ctx.fillText('★ TRICHE (DEV) — F9', px+pad, py+pad+8);
   CHEAT.rects = [];
   for (let i=0;i<items.length;i++){
@@ -282,7 +288,7 @@ function drawCheatPanel(){
     const on = it.k==='god' && CHEAT.god;
     ctx.fillStyle = on? 'rgba(255,90,240,0.22)':'rgba(255,255,255,0.06)';
     rr(px+pad, y, pw-pad*2, rh-4, 4); ctx.fill();
-    ctx.fillStyle = '#f0d8f0'; ctx.font='600 11px Arial';
+    ctx.fillStyle = '#f0d8f0'; ctx.font=HF(11);
     ctx.fillText(it.l, px+pad+8, y+(rh-4)/2+1);
     CHEAT.rects.push({x:px+pad, y, w:pw-pad*2, h:rh-4, k:it.k});
   }

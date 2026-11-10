@@ -89,10 +89,10 @@ function mkSide(side, facKey, x){
     lastSeen:false, lastReady:false, lastUsed:false,
     stance:'charge', holdX:null,
     cap:30, capUp:false,
-    formation:false, autoRepair:false, fortLvl:1, mode:'build', reach:260,
+    formation:false, autoRepair:false, fortLvl:1, mode:'build',
     upg:{melee:0,tank:0,ranged:0,siege:0,air:0,support:0},
     queue:[],                 // file d'attente de production (max 10)
-    heroCd:0, heroDone:false,  // unité héroïque légendaire (1 / 10 min)
+    heroCd:0,  // unité héroïque légendaire (1 / 10 min)
     phase:1, combatBuff:0, zoneBuff:0,     // seconde base (phase 2) + bonus de comeback + bonus de zones
     siegeT:0,                              // Mode Siège de base (héros) : minuterie du bonus offensif
     slots:[0,1,2].map(i=>({ x: x + side*(95+i*64), b:null, owner:null })),
@@ -133,7 +133,7 @@ function newGame(facKey, diff, withTuto, eFacOverride){
   // pour qu'aucun achat/apparition en cours de jeu ne déclenche de micro-saccade de fabrication
   // de sprite (payé une seule fois ici plutôt qu'au hasard des premières apparitions).
   if (typeof prewarmSprites==='function') prewarmSprites();
-  particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[];
+  particles=[]; floaters=[]; shots=[]; projectiles=[]; LIGHTS=[]; deaths=[]; wrecks=[];
   speedPanel=null; speedVote=null; clearSpeedPending(); speedProps=[];
   camX = 0; zoom = 1; camFollow = true; buildMenu = null; paused = false; settingsOpen = false;
   selMode = false; selBox = null;

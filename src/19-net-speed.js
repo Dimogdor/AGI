@@ -17,7 +17,7 @@ function canProposeSpeed(){
 function pickSpeed(s){
   s = clampSpeed(s); speedPanel = null;
   if (!isOnline()){
-    setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); refreshSpeedBtns(); speedAnnounce(s);
+    setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); speedAnnounce(s);
     return;
   }
   if (!net) return;                                        // sécurité : déconnecté entre-temps
@@ -42,7 +42,7 @@ function onSpeedMsg(d){
     speedPropsFoe = speedPropsFoe.filter(ts => now - ts < SPEED_PROP_WINDOW);
     if (speedVote || speedPropsFoe.length >= SPEED_PROP_MAX){ net.sendSpeed({ act:'reject', speed:clampSpeed(d.speed) }); return; }
     speedPropsFoe.push(now);
-    speedVote = { speed: clampSpeed(d.speed), rects:null };
+    speedVote = { speed: clampSpeed(d.speed), rects:null, exp: performance.now()+14000 };   // expire avant le délai (15 s) du demandeur
   } else if (d.act === 'accept'){
     if (speedPending){ setGameSpeed(speedPending.speed); speedAnnounce(speedPending.speed); clearSpeedPending(); }
   } else if (d.act === 'reject'){
@@ -52,7 +52,7 @@ function onSpeedMsg(d){
 // l'adversaire vote sur ma proposition reçue
 function castSpeedVote(ok){
   if (!speedVote) return;
-  if (!net){ speedVote=null; return; }                     // sécurité : déconnecté entre-temps
+  if (!net || performance.now() > speedVote.exp){ speedVote=null; return; }   // vote périmé : accepter désynchroniserait les vitesses                     // sécurité : déconnecté entre-temps
   const s = speedVote.speed;
   if (ok){ setGameSpeed(s); net.sendSpeed({ act:'accept', speed:s }); speedAnnounce(s); }
   else   { net.sendSpeed({ act:'reject', speed:s }); announce(t('spd_rejected'), '#ff9d45'); }
