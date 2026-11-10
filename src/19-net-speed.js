@@ -17,7 +17,7 @@ function canProposeSpeed(){
 function pickSpeed(s){
   s = clampSpeed(s); speedPanel = null;
   if (!isOnline()){
-    setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); refreshSpeedBtns(); speedAnnounce(s);
+    setGameSpeed(s); menuSpeed = s; SETTINGS.speed = s; saveSettings(); speedAnnounce(s);
     return;
   }
   if (!net) return;                                        // sécurité : déconnecté entre-temps

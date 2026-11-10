@@ -43,7 +43,7 @@ const SIEGE_DUR = 22;                        // durée du bonus offensif anti-ba
 const HERO_NAME = {HUM:'CHE GUEVARA', IA:'SINGULARITÉ'};
 const FACTIONS = {
   HUM: {
-    name:"HUMANITÉ", accent:"#ff9d45", dark:"#b85f1e",
+    name:"HUMANITÉ", accent:"#ff9d45",
     icons:{f:"🌾", m:"🪙", w:"💧"},
     eras:[
       {name:"2025 · RÉVOLTE",                tag:"I"},
@@ -67,7 +67,7 @@ const FACTIONS = {
     transName:"COMMUNISME À VISAGE HUMAIN", transTxt:"L'argent est aboli — 🪙 n'est plus nécessaire",
   },
   IA: {
-    name:"GPT", accent:"#5ad0ff", dark:"#1e6a8c",
+    name:"GPT", accent:"#5ad0ff",
     icons:{f:"⚡", m:"◈", w:"💧"},
     eras:[
       {name:"2025 · AUBE DES LLM",      tag:"v4"},

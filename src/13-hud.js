@@ -7,7 +7,8 @@ const UIPAL = {
   IA: { paper:'#eef2ea', paper2:'#dde9da', ink:'#10262d', ink2:'#3d5a62', red:'#0b6fa8', ok:'#0b6fa8', line:'rgba(16,38,45,0.28)',
         head:'"AGI Term","Courier New",monospace', headW:400, type:'"AGI Term","Courier New",monospace', k:1.3, ia:true },
 };
-const UI_COND = '"AGI Cond","Arial Narrow",Arial,sans-serif';
+const UI_COND = '"AGI Cond","Arial Narrow",sans-serif';
+const UI_TYPE = '"AGI Type","Courier New",monospace', UI_STEN = '"AGI Stencil","AGI Cond",Impact,sans-serif';
 // police du HUD : condensée de presse (Oswald 600) — plus typée que l'Arial gras et plus étroite,
 // donc moins de libellés comprimés par fitFont dans les langues longues
 const HF = px => '600 '+px+'px '+UI_COND;
@@ -69,6 +70,95 @@ function inkRule(x1, x2, y, pal){ ctx.save(); ctx.strokeStyle = pal.line; ctx.li
   ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke(); ctx.restore(); }
 
 /* ---------- HUD (refait : zones fixes, aucun chevauchement) ---------- */
+/* ---------- PICTOGRAMMES VECTORIELS (v1.13) ----------
+   Plus aucun emoji système dans l'interface de jeu : ils changeaient d'aspect d'un appareil à
+   l'autre (et donnaient un air « générique »). Chaque symbole est tracé à la main, d'un seul ton
+   (la couleur du texte courant), dans un carré de côté s centré en (0,0). ctx.fillText est
+   enveloppé une fois pour toutes : toute chaîne contenant un symbole connu (libellés traduits
+   compris, dans les 9 langues) est composée texte + pictogrammes, alignement respecté. */
+const ICON = (()=>{
+  const P = (g, pts, close)=>{ g.beginPath(); g.moveTo(pts[0],pts[1]); for (let i=2;i<pts.length;i+=2) g.lineTo(pts[i],pts[i+1]); if (close!==false) g.closePath(); };
+  const star = (g, n, ro, ri, a0)=>{ g.beginPath(); for (let i=0;i<n*2;i++){ const a=(a0||-Math.PI/2)+i*Math.PI/n, r=i%2? ri:ro; g.lineTo(Math.cos(a)*r, Math.sin(a)*r); } g.closePath(); g.fill(); };
+  const shieldP = g=>{ g.beginPath(); g.moveTo(0,-.46); g.lineTo(.38,-.3); g.lineTo(.38,.02); g.quadraticCurveTo(.34,.34,0,.48); g.quadraticCurveTo(-.34,.34,-.38,.02); g.lineTo(-.38,-.3); g.closePath(); }, shield = g=>{ shieldP(g); g.fill(); };
+  const coin = g=>{ g.lineWidth=.11; g.beginPath(); g.arc(0,0,.36,0,6.283); g.stroke(); g.beginPath(); g.arc(0,0,.15,0,6.283); g.fill(); };
+  const I = {
+    wheat:g=>{ g.lineWidth=.07; g.beginPath(); g.moveTo(0,.48); g.lineTo(0,-.2); g.stroke();
+      for (let i=0;i<3;i++) for (const d of [-1,1]){ g.beginPath(); g.ellipse(d*.15, .12-i*.2, .16, .075, d*-.9, 0, 6.283); g.fill(); }
+      g.beginPath(); g.ellipse(0,-.36,.075,.14,0,0,6.283); g.fill(); },
+    coin, drop:g=>{ g.beginPath(); g.moveTo(0,-.48); g.bezierCurveTo(.1,-.2,.36,0,.36,.16); g.arc(0,.16,.36,0,Math.PI); g.bezierCurveTo(-.36,0,-.1,-.2,0,-.48); g.fill(); },
+    bolt:g=>{ P(g,[.1,-.5,-.3,.06,-.02,.06,-.12,.5,.3,-.1,.02,-.1]); g.fill(); },
+    people:g=>{ for (const [x,s] of [[-.2,.82],[.2,1]]){ g.beginPath(); g.arc(x,-.22*s,.15*s,0,6.283); g.fill();
+      g.beginPath(); g.moveTo(x-.27*s,.42); g.quadraticCurveTo(x-.27*s,-.02*s,x,-.02*s); g.quadraticCurveTo(x+.27*s,-.02*s,x+.27*s,.42); g.closePath(); g.fill(); } },
+    hourglass:g=>{ P(g,[-.3,-.45,.3,-.45,.04,0,.3,.45,-.3,.45,-.04,0]); g.fill(); g.fillRect(-.36,-.5,.72,.08); g.fillRect(-.36,.42,.72,.08); },
+    lock:g=>{ g.fillRect(-.32,-.06,.64,.5); g.lineWidth=.1; g.beginPath(); g.arc(0,-.1,.2,Math.PI,0); g.stroke(); },
+    wrench:g=>{ g.save(); g.rotate(.78); g.fillRect(-.07,-.2,.14,.68); g.lineWidth=.13; g.beginPath(); g.arc(0,-.3,.17,-1.05,Math.PI+1.05); g.stroke(); g.restore(); },
+    swords:g=>{ g.lineWidth=.085; g.lineCap='round'; for (const d of [-1,1]){ g.beginPath(); g.moveTo(d*.4,-.42); g.lineTo(-d*.3,.3); g.stroke();
+      g.beginPath(); g.moveTo(-d*.12,.3); g.lineTo(-d*.4,.06); g.stroke(); g.beginPath(); g.moveTo(-d*.32,.3); g.lineTo(-d*.42,.42); g.stroke(); } },
+    hold:g=>{ shieldP(g); g.rect(-.2,-.07,.4,.12); g.fill('evenodd'); },
+    shield, back:g=>{ g.lineWidth=.1; g.lineCap='round'; g.lineJoin='round'; g.beginPath(); g.moveTo(.36,.3); g.lineTo(.36,-.04); g.quadraticCurveTo(.36,-.2,.2,-.2); g.lineTo(-.3,-.2); g.stroke();
+      P(g,[-.44,-.2,-.16,-.42,-.16,.02]); g.fill(); },
+    camera:g=>{ g.fillRect(-.44,-.22,.58,.46); P(g,[.16,-.02,.44,-.24,.44,.26,.16,.06]); g.fill(); g.beginPath(); g.arc(-.26,-.32,.13,0,6.283); g.arc(.0,-.32,.13,0,6.283); g.fill(); },
+    zoom:g=>{ g.lineWidth=.1; g.lineCap='round'; g.beginPath(); g.arc(-.08,-.08,.28,0,6.283); g.stroke(); g.beginPath(); g.moveTo(.14,.14); g.lineTo(.42,.42); g.stroke(); },
+    heart:g=>{ g.beginPath(); g.moveTo(0,.42); g.bezierCurveTo(-.6,0,-.42,-.5,0,-.2); g.bezierCurveTo(.42,-.5,.6,0,0,.42); g.fill(); },
+    clock:g=>{ g.lineWidth=.09; g.lineCap='round'; g.beginPath(); g.arc(0,.03,.38,0,6.283); g.stroke(); g.beginPath(); g.moveTo(0,-.18); g.lineTo(0,.03); g.lineTo(.16,.12); g.stroke(); g.fillRect(-.1,-.5,.2,.08); },
+    target:g=>{ g.lineWidth=.08; g.beginPath(); g.arc(0,0,.38,0,6.283); g.stroke(); g.beginPath(); g.arc(0,0,.13,0,6.283); g.fill();
+      g.beginPath(); g.moveTo(0,-.5); g.lineTo(0,-.28); g.moveTo(0,.5); g.lineTo(0,.28); g.moveTo(-.5,0); g.lineTo(-.28,0); g.moveTo(.5,0); g.lineTo(.28,0); g.stroke(); },
+    speed:g=>{ g.lineWidth=.1; g.lineCap='round'; g.lineJoin='round'; for (const x of [-.26,.08]){ g.beginPath(); g.moveTo(x,-.3); g.lineTo(x+.26,0); g.lineTo(x,.3); g.stroke(); } },
+    burst:g=>star(g,8,.48,.2), spark:g=>star(g,4,.48,.14), star:g=>star(g,5,.48,.2),
+    cross:g=>{ g.lineWidth=.12; g.lineCap='round'; g.beginPath(); g.moveTo(-.3,-.3); g.lineTo(.3,.3); g.moveTo(.3,-.3); g.lineTo(-.3,.3); g.stroke(); },
+    play:g=>{ P(g,[-.26,-.38,.38,0,-.26,.38]); g.fill(); }, pause:g=>{ g.fillRect(-.3,-.36,.2,.72); g.fillRect(.1,-.36,.2,.72); },
+    full:g=>{ g.lineWidth=.09; g.lineCap='round'; g.lineJoin='round'; for (const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ g.beginPath(); g.moveTo(a*.4,b*.14); g.lineTo(a*.4,b*.4); g.lineTo(a*.14,b*.4); g.stroke(); } },
+    up:g=>{ P(g,[0,-.46,.38,-.04,.14,-.04,.14,.44,-.14,.44,-.14,-.04,-.38,-.04]); g.fill(); },
+    gear:g=>{ g.beginPath(); for (let i=0;i<16;i++){ const a=i*Math.PI/8-.2, r=i%2? .46:.33; g.lineTo(Math.cos(a)*r, Math.sin(a)*r); } g.closePath(); g.moveTo(.15,0); g.arc(0,0,.15,0,6.283); g.fill('evenodd'); },
+    flag:g=>{ g.fillRect(-.3,-.46,.08,.94); P(g,[-.22,-.44,.4,-.24,-.22,-.02]); g.fill(); },
+    door:g=>{ g.beginPath(); g.moveTo(-.28,.46); g.lineTo(-.28,-.18); g.arc(0,-.18,.28,Math.PI,0); g.lineTo(.28,.46); g.closePath(); g.moveTo(.18,.12); g.arc(.12,.12,.06,0,6.283); g.fill('evenodd'); },
+    skull:g=>{ g.beginPath(); g.arc(0,-.1,.36,0,6.283); g.moveTo(-.04,-.08); g.arc(-.14,-.08,.1,0,6.283); g.moveTo(.24,-.08); g.arc(.14,-.08,.1,0,6.283); g.fill('evenodd');
+      g.fillRect(-.2,.2,.17,.24); g.fillRect(.03,.2,.17,.24); },
+    trophy:g=>{ g.beginPath(); g.moveTo(-.28,-.44); g.lineTo(.28,-.44); g.quadraticCurveTo(.28,.1,0,.12); g.quadraticCurveTo(-.28,.1,-.28,-.44); g.fill(); g.fillRect(-.05,.1,.1,.2); g.fillRect(-.24,.3,.48,.14);
+      g.lineWidth=.07; g.beginPath(); g.arc(-.3,-.24,.13,1.2,4.9); g.stroke(); g.beginPath(); g.arc(.3,-.24,.13,-1.75,1.95); g.stroke(); },
+    wall:g=>{ for (let r=0;r<3;r++) for (let c=0;c<3;c++){ const o=r%2? -.16:0; g.fillRect(-.46+c*.32+o, -.4+r*.28, .28, .22); } },
+    tower:g=>{ P(g,[-.2,.46,-.14,-.14,.14,-.14,.2,.46]); g.fill(); g.fillRect(-.3,-.44,.6,.24); g.fillRect(.2,-.38,.26,.09); },
+    well:g=>{ g.fillRect(-.36,.1,.72,.34); g.fillRect(-.34,-.34,.07,.46); g.fillRect(.27,-.34,.07,.46); P(g,[-.44,-.3,0,-.5,.44,-.3]); g.fill(); },
+    rain:g=>{ g.beginPath(); g.arc(-.16,-.16,.2,0,6.283); g.arc(.12,-.22,.24,0,6.283); g.fill(); g.fillRect(-.36,-.18,.72,.16);
+      g.lineWidth=.07; g.lineCap='round'; for (const x of [-.22,0,.22]){ g.beginPath(); g.moveTo(x,.12); g.lineTo(x-.08,.4); g.stroke(); } },
+    fire:g=>{ g.beginPath(); g.moveTo(0,-.5); g.bezierCurveTo(.1,-.2,.4,-.06,.34,.2); g.bezierCurveTo(.3,.42,.12,.48,0,.48); g.bezierCurveTo(-.2,.48,-.38,.36,-.34,.12); g.bezierCurveTo(-.32,-.06,-.16,-.1,-.14,-.26); g.bezierCurveTo(-.04,-.2,-.02,-.36,0,-.5); g.fill(); },
+    warn:g=>{ P(g,[0,-.46,.48,.4,-.48,.4]); g.rect(-.045,-.16,.09,.3); g.rect(-.045,.2,.09,.09); g.fill('evenodd'); },
+    crane:g=>{ g.fillRect(-.3,-.44,.09,.9); g.fillRect(-.3,-.44,.72,.08); g.fillRect(.3,-.4,.04,.36); g.fillRect(.2,-.06,.24,.18); g.fillRect(-.44,.38,.4,.08); },
+    medic:g=>{ g.fillRect(-.14,-.42,.28,.84); g.fillRect(-.42,-.14,.84,.28); },
+    chart:g=>{ g.fillRect(-.42,.14,.2,.3); g.fillRect(-.1,-.1,.2,.54); g.fillRect(.22,-.4,.2,.84); },
+    globe:g=>{ g.lineWidth=.07; g.beginPath(); g.arc(0,0,.42,0,6.283); g.stroke(); g.beginPath(); g.ellipse(0,0,.18,.42,0,0,6.283); g.stroke(); g.beginPath(); g.moveTo(-.42,0); g.lineTo(.42,0); g.stroke(); },
+    lr:g=>{ P(g,[-.48,0,-.22,-.24,-.22,-.08,.22,-.08,.22,-.24,.48,0,.22,.24,.22,.08,-.22,.08,-.22,.24]); g.fill(); },
+  };
+  const MAP = { '🌾':'wheat','🪙':'coin','💰':'coin','💧':'drop','⚡':'bolt','👥':'people','⏳':'hourglass','🔒':'lock','🔧':'wrench','🛠':'wrench',
+    '⚔':'swords','✋':'hold','✊':'hold','🛡':'shield','↩':'back','🎥':'camera','🔍':'zoom','❤':'heart','⏱':'clock','🎯':'target','👟':'speed','⏩':'speed',
+    '💥':'burst','✸':'burst','✦':'spark','★':'star','🦸':'star','✖':'cross','▶':'play','⏸':'pause','⛶':'full','⬆':'up','📈':'chart','⚙':'gear','⚑':'flag',
+    '🚪':'door','☠':'skull','🏆':'trophy','🧱':'wall','🗼':'tower','🏰':'tower','⛲':'well','🌧':'rain','🔥':'fire','⚠':'warn','🚧':'warn','❗':'warn',
+    '🏗':'crane','🚑':'medic','🌐':'globe','🌍':'globe','↔':'lr','🏹':'target','💣':'burst','🪖':'shield' };
+  const RE = new RegExp('('+Object.keys(MAP).join('|')+')\\uFE0F?', 'u'), REG = new RegExp(RE.source, 'gu');
+  return { I, MAP, RE, REG };
+})();
+function drawIcon(name, x, y, s, g){ g = g||ctx; const f = ICON.I[name]; if (!f) return;
+  g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = g.fillStyle; g.setLineDash([]); f(g); g.restore(); }
+{ const ft = ctx.fillText.bind(ctx);
+  ctx.fillText = function(str, x, y, mw){
+    str = String(str);
+    if (!ICON.RE.test(str)){ return mw===undefined? ft(str, x, y) : ft(str, x, y, mw); }
+    const px = parseFloat((/([\d.]+)px/.exec(ctx.font)||[0,12])[1]), iw = px*1.02, gap = px*0.14;
+    const parts = []; let last = 0, tw = 0, m; ICON.REG.lastIndex = 0;
+    while ((m = ICON.REG.exec(str))){ if (m.index>last) parts.push(str.slice(last, m.index)); parts.push({ic:ICON.MAP[m[1]]}); last = m.index+m[0].length; }
+    if (last<str.length) parts.push(str.slice(last));
+    for (const p of parts) tw += typeof p==='string'? ctx.measureText(p).width : iw+gap;
+    const al = ctx.textAlign, bl = ctx.textBaseline;
+    let cx = al==='center'? x-tw/2 : (al==='right'||al==='end')? x-tw : x;
+    const cy = bl==='middle'? y : bl==='top'? y+px*0.55 : y-px*0.36;
+    ctx.textAlign = 'left';
+    for (const p of parts){
+      if (typeof p==='string'){ ft(p, cx, y); cx += ctx.measureText(p).width; }
+      else { drawIcon(p.ic, cx+iw/2, cy, px*0.98); cx += iw+gap; }
+    }
+    ctx.textAlign = al;
+  };
+}
 const HUD = { btns:[], selRect:null, upgRects:[] };
 function layoutHUD(){
   HUD.btns = [];
@@ -126,7 +216,7 @@ function drawQueue(){
     const x=bx+i*(sz+gap), next=(i===0);
     ctx.fillStyle = next? 'rgba(255,211,74,0.18)':'rgba(255,255,255,0.06)'; rr(x,by,sz,sz,4); ctx.fill();
     ctx.strokeStyle = next? '#ffd34a':'#4a443c'; ctx.lineWidth=1; rr(x,by,sz,sz,4); ctx.stroke();
-    ctx.font='13px Arial'; ctx.fillStyle='#e8e0d2';
+    ctx.font=HF(13); ctx.fillStyle='#e8e0d2';
     ctx.fillText(ROLE_ICON[ROLES[q[i]].key]||'?', x+sz/2, by+sz/2+1);
   }
 }
@@ -144,7 +234,7 @@ function drawUnitTooltip(i){
     '🎯 '+Math.round(s.range)+'    👟 '+Math.round(s.spd)+(s.aoe?'    💥 '+s.aoe:''),
     '💰 '+costStr(p, unitCost(p, i)),
   ];
-  ctx.font='11px Arial'; let tw=ctx.measureText(name).width;
+  ctx.font=HF(11); let tw=ctx.measureText(name).width;
   for (const l of lines) tw=Math.max(tw, ctx.measureText(l).width);
   // PORTRAIT (v1.9) : le personnage exact qui sera déployé (ère, faction, transcendance)
   const PW=62, w=tw+20+PW, h=Math.max(76, 22+lines.length*15), x=clamp(btn.x+btn.w/2-w/2, 4, W-w-4), y=btn.y-h-8;
@@ -161,7 +251,7 @@ function drawUnitTooltip(i){
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.fillStyle=p.fac.accent; ctx.font=HF(12);
   ctx.fillText((ROLE_ICON[r.key]||'')+' '+name, x+PW+8, y+16);
-  ctx.fillStyle='#cdc4b6'; ctx.font='11px Arial';
+  ctx.fillStyle='#cdc4b6'; ctx.font=HF(11);
   let yy=y+33; for (const l of lines){ ctx.fillText(l, x+PW+8, yy); yy+=15; }
   ctx.textAlign='center';
 }
@@ -185,7 +275,7 @@ function drawHUD(){
   const nx = p.era<4? EVOLVE_XP[p.era+1] : (!p.trans? TRANS_XP : null);
   ctx.fillText('✦ '+Math.floor(p.xp)+(nx?'/'+nx:''), 262, 13);
   // production /s sous chaque ressource
-  ctx.font='10px Arial';
+  ctx.font=HF(10);
   ctx.fillStyle='#9dc88a';
   ctx.fillText(fmtRate(rates.f)+'/s', 8, 29);
   ctx.fillText(p.trans?'∞':fmtRate(rates.m)+'/s', 96, 29);
@@ -199,7 +289,7 @@ function drawHUD(){
   ctx.fillText(p.trans? lTransName(p.facKey) : lEra(p.facKey,p.era), W/2, 11);
   ctx.fillStyle='rgba(255,255,255,0.13)'; rr(W/2-80, 25.5, 160, 5, 2.5); ctx.fill();
   if (game.dev>0.01){ ctx.fillStyle = lerpCol([120,200,120],[200,60,40],game.dev); rr(W/2-80, 25.5, Math.max(5,160*game.dev), 5, 2.5); ctx.fill(); }
-  ctx.font='8.5px Arial'; ctx.fillStyle='rgba(255,255,255,0.45)';
+  ctx.font=HF(8.5); ctx.fillStyle='rgba(255,255,255,0.45)';
   ctx.fillText(tr('world_health'), W/2, 20);
   // droite : effectif + ennemi (calés À GAUCHE du cluster de contrôles → plus de chevauchement)
   const RX = W-120;                                // 8 px d'air avant le bouton de vitesse (x = W-112)
@@ -208,7 +298,7 @@ function drawHUD(){
   const qn = (p.queue && p.queue.length) ? p.queue.length : (p.queueLen||0);
   ctx.fillText('👥 '+unitTotal(p)+'/'+p.cap+(qn? ' ⏳'+qn:''), RX, 13);
   // ligne 2 : ennemi (couleur faction) puis difficulté (gris), tous deux calés à droite
-  ctx.font='10px Arial'; ctx.fillStyle='#988e80';
+  ctx.font=HF(10); ctx.fillStyle='#988e80';
   const diffTxt = tr('diff_'+game.diff).toUpperCase();
   ctx.fillText(diffTxt, RX, 29);
   const dw = ctx.measureText(diffTxt).width;
@@ -347,7 +437,7 @@ function drawHeroBtn(b, p){
   ctx.strokeStyle = col; ctx.lineWidth = 1.4+1.4*pulse; rr(b.x,b.y,b.w,b.h,6); ctx.stroke();
   ctx.shadowBlur = 0;
   ctx.globalAlpha = 0.6+0.4*pulse;
-  ctx.fillStyle = col; ctx.font='800 16px Georgia'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = col; ctx.font=HF(16); ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('✦', b.x+b.w/2, b.y+b.h/2+1);    // glyphe énigmatique : on ne révèle pas ce que c'est
   ctx.restore();
 }
@@ -397,7 +487,7 @@ function hudPlate(b, r, active, col, dim){
   ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(b.x+r, b.y+1, b.w-r*2, 1);   // reflet du haut (plaque)
 }
 // buste du personnage dans un cadre w×h dont le coin haut-gauche est (x, y)
-function hudPortrait(p, role, x, y, w, h, locked){
+function hudPortrait(p, role, x, y, w, h){
   ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   const g = ctx.createLinearGradient(0, y, 0, y+h); g.addColorStop(0, rgbaC(p.fac.accent, 0.22)); g.addColorStop(1, 'rgba(0,0,0,0.25)');
   ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
@@ -407,47 +497,41 @@ function hudPortrait(p, role, x, y, w, h, locked){
   } else {
     // cadrage BUSTE : la bande y ∈ [-60, -22] du personnage (tête + torse + arme) remplit le cadre
     const k = h/38; ctx.translate(x + w/2 - 3*k, y + h + 22*k); ctx.scale(k, k);
-    drawUnitLayers(p.facKey==='HUM'?'hum':'bot', p.facKey, role.key, role.minEra? Math.max(p.era, role.minEra) : p.era, p.trans, 0);
+    drawUnitLayers(p.facKey==='HUM'?'hum':'bot', p.facKey, role.key, p.era, p.trans, 0);
   }
   ctx.restore();
-  if (locked){ ctx.fillStyle = 'rgba(10,8,10,0.72)'; ctx.fillRect(x, y, w, h); }
 }
 function drawUnitCard(b){
   const A0 = ctx.globalAlpha;
   const p = game.p, role = ROLES[b.i], cat = UNIT_CAT_COL[b.i];
-  const locked = !!(role.minEra && p.era<role.minEra);
   const cost = unitCost(p, b.i), lvl = p.upg[role.key]||0;
   const cd = p.cd[b.i]>0? clamp(p.cd[b.i]/(0.5+b.i*0.45), 0, 1) : 0;
   const full = unitTotal(p)>=p.cap;
-  const ok = !locked && canPay(p, cost) && cd<=0 && !full;
+  const ok = canPay(p, cost) && cd<=0 && !full;
   hudPlate(b, 5, ok, p.fac.accent, !ok);
   ctx.fillStyle = rgbaC(cat, ok? 1 : 0.5); ctx.fillRect(b.x+5, b.y+1, b.w-10, 2.5);          // filet de catégorie
   // nom
-  const name = lUnit(p.facKey, role.key, locked? role.minEra : p.era);
+  const name = lUnit(p.facKey, role.key, p.era);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = ok? '#f4eee2' : '#a39a8c';
   fitFont(name, b.w-8, HF(10.5), 7); ctx.fillText(name, b.x+b.w/2, b.y+10.5);
   // portrait + recharge
   const px = b.x+4, py = b.y+17, pw = 33, ph = 31;
-  ctx.globalAlpha = A0*(ok? 1 : locked? 1 : 0.62);
-  hudPortrait(p, role, px, py, pw, ph, locked);
+  ctx.globalAlpha = A0*(ok? 1 : 0.62);
+  hudPortrait(p, role, px, py, pw, ph);
   ctx.globalAlpha = A0;
   if (cd>0){ ctx.fillStyle = 'rgba(8,6,8,0.66)'; ctx.fillRect(px, py, pw, ph*cd); }
   ctx.strokeStyle = rgbaC(cat, ok? 0.75 : 0.3); ctx.lineWidth = 1; ctx.strokeRect(px+0.5, py+0.5, pw-1, ph-1);
   // raccourci clavier (coin du portrait)
   ctx.fillStyle = 'rgba(10,8,10,0.78)'; ctx.fillRect(px, py+ph-9, 9, 9);
   ctx.fillStyle = '#cfc7b8'; ctx.font = HF(7.5); ctx.textAlign = 'center'; ctx.fillText(String(b.i+1), px+4.5, py+ph-4);
-  // colonne de droite : verrou d'ère, ou coût ressource par ressource
+  // colonne de droite : coût ressource par ressource
   const cx0 = b.x+41;
   ctx.textAlign = 'left';
-  if (locked){
-    ctx.font = '13px Arial'; ctx.fillStyle = '#b8b0a4'; ctx.fillText('🔒', cx0+8, b.y+26);
-    ctx.fillStyle = '#a39a8c'; const lk = fmt('hud_era_lock', {n:role.minEra+1});
-    fitFont(lk, b.w-45, HF(9), 6.5); ctx.fillText(lk, cx0, b.y+41);
-  } else {
+  {
     let yy = b.y+22;
     for (const r in cost){
       const free = r==='m' && p.trans, have = free || p[r]>=cost[r];
-      ctx.font = '9px Arial'; ctx.globalAlpha = A0*(ok||!have? 1 : 0.7); ctx.fillStyle = '#fff';
+      ctx.font = HF(9); ctx.globalAlpha = A0*(ok||!have? 1 : 0.7); ctx.fillStyle = '#fff';
       ctx.fillText(p.fac.icons[r], cx0, yy);
       ctx.font = HF(10.5); ctx.fillStyle = have? (ok? RES_COL[r] : '#b9b0a2') : '#ff6a5a';
       ctx.fillText(free? '∞' : String(cost[r]), cx0+13, yy+0.5);
@@ -457,7 +541,7 @@ function drawUnitCard(b){
   }
   // bas de carte : amélioration de classe (coût en chiffres colorés + onglet ⬆ + pastilles de niveau)
   // (en tuto : masqué tant que l'étape « amélioration » n'est pas atteinte)
-  if (!locked && (!game.tut || !TUT || tutUpgAllowed())){
+  if ((!game.tut || !TUT || tutUpgAllowed())){
     const r = {x:b.x+b.w-22, y:b.y+b.h-17, w:21, h:16, i:b.i};
     HUD.upgRects.push({x:b.x+b.w-24, y:b.y+b.h-20, w:24, h:20, i:b.i});
     const upc = {f:90*(lvl+1), m:180*(lvl+1)}, can = lvl<3 && canPay(p, upc);
@@ -536,7 +620,7 @@ function drawBtn(b){
   // carte d'action (pouvoir, évolution, capacité, réparation) : pictogramme + libellé + coût + jauge
   hudPlate(b, 5, ok, col, !ok);
   ctx.globalAlpha = A0*(ok? 1 : 0.55);
-  if (glyph){ ctx.font = '15px Arial'; ctx.fillStyle = col; ctx.fillText(glyph, b.x+b.w/2, b.y+15); }
+  if (glyph){ ctx.font = HF(15); ctx.fillStyle = col; ctx.fillText(glyph, b.x+b.w/2, b.y+15); }
   ctx.fillStyle = ok? '#f4eee2' : '#a39a8c';
   fitFont(label, b.w-8, HF(glyph? 10.5 : 11.5), 7); ctx.fillText(label, b.x+b.w/2, b.y+(glyph? 31 : 20));
   ctx.fillStyle = ok? col : '#8a8378';
@@ -687,7 +771,7 @@ function drawPause(){
       ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,34,0,6.28); ctx.fill();
     }
     ctx.restore();
-    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='11px Arial'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font=HF(11); ctx.textAlign='center';
     ctx.fillText(tr('heatmap_lbl'), W/2, 70);
   }
   const bw=316, bx=W/2-bw/2;

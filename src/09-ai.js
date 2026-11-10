@@ -60,7 +60,6 @@ function aiUpdate(dt){
   if (e.m>300 && !heroSave){
     let bi=-1, bl=9;
     for (let i=0;i<6;i++){
-      if (ROLES[i].minEra && e.era<ROLES[i].minEra) continue;
       const l = e.upg[ROLES[i].key]||0;
       if (l<bl){ bl=l; bi=i; }
     }

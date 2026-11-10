@@ -243,7 +243,7 @@ function drawNews(){
   ctx.font = uiF(pal, fontK, fs); ctx.fillStyle = closed? pal.ink2 : ev? pal.red : pal.ink;
   for (let i=0;i<lines.length;i++) ctx.fillText(lines[i], X+padL, Y+4.5+lh*i+lh/2+0.5);
   if (!closed){
-    ctx.fillStyle = pal.ink2; ctx.font = '700 12px Arial'; ctx.textAlign = 'center';
+    ctx.fillStyle = pal.ink2; ctx.font = HF(12); ctx.textAlign = 'center';
     ctx.fillText('×', X+w-11, Y+4.5+lh/2);
     NEWSF.rect = { x:x0+w-26, y:y0-4, w:30, h:Math.max(26, h+6) };   // zone tactile généreuse (mobile)
   }

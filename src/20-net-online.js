@@ -281,7 +281,7 @@ function bindConn(conn){
   conn.on('open', ()=>{
     if (!net || net.conn!==conn) return;
     if (net.findTimer){ clearTimeout(net.findTimer); net.findTimer=null; }
-    net.peer = true; net.peerId = conn.peer;
+    net.peer = true;
     if (net.role==='guest'){ netStatus(tr('net_found')); net.sendHello({fac:net.myFac, v:NET_PROTO, pw:net.pw||''}); }
     else netStatus(tr('net_peer_conn'));
   });

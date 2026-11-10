@@ -21,7 +21,6 @@ function costStr(side, cost){
 function tryBuy(side, ri){
   if (isGuest(side)){ guestCmd({c:'buy',ri}); sfx('buy',ri); return true; }
   const role = ROLES[ri];
-  if (role.minEra && side.era < role.minEra) return false;
   // quota strict de SOUTIEN (médic humain ET ruche GPT) : 1, +1 par niveau d'amélioration (max 3)
   if (role.key==='support'){
     const maxS = 1 + Math.min(2, side.upg.support||0);

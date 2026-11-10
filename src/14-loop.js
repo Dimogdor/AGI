@@ -114,7 +114,7 @@ function render(dt){
   ctx.textAlign='center';
   for (const f of floaters){
     ctx.globalAlpha=1-f.t/1.6;
-    ctx.font='800 '+f.size+'px Georgia'; ctx.fillStyle=f.color;
+    ctx.font=HF(f.size); ctx.fillStyle=f.color;
     ctx.fillText(f.txt, f.x-camX, f.y);
   }
   ctx.globalAlpha=1;
@@ -280,7 +280,7 @@ function drawCheatPanel(){
   const px=W-pw-10, py=64;
   ctx.fillStyle='rgba(14,8,16,0.94)'; rr(px,py,pw,ph,7); ctx.fill();
   ctx.strokeStyle='#ff5af0'; ctx.lineWidth=1.4; rr(px,py,pw,ph,7); ctx.stroke();
-  ctx.textAlign='left'; ctx.font='700 11px Arial'; ctx.fillStyle='#ff9bf0';
+  ctx.textAlign='left'; ctx.font=HF(11); ctx.fillStyle='#ff9bf0';
   ctx.fillText('★ TRICHE (DEV) — F9', px+pad, py+pad+8);
   CHEAT.rects = [];
   for (let i=0;i<items.length;i++){
@@ -288,7 +288,7 @@ function drawCheatPanel(){
     const on = it.k==='god' && CHEAT.god;
     ctx.fillStyle = on? 'rgba(255,90,240,0.22)':'rgba(255,255,255,0.06)';
     rr(px+pad, y, pw-pad*2, rh-4, 4); ctx.fill();
-    ctx.fillStyle = '#f0d8f0'; ctx.font='600 11px Arial';
+    ctx.fillStyle = '#f0d8f0'; ctx.font=HF(11);
     ctx.fillText(it.l, px+pad+8, y+(rh-4)/2+1);
     CHEAT.rects.push({x:px+pad, y, w:pw-pad*2, h:rh-4, k:it.k});
   }

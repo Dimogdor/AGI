@@ -249,7 +249,7 @@ function stepBreak(st, t, stepDur){
    lointain quand la bataille s'intensifie, battement de cœur quand votre base est en danger.
    Deux sources de bruit en boucle (coût quasi nul) + quelques tons ponctuels ; suit le réglage
    « Effets sonores » et le volume ; se tait en pause, au menu et à la fin. */
-const AMBS = { on:false, wind:null, rain:null, windF:null, timer:null, beatT:0, birdT:2, crackT:0, rumbleT:6 };
+const AMBS = { on:false, wind:null, rain:null, timer:null, beatT:0, birdT:2, crackT:0, rumbleT:6 };
 function ambLoop(hp, bp){
   const len = AC.sampleRate*2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
   let b = 0; for (let i=0;i<len;i++){ const w = Math.random()*2-1; b = b*0.96 + w*0.04; d[i] = hp? w : b*6; }   // bruit blanc / brun
