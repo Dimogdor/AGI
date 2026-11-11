@@ -161,7 +161,7 @@ function drawIcon(name, x, y, s, g){ g = g||ctx; const f = ICON.I[name]; if (!f)
     ctx.textAlign = al;
   };
 }
-const HUD = { btns:[], selRect:null, upgRects:[] };
+const HUD = { btns:[], selRect:null, upgRects:[], press:null };
 function layoutHUD(){
   HUD.btns = [];
   const bh=64, y=H-bh-6;            // rangée unités
@@ -409,8 +409,13 @@ function drawHUD(){
   for (const b of HUD.btns){
     if (btnHidden(b)) continue;
     const dim = game.tut && TUT && tutBtnDim(b);    // tuto : acquis mais pas l'étape courante → grisé
+    // fiche pressée : elle s'enfonce de 2 px pendant 130 ms ; début de partie : les fiches sont distribuées une à une
+    const prs = HUD.press && HUD.press.b===b && performance.now()-HUD.press.t < 130;
+    const deal = (game.t<1.2 && b.y>H/2)? Math.max(0, 1 - (game.t - (b.x/W)*0.55)/0.3) : 0;
+    if (prs || deal>0){ ctx.save(); ctx.translate(prs? 1.5 : 0, (prs? 2 : 0) + deal*deal*130); }
     if (dim){ ctx.save(); ctx.globalAlpha = 0.38; drawBtn(b); ctx.restore(); }
     else drawBtn(b);
+    if (prs || deal>0) ctx.restore();
   }
   if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
   // ---- bandeau de sélection (y=H-132, jamais sur les boutons) : bande de papier ----

@@ -7,7 +7,7 @@ let speedVote = null;       // proposition de vitesse reçue de l'adversaire (mo
 let speedPending = null;    // ma proposition en attente de réponse
 let speedProps = [];        // horodatage de mes propositions (anti-spam : 2 max / 7 min)
 let onlineVoteRects = null; // boutons Oui/Non du vote de prolongation
-let net = null, GX = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
+let net = null, GX = {}, GV = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
 const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6,hero:7};
 const CODE_ROLES = ['melee','tank','ranged','siege','air','support','gremlin','hero'];
 const isGuest = side => game && game.net==='guest' && side===game.p;

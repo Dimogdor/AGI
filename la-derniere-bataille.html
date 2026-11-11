@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-vMVRpIVMHoJHOXc2HOrtblKcKa1wXMBqp8YANtJ7kmU=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-eGEnhKZDqXkA2fcXXeGxim3LlN42jFA0dMQ5ERUPHVk=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1302,7 +1302,7 @@ let speedVote = null;       // proposition de vitesse reçue de l'adversaire (mo
 let speedPending = null;    // ma proposition en attente de réponse
 let speedProps = [];        // horodatage de mes propositions (anti-spam : 2 max / 7 min)
 let onlineVoteRects = null; // boutons Oui/Non du vote de prolongation
-let net = null, GX = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
+let net = null, GX = {}, GV = {}, UID = 1;          // réseau (serveur-chez-l'hôte) + ids d'unités
 const ROLE_CODES = {melee:0,tank:1,ranged:2,siege:3,air:4,support:5,gremlin:6,hero:7};
 const CODE_ROLES = ['melee','tank','ranged','siege','air','support','gremlin','hero'];
 const isGuest = side => game && game.net==='guest' && side===game.p;
@@ -5416,7 +5416,10 @@ function attackFX(u, x, bodyY, imp, mx){
     ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,2+2*imp,0,6.283); ctx.fill();                 // bouche à feu
     ctx.strokeStyle=rgbaC(col,0.65*imp); ctx.lineWidth=2; ctx.beginPath();                              // traceur nerveux
     ctx.moveTo(fx,bodyY); ctx.lineTo(fx+dir*(46+u.range*0.12), bodyY-2); ctx.stroke();
-    ctx.fillStyle=rgbaC('#ffcf8a',0.8*imp); ctx.beginPath(); ctx.arc(x+dir*14, bodyY+3, 1.6, 0,6.283); ctx.fill(); // douille
+    if (glow && imp>0.8 && u.role==='ranged' && u.fac==='HUM' && u.era<3 && u._csg!==u.atkT && particles.length<480){   // douille éjectée
+      u._csg = u.atkT;
+      particles.push({k:'d', x:u.x+dir*12, y:bodyY+1, vx:-dir*(30+Math.random()*30), vy:-70-Math.random()*40, g:520, dr:0.4, life:0.7, t:0,
+        r:1.1, rot:Math.random()*6, vr:(Math.random()-0.5)*30, color:'#d8b050'}); }
   } else if (u.role==='siege'){
     const fx=x+dir*(mx!=null?mx:24), fy=mx!=null? bodyY : bodyY-4;
     const r=7+10*imp; ctx.globalAlpha=Math.min(1,0.3+imp); ctx.drawImage(PF.fire, fx-r, fy-r, r*2, r*2); ctx.globalAlpha=1;
@@ -5511,21 +5514,25 @@ function blitHumanoid(u, x, gy, kind){
   const sp = Math.sin(ph), pose = (!moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);
   let sy = 1 + 0.03*Math.sin(t*2.6);                               // léger tassement, PIEDS ANCRÉS au sol
   if (u.flash>0) sy *= 0.86;                                       // ÉCRASEMENT bref à l'impact (feedback)
+  // VICTOIRE : les survivants du camp vainqueur sautent de joie, arme levée
+  const cheer = game.over && ((u.side===1)===!!game.win) && u.role!=='support';
+  const hop = cheer? -Math.abs(Math.sin(performance.now()/190 + u.bob))*7 : 0;
   const atk = u.atkT > u.rate-0.16;
   const imp = atk ? clamp((u.atkT-(u.rate-0.16))/0.16, 0, 1) : 0;   // 1 à l'impact → 0
   const fwd = (u.role==='melee'||u.role==='tank');                  // mêlée : jab avant ; tir/siège : recul
   const lunge = fwd ? dir*9*imp : (atk? -dir*5*imp : 0);
-  const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
+  let tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);         // bascule (poids/impact)
+  if (u.flash>0 && !atk) tilt -= dir*Math.min(0.14, u.flash*0.5);   // touché : le buste part en arrière
   if (qFx()) unitShadow(kind, fac, u.role, u.era, x, gy, dir); else projShadow(x, gy, 15);
   // POUSSIÈRE DE PAS : petites volutes au sol quand l'unité marche (cosmétique, plafonné)
   if (moving && qFx() && particles.length<440 && Math.random()<0.09){
     particles.push({ x:u.x-dir*7, y:gy-1, vx:-dir*6+(Math.random()*6-3), vy:-8-Math.random()*8,
       r:1.4+Math.random()*1.6, life:0.4+Math.random()*0.3, t:0, color:'rgba(198,184,156,0.5)' });
   }
-  ctx.save(); ctx.translate(x+lunge, gy+stepBob); ctx.rotate(tilt);
+  ctx.save(); ctx.translate(x+lunge, gy+stepBob+hop); ctx.rotate(tilt);
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
-  const aa = qFx()? armAngle(u, moving, ph) : undefined;
+  const aa = !qFx()? undefined : cheer? -1.05+0.25*Math.sin(performance.now()/190 + u.bob) : armAngle(u, moving, ph);
   drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
   ctx.restore();
@@ -5587,7 +5594,12 @@ function drawAir(u, x, gy){
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
   const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
-  ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
+  // ASSIETTE (v1.14) : l'appareil pique du nez quand il avance, se cabre au tir, se redresse en vol stationnaire
+  const mvA = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
+  const kick = u.atkT>u.rate-0.2? (u.atkT-(u.rate-0.2))/0.2 : 0;
+  const want = (mvA>0.04? 0.13 : 0) - kick*0.1 + Math.sin(t*0.9)*0.02;
+  u._pit = u._pit===undefined? want : u._pit + (want-u._pit)*0.12;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(dir*u._pit); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
@@ -5702,10 +5714,17 @@ function drawUnit(u){
     ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x, gy+2, 14, 4.5, 0,0,6.28); ctx.fill();
     ctx.restore(); ctx.globalAlpha=1;
   }
+  // APPARITION (v1.14) : l'unité sort de l'ombre de sa base en 0,4 s, dans un nuage de poussière
+  if (u._born===undefined){ u._born = game.t;
+    if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
+      for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
+  const bornA = clamp((game.t-u._born)/0.4, 0, 1);
+  if (bornA<1) ctx.globalAlpha = 0.15+0.85*bornA;
   if (u.role==='hero') drawHero(u,x,gy);
   else if (u.role==='air') drawAir(u,x,gy);
   else if (u.fac==='HUM') drawHuman(u,x,gy);
   else drawBot(u,x,gy);
+  ctx.globalAlpha = 1;
   // galons d'amélioration de classe
   const side = u.side===1? game.p : game.e;
   const ulvl = side.upg[u.role]||0;
@@ -5740,6 +5759,8 @@ function drawUnit(u){
   if (frac<1){
     const w = u.role==='gremlin'? 14:24, yy = gy-top-fh;
     ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-w/2,yy,w,3.4);
+    u._hpS = (u._hpS===undefined || u._hpS<frac)? frac : u._hpS + (frac-u._hpS)*0.08;      // traîne des dégâts récents
+    if (u._hpS>frac+0.01){ ctx.fillStyle='rgba(255,240,220,0.85)'; ctx.fillRect(x-w/2,yy,w*u._hpS,3.4); }
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }
@@ -6567,7 +6588,7 @@ function drawIcon(name, x, y, s, g){ g = g||ctx; const f = ICON.I[name]; if (!f)
     ctx.textAlign = al;
   };
 }
-const HUD = { btns:[], selRect:null, upgRects:[] };
+const HUD = { btns:[], selRect:null, upgRects:[], press:null };
 function layoutHUD(){
   HUD.btns = [];
   const bh=64, y=H-bh-6;            // rangée unités
@@ -6815,8 +6836,13 @@ function drawHUD(){
   for (const b of HUD.btns){
     if (btnHidden(b)) continue;
     const dim = game.tut && TUT && tutBtnDim(b);    // tuto : acquis mais pas l'étape courante → grisé
+    // fiche pressée : elle s'enfonce de 2 px pendant 130 ms ; début de partie : les fiches sont distribuées une à une
+    const prs = HUD.press && HUD.press.b===b && performance.now()-HUD.press.t < 130;
+    const deal = (game.t<1.2 && b.y>H/2)? Math.max(0, 1 - (game.t - (b.x/W)*0.55)/0.3) : 0;
+    if (prs || deal>0){ ctx.save(); ctx.translate(prs? 1.5 : 0, (prs? 2 : 0) + deal*deal*130); }
     if (dim){ ctx.save(); ctx.globalAlpha = 0.38; drawBtn(b); ctx.restore(); }
     else drawBtn(b);
+    if (prs || deal>0) ctx.restore();
   }
   if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
   // ---- bandeau de sélection (y=H-132, jamais sur les boutons) : bande de papier ----
@@ -7341,7 +7367,11 @@ function render(dt){
   for (const d of deaths){
     const x=d.x-camX; if (x<-60||x>VW()+60) continue;
     // le VRAI sprite de l'unité bascule (pivot aux pieds) puis s'efface, au lieu d'un bâtonnet coloré
-    const gy=gY(d.x), k=d.t/d.life; ctx.save(); ctx.globalAlpha=Math.max(0,1-k*k);
+    const gy=gY(d.x), k=d.t/d.life;
+    if (k>0.5 && !d._thud){ d._thud = 1;                                  // le corps touche le sol : nuage de poussière
+      if (qFx() && d.role!=='gremlin' && particles.length<460) for (let i=0;i<(d.fly? 6 : 3);i++)
+        particles.push({k:'u', x:d.x-d.side*(8+Math.random()*14), y:gy-2, vx:(Math.random()-0.5)*40, vy:-8-Math.random()*14, g:-4, dr:1.6, life:0.7+Math.random()*0.3, t:0, r:4+Math.random()*3}); }
+    ctx.save(); ctx.globalAlpha=Math.max(0,1-k*k);
     const e=Math.min(1,k*1.7), fall=e*e*(3-2*e);
     if (d.fly){ const s=1.5*(1-k*0.25); ctx.translate(x, gy-d.flyH*(1-k*k)-6); ctx.rotate(k*6*d.side); ctx.scale(d.side*s,s);
       ctx.drawImage(sprite('AIR'+d.fac+d.era+(d.trans?'T':''),64,44,()=>airSprite(d.fac,d.era,d.trans)),-32,-22,64,44); }
@@ -8612,7 +8642,7 @@ function serialize(){
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
   return {
-    t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
+    t:game.t, sv:game.speed||1, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
     wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
@@ -8727,6 +8757,7 @@ function applySnapshot(snap){
   if (!game || game.net!=='guest' || !snap || typeof snap!=='object') return;
   const g = game;
   g.t = SN(snap.t, 0, 1e7); g.dev = SN(snap.dev, 0, 1);
+  if (snap.sv !== undefined) g.speed = clampSpeed(snap.sv);   // la vitesse de l'hôte fait foi (un vote accepté trop tard ne désynchronise plus)
   g.weather = SNAP_WEATHER.includes(snap.we)? snap.we : null; g.boon = SNAP_BOON.includes(snap.bo)? snap.bo : null;
   g.kills = SN(snap.ekills, 0, 1e7)|0; g.eKills = SN(snap.kills, 0, 1e7)|0;
   // cataclysme en cours (vue miroir : x → WORLD-x)
@@ -8756,6 +8787,7 @@ function applySnapshot(snap){
   // unités : mirroir x = WORLD-x, side inversé
   const keep = new Set([...g.sel].map(u=>u.id));
   g.p.units.length = 0; g.e.units.length = 0;
+  const GV2 = {};
   const addU = (a)=>{
     if (!Array.isArray(a)) return;
     const role = CODE_ROLES[a[1]]; if (!role) return;
@@ -8768,10 +8800,19 @@ function applySnapshot(snap){
       tx, x:(GX[id]!==undefined? GX[id]:tx), hp:SN(a[3], 0, maxhp), maxhp,
       fly:!!a[8], flyH:SN(a[9], 0, 200)|0, vet:!!a[10], tiredT:a[11]?1:0, trans:!!a[12],
       atkT:a[13]?1:0, rate:1, bob:Math.random()*6.28, flash:0, range:role==='ranged'||role==='siege'||role==='air'?150:16 };
+    // CONTINUITÉ D'ANIMATION : l'unité est recréée à chaque instantané — on reprend la phase de marche
+    // et l'état de rendu de son prédécesseur (sinon la démarche hachait et l'apparition rejouait sans fin)
+    const pv = GV[id];
+    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
+      if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
+      // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
+      if (!(a[13] && pv.atkT<0.75)) u.atkT = pv.atkT; }
+    GV2[id] = u;
     loc.units.push(u);
   };
   for (const a of SA(snap.pu, 300)) addU(a);
   for (const a of SA(snap.eu, 300)) addU(a);
+  GV = GV2;                                 // ne garde que les unités encore en vie
   g.sel = new Set(g.p.units.filter(u=>keep.has(u.id)));
   // spots neutres (mirroir owner) et lacs (mirroir prog/owner)
   const sn = SA(snap.neut, 16), sd = SA(snap.nodes, 16), sz = SA(snap.zones, 16);
@@ -8814,6 +8855,7 @@ function netGuestTick(dt){
   for (const side of [game.p, game.e]) for (const u of side.units){
     u.x += (u.tx - u.x)*ease; GX[u.id] = u.x;
     u.bob += dt*7; if (u.flash>0) u.flash-=dt;
+    u.atkT -= dt; if (u.atkT<0.6 && u.atkT>-0.5) u.atkT = -1;                  // geste terminé → repos (pas de faux armement)
   }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
@@ -8864,7 +8906,7 @@ function startGuestGame(data){
   game.zones = [ {x:WORLD*0.70,owner:null,prog:0}, {x:WORLD*0.50,owner:null,prog:0}, {x:WORLD*0.30,owner:null,prog:0} ];
   game.neut = [ {x:WORLD*0.67,b:null,owner:null}, {x:WORLD*0.58,b:null,owner:null},
                 {x:WORLD*0.42,b:null,owner:null}, {x:WORLD*0.33,b:null,owner:null} ];
-  GX = {};
+  GX = {}; GV = {};
   $('menu').style.display='none'; closeNetUI();
   announce(fmt('a_net_conn',{name:FACTIONS[data.guestFac].name}), '#9dc88a');
 }
@@ -10150,6 +10192,7 @@ function handleTap(sx, sy, shift, opts){
   }
   // boutons HUD
   for (const b of HUD.btns) if (!btnHidden(b) && inRect(sx,sy,b)){
+    HUD.press = { b, t:performance.now() };          // la fiche touchée s'enfonce un instant (retour tactile)
     if (b.type==='unit'){ tryBuy(p, b.i); }
     else if (b.type==='hero'){ if (!heroBtnReady(p)) continue; tryHero(p); }
     else if (b.type==='special'){ trySpecial(p); }

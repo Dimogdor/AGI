@@ -2144,7 +2144,10 @@ function attackFX(u, x, bodyY, imp, mx){
     ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,2+2*imp,0,6.283); ctx.fill();                 // bouche à feu
     ctx.strokeStyle=rgbaC(col,0.65*imp); ctx.lineWidth=2; ctx.beginPath();                              // traceur nerveux
     ctx.moveTo(fx,bodyY); ctx.lineTo(fx+dir*(46+u.range*0.12), bodyY-2); ctx.stroke();
-    ctx.fillStyle=rgbaC('#ffcf8a',0.8*imp); ctx.beginPath(); ctx.arc(x+dir*14, bodyY+3, 1.6, 0,6.283); ctx.fill(); // douille
+    if (glow && imp>0.8 && u.role==='ranged' && u.fac==='HUM' && u.era<3 && u._csg!==u.atkT && particles.length<480){   // douille éjectée
+      u._csg = u.atkT;
+      particles.push({k:'d', x:u.x+dir*12, y:bodyY+1, vx:-dir*(30+Math.random()*30), vy:-70-Math.random()*40, g:520, dr:0.4, life:0.7, t:0,
+        r:1.1, rot:Math.random()*6, vr:(Math.random()-0.5)*30, color:'#d8b050'}); }
   } else if (u.role==='siege'){
     const fx=x+dir*(mx!=null?mx:24), fy=mx!=null? bodyY : bodyY-4;
     const r=7+10*imp; ctx.globalAlpha=Math.min(1,0.3+imp); ctx.drawImage(PF.fire, fx-r, fy-r, r*2, r*2); ctx.globalAlpha=1;
@@ -2239,21 +2242,25 @@ function blitHumanoid(u, x, gy, kind){
   const sp = Math.sin(ph), pose = (!moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);
   let sy = 1 + 0.03*Math.sin(t*2.6);                               // léger tassement, PIEDS ANCRÉS au sol
   if (u.flash>0) sy *= 0.86;                                       // ÉCRASEMENT bref à l'impact (feedback)
+  // VICTOIRE : les survivants du camp vainqueur sautent de joie, arme levée
+  const cheer = game.over && ((u.side===1)===!!game.win) && u.role!=='support';
+  const hop = cheer? -Math.abs(Math.sin(performance.now()/190 + u.bob))*7 : 0;
   const atk = u.atkT > u.rate-0.16;
   const imp = atk ? clamp((u.atkT-(u.rate-0.16))/0.16, 0, 1) : 0;   // 1 à l'impact → 0
   const fwd = (u.role==='melee'||u.role==='tank');                  // mêlée : jab avant ; tir/siège : recul
   const lunge = fwd ? dir*9*imp : (atk? -dir*5*imp : 0);
-  const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
+  let tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);         // bascule (poids/impact)
+  if (u.flash>0 && !atk) tilt -= dir*Math.min(0.14, u.flash*0.5);   // touché : le buste part en arrière
   if (qFx()) unitShadow(kind, fac, u.role, u.era, x, gy, dir); else projShadow(x, gy, 15);
   // POUSSIÈRE DE PAS : petites volutes au sol quand l'unité marche (cosmétique, plafonné)
   if (moving && qFx() && particles.length<440 && Math.random()<0.09){
     particles.push({ x:u.x-dir*7, y:gy-1, vx:-dir*6+(Math.random()*6-3), vy:-8-Math.random()*8,
       r:1.4+Math.random()*1.6, life:0.4+Math.random()*0.3, t:0, color:'rgba(198,184,156,0.5)' });
   }
-  ctx.save(); ctx.translate(x+lunge, gy+stepBob); ctx.rotate(tilt);
+  ctx.save(); ctx.translate(x+lunge, gy+stepBob+hop); ctx.rotate(tilt);
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
-  const aa = qFx()? armAngle(u, moving, ph) : undefined;
+  const aa = !qFx()? undefined : cheer? -1.05+0.25*Math.sin(performance.now()/190 + u.bob) : armAngle(u, moving, ph);
   drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
   ctx.restore();
@@ -2315,7 +2322,12 @@ function drawAir(u, x, gy){
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
   const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
-  ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
+  // ASSIETTE (v1.14) : l'appareil pique du nez quand il avance, se cabre au tir, se redresse en vol stationnaire
+  const mvA = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
+  const kick = u.atkT>u.rate-0.2? (u.atkT-(u.rate-0.2))/0.2 : 0;
+  const want = (mvA>0.04? 0.13 : 0) - kick*0.1 + Math.sin(t*0.9)*0.02;
+  u._pit = u._pit===undefined? want : u._pit + (want-u._pit)*0.12;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(dir*u._pit); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
@@ -2430,10 +2442,17 @@ function drawUnit(u){
     ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x, gy+2, 14, 4.5, 0,0,6.28); ctx.fill();
     ctx.restore(); ctx.globalAlpha=1;
   }
+  // APPARITION (v1.14) : l'unité sort de l'ombre de sa base en 0,4 s, dans un nuage de poussière
+  if (u._born===undefined){ u._born = game.t;
+    if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
+      for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
+  const bornA = clamp((game.t-u._born)/0.4, 0, 1);
+  if (bornA<1) ctx.globalAlpha = 0.15+0.85*bornA;
   if (u.role==='hero') drawHero(u,x,gy);
   else if (u.role==='air') drawAir(u,x,gy);
   else if (u.fac==='HUM') drawHuman(u,x,gy);
   else drawBot(u,x,gy);
+  ctx.globalAlpha = 1;
   // galons d'amélioration de classe
   const side = u.side===1? game.p : game.e;
   const ulvl = side.upg[u.role]||0;
@@ -2468,6 +2487,8 @@ function drawUnit(u){
   if (frac<1){
     const w = u.role==='gremlin'? 14:24, yy = gy-top-fh;
     ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-w/2,yy,w,3.4);
+    u._hpS = (u._hpS===undefined || u._hpS<frac)? frac : u._hpS + (frac-u._hpS)*0.08;      // traîne des dégâts récents
+    if (u._hpS>frac+0.01){ ctx.fillStyle='rgba(255,240,220,0.85)'; ctx.fillRect(x-w/2,yy,w*u._hpS,3.4); }
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }

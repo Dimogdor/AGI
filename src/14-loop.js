@@ -56,7 +56,11 @@ function render(dt){
   for (const d of deaths){
     const x=d.x-camX; if (x<-60||x>VW()+60) continue;
     // le VRAI sprite de l'unité bascule (pivot aux pieds) puis s'efface, au lieu d'un bâtonnet coloré
-    const gy=gY(d.x), k=d.t/d.life; ctx.save(); ctx.globalAlpha=Math.max(0,1-k*k);
+    const gy=gY(d.x), k=d.t/d.life;
+    if (k>0.5 && !d._thud){ d._thud = 1;                                  // le corps touche le sol : nuage de poussière
+      if (qFx() && d.role!=='gremlin' && particles.length<460) for (let i=0;i<(d.fly? 6 : 3);i++)
+        particles.push({k:'u', x:d.x-d.side*(8+Math.random()*14), y:gy-2, vx:(Math.random()-0.5)*40, vy:-8-Math.random()*14, g:-4, dr:1.6, life:0.7+Math.random()*0.3, t:0, r:4+Math.random()*3}); }
+    ctx.save(); ctx.globalAlpha=Math.max(0,1-k*k);
     const e=Math.min(1,k*1.7), fall=e*e*(3-2*e);
     if (d.fly){ const s=1.5*(1-k*0.25); ctx.translate(x, gy-d.flyH*(1-k*k)-6); ctx.rotate(k*6*d.side); ctx.scale(d.side*s,s);
       ctx.drawImage(sprite('AIR'+d.fac+d.era+(d.trans?'T':''),64,44,()=>airSprite(d.fac,d.era,d.trans)),-32,-22,64,44); }
