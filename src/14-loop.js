@@ -239,7 +239,7 @@ function loop(now){
   else if (game && !game.over && !paused){
     // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
     let rem = dt * sp;
-    while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; }
+    while (rem > 1e-4){ const st = Math.min(rem, 0.05); try { update(st); } catch(err){ setTimeout(()=>{ throw err; }); } rem -= st; }   // l'erreur est signalée sans figer la boucle
   } else update(dt);                                    // menu / intro / pause / fin : logique inchangée
   if (PERF.on){ const n=performance.now(); PERF.upd += (n-PERF.t0 - PERF.upd)*0.15; PERF.t0=n; }
   // l'hôte diffuse l'état ~12 fois/seconde (cadence en temps réel, indépendante de la vitesse de jeu)

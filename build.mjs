@@ -63,7 +63,7 @@ async function addCSP(page){
   const hashes = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)]
     .map(m => `'sha256-${createHash('sha256').update(m[1], 'utf8').digest('base64')}'`).join(' ');
   const csp = [`default-src 'self'`,
-    `script-src 'self' ${hashes} https://cdn.jsdelivr.net https://unpkg.com`,
+    `script-src 'self' ${hashes} https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js`,   // le seul fichier permis, pas les CDN entiers
     `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`, `media-src 'self' data: blob:`, `font-src 'self' data:`,
     `connect-src 'self' ${origin('firebaseDb')} ${origin('cfTurnProxy')} https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com`.replace(/ +/g,' '),
     `worker-src 'self'`, `manifest-src 'self'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`].join('; ');
@@ -123,7 +123,7 @@ const nativeBoot = `window.addEventListener('load',function(){try{var u=window.C
 // + rechargement AUTOMATIQUE quand une nouvelle version prend la main : plus jamais
 //   d'ancienne version coincée en cache chez un joueur de retour.
 const swReg = `if('serviceWorker'in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',function(){`+
-  `var reloaded=false,had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded||!had)return;reloaded=true;location.reload();});`+
+  `var reloaded=false,had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded||!had)return;var go=function(){var g=null;try{g=game}catch(e){}if(g&&!g.over){setTimeout(go,5000);return}reloaded=true;location.reload()};go();});`+
   `navigator.serviceWorker.register('sw.js').then(function(reg){reg.update();setInterval(function(){reg.update();},60000);}).catch(function(){});`+
   `});}`;
 
@@ -180,14 +180,14 @@ catch(e){ console.warn('  ⚠ PeerJS non auto-hébergé ('+e.message+') — repl
 // --- service worker : RÉSEAU D'ABORD pour le HTML (toujours la dernière version en ligne),
 //     cache d'abord pour les ressources statiques (offline). Cache unique par build → mise
 //     à jour et purge automatiques à chaque déploiement. ---
-const sw = `const C='agi-${BUILD_ID}';const A=['./','index.html','manifest.webmanifest','peerjs.min.js','icons/icon-192.png','icons/icon-512.png'];
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+const sw = `const P='agi-',C=P+'${BUILD_ID}';const A=['./','index.html','manifest.webmanifest','peerjs.min.js','icons/icon-192.png','icons/icon-512.png'];
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>Promise.allSettled(A.map(a=>c.add(a)))))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith(P)&&x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const req=e.request,u=new URL(req.url);
   if(u.origin!==self.location.origin)return; // autres domaines (liste des salons Firebase…) : réseau direct, jamais de cache
-  const isDoc=req.mode==='navigate'||u.pathname==='/'||u.pathname.endsWith('/')||u.pathname.endsWith('index.html');
+  const isDoc=u.pathname.endsWith('/')||u.pathname.endsWith('index.html');
   if(isDoc){ // réseau d'abord : la page la plus récente quand on est connecté
     e.respondWith(fetch(req).then(res=>{if(res.ok&&res.type==='basic'){const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));}return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
     return;

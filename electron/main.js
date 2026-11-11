@@ -24,7 +24,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-  if (!DEV) Menu.setApplicationMenu(null);
+  // macOS : les raccourcis Cmd+C / Cmd+V / Cmd+Q vivent dans le menu — on garde le strict nécessaire
+  if (!DEV) Menu.setApplicationMenu(process.platform==='darwin' ? Menu.buildFromTemplate([{role:'appMenu'},{role:'editMenu'}]) : null);
   // SÉCURITÉ : la fenêtre ne quitte JAMAIS le jeu local. Nouvelles fenêtres refusées ; seuls les
   // liens mailto: (avis / rapport de bug) et https: partent vers le système, jamais dans l'appli.
   win.webContents.setWindowOpenHandler(({ url }) => {

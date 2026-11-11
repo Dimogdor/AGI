@@ -29,8 +29,11 @@ function resize() {
   // l'indicateur d'accueil → le canvas débordait sous l'écran. visualViewport donne la
   // hauteur RÉELLEMENT visible, ce qui supprime la coupure du bas.
   const vv = window.visualViewport;
-  const ww = Math.round(vv ? vv.width  : window.innerWidth);
-  const wh = Math.round(vv ? vv.height : window.innerHeight);
+  // zoom navigateur (menus zoomés au pincement) : visualViewport rétrécit, on garde la taille de mise en page
+  const zk = (vv && vv.scale > 1.01) ? vv.scale : 1;
+  document.documentElement.classList.toggle('vzoom', zk > 1);
+  const ww = Math.round(vv ? vv.width  * zk : window.innerWidth);
+  const wh = Math.round(vv ? vv.height * zk : window.innerHeight);
   // ratio logique = ratio écran, borné : 4:3 (tablettes) à 21:9 (ultra-larges).
   // Écran plus large que 16:9 → largeur logique étendue (plus de monde visible) ;
   // plus haut (4:3) → hauteur logique étendue (plus de ciel, sol plus bas).

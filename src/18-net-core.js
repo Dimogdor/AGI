@@ -254,6 +254,7 @@ function startHostGame(){
   if (net.hbTimer){ clearInterval(net.hbTimer); net.hbTimer=null; }
   if (net.pub) lobbyRemove(net.code);                 // salon plein : on le retire de la liste
   resetSpeedNet();
+  net.cmdQ.length = 0;                                 // rien de ce qui a été envoyé avant le départ ne s'exécute
   net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO, speed:game.speed});
   $('menu').style.display='none'; closeNetUI();
   announce(fmt('a_net_start',{a:FACTIONS[net.myFac].name, b:FACTIONS[net.foeFac].name}), '#9dc88a');

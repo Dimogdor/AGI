@@ -1651,14 +1651,63 @@ function unitPart(kind, fac, role, era, trans, part, pose){
   if (part==='legs'){ const h = unitHeavy(kind, role);
     return sprite('SL'+kind+(h?'h':'n')+era+'p'+pose, LEGS.W, LEGS.H, ()=>{ TC.translate(-(USP.cx+LEGS.ox), -(USP.foot+LEGS.oy));
       bakePart(kind, fac, h? 'tank' : 'melee', era, false, 'legs', pose); }); }
-  return sprite((part==='back'?'SB':'S')+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
+  return sprite(PART_KEY[part]+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
 }
+const PART_KEY = { back:'SB', front:'S', body:'SY', armb:'SQ', arm:'SA' };
 // dessine un personnage complet (couches) au repère courant : pieds en (0,0), tourné vers +x
-function drawUnitLayers(kind, fac, role, era, trans, pose, g){
+// BRAS ANIMÉS (v1.14) : si un angle `aa` est fourni, le haut du corps est rendu en trois couches —
+// bras arrière, tronc + tête, arme + bras avant — et les deux couches de bras pivotent à l'épaule
+// (armement, frappe, recul du tir, arme portée bas en marche). Sans angle : couche 'front' unique.
+function drawUnitLayers(kind, fac, role, era, trans, pose, g, aa){
   g = g || ctx;
   if (unitHasBack(kind, role, era)) g.drawImage(unitPart(kind,fac,role,era,trans,'back'), -USP.cx, -USP.foot, USP.W, USP.H);
+  if (aa===undefined){
+    g.drawImage(unitPart(kind,fac,role,era,trans,'legs',pose), LEGS.ox, LEGS.oy, LEGS.W, LEGS.H);
+    g.drawImage(unitPart(kind,fac,role,era,trans,'front'), -USP.cx, -USP.foot, USP.W, USP.H);
+    return;
+  }
+  const limb = (part, px) => { g.save(); g.translate(px, -42); g.rotate(aa); g.translate(-px, 42);
+    g.drawImage(unitPart(kind,fac,role,era,trans,part), -USP.cx, -USP.foot, USP.W, USP.H); g.restore(); };
+  limb('armb', -3);
   g.drawImage(unitPart(kind,fac,role,era,trans,'legs',pose), LEGS.ox, LEGS.oy, LEGS.W, LEGS.H);
-  g.drawImage(unitPart(kind,fac,role,era,trans,'front'), -USP.cx, -USP.foot, USP.W, USP.H);
+  g.drawImage(unitPart(kind,fac,role,era,trans,'body'), -USP.cx, -USP.foot, USP.W, USP.H);
+  limb('arm', 2);
+}
+// angle des bras d'une unité (rad, sens horaire = arme vers le bas, unité tournée vers +x)
+function armAngle(u, moving, ph){
+  const mult = u.tiredT>0? (u.fac==='IA'? 1.5 : 1.3) : 1;
+  const ts = u.rate*mult - u.atkT;                                   // temps écoulé depuis le dernier coup
+  const wind = (u.atkT>0 && u.atkT<0.24)? 1-u.atkT/0.24 : 0;         // armement, juste avant de frapper
+  const w2 = wind*wind*(3-2*wind);
+  let fast = 0, base = 0.022*Math.sin(u.bob*0.37);
+  switch (u.role){
+    case 'melee':
+      if (ts<0.07) fast = lerp(-0.9, 0.95, Math.max(0,ts)/0.07);
+      else if (ts<0.36){ const k=(ts-0.07)/0.29; fast = 0.95*(1-k)*(1-k); }
+      else if (wind) fast = -0.9*w2;
+      else if (moving) base = Math.sin(ph)*0.2;
+      break;
+    case 'tank':
+      if (ts<0.09) fast = lerp(-0.1, 0.2, Math.max(0,ts)/0.09);
+      else if (ts<0.32) fast = 0.2*(1-(ts-0.09)/0.23);
+      else if (wind) fast = -0.1*w2;
+      else if (moving) base = Math.sin(ph)*0.035;
+      break;
+    case 'ranged':
+      if (ts<0.04) fast = -0.26*Math.max(0,ts)/0.04;
+      else if (ts<0.3){ const k=(ts-0.04)/0.26; fast = -0.26*(1-k)*(1-k); }
+      if (moving && u.atkT<-0.35) base = 0.24 + Math.sin(ph*2)*0.03;   // marche : arme portée bas
+      break;
+    case 'siege':
+      if (ts<0.05) fast = -0.16*Math.max(0,ts)/0.05;
+      else if (ts<0.5){ const k=(ts-0.05)/0.45; fast = -0.16*(1-k)*(1-k); }
+      if (moving && u.atkT<-0.35) base = 0.05 + Math.sin(ph*2)*0.02;
+      break;
+    default:
+      if (moving) base = Math.sin(ph)*0.12;
+  }
+  u._ab = u._ab===undefined? base : u._ab + (base-u._ab)*0.2;        // les poses lentes sont lissées
+  return u._ab + fast;
 }
 function drawUnitSprite(kind, fac, role, era, trans){
   if (kind==='bot') drawBotSprite(fac, role, era, trans, false); else drawHumSprite(fac, role, era, trans, false);
@@ -1720,12 +1769,14 @@ function drawHumSprite(fac, role, era, trans, hero){
   if (SPART==='back') return;
   // --- jambe arrière (plus sombre : côté opposé à la lumière)
   if (SPART==='full') legB();
-  // --- bras arrière
-  limbT(P.b, aw-0.4, shade(uni,0.66));
-  TC.fillStyle=shade(glove,0.8); TC.beginPath(); TC.arc(P.b[4],P.b[5],aw*0.45,0,6.283); TC.fill();
+  // --- bras arrière (couche 'armb' : pivote avec l'arme)
+  if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, aw-0.4, shade(uni,0.66));
+    TC.fillStyle=shade(glove,0.8); TC.beginPath(); TC.arc(P.b[4],P.b[5],aw*0.45,0,6.283); TC.fill(); }
+  if (SPART==='armb') return;
   // --- jambe avant + botte
   if (SPART==='full') legF();
-  // --- torse
+  // --- torse + tête (sautés pour la couche 'arm' : arme et bras avant seuls)
+  if (SPART!=='arm'){
   plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw,F-41, cx+sw-2,F-23, cx-sw+2,F-23, cx-sw,F-41], uni);
   TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=1;
   if (era===0){
@@ -1808,6 +1859,8 @@ function drawHumSprite(fac, role, era, trans, hero){
     bloomT(vc,6,()=>{ TC.fillStyle=vc; rrectT(hx+1,hy-2.6,8.6,2.6,1.2); TC.fill(); });              // visière
     if (role==='support') crossT(hx-3,hy-5,4,RED);
   }
+  }
+  if (SPART==='body') return;
   // --- arme (rôle × ère) puis bras avant par-dessus
   const fh = [P.f[4], P.f[5]];
   if (tank){ drawArm(); humShield(); return; }
@@ -1947,11 +2000,13 @@ function drawBotSprite(fac, role, era, trans, hero){
   if (SPART==='back') return;
   // --- jambe arrière (digitigrade)
   if (SPART==='full') legB();
-  // --- bras arrière
-  limbT(P.b, 4.4, shade(frame,0.85));
-  TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill();
+  // --- bras arrière (couche 'armb')
+  if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, 4.4, shade(frame,0.85));
+    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill(); }
+  if (SPART==='armb') return;
   // --- jambe avant : cuisse blindée, genou articulé, vérin
   if (SPART==='full') legF();
+  if (SPART!=='arm'){                          // châssis + tête : sautés pour la couche 'arm'
   // --- bassin + colonne
   plateT([cx-6,F-30, cx+6,F-30, cx+5,F-23, cx-5,F-23], frame);
   TC.fillStyle=joint; TC.fillRect(cx-3,F-33,6,4);
@@ -1989,7 +2044,7 @@ function drawBotSprite(fac, role, era, trans, hero){
   }
   if (trans) glowDot(cx+2,F-40,2.4,'#39ff6a',8);
   // --- tête
-  const hx=cx+1, hy=F-54+hy0;
+  var hx=cx+1, hy=F-54+hy0;
   TC.fillStyle=frame; TC.fillRect(cx-1.5,hy+3.5,4,4);
   if (era===0){
     plateT([hx-6,hy-6, hx+6,hy-6, hx+6,hy+4, hx-6,hy+4], plate);
@@ -2017,6 +2072,8 @@ function drawBotSprite(fac, role, era, trans, hero){
     bloomT(lite,7,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(hx,hy-12,6.5,1.8,0,0,6.283); TC.stroke(); });  // auréole
   }
   if (trans) bloomT('#39ff6a',7,()=>{ TC.fillStyle='#39ff6a'; for (let i=0;i<3;i++){ rrectT(hx-5+i*4.4,hy-(era===4?16.5:era===3?15:13)-(i===1?2:0),1.8,4.4,0.8); TC.fill(); } });
+  }
+  if (SPART==='body') return;
   // --- bras avant + arme intégrée
   const fh=[P.f[4],P.f[5]];
   const arm = (pts) => { limbT(pts, 4.6, frame); plateT([pts[0]-2.4,pts[1]-2.6, pts[0]+3,pts[1]-2.4, pts[2]+1.6,pts[3]+1, pts[2]-1.8,pts[3]+1.4], shade(plate,1.05)); };
@@ -2196,8 +2253,9 @@ function blitHumanoid(u, x, gy, kind){
   ctx.save(); ctx.translate(x+lunge, gy+stepBob); ctx.rotate(tilt);
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
-  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose); }
+  const aa = qFx()? armAngle(u, moving, ph) : undefined;
+  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
   ctx.restore();
   if (atk){ const m=muzzleOf(u); attackFX(u, x+lunge, gy+m[1], imp, m[0]); }
 }

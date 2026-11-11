@@ -576,8 +576,11 @@ function drawBtn(b){
     } else {
       label=lSpecial(p.facKey, p.era); glyph='✸';
       const xc = specialXpCost(p);
-      ok = p.specialCd<=0 && p.xp>=xc;
-      sub = (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+' [ESP]';
+      // héros en vie à la dernière ère : la touche déclenche le MODE SIÈGE (payé en ressources) — le bon l'annonce
+      const siegeOk = p.heroAlive && p.era>=4 && p.siegeT<=0 && p.specialCd<=0 && canPay(p,SIEGE_COST);
+      ok = siegeOk || (p.specialCd<=0 && p.xp>=xc);
+      if (siegeOk) label = tr('ev_siege');
+      sub = siegeOk? costStr(p,SIEGE_COST)+' [ESP]' : (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+' [ESP]';
       prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc));
     }
   } else if (b.type==='evolve'){

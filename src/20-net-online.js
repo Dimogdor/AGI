@@ -194,20 +194,24 @@ async function getIceServers(){
   const useProxy = !!NET_CONFIG.cfTurnProxy;
   if (useProxy || (NET_CONFIG.cfTurnKeyId && NET_CONFIG.cfTurnToken)){
     try {
-      if (cfIceCache && cfIceCache.exp > Date.now()) return { iceServers: cfIceCache.servers };
+      if (cfIceCache && cfIceCache.exp > performance.now()) return { iceServers: cfIceCache.servers };
       const url = useProxy
         ? NET_CONFIG.cfTurnProxy
         : 'https://rtc.live.cloudflare.com/v1/turn/keys/'+encodeURIComponent(NET_CONFIG.cfTurnKeyId)+'/credentials/generate-ice-servers';
       const headers = useProxy
         ? { 'Content-Type':'application/json' }   // pas de token côté client avec le proxy
         : { 'Authorization':'Bearer '+NET_CONFIG.cfTurnToken, 'Content-Type':'application/json' };
-      const r = await fetch(url, { method:'POST', headers, body: JSON.stringify({ ttl: 7200 }) });
+      const r = await fetch(url, { method:'POST', headers, body: JSON.stringify({ ttl: 7200 }),
+        signal: (window.AbortSignal && AbortSignal.timeout)? AbortSignal.timeout(6000) : undefined });   // proxy muet : repli au bout de 6 s
       if (r.ok){
         const j = await r.json();
         const turn = (j.iceServers ? (Array.isArray(j.iceServers)? j.iceServers : [j.iceServers]) : []);
-        const servers = STUN.concat(turn);
-        cfIceCache = { servers, exp: Date.now() + 6600*1000 };   // identifiants valables 2 h : on renouvelle avant
-        return { iceServers: servers };
+        const okTurn = turn.filter(s => s && typeof s==='object' && s.urls);
+        if (okTurn.length){                                       // réponse sans TURN : pas de cache, repli public
+          const servers = STUN.concat(okTurn);
+          cfIceCache = { servers, exp: performance.now() + 6600*1000 };   // identifiants valables 2 h : on renouvelle avant
+          return { iceServers: servers };
+        }
       }
     } catch(e){ /* échec Cloudflare → repli public ci-dessous */ }
   }
@@ -289,19 +293,21 @@ function bindConn(conn){
   conn.on('data', msg=>{ if (net && net.conn===conn) nrecv(msg); });
   conn.on('close', ()=>{ if (!net || net.conn!==conn) return;
     const was = net.authed; net.peer=false; net.authed=false;
-    if (was || game) onPeerLeft(); });                 // tentative jamais authentifiée : rien à défaire
+    if (was || game) onPeerLeft();
+    else if (net.role==='guest') netStatus(fmt('net_nohost2',{code:net.code})); });   // refusé (salon plein, mauvais mot de passe)
   conn.on('error', ()=>{});
 }
 async function netConnect(role, code, fac, opts){
   opts = opts || {};
   netStatus(t('net_loading'));
+  const tok = netConnect._tok = (netConnect._tok||0)+1;   // pris AVANT tout await : Annuler ou un double clic l'invalident
   const Peer = await loadPeerLib();
-  if (!Peer){ netStatus(tr('net_nop2p')); return; }
-  netDisconnect();                                        // repart propre si une tentative précédente traîne
-  const tok = netConnect._tok = (netConnect._tok||0)+1;   // double clic : seule la dernière demande aboutit
-  const RTC = await getIceServers();
   if (tok !== netConnect._tok) return;
-  netDisconnect();                      // STUN + TURN (Cloudflare dédié ou repli public)
+  if (!Peer){ netStatus(tr('net_nop2p')); return; }
+  netTeardown();                                          // repart propre si une tentative précédente traîne
+  const RTC = await getIceServers();                      // STUN + TURN (Cloudflare dédié ou repli public)
+  if (tok !== netConnect._tok) return;
+  netTeardown();
   const hostId = 'agi-' + code;
   const myId   = role==='host' ? hostId : (hostId + '-g' + Math.random().toString(36).slice(2,8));
   net = { role, code, myFac:fac, foeFac:(fac==='HUM'?'IA':'HUM'), speed:clampSpeed(opts.speed||menuSpeed),
@@ -319,10 +325,13 @@ async function netConnect(role, code, fac, opts){
     if (conn) bindConn(conn);
   };
   peerObj.on('open', ()=>{
+    // PeerJS ré-émet 'open' après reconnect() : sans cette garde, l'invité rouvrait une connexion en
+    // pleine partie (et se faisait éjecter), l'hôte empilait un second minuteur de publication
+    if (net!==my || game || my.peer || my.authed) return;
     if (role==='host'){
       showHostingCode(code);                              // affiche le code à partager
       netStatus(t('net_waiting'));
-      if (net && net.pub){ lobbyPublish(); net.hbTimer = setInterval(lobbyPublish, 20000); } // heartbeat liste publique
+      if (my.pub){ lobbyPublish(); if (my.hbTimer) clearInterval(my.hbTimer); my.hbTimer = setInterval(lobbyPublish, 20000); } // heartbeat liste publique
     } else { netStatus(fmt('net_search',{code:code})); tryConnect(); }
   });
   // invité entrant côté hôte. VERROU : une fois un invité authentifié (bon mot de passe, lobby ou
@@ -360,12 +369,13 @@ async function netConnect(role, code, fac, opts){
     if (net && !net.peer) netStatus(fmt(role==='host'? 'net_stillwait':'net_nohost2', {code:code}));
   }, 35000);
 }
-function netDisconnect(){
+function netDisconnect(){ netConnect._tok = (netConnect._tok||0)+1; netTeardown(); }   // invalide aussi une connexion en cours de préparation
+function netTeardown(){
   speedVote = null; speedPanel = null; clearSpeedPending();  // annule tout vote/minuteur de vitesse en cours
   if (net){
     if (net.findTimer) clearTimeout(net.findTimer);
     if (net.hbTimer) clearInterval(net.hbTimer);
-    if (net.pub && net.code) lobbyRemove(net.code);     // retire le salon de la liste publique
+    if (net.pub && net.code && net.listed) lobbyRemove(net.code);     // retire NOTRE salon de la liste publique (jamais celui d'un homonyme)
   }
   try { if (net && net.conn) net.conn.close(); } catch(e){}
   try { if (peerObj) peerObj.destroy(); } catch(e){}
@@ -375,11 +385,15 @@ function netDisconnect(){
 /* ---- liste des salons publics via Firebase Realtime DB (API REST, sans SDK) ---- */
 function fbUrl(path){ return NET_CONFIG.firebaseDb.replace(/\/+$/,'') + path + '.json'; }
 function lobbyPublish(){
-  if (!NET_CONFIG.firebaseDb || !net || !net.pub) return;
+  if (!NET_CONFIG.firebaseDb || !net || !net.pub || net.authed) return;   // salon occupé : l'entrée expire d'elle-même en 60 s
+  net.listed = true;
   const body = JSON.stringify({ code:net.code, name:(net.name||('Salon '+net.code)), fac:net.myFac,
                                 speed:net.speed, hasPw:!!net.pw, ts:{'.sv':'timestamp'} });   // heure du SERVEUR (horloges des téléphones souvent fausses)
   fetch(fbUrl('/lobbies/'+net.code), { method:'PUT', body }).catch(()=>{});
 }
+// onglet fermé / appli tuée : on retire le salon tout de suite (keepalive : la requête survit à la page)
+window.addEventListener('pagehide', ()=>{ try { if (net && net.pub && net.listed && net.code && NET_CONFIG.firebaseDb)
+  fetch(fbUrl('/lobbies/'+net.code), { method:'DELETE', keepalive:true }); } catch(e){} });
 function lobbyRemove(code){
   if (!NET_CONFIG.firebaseDb || !code) return;
   fetch(fbUrl('/lobbies/'+code), { method:'DELETE' }).catch(()=>{});
@@ -391,6 +405,7 @@ function lobbyClean(l){
   return { code, name: typeof l.name==='string'? l.name.slice(0,40) : '', fac: l.fac==='IA'? 'IA' : 'HUM',
            speed: SPEEDS.includes(+l.speed)? +l.speed : 1, hasPw: l.hasPw===true, ts: Number.isFinite(+l.ts)? +l.ts : 0 };
 }
+const lobbySeen = {};   // code → { ts, at, first } : dernière évolution observée de l'horodatage (temps monotone)
 async function lobbyList(){
   if (!NET_CONFIG.firebaseDb) return [];
   try {
@@ -402,7 +417,18 @@ async function lobbyList(){
     if (!r.ok) r = await fetch(fbUrl('/lobbies'), { cache:'no-store' });
     if (!r.ok) return [];
     const j = (await r.json()) || {};
-    const now = Date.now();
+    // FRAÎCHEUR SANS HORLOGE LOCALE : les « ts » sont posés par le serveur. Si l'horloge de l'appareil
+    // concorde avec le plus récent, on s'y fie (affichage immédiat) ; sinon (téléphone mal réglé) un
+    // salon est vivant dès qu'on a VU son horodatage changer — l'hôte republie toutes les 20 s —,
+    // mesuré en temps monotone. Avant, un appareil décalé de plus d'une minute ne voyait aucun salon.
+    const loc = Date.now(), mono = performance.now();
+    let tsMax = 0; for (const v of Object.values(j)) if (v && Number.isFinite(+v.ts) && +v.ts > tsMax) tsMax = +v.ts;
+    const clockOk = tsMax>0 && Math.abs(loc - tsMax) < 90000;
+    for (const v of Object.values(j)){ if (!v || !v.code) continue; const k = String(v.code), s = lobbySeen[k];
+      if (!s) lobbySeen[k] = { ts:+v.ts, at:-1e12, first:mono };
+      else if (s.ts!==+v.ts){ s.ts = +v.ts; s.at = mono; } }
+    for (const k in lobbySeen) if (!Object.values(j).some(v => v && String(v.code)===k)) delete lobbySeen[k];
+    const alive = l => (clockOk && Math.abs(loc - l.ts) < 60000) || (lobbySeen[l.code] && mono - lobbySeen[l.code].at < 60000);
     // AUTO-NETTOYAGE : un salon dont l'appli a été tuée ou a planté ne passe jamais par
     // lobbyRemove() — son entrée (nom saisi compris) restait stockée indéfiniment. Chaque
     // consultation de la liste supprime donc les entrées mortes depuis plus de 5 min (l'hôte
@@ -411,13 +437,16 @@ async function lobbyList(){
     let purged = 0;
     for (const [k, l] of Object.entries(j)){
       if (purged >= 5) break;
-      if (!l || !l.code || now - (l.ts||0) > 300000){ purged++;
+      // mort = plus de 5 min de retard sur l'entrée la plus récente (heures serveur comparées entre
+      // elles), ou observé figé pendant 5 min — jamais « vieux d'après l'horloge de ce téléphone »
+      const s = l && l.code && lobbySeen[String(l.code)];
+      if (!l || !l.code || tsMax - (+l.ts||0) > 300000 || (s && s.at<0 && mono - s.first > 300000)){ purged++;
         fetch(fbUrl('/lobbies/'+encodeURIComponent(k)), { method:'DELETE' }).catch(()=>{}); }
     }
     // SÉCURITÉ : la base est publique en écriture — chaque champ est revalidé ici (type,
     // longueur, liste blanche) ; plus rien de brut n'atteint l'affichage (faille XSS stockée
     // possible auparavant via le champ « speed », inséré tel quel dans le HTML de la liste).
-    return Object.values(j).map(lobbyClean).filter(l => l && (now - l.ts < 60000))   // ignore les périmés (>60 s)
+    return Object.values(j).map(lobbyClean).filter(l => l && alive(l))               // ignore les périmés (>60 s)
                            .sort((a,b)=> b.ts-a.ts);
   } catch(e){ return []; }
 }

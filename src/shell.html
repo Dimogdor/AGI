@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AGI">
@@ -13,8 +13,12 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; touch-action:none; }
   html,body { width:100%; height:100%; overflow:hidden; background:#0d0a0a; font-family:'AGI Cond','Arial Narrow',sans-serif; }
   /* le menu (et l'écran de fin) doivent pouvoir défiler au doigt sur mobile en plein écran */
-  #menu, #endscreen { touch-action:pan-y; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
-  #menu *, #endscreen * { touch-action:pan-y; }
+  /* ACCESSIBILITÉ : les menus se zooment au pincement (le canvas, lui, garde son propre zoom : il reste en « none ») */
+  html, body, #ui { touch-action:manipulation; }
+  #menu, #endscreen { touch-action:manipulation; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  #menu *, #endscreen * { touch-action:manipulation; }
+  /* page zoomée au moment d'entrer en jeu : on laisse le navigateur dézoomer, sinon on resterait coincé */
+  html.vzoom, html.vzoom * { touch-action:manipulation !important; }
   #menu button, #menu input, #menu textarea, #menu .tab, #menu .pick, #menu .go, #menu .tog,
   #endscreen button { touch-action:manipulation; }
   /* iOS : on respecte l'encoche / l'indicateur d'accueil pour ne rien rogner en paysage */

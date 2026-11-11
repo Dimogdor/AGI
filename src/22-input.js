@@ -297,6 +297,7 @@ function handleTap(sx, sy, shift, opts){
     const slot = buildMenu.slot, base = buildMenu.base;
     buildMenu = null;
     if (!hit) return;
+    if (!base && slot.b && slot.owner && slot.owner!==p) return;   // bâtiment ennemi apparu pendant que le menu était ouvert
     if (base){
       if (hit==='repairBase') tryRepairBase(p);
       else if (hit==='repairAll') tryRepairAll(p);

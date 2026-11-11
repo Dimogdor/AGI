@@ -41,4 +41,5 @@ function applyLang(){
   // appel, changer de langue en jeu (⚙ → Langue) ou via le sélecteur au 1er lancement ne
   // rafraîchissait jamais ces boutons — ils restaient dans la langue de démarrage.
   if (typeof layoutHUD==='function') layoutHUD();
+  try { if (typeof refreshLobbyView==='function') refreshLobbyView(); if (typeof lobbyTimer!=='undefined' && lobbyTimer) refreshLobbies(); } catch(e){}
 }

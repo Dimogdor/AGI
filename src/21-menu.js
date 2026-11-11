@@ -88,6 +88,10 @@ function fsBtnHidden(){
   return (typeof game!=='undefined' && game && !game.over) || (typeof intro!=='undefined' && intro>=0);
 }
 function refreshFsBtn(){
+  // en jeu, le zoom navigateur est replafonné (Android le ramène à 1) ; il est rendu aux menus ensuite
+  try { const vp = document.querySelector('meta[name="viewport"]'), inPlay = (game && !game.over) || intro>=0,
+      want = 'width=device-width, initial-scale=1.0, viewport-fit=cover' + (inPlay? ', maximum-scale=1.0, user-scalable=no' : '');
+    if (vp && vp.content!==want) vp.content = want; } catch(e){}
   const b = $('fsBtn'); if (!b) return;
   if (fsBtnHidden()){ b.style.display='none'; return; }
   b.textContent = (IS_IOS ? '⤢' : (isFullscreen()? '✕' : '⛶'));
