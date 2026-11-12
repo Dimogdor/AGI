@@ -92,10 +92,13 @@ const FACTIONS = {
   },
 };
 const DIFFS = [ // cheat = bonus de production caché de l'IA
-  {name:"FACILE",    inc:0.6,  think:2.4,  eraLag:0.5,  hpMul:0.8,  cheat:0.9},
-  {name:"NORMAL",    inc:1.0,  think:1.3,  eraLag:0.1,  hpMul:1.0,  cheat:1.12},
-  {name:"DIFFICILE", inc:1.3,  think:0.85, eraLag:0.03, hpMul:1.25, cheat:1.7},
-  {name:"BRUTAL",    inc:1.6,  think:0.55, eraLag:0,    hpMul:1.5,  cheat:2.3},
+  // v1.14 : échelle recalibrée par simulation (joueur « correct » : ~100 % / 88 % / 48 % / 25 %).
+  // Depuis que l'IA ne gèle plus ses dépenses pour son héros et fortifie toujours sa base, les
+  // anciens réglages donnaient 71 % / 56 % / 21 % / 8 %.
+  {name:"FACILE",    inc:0.3,  think:4.0,  eraLag:1.5,  hpMul:0.4,  cheat:0.6},
+  {name:"NORMAL",    inc:0.4,  think:2.6,  eraLag:0.8,  hpMul:0.55, cheat:0.8},
+  {name:"DIFFICILE", inc:0.85, think:1.3,  eraLag:0.15, hpMul:0.9,  cheat:1.05},
+  {name:"BRUTAL",    inc:1.3,  think:0.65, eraLag:0.03, hpMul:1.3,  cheat:1.7},
 ];
 const BUILDS = {
   wall:  {label:"Muraille",  hp:900,  cost:{f:90,m:50}},

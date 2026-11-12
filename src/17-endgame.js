@@ -4,7 +4,8 @@ const escH = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>
 function showEnd(){
   if (!game || !game.over) return;           // partie quittée/relancée pendant le délai de 1,1 s : rien à afficher
   const et = document.getElementById('endtitle'), s = document.getElementById('endstats');
-  et.textContent = game.win? t('end_win') : t('end_lose');
+  const camp = game.camp || null;
+  et.textContent = camp? cT(game.win? CAMP_UI.won : CAMP_UI.lost) : game.win? t('end_win') : t('end_lose');
   const gt = Math.max(0, +game.t||0), mins = Math.floor(gt/60), secs = ('0'+Math.floor(gt%60)).slice(-2);
   const cells = [
     [t('end_duration'), mins+' '+t('unit_min')+' '+secs+' '+t('unit_sec')],
@@ -22,7 +23,13 @@ function showEnd(){
   const no = document.getElementById('endNo'); if (no) no.textContent = '#'+String(73 + (Math.floor(gt)%900)).padStart(4,'0');
   s.innerHTML = cells.map(([l,v])=>'<div class="esLine"><span>'+escH(l)+'</span><i></i><b>'+escH(v)+'</b></div>').join('')+
     '<div class="esWorld"><span>'+escH(t('end_world'))+'</span><div class="esBar"><i style="width:'+wh+'%"></i></div><b>'+wh+'%</b></div>'+
-    '<i class="esJournal">'+escH(warJournal())+'</i>';
+    '<i class="esJournal">'+escH(camp? campResult() : warJournal())+'</i>';
+  // campagne : mission suivante / réessayer, et retour au carnet
+  const nb = document.getElementById('campNextBtn'), rb = document.getElementById('replayBtn');
+  if (camp){ const nxt = game.win && camp.i+1 < CAMPAIGN.length;
+    nb.style.display = ''; nb.dataset.i = nxt? camp.i+1 : camp.i;
+    nb.textContent = cT(game.win? (nxt? CAMP_UI.next : CAMP_UI.again) : CAMP_UI.retry); rb.textContent = cT(CAMP_UI.notebook); }
+  else { nb.style.display = 'none'; rb.textContent = t('replay'); }
   try { drawEndArt(); } catch(e){}
   document.getElementById('endscreen').style.display = 'flex';
 }

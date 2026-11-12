@@ -399,6 +399,7 @@ function drawHUD(){
     ctx.globalAlpha=1;
   }
   drawNews();                                      // fil d'actualités du monde (haut gauche, discret)
+  if (game.camp) drawCampHUD();                    // campagne : objectif (haut droite) + transmissions radio
   // ---- plateau du bureau : les fiches et intercalaires y sont posés ----
   { const dockY = H-64-6-31-3-7;
     deskFill(0, dockY, W, H-dockY);

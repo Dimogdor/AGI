@@ -15,6 +15,7 @@ document.querySelectorAll('.tab').forEach(tb=>{
     tb.classList.add('on');
     $('page-'+tb.dataset.page).classList.add('on');
     if (tb.dataset.page==='tuto') refreshTutoPage();
+    if (tb.dataset.page==='camp') campRenderMenu();
   });
 });
 // choix du camp : le menu entier change d'identité (tract de la Résistance ↔ listing d'Omnicorp)
@@ -130,9 +131,12 @@ $('storyBtn').addEventListener('click', ()=>{
   $('menu').style.display = 'none';
   pendingStart = null; intro = 0; introT = 0; introOut = 0;
 });
+$('campNextBtn').addEventListener('click', ()=>{ const i = +$('campNextBtn').dataset.i || 0; game = null; campLaunch(i); });
 $('replayBtn').addEventListener('click', ()=>{
+  const wasCamp = !!(game && game.camp);
   $('endscreen').style.display = 'none';
   $('menu').style.display = 'flex';
+  if (wasCamp){ campView = -1; const tb = document.querySelector('.tab[data-page="camp"]'); if (tb) tb.click(); }   // retour au carnet
   netDisconnect();
   game = null; paused = false; settingsOpen = false; netPause = null; buildMenu = null; selMode = false; selBox = null; intro = -1; pendingStart = null;
 });

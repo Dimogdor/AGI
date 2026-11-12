@@ -1675,8 +1675,9 @@ function drawUnitLayers(kind, fac, role, era, trans, pose, g, aa){
     g.drawImage(unitPart(kind,fac,role,era,trans,'front'), -USP.cx, -USP.foot, USP.W, USP.H);
     return;
   }
+  // (les bras n'ont pas de variante « transcendée » : une seule cuisson par rôle et par ère)
   const limb = (part, px) => { g.save(); g.translate(px, -42); g.rotate(aa); g.translate(-px, 42);
-    g.drawImage(unitPart(kind,fac,role,era,trans,part), -USP.cx, -USP.foot, USP.W, USP.H); g.restore(); };
+    g.drawImage(unitPart(kind,fac,role,era,false,part), -USP.cx, -USP.foot, USP.W, USP.H); g.restore(); };
   limb('armb', -3);
   g.drawImage(unitPart(kind,fac,role,era,trans,'legs',pose), LEGS.ox, LEGS.oy, LEGS.W, LEGS.H);
   g.drawImage(unitPart(kind,fac,role,era,trans,'body'), -USP.cx, -USP.foot, USP.W, USP.H);
@@ -2390,6 +2391,16 @@ function prewarmSprites(){
     }
   }
   while (WARMQ.length && WARMQ[0].era===0 && !WARMQ[0].trans) WARMQ.shift().fn();
+  if (game){ warmArms(game.p, true); warmArms(game.e, true); }
+}
+// couches de bras animés (v1.14) : cuites seulement pour les ères en jeu (au départ, puis à chaque
+// évolution), jamais d'avance pour toutes — trois toiles par rôle, la mémoire resterait prise
+function warmArms(side, now){
+  if (!qFx()) return;
+  const kind = side.facKey==='HUM'? 'hum':'bot', era = side.era;
+  for (const role of ['melee','tank','ranged','siege','support']){
+    const fn = ()=>{ unitPart(kind,side.facKey,role,era,side.trans,'body'); unitPart(kind,side.facKey,role,era,false,'armb'); unitPart(kind,side.facKey,role,era,false,'arm'); };
+    if (now) fn(); else WARMQ.unshift({ era, trans:false, fn }); }
 }
 function warmTick(budgetMs){
   const t0 = performance.now();

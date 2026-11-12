@@ -581,7 +581,7 @@ function update(dt){
 
   // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
   // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement.
-  game.dev = game.tut? 0 : clamp(game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);
+  game.dev = game.tut? 0 : clamp((game.devBase||0) + game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);   // devBase : état du monde au début d'une mission de campagne
   if (!game.tut) updateCata(dt);
 
   for (let i=projectiles.length-1;i>=0;i--){
@@ -642,6 +642,8 @@ function update(dt){
     }
     tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
   }
+
+  if (game.camp && campTick(dt)) return;      // campagne : radio, règles et objectifs propres à la mission
 
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;

@@ -313,6 +313,7 @@ function drawWinter(){
   }
   ctx.globalCompositeOperation='source-over';
   ctx.font=HF(12); ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
-  ctx.fillText(fmt('ev_winter_now',{min:Math.ceil((game.winterT||0)/60)}), W/2, 78);
+  if (!(game.camp && game.camp.m.oneLife))            // campagne « Rochefroide » : l'hiver ne se lève pas, pas de décompte
+    ctx.fillText(fmt('ev_winter_now',{min:Math.ceil((game.winterT||0)/60)}), W/2, 78);
   ctx.restore();
 }

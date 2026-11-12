@@ -133,6 +133,7 @@ function tryEvolve(side){
   if (isGuest(side)){ guestCmd({c:'evo'}); return true; }
   if (side.era>=4 || side.era>=(game.eraCap!=null?game.eraCap:4) || side.xp < EVOLVE_XP[side.era+1]) return false;
   side.era++;
+  warmArms(side);                               // cuit les bras animés de la nouvelle ère (étalé sur quelques images)
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
   burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
