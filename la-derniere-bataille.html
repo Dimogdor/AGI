@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-LJK/mxAhOq28pkXjC1MYNILwTVm6jKDmorGau/DUc70=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1T2wreqEpdDwlUsKr+hGE/7Iz2qGlrOr77qKMHwX/24=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -7010,6 +7010,9 @@ function drawUnitCard(b){
   }
   ctx.textBaseline = 'middle';
 }
+// rappel du raccourci clavier RÉEL (touches reconfigurables) — rien sur un écran tactile sans clavier
+const HK_TOUCH = !!(window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches);
+function hk(action){ const c = SETTINGS.keys[action]; return (HK_TOUCH || !c)? '' : ' ['+keyName(c)+']'; }
 function drawBtn(b){
   const A0 = ctx.globalAlpha, pal = uiPal();
   const p=game.p;
@@ -7027,19 +7030,19 @@ function drawBtn(b){
       const siegeOk = p.heroAlive && p.era>=4 && p.siegeT<=0 && p.specialCd<=0 && canPay(p,SIEGE_COST);
       ok = siegeOk || (p.specialCd<=0 && p.xp>=xc);
       if (siegeOk) label = tr('ev_siege');
-      sub = siegeOk? costStr(p,SIEGE_COST)+' [ESP]' : (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+' [ESP]';
+      sub = siegeOk? costStr(p,SIEGE_COST)+hk('special') : (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+hk('special');
       prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc));
     }
   } else if (b.type==='evolve'){
     label=tr('hud_evolve').replace(/^⚡\s*/,''); glyph='⚡';
-    if (p.era<4){ ok = p.xp>=EVOLVE_XP[p.era+1]; sub='✦'+EVOLVE_XP[p.era+1]+' [E]';
+    if (p.era<4){ ok = p.xp>=EVOLVE_XP[p.era+1]; sub='✦'+EVOLVE_XP[p.era+1]+hk('evolve');
       prog = Math.min(1,p.xp/EVOLVE_XP[p.era+1]); }
     else if (!p.trans){ ok=false; sub='✦'+TRANS_XP+' → '+p.fac.sym; prog=Math.min(1,p.xp/TRANS_XP); }
     else { ok=false; sub=tr('hud_trans'); prog=1; }
   } else if (b.type==='cap'){
     label=tr('hud_cap').replace(/^👥\s*/,''); glyph='👥';
     ok = !p.capUp && canPay(p,{m:350,w:100});
-    sub = p.capUp? tr('hud_owned'):costStr(p,{m:350,w:100})+' [U]';
+    sub = p.capUp? tr('hud_owned'):costStr(p,{m:350,w:100})+hk('capup');
     prog = 1;
   } else if (b.type==='stance'){
     label=b.label; ok = game.sel.size? false : p.stance===b.st;
@@ -7051,7 +7054,7 @@ function drawBtn(b){
     label=tr('hud_repall').replace(/^🔧\s*/,''); glyph='🔧';
     const rc = repairAllCost(p);
     ok = rc.f>0 || rc.m>0;
-    sub = ok? costStr(p, rc)+' [R]' : tr('hud_norep');
+    sub = ok? costStr(p, rc)+hk('repairall') : tr('hud_norep');
   } else if (b.type==='cam'){
     label=b.label; ok = b.go==='follow' && camFollow;
   } else if (b.type==='zoom'){
@@ -7159,6 +7162,7 @@ function drawBuildMenu(){
   // TUTORIEL : sur un SOCLE VIDE, ne proposer que la construction de l'étape + celles déjà
   // enseignées. (Sur un bâtiment existant — réparer / améliorer / GARNISON — on ne filtre rien.)
   if (game.tut && TUT && !buildMenu.base && !slot.b) opts = opts.filter(o => tutBuildAllowed(o.key));
+  if (!opts.length){ buildMenu = null; return; }      // tuto : rien à bâtir ici à cette étape
   const bw=210, bh=Math.max(1,opts.length)*34+12;
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);
@@ -7673,7 +7677,17 @@ function tutHold(x){ const p=game.p; p.stance='hold'; p.holdX = (x!=null)? x : p
 // un tireur ennemi les décimait une à une hors de portée (vague de 60 s, armée perdue).
 function tutLine(x){ const p=game.p; tutHold(x); game.sel.clear();
   p.units.forEach((u,i)=>{ if (u.role==='gremlin') return; u.ord='point'; u.task=null; u.px = x - (i%5)*14; }); }
-function tutEmptySlot(){ const p=game.p; return p.slots.find(s=>!s.b) || null; }
+// socle vide de l'économie : il y en a TOUJOURS un (si le joueur a tout occupé, on en ajoute un —
+// avant, l'étape suivante n'avait plus de cible et le tutoriel restait bloqué)
+function tutEmptySlot(){ const p=game.p; let s=p.slots.find(q=>!q.b);
+  if (!s){ const k=p.slots.filter(q=>q.x<p.x+500).length; s={ x:p.x+95+64*k, b:null, owner:null }; p.slots.push(s); }
+  return s; }
+// socles de DÉFENSE (muraille + tourelle), créés seulement à l'étape de la barrière : posés dès le
+// départ, on pouvait y bâtir une ferme et fausser tout le bloc défense
+function tutDefSlots(){ const p=game.p, b=game.tutBarrier; if (b==null) return;
+  for (const dx of [295,235]) if (!p.slots.some(s=>s.x===b-dx)) p.slots.push({ x:b-dx, b:null, owner:null }); }
+function tutFrontSlot(){ const p=game.p; tutDefSlots(); return p.slots.find(s=>!s.b && s.x>p.x+800) || tutEmptySlot(); }
+function tutBuilt(type){ return sideBuildSlots(game.p).find(s=>s.b && s.b.type===type) || null; }
 function tutHudRect(match){ for (const b of HUD.btns) if (!btnHidden(b) && match(b)) return {x:b.x,y:b.y,w:b.w,h:b.h}; return null; }
 function tutWorldRect(wx){ const sx=w2sX(wx), gy=w2sY(gY(wx)); return {x:sx-46, y:gy-100, w:92, h:108}; }
 // garantit au moins n unités au sol (pour les étapes sélection / lasso)
@@ -7702,8 +7716,8 @@ function tutDesc(b){
 const TUT_STEPS = [
   { // 0 — accueil
     tap:true,
-    text:{fr:"Bienvenue, commandant. Objectif : détruire la base ennemie à droite. En haut : vos ressources — 🌾 nourriture, 🪙 argent, 💧 eau.",
-          en:"Welcome, commander. Goal: destroy the enemy base on the right. Top bar: your resources — 🌾 food, 🪙 money, 💧 water.",es:"Bienvenido, comandante. Objetivo: destruir la base enemiga a la derecha. Arriba: tus recursos — 🌾 comida, 🪙 dinero, 💧 agua.",de:"Willkommen, Kommandant. Ziel: die feindliche Basis rechts zerstören. Oben: deine Ressourcen — 🌾 Nahrung, 🪙 Geld, 💧 Wasser.",it:"Benvenuto, comandante. Obiettivo: distruggere la base nemica a destra. In alto: le tue risorse — 🌾 cibo, 🪙 denaro, 💧 acqua.",pt:"Bem-vindo, comandante. Objetivo: destruir a base inimiga à direita. No topo: seus recursos — 🌾 comida, 🪙 dinheiro, 💧 água.",ru:"Добро пожаловать, командир. Цель: уничтожить вражескую базу справа. Наверху — ваши ресурсы: 🌾 еда, 🪙 деньги, 💧 вода.",zh:"欢迎，指挥官。目标：摧毁右侧的敌方基地。顶部是你的资源——🌾 食物、🪙 金钱、💧 水。",ar:"مرحباً أيها القائد. الهدف: تدمير قاعدة العدو على اليمين. أعلى الشاشة: مواردك — 🌾 طعام، 🪙 مال، 💧 ماء."},
+    text:{fr:"Bienvenue, commandant. Objectif : détruire la base ennemie à droite. En haut : 🌾 nourriture, 🪙 argent, 💧 eau, ✦ expérience ; au centre l'ère et la minicarte ; à droite 👥 effectif / plafond.",
+          en:"Welcome, commander. Goal: destroy the enemy base on the right. Top bar: 🌾 food, 🪙 money, 💧 water, ✦ experience; centre: era and minimap; right: 👥 army size / cap."},
     enter:()=>{ camFollow=false; camX=0; },
     focus:()=>({x:0,y:0,w:Math.min(320,W),h:38}),
   },
@@ -7733,6 +7747,14 @@ const TUT_STEPS = [
     focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
     allow:a=>a.t==='build'&&a.type==='well',
     done:()=>tutHasBuild('well'),
+  },
+  { // 3b — AMÉLIORER un bâtiment (+ bonus de longévité)
+    text:{fr:"Vos bâtiments PROGRESSENT : touchez la ferme, puis « Améliorer » (+50 % de production, 3 niveaux). Gardés en vie, ils montent aussi en régime avec le temps (jusqu'à ×3 en 15 min) : protégez-les !",
+          en:"Your buildings GROW: tap the farm, then \"Upgrade\" (+50% output, 3 levels). Kept alive, they also ramp up over time (up to ×3 after 15 min): protect them!"},
+    obj:{fr:"Améliorez la ferme",en:"Upgrade the farm"},
+    enter:()=>{ tutGrant(400,400,150); const s=tutBuilt('farmF'); if(s)tutCam(s.x); },
+    focus:()=>{ const s=tutBuilt('farmF'); return s? tutWorldRect(s.x):null; },
+    done:()=>{ const s=tutBuilt('farmF'); return !s || (s.b.lvl||1)>=2; },
   },
   { // 4 — mêlée
     text:{fr:"En bas, la barre de recrutement. Recrutez DEUX unités de ⚔ MÊLÉE (bouton surligné) : votre première ligne.",
@@ -7787,22 +7809,32 @@ const TUT_STEPS = [
       return {x, y, w:Math.max(a.x+a.w,b.x+b.w)-x, h:Math.max(a.y+a.h,b.y+b.h)-y}; },
     allow:a=>a.t==='buy'&&(a.i===3||a.i===5),
   },
+  { // 6c — CAMÉRA : glisser, zoomer, recentrer
+    text:{fr:"Explorez la carte : GLISSEZ le terrain (ou ←/→, molette), pincez ou 🔍 pour zoomer. « Base » et « Front » recentrent la vue, « Auto » suit vos troupes.",
+          en:"Explore the map: DRAG the terrain (or ←/→, mouse wheel), pinch or 🔍 to zoom. \"Base\" and \"Front\" recenter the view, \"Auto\" follows your troops."},
+    obj:{fr:"Déplacez la caméra",en:"Move the camera"},
+    enter:()=>{ camFollow=false; camX=0; TUT.camStart=0; },
+    focus:()=>tutHudRect(b=>b.type==='cam'&&b.go==='front'),
+    done:()=>Math.abs(camX-(TUT.camStart||0))>200,
+  },
   { // 7 — sélection
-    text:{fr:"Place au CONTRÔLE. Touchez l'une de vos unités sur le terrain pour la SÉLECTIONNER.",
-          en:"Time for CONTROL. Tap one of your units on the field to SELECT it.",es:"Turno del CONTROL. Toca una de tus unidades en el terreno para SELECCIONARLA.",de:"Zeit für die STEUERUNG. Tippe auf eine deiner Einheiten im Feld, um sie AUSZUWÄHLEN.",it:"Tocca al CONTROLLO. Tocca una delle tue unità sul campo per SELEZIONARLA.",pt:"Hora do CONTROLE. Toque em uma de suas unidades no campo para SELECIONÁ-LA.",ru:"Время УПРАВЛЕНИЯ. Нажмите на одну из своих единиц на поле, чтобы ВЫДЕЛИТЬ её.",zh:"该学习操控了。点击场上的一个单位以选中它。",ar:"حان وقت التحكم. المس إحدى وحداتك في الميدان لتحديدها."},
+    text:{fr:"Place au CONTRÔLE. Touchez une unité : toute sa CLASSE est sélectionnée (retouchez-la pour n'en garder qu'une).",
+          en:"Time for CONTROL. Tap a unit: its whole CLASS is selected (tap it again to keep just that one)."},
     obj:{fr:"Sélectionnez une unité",en:"Select a unit",es:"Selecciona una unidad",de:"Wähle eine Einheit aus",it:"Seleziona un'unità",pt:"Selecione uma unidade",ru:"Выделите одну единицу",zh:"选中一个单位",ar:"حدّد وحدة"},
     enter:()=>{ camFollow=false; camX=0; tutHold(); tutEnsureGround(2); game.sel.clear(); },
     focus:()=>{ const u=game.p.units.find(x=>!x.fly)||game.p.units[0]; return u? tutWorldRect(u.x):null; },
     done:()=>game.sel.size>=1,
   },
   { // 8 — lasso
-    text:{fr:"Pour sélectionner TOUT un groupe : touchez ⬚ LASSO (surligné), puis tracez un rectangle autour de vos troupes.",
-          en:"To select a WHOLE group: tap ⬚ LASSO (highlighted), then drag a box around your troops.",es:"Para seleccionar TODO un grupo: toca ⬚ LAZO (resaltado), luego traza un rectángulo alrededor de tus tropas.",de:"Um eine GANZE Gruppe auszuwählen: tippe auf ⬚ LASSO (markiert) und ziehe dann ein Rechteck um deine Truppen.",it:"Per selezionare un INTERO gruppo: tocca ⬚ LASSO (evidenziato), poi traccia un rettangolo attorno alle tue truppe.",pt:"Para selecionar um grupo INTEIRO: toque em ⬚ LASSO (destacado), depois desenhe um retângulo ao redor de suas tropas.",ru:"Чтобы выделить ЦЕЛУЮ группу: нажмите ⬚ ЛАССО (выделено), затем обведите прямоугольником свои войска.",zh:"要选中整个部队：点击高亮的 ⬚ 套索，然后拖拽画一个框圈住你的部队。",ar:"لتحديد مجموعة كاملة: المس ⬚ اللاسو (المضيء)، ثم ارسم مستطيلاً حول قواتك."},
+    text:{fr:"Pour sélectionner des types MÉLANGÉS : touchez ⬚ LASSO (surligné), puis tracez un rectangle autour de TOUTES vos troupes. (PC : Maj + glisser.)",
+          en:"To select MIXED types: tap ⬚ LASSO (highlighted), then drag a box around ALL your troops. (PC: Shift + drag.)"},
     obj:{fr:"Sélectionnez un groupe au lasso",en:"Lasso-select a group",es:"Selecciona un grupo con el lazo",de:"Wähle eine Gruppe mit dem Lasso aus",it:"Seleziona un gruppo con il lasso",pt:"Selecione um grupo com o lasso",ru:"Выделите группу лассо",zh:"用套索选中一组单位",ar:"حدّد مجموعة باللاسو"},
     enter:()=>{ camFollow=false; camX=0; tutEnsureGround(3); game.sel.clear(); selMode=false; },
     focus:()=>tutHudRect(b=>b.type==='lasso'),
     allow:a=>a.t==='lasso',
-    done:()=>game.sel.size>=2,
+    // sélection MÉLANGÉE exigée (un simple toucher sélectionne déjà toute une classe) — sauf s'il n'y a qu'une classe au sol
+    done:()=>{ const kinds=new Set([...game.sel].map(u=>u.role)), all=new Set(game.p.units.filter(u=>!u.fly).map(u=>u.role));
+      return game.sel.size>=2 && (kinds.size>=2 || all.size<2); },
   },
   { // 9 — formation
     text:{fr:"Activez la ⚏ FORMATION : vos troupes se rangent — mêlée devant, tireurs derrière. Bien plus solide.",
@@ -7814,8 +7846,8 @@ const TUT_STEPS = [
     done:()=>game.p.formation===true,
   },
   { // 10 — charger
-    text:{fr:"Donnez l'ordre ⚔ CHARGER (surligné) pour lancer vos troupes vers l'ennemi. ✋ Tenir et ↩ Replier complètent vos ordres.",
-          en:"Give the ⚔ CHARGE order (highlighted) to send troops at the enemy. ✋ Hold and ↩ Retreat round out your orders.",es:"Da la orden ⚔ CARGAR (resaltada) para lanzar tus tropas contra el enemigo. ✋ Aguantar y ↩ Replegarse completan tus órdenes.",de:"Gib den Befehl ⚔ ANGREIFEN (markiert), um deine Truppen auf den Feind zu hetzen. ✋ Halten und ↩ Zurückziehen ergänzen deine Befehle.",it:"Dai l'ordine ⚔ CARICA (evidenziato) per lanciare le truppe contro il nemico. ✋ Tieni e ↩ Ripiega completano i tuoi ordini.",pt:"Dê a ordem ⚔ CARREGAR (destacada) para lançar suas tropas contra o inimigo. ✋ Segurar e ↩ Recuar completam suas ordens.",ru:"Отдайте приказ ⚔ В АТАКУ (выделено), чтобы бросить войска на врага. ✋ Держать и ↩ Отступить дополняют ваши приказы.",zh:"下达 ⚔ 冲锋 命令（高亮）派部队进攻敌人。✋ 坚守 和 ↩ 撤退 是另外两种可用命令。",ar:"أصدر أمر ⚔ الهجوم (المضيء) لإرسال قواتك نحو العدو. ✋ التمسّك و↩ التراجع يكمّلان أوامرك."},
+    text:{fr:"Donnez l'ordre ⚔ CHARGER (surligné) pour lancer vos troupes vers l'ennemi. ✋ Tenir et ↩ Replier complètent vos ordres. Avec une sélection, l'ordre ne vaut que pour elle ; sinon pour toute l'armée.",
+          en:"Give the ⚔ CHARGE order (highlighted) to send troops at the enemy. ✋ Hold and ↩ Retreat round out your orders. With a selection the order applies to it only; otherwise to the whole army."},
     obj:{fr:"Ordonnez la charge",en:"Order the charge",es:"Ordena la carga",de:"Befiehl den Angriff",it:"Ordina la carica",pt:"Ordene o ataque",ru:"Отдайте приказ в атаку",zh:"下达冲锋命令",ar:"أصدر أمر الهجوم"},
     enter:()=>{ camFollow=false; camX=0; },
     focus:()=>tutHudRect(b=>b.type==='stance'&&b.st==='charge'),
@@ -7831,8 +7863,8 @@ const TUT_STEPS = [
     done:()=>game.p.units.some(u=>u.ord==='point'),
   },
   { // 11 — amélioration de classe
-    text:{fr:"Renforcez vos troupes : touchez le petit ⬆ dans le coin du bouton ⚔ MÊLÉE pour AMÉLIORER toute la classe (cumulable ×3).",
-          en:"Strengthen your troops: tap the small ⬆ in the corner of the ⚔ MELEE button to UPGRADE the whole class (stacks ×3).",es:"Refuerza tus tropas: toca el pequeño ⬆ en la esquina del botón ⚔ CUERPO A CUERPO para MEJORAR toda la clase (acumulable ×3).",de:"Verstärke deine Truppen: tippe auf das kleine ⬆ in der Ecke des ⚔ NAHKAMPF-Buttons, um die ganze Klasse zu VERBESSERN (bis zu ×3 stapelbar).",it:"Rafforza le tue truppe: tocca il piccolo ⬆ nell'angolo del pulsante ⚔ CORPO A CORPO per MIGLIORARE l'intera classe (cumulabile ×3).",pt:"Reforce suas tropas: toque no pequeno ⬆ no canto do botão ⚔ CORPO A CORPO para MELHORAR toda a classe (acumula ×3).",ru:"Усильте войска: нажмите на маленькую ⬆ в углу кнопки ⚔ БЛИЖНИЙ БОЙ, чтобы УЛУЧШИТЬ весь класс (суммируется до ×3).",zh:"强化你的部队：点击 ⚔ 近战 按钮角落的小 ⬆ 图标，升级整个兵种（可叠加 ×3）。",ar:"عزّز قواتك: المس ⬆ الصغير في زاوية زر ⚔ القتال القريب لترقية الفئة بأكملها (قابل للتراكم ×3)."},
+    text:{fr:"Renforcez vos troupes : touchez le petit ⬆ en bas à droite de la fiche MÊLÉE. Chaque niveau (3 max) donne +15 % de PV et de dégâts aux unités de cette classe recrutées ENSUITE.",
+          en:"Strengthen your troops: tap the small ⬆ at the bottom-right of the MELEE card. Each level (3 max) gives +15% HP and damage to units of that class recruited AFTERWARDS."},
     obj:{fr:"Améliorez la classe mêlée (⬆)",en:"Upgrade the melee class (⬆)",es:"Mejora la clase cuerpo a cuerpo (⬆)",de:"Verbessere die Nahkampf-Klasse (⬆)",it:"Migliora la classe corpo a corpo (⬆)",pt:"Melhore a classe corpo a corpo (⬆)",ru:"Улучшите класс ближнего боя (⬆)",zh:"升级近战兵种（⬆）",ar:"طوّر فئة القتال القريب (⬆)"},
     enter:()=>{ tutGrant(600,1200,250); camFollow=false; camX=0; },
     focus:()=>tutHudRect(b=>b.type==='unit'&&b.i===0),
@@ -7840,8 +7872,8 @@ const TUT_STEPS = [
     done:()=>(game.p.upg.melee||0)>=1,
   },
   { // 12 — capacité d'armée
-    text:{fr:"Investissez : touchez 📈 CAPACITÉ pour augmenter le nombre maximum d'unités de votre armée.",
-          en:"Invest: tap 📈 CAPACITY to raise your army's maximum unit count.",es:"Invierte: toca 📈 CAPACIDAD para aumentar el número máximo de unidades de tu ejército.",de:"Investiere: tippe auf 📈 KAPAZITÄT, um die maximale Einheitenzahl deiner Armee zu erhöhen.",it:"Investi: tocca 📈 CAPACITÀ per aumentare il numero massimo di unità del tuo esercito.",pt:"Invista: toque em 📈 CAPACIDADE para aumentar o número máximo de unidades do seu exército.",ru:"Инвестируйте: нажмите 📈 ВМЕСТИМОСТЬ, чтобы увеличить максимум юнитов в армии.",zh:"进行投资：点击 📈 容量 以提升军队的最大单位上限。",ar:"استثمر: المس 📈 السعة لزيادة الحد الأقصى لعدد وحدات جيشك."},
+    text:{fr:"Investissez : touchez 👥 +10 (🪙350 💧100, une seule fois) : le plafond d'armée passe de 30 à 40. Au plafond, les recrues attendent en file (⏳, 10 au plus).",
+          en:"Invest: tap 👥 +10 (🪙350 💧100, one time): the army cap goes from 30 to 40. At the cap, recruits wait in a queue (⏳, 10 at most)."},
     obj:{fr:"Augmentez votre capacité d'armée",en:"Raise your army capacity",es:"Aumenta la capacidad de tu ejército",de:"Erhöhe die Kapazität deiner Armee",it:"Aumenta la capacità del tuo esercito",pt:"Aumente a capacidade do seu exército",ru:"Увеличьте вместимость армии",zh:"提升军队容量",ar:"زد سعة جيشك"},
     enter:()=>{ tutGrant(500,800,500); camFollow=false; camX=0; },
     focus:()=>tutHudRect(b=>b.type==='cap'),
@@ -7853,17 +7885,17 @@ const TUT_STEPS = [
   //       On fortifie la LIGNE au milieu de la carte, on garnit, puis on encaisse une vague. =====
   { // 13 — la barrière (info, gelé)
     tap:true,
-    text:{fr:"🛡 Une BARRIÈRE d'énergie bloque le front au milieu de la carte : vos troupes ne peuvent pas avancer pour l'instant. Profitez-en pour FORTIFIER cette ligne. Le combat est automatique : mêlée devant, tireurs derrière.",
-          en:"🛡 An energy BARRIER blocks the front at mid-map: your troops can't advance yet. Use this time to FORTIFY the line. Combat is automatic: melee in front, ranged behind.",es:"🛡 Una BARRERA de energía bloquea el frente en medio del mapa: tus tropas no pueden avanzar por ahora. Aprovecha para FORTIFICAR esta línea. El combate es automático: cuerpo a cuerpo delante, tiradores detrás.",de:"🛡 Eine Energie-BARRIERE blockiert die Front in der Kartenmitte: deine Truppen können vorerst nicht vorrücken. Nutze die Zeit, um diese Linie zu BEFESTIGEN. Der Kampf läuft automatisch: Nahkampf vorne, Fernkampf hinten.",it:"🛡 Una BARRIERA di energia blocca il fronte a metà mappa: le tue truppe non possono avanzare per ora. Approfittane per FORTIFICARE questa linea. Il combattimento è automatico: corpo a corpo davanti, tiratori dietro.",pt:"🛡 Uma BARREIRA de energia bloqueia a frente no meio do mapa: suas tropas não podem avançar por enquanto. Aproveite para FORTIFICAR essa linha. O combate é automático: corpo a corpo na frente, atiradores atrás.",ru:"🛡 Энергетический БАРЬЕР блокирует фронт в центре карты: войска пока не могут продвинуться. Используйте это время, чтобы УКРЕПИТЬ линию. Бой идёт автоматически: ближний бой впереди, стрелки сзади.",zh:"🛡 一道能量屏障阻挡了地图中央的战线：你的部队暂时无法前进。趁此机会加固这条防线。战斗是自动进行的：近战在前，射手在后。",ar:"🛡 حاجز طاقة يوقف الجبهة في منتصف الخريطة: لا يمكن لقواتك التقدم الآن. استغل الوقت لتحصين هذا الخط. القتال تلقائي: القتال القريب أمامًا، الرماة خلفًا."},
-    enter:()=>{ camFollow=false; tutCam(game.tutBarrier); tutHold(game.tutBarrier); game.sel.clear(); },   // les troupes rejoignent la ligne
+    text:{fr:"🛡 Une BARRIÈRE d'énergie bloque le front au milieu de la carte : vos troupes ne peuvent pas avancer pour l'instant. Profitez-en pour FORTIFIER cette ligne. Le combat est automatique : mêlée devant, tireurs derrière. Près de leur propre base, vos troupes se battent nettement mieux.",
+          en:"🛡 An energy BARRIER blocks the front at mid-map: your troops can't advance yet. Use this time to FORTIFY the line. Combat is automatic: melee in front, ranged behind. Near their own base your troops fight noticeably better."},
+    enter:()=>{ tutDefSlots(); camFollow=false; tutCam(game.tutBarrier); tutHold(game.tutBarrier); game.sel.clear(); },   // les troupes rejoignent la ligne
     focus:()=>null,
   },
   { // 14 — muraille (sur la ligne de front, au milieu de la carte)
     text:{fr:"🧱 Bâtissez une MURAILLE sur le socle surligné, sur la ligne de front. Solide, elle encaisse les coups à la place de vos troupes.",
           en:"🧱 Build a WALL on the highlighted pad, on the front line. Sturdy, it takes hits instead of your troops.",es:"🧱 Construye una MURALLA en el socle resaltado, en la línea de frente. Sólida, aguanta los golpes en lugar de tus tropas.",de:"🧱 Baue eine MAUER auf dem markierten Feld an der Frontlinie. Robust, sie hält Treffer statt deiner Truppen aus.",it:"🧱 Costruisci un MURO sulla piastra evidenziata, sulla linea del fronte. Solido, incassa i colpi al posto delle tue truppe.",pt:"🧱 Construa uma MURALHA no espaço destacado, na linha de frente. Sólida, ela aguenta os golpes no lugar de suas tropas.",ru:"🧱 Постройте СТЕНУ на выделенном слоте, на линии фронта. Прочная, она принимает удары вместо ваших войск.",zh:"🧱 在前线高亮地块建造一座城墙。坚固的城墙会替你的部队承受打击。",ar:"🧱 ابنِ سوراً في اللوحة المضيئة، على خط الجبهة. متين، يمتصّ الضربات بدلاً من قواتك."},
     obj:{fr:"Construisez une muraille (ligne de front)",en:"Build a wall (front line)",es:"Construye una muralla (línea de frente)",de:"Baue eine Mauer (Frontlinie)",it:"Costruisci un muro (linea del fronte)",pt:"Construa uma muralha (linha de frente)",ru:"Постройте стену (на линии фронта)",zh:"建造一座城墙（前线）",ar:"ابنِ سوراً (على الجبهة)"},
-    enter:()=>{ tutGrant(400,400,200); const s=tutEmptySlot(); if(s)tutCam(s.x); },
-    focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
+    enter:()=>{ tutGrant(400,400,200); const s=tutFrontSlot(); if(s)tutCam(s.x); },
+    focus:()=>{ const s=tutFrontSlot(); return s? tutWorldRect(s.x):null; },
     allow:a=>a.t==='build'&&a.type==='wall',
     done:()=>tutHasBuild('wall'),
   },
@@ -7871,14 +7903,14 @@ const TUT_STEPS = [
     text:{fr:"🗼 Ajoutez une TOURELLE sur le socle surligné : elle tire automatiquement sur tout ennemi à portée.",
           en:"🗼 Add a TURRET on the highlighted pad: it automatically fires at any enemy in range.",es:"🗼 Añade una TORRETA en el socle resaltado: dispara automáticamente a cualquier enemigo a su alcance.",de:"🗼 Baue einen TURM auf dem markierten Feld: er feuert automatisch auf jeden Feind in Reichweite.",it:"🗼 Aggiungi una TORRETTA sulla piastra evidenziata: spara automaticamente a ogni nemico a portata.",pt:"🗼 Adicione uma TORRETA no espaço destacado: ela atira automaticamente em qualquer inimigo ao alcance.",ru:"🗼 Постройте БАШНЮ на выделенном слоте: она автоматически стреляет по любому врагу в радиусе действия.",zh:"🗼 在高亮地块建造一座炮塔：它会自动攻击射程内的任何敌人。",ar:"🗼 أضف برجاً في اللوحة المضيئة: يطلق النار تلقائياً على أي عدو في مداه."},
     obj:{fr:"Construisez une tourelle",en:"Build a turret",es:"Construye una torreta",de:"Baue einen Turm",it:"Costruisci una torretta",pt:"Construa uma torreta",ru:"Постройте башню",zh:"建造一座炮塔",ar:"ابنِ برجاً"},
-    enter:()=>{ tutGrant(400,500,200); const s=tutEmptySlot(); if(s)tutCam(s.x); },
-    focus:()=>{ const s=tutEmptySlot(); return s? tutWorldRect(s.x):null; },
+    enter:()=>{ tutGrant(400,500,200); const s=tutFrontSlot(); if(s)tutCam(s.x); },
+    focus:()=>{ const s=tutFrontSlot(); return s? tutWorldRect(s.x):null; },
     allow:a=>a.t==='build'&&a.type==='turret',
     done:()=>tutHasBuild('turret'),
   },
   { // 16 — garnison (ACTION, monde vivant : le tireur marche jusqu'au bâtiment)
-    text:{fr:"🚪 GARNISON : touchez votre tour ou muraille, puis « Garnison (tireur) ». Un tireur ira s'y abriter — perché et protégé, il tire de plus loin et survit bien mieux.",
-          en:"🚪 GARRISON: tap your turret or wall, then \"Garrison (shooter)\". A shooter will take cover inside — elevated and protected, it shoots farther and survives much longer.",es:"🚪 GUARNICIÓN: toca tu torre o muralla, luego « Guarnición (tirador) ». Un tirador se refugiará dentro — en alto y protegido, dispara más lejos y sobrevive mucho más.",de:"🚪 GARNISON: tippe auf deinen Turm oder deine Mauer, dann „Garnison (Schütze)“. Ein Schütze nimmt dort Stellung — erhöht und geschützt schießt er weiter und überlebt viel länger.",it:"🚪 GUARNIGIONE: tocca la tua torre o il tuo muro, poi « Guarnigione (tiratore) ». Un tiratore si rifugerà lì dentro — elevato e protetto, spara più lontano e sopravvive molto meglio.",pt:"🚪 GUARNIÇÃO: toque na sua torre ou muralha, depois « Guarnição (atirador) ». Um atirador vai se abrigar lá dentro — elevado e protegido, atira mais longe e sobrevive muito mais.",ru:"🚪 ГАРНИЗОН: нажмите на свою башню или стену, затем «Гарнизон (стрелок)». Стрелок укроется внутри — приподнятый и защищённый, он стреляет дальше и выживает намного лучше.",zh:"🚪 驻防：点击你的塔楼或城墙，然后选择「驻防（射手）」。一名射手会进驻其中——居高临下且受到保护，射程更远，存活率更高。",ar:"🚪 الحامية: المس برجك أو سورك، ثم « حامية (رامٍ) ». سيحتمي رامٍ بالداخل — مرتفعاً ومحمياً، يطلق النار من مسافة أبعد وينجو لفترة أطول."},
+    text:{fr:"🚪 GARNISON : touchez votre tour ou votre muraille, puis choisissez d'y poster un tireur. À l'abri (2 par bâtiment au plus), il tire plus loin et survit aux crues.",
+          en:"🚪 GARRISON: tap your turret or wall, then choose to post a shooter in it. Under cover (2 per building at most) it shoots farther and survives floods."},
     obj:{fr:"Garnissez une tour ou une muraille",en:"Garrison a turret or wall",es:"Guarnece una torre o muralla",de:"Bemanne einen Turm oder eine Mauer",it:"Guarnisci una torre o un muro",pt:"Guarneça uma torre ou muralha",ru:"Разместите гарнизон в башне или стене",zh:"为塔楼或城墙驻防",ar:"ضع حامية في برج أو سور"},
     enter:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')){ tutCam(s.x); break; } },
     focus:()=>{ for (const s of sideBuildSlots(game.p)) if (s.b && (s.b.type==='turret'||s.b.type==='wall')) return tutWorldRect(s.x); return null; },
@@ -7895,28 +7927,28 @@ const TUT_STEPS = [
   },
   { // 18 — expérience (info)
     tap:true,
-    text:{fr:"✦ L'EXPÉRIENCE se gagne en combattant, en tenant les zones ◈ et les lacs 💧, et en fortifiant votre base. Elle alimente vos pouvoirs et vos évolutions — votre moteur de progression.",
-          en:"✦ EXPERIENCE comes from fighting, holding zones ◈ and lakes 💧, and fortifying your base. It powers your abilities and evolutions — your engine of progression.",es:"✦ La EXPERIENCIA se gana combatiendo, controlando las zonas ◈ y los lagos 💧, y fortificando tu base. Alimenta tus poderes y evoluciones — tu motor de progreso.",de:"✦ ERFAHRUNG erhältst du durch Kämpfen, das Halten von Zonen ◈ und Seen 💧 sowie durch die Befestigung deiner Basis. Sie treibt deine Fähigkeiten und Entwicklungen an — dein Fortschrittsmotor.",it:"✦ L'ESPERIENZA si guadagna combattendo, tenendo le zone ◈ e i laghi 💧, e fortificando la tua base. Alimenta i tuoi poteri e le tue evoluzioni — il tuo motore di progressione.",pt:"✦ A EXPERIÊNCIA é ganha combatendo, controlando zonas ◈ e lagos 💧, e fortificando sua base. Ela alimenta seus poderes e evoluções — seu motor de progresso.",ru:"✦ ОПЫТ зарабатывается в боях, удержанием зон ◈ и озёр 💧, а также укреплением базы. Он питает ваши способности и эволюции — двигатель вашего развития.",zh:"✦ 经验值 通过战斗、占领 ◈ 区域与 💧 湖泊，以及加固基地来获得。它是你的能力与进化的动力源泉。",ar:"✦ الخبرة تُكتسب بالقتال، والسيطرة على المناطق ◈ والبحيرات 💧، وتحصين قاعدتك. تغذّي قدراتك وتطوراتك — محرك تقدمك."},
+    text:{fr:"✦ L'EXPÉRIENCE coule seule, et plus vite en combattant, en tenant les zones ◈ et les lacs 💧, en frappant la base ennemie et en fortifiant la vôtre. Elle paie les pouvoirs ET les évolutions : il faut choisir.",
+          en:"✦ EXPERIENCE trickles in by itself, and faster by fighting, holding zones ◈ and lakes 💧, hitting the enemy base and fortifying yours. It pays for powers AND evolutions: you have to choose."},
     enter:()=>{ camFollow=false; camX=0; },
     focus:()=>({x:248,y:6,w:120,h:34}),   // compteur ✦ dans le bandeau du haut
   },
+  { // 18a — EXPANSION (info) : socles libres, chantiers à distance
+    tap:true,
+    text:{fr:"🗺 Entre les deux bases, des emplacements LIBRES (piquets) étendent votre économie ou vos défenses. On ne bâtit que là où vos troupes sont déjà passées : un soldat libre vient achever le chantier (2 chantiers à la fois au plus).",
+          en:"🗺 Between the two bases, FREE plots (stakes) extend your economy or your defenses. You can only build where your troops have already been: an idle soldier comes to finish the building site (2 sites at once at most)."},
+    enter:()=>{ camFollow=false; camX=0; },
+    focus:()=>null,
+  },
   { // 18b — santé du monde, cataclysmes et fil d'actualités (info, avec une dépêche de démonstration)
     tap:true,
-    text:{fr:"🌍 SANTÉ DU MONDE (barre en haut) : la planète se dégrade au fil de la guerre. Plus elle baisse, plus les CATACLYSMES frappent les deux camps — pluie d'acide, canicule, crue, tempête de sable… En haut à gauche, un fil discret relate l'état du monde (× pour le masquer).",
-          en:"🌍 WORLD HEALTH (top bar): the planet decays as the war drags on. The lower it gets, the more CATACLYSMS hit both sides — acid rain, heatwave, flood, sandstorm… Top left, a discreet feed reports on the world (× to hide it).",
-          es:"🌍 SALUD DEL MUNDO (barra superior): el planeta se degrada con la guerra. Cuanto más baja, más CATACLISMOS golpean a ambos bandos — lluvia ácida, ola de calor, crecida, tormenta de arena… Arriba a la izquierda, un discreto boletín informa del estado del mundo (× para ocultarlo).",
-          de:"🌍 WELTGESUNDHEIT (obere Leiste): der Planet verfällt, je länger der Krieg dauert. Je tiefer sie sinkt, desto öfter treffen KATAKLYSMEN beide Seiten — saurer Regen, Hitzewelle, Flut, Sandsturm… Oben links berichtet ein dezenter Nachrichtenticker über die Welt (× zum Ausblenden).",
-          it:"🌍 SALUTE DEL MONDO (barra in alto): il pianeta si degrada con il protrarsi della guerra. Più scende, più i CATACLISMI colpiscono entrambe le parti — pioggia acida, canicola, piena, tempesta di sabbia… In alto a sinistra, un discreto notiziario racconta lo stato del mondo (× per nasconderlo).",
-          pt:"🌍 SAÚDE DO MUNDO (barra superior): o planeta se degrada com a guerra. Quanto mais baixa, mais CATACLISMOS atingem os dois lados — chuva ácida, onda de calor, cheia, tempestade de areia… No canto superior esquerdo, um discreto noticiário relata o estado do mundo (× para ocultar).",
-          ru:"🌍 ЗДОРОВЬЕ МИРА (верхняя панель): планета деградирует по ходу войны. Чем ниже показатель, тем чаще КАТАКЛИЗМЫ бьют по обеим сторонам — кислотный дождь, жара, наводнение, песчаная буря… Слева вверху неброская лента новостей рассказывает о мире (× — скрыть).",
-          zh:"🌍 世界健康度（顶部栏）：战争越久，地球越衰败。数值越低，灾变越频繁地袭击双方——酸雨、热浪、洪水、沙尘暴……左上角有低调的新闻快讯播报世界动态（点 × 可隐藏）。",
-          ar:"🌍 صحة العالم (الشريط العلوي): الكوكب يتدهور مع استمرار الحرب. كلما انخفضت، ازدادت الكوارث التي تضرب الطرفين — مطر حمضي، موجة حر، فيضان، عاصفة رملية… في الأعلى يساراً، شريط أخبار هادئ يروي حال العالم (× لإخفائه)."},
+    text:{fr:"🌍 SANTÉ DU MONDE (réglette en haut : elle se REMPLIT de rouge quand la planète meurt). Plus la guerre dure, plus les CATACLYSMES frappent les deux camps : acide, canicule, crue (les garnisons y survivent), tempête de sable (fatale aux volants), parfois météores ou bombe atomique. Grèves et mises à jour forcées figent un camp 15 s. En haut à gauche, un fil raconte le monde (× pour le masquer).",
+          en:"🌍 WORLD HEALTH (ruler at the top: it FILLS with red as the planet dies). The longer the war, the more CATACLYSMS hit both sides: acid, heatwave, flood (garrisons survive it), sandstorm (deadly to flyers), sometimes meteors or a nuke. Strikes and forced updates freeze one side for 15 s. Top left, a feed reports on the world (× to hide it)."},
     enter:()=>{ camFollow=false; camX=0; newsDemo(NEWS.t1[0]); },
     focus:()=>({x:W/2-86, y:15, w:172, h:19}),   // barre « santé du monde »
   },
   { // 19 — pouvoir ultime
-    text:{fr:"Votre POUVOIR ULTIME ✸ est alimenté par l'✦. Il est prêt : lancez-le (bouton surligné).",
-          en:"Your ULTIMATE ✸ is powered by ✦. It's ready: unleash it (highlighted button).",es:"Tu PODER DEFINITIVO ✸ se alimenta de ✦. Está listo: úsalo (botón resaltado).",de:"Deine ULTIMATIVE FÄHIGKEIT ✸ wird von ✦ gespeist. Sie ist bereit: setze sie ein (markierter Button).",it:"La tua ABILITÀ SUPREMA ✸ è alimentata da ✦. È pronta: usala (pulsante evidenziato).",pt:"Sua HABILIDADE SUPREMA ✸ é alimentada por ✦. Está pronta: use-a (botão destacado).",ru:"Ваша КОРОННАЯ СПОСОБНОСТЬ ✸ питается очками ✦. Она готова: примените её (выделенная кнопка).",zh:"你的 ✸ 大招 由 ✦ 提供能量。现已就绪：使用它吧（高亮按钮）。",ar:"مهارتك القصوى ✸ تُغذّى بـ✦. إنها جاهزة: استخدمها (الزر المضيء)."},
+    text:{fr:"Votre POUVOIR ULTIME ✸ se paie en ✦ (de plus en plus cher à chaque ère), se recharge en 40 s environ et blesse TOUS les ennemis sans jamais tuer d'un coup. Il est prêt : lancez-le ! Si votre base tombe sous 20 % de PV, il devient ☠ DERNIER RECOURS (gratuit, une seule fois).",
+          en:"Your ULTIMATE ✸ is paid in ✦ (pricier with each era), recharges in about 40 s and hurts ALL enemies without ever killing outright. It's ready: unleash it! If your base drops below 20% HP it becomes ☠ LAST RESORT (free, one time)."},
     obj:{fr:"Lancez votre pouvoir ultime",en:"Unleash your ultimate",es:"Usa tu poder definitivo",de:"Setze deine ultimative Fähigkeit ein",it:"Usa la tua abilità suprema",pt:"Use sua habilidade suprema",ru:"Примените коронную способность",zh:"使用你的大招",ar:"استخدم مهارتك القصوى"},
     enter:()=>{ const p=game.p; p.specialCd=0; p.xp=Math.max(p.xp, specialXpCost(p)+30); TUT.specBase=game.specialsUsed; camFollow=true; },
     focus:()=>tutHudRect(b=>b.type==='special'),
@@ -7924,8 +7956,8 @@ const TUT_STEPS = [
     done:()=>game.specialsUsed>(TUT.specBase||0),
   },
   { // 20 — évolution d'ère
-    text:{fr:"L'✦ permet aussi d'ÉVOLUER : changer d'ère rend TOUTES vos forces plus puissantes et débloque de nouvelles unités. Touchez ⚡ ÉVOLUER.",
-          en:"✦ also lets you EVOLVE: advancing an era makes ALL your forces stronger and unlocks new units. Tap ⚡ EVOLVE.",es:"✦ también permite EVOLUCIONAR: cambiar de era hace TODAS tus fuerzas más poderosas y desbloquea nuevas unidades. Toca ⚡ EVOLUCIONAR.",de:"✦ erlaubt auch die EVOLUTION: ein Zeitalterwechsel macht ALLE deine Kräfte stärker und schaltet neue Einheiten frei. Tippe auf ⚡ ENTWICKELN.",it:"✦ permette anche di EVOLVERE: cambiare era rende TUTTE le tue forze più potenti e sblocca nuove unità. Tocca ⚡ EVOLVI.",pt:"✦ também permite EVOLUIR: mudar de era torna TODAS as suas forças mais poderosas e desbloqueia novas unidades. Toque em ⚡ EVOLUIR.",ru:"✦ также позволяет ЭВОЛЮЦИОНИРОВАТЬ: смена эпохи делает ВСЕ ваши силы мощнее и открывает новые юниты. Нажмите ⚡ ЭВОЛЮЦИЯ.",zh:"✦ 还能让你 进化：跨入新纪元会让你的所有兵力更加强大，并解锁新单位。点击 ⚡ 进化。",ar:"✦ يتيح أيضاً التطوّر: تغيير الحقبة يجعل كل قواك أقوى ويفتح وحدات جديدة. المس ⚡ تطوّر."},
+    text:{fr:"L'✦ sert aussi à ÉVOLUER : à chaque ère (5, puis la TRANSCENDANCE), les unités recrutées ensuite sont bien plus fortes, mais plus chères ; vos troupes déjà en place ne changent pas. Touchez ⚡ ÉVOLUER.",
+          en:"✦ also lets you EVOLVE: with each era (5, then TRANSCENDENCE) units recruited afterwards are much stronger, but pricier; troops already fielded don't change. Tap ⚡ EVOLVE."},
     obj:{fr:"Évoluez vers l'ère suivante",en:"Evolve to the next era",es:"Evoluciona a la siguiente era",de:"Entwickle dich zum nächsten Zeitalter",it:"Evolvi alla prossima era",pt:"Evolua para a próxima era",ru:"Перейдите в следующую эпоху",zh:"进化到下一纪元",ar:"تطوّر إلى الحقبة التالية"},
     enter:()=>{ const p=game.p; TUT.eraBase=p.era; p.xp=Math.max(p.xp, EVOLVE_XP[Math.min(p.era+1,4)]+30); camFollow=false; camX=0; },
     focus:()=>tutHudRect(b=>b.type==='evolve'),
@@ -7933,16 +7965,26 @@ const TUT_STEPS = [
     done:()=>game.p.era>(TUT.eraBase||0),
   },
   { // 21 — fortifier la base
-    text:{fr:"Votre BASE aussi s'améliore : touchez-la, puis « Fortifier » — plus de points de vie ET plus d'✦ passif. Pensez aussi à la réparer en cours de partie.",
-          en:"Your BASE upgrades too: tap it, then \"Fortify\" — more HP AND more passive ✦. Remember to repair it mid-game too.",es:"Tu BASE también mejora: tócala, luego « Fortificar » — más puntos de vida Y más ✦ pasivo. Recuerda también repararla durante la partida.",de:"Auch deine BASIS wird besser: tippe darauf, dann „Befestigen“ — mehr Lebenspunkte UND mehr passives ✦. Denk daran, sie auch während des Spiels zu reparieren.",it:"Anche la tua BASE migliora: toccala, poi « Fortifica » — più punti vita E più ✦ passivo. Ricordati anche di ripararla durante la partita.",pt:"Sua BASE também melhora: toque nela, depois « Fortificar » — mais pontos de vida E mais ✦ passivo. Lembre-se também de repará-la durante a partida.",ru:"Ваша БАЗА тоже улучшается: коснитесь её, затем «Укрепить» — больше очков здоровья И больше пассивного ✦. Не забывайте также чинить её по ходу игры.",zh:"你的 基地 也能升级：点击基地，然后选择「加固」——获得更多生命值以及更多被动 ✦。记得在游戏过程中也要修复它。",ar:"قاعدتك تتحسّن أيضاً: المسها، ثم « تحصين » — المزيد من نقاط الحياة وا لمزيد من ✦ السلبية. تذكّر أيضاً إصلاحها أثناء اللعب."},
+    text:{fr:"Votre BASE aussi s'améliore : touchez-la, puis « Fortifier » — plus de PV ET plus d'✦ passif. Son menu offre aussi la GARDE du château (3 tireurs) et la nano-réparation.",
+          en:"Your BASE upgrades too: tap it, then \"Fortify\" — more HP AND more passive ✦. Its menu also offers the stronghold GUARD (3 shooters) and nano-repair."},
     obj:{fr:"Fortifiez votre base",en:"Fortify your base",es:"Fortifica tu base",de:"Befestige deine Basis",it:"Fortifica la tua base",pt:"Fortifique sua base",ru:"Укрепите базу",zh:"加固你的基地",ar:"حصّن قاعدتك"},
     enter:()=>{ const p=game.p; TUT.fortBase=(p.fortLvl||1); tutGrant(700,700,200); camFollow=false; tutCam(p.x); },
     focus:()=>tutWorldRect(game.p.x),
-    done:()=>(game.p.fortLvl||1)>(TUT.fortBase||1),
+    done:()=>(game.p.fortLvl||1)>(TUT.fortBase||1) || (TUT.fortBase||1)>=3,   // déjà au maximum : étape acquise
+  },
+  { // 21b — RÉPARER (dégâts mis en scène)
+    text:{fr:"🔧 RÉPARER : votre château et vos bâtiments ont pris des coups. Touchez 🔧 TOUT pour tout remettre à neuf (le prix dépend des dégâts). La nano-réparation (menu du château) s'en charge toute seule.",
+          en:"🔧 REPAIR: your stronghold and buildings took hits. Tap 🔧 ALL to restore everything (the price depends on the damage). Nano-repair (stronghold menu) takes care of it by itself."},
+    obj:{fr:"Réparez tout",en:"Repair everything"},
+    enter:()=>{ const p=game.p; tutGrant(500,500,150); p.hp=Math.min(p.hp, Math.max(1,p.maxhp-400));
+      for (const s of sideBuildSlots(p)) if (s.b && s.b.type!=='site') s.b.hp=Math.min(s.b.hp, Math.round(s.b.maxhp*0.5)); camFollow=false; camX=0; },
+    focus:()=>tutHudRect(b=>b.type==='repairall'),
+    allow:a=>a.t==='repairall', noReenter:true,
+    done:()=>{ const p=game.p; return p.hp>=p.maxhp-0.5 && sideBuildSlots(p).every(s=>!s.b || s.b.type==='site' || s.b.hp>=s.b.maxhp-0.5); },
   },
   { // 22 — héros
-    text:{fr:"Une fois par partie, invoquez votre 🦸 HÉROS légendaire : il décuple la force de toute votre armée tant qu'il vit.",
-          en:"Once per game, summon your 🦸 legendary HERO: he massively boosts your whole army while alive.",es:"Una vez por partida, invoca a tu 🦸 HÉROE legendario: multiplica la fuerza de todo tu ejército mientras viva.",de:"Einmal pro Partie kannst du deinen legendären 🦸 HELDEN beschwören: er vervielfacht die Stärke deiner gesamten Armee, solange er lebt.",it:"Una volta per partita, evoca il tuo 🦸 EROE leggendario: moltiplica la forza di tutto il tuo esercito finché è in vita.",pt:"Uma vez por partida, invoque seu 🦸 HERÓI lendário: ele multiplica a força de todo o seu exército enquanto estiver vivo.",ru:"Раз за игру вы можете призвать легендарного 🦸 ГЕРОЯ: пока он жив, сила всей вашей армии многократно возрастает.",zh:"每局游戏可召唤一次你的传奇 🦸 英雄：只要他存活，你全军的战力都会大幅提升。",ar:"مرة واحدة في كل مباراة، استدعِ 🦸 بطلك الأسطوري: يضاعف قوة جيشك بأكمله طالما بقي حياً."},
+    text:{fr:"Invoquez votre HÉROS légendaire (🌾700 🪙700 💧200 ; à nouveau disponible au bout de 10 min ; un seul à la fois) : tant qu'il vit, toute votre armée frappe 3 fois plus fort et avance 2 fois plus vite.",
+          en:"Summon your legendary HERO (🌾700 🪙700 💧200; available again after 10 min; one at a time): while they live your whole army hits 3 times harder and moves twice as fast."},
     obj:{fr:"Invoquez votre héros",en:"Summon your hero",es:"Invoca a tu héroe",de:"Beschwöre deinen Helden",it:"Evoca il tuo eroe",pt:"Invoque seu herói",ru:"Призовите героя",zh:"召唤你的英雄",ar:"استدعِ بطلك"},
     // garantit l'invocation DANS TOUS LES CAS, peu importe ce qui a été dépensé avant :
     // ressources largement au-dessus du coût du héros + recharge remise à zéro.
@@ -7953,8 +7995,8 @@ const TUT_STEPS = [
     done:()=>game.p.units.some(u=>u.role==='hero'),
   },
   { // 23 — assaut final (la barrière TOMBE, on libère la carte, on détruit la base)
-    text:{fr:"⚔ La BARRIÈRE TOMBE ! La voie est libre. Ordonnez la CHARGE et menez votre armée détruire la base ennemie ! ⏩ Temps accéléré ×2 (bouton en haut à droite).",
-          en:"⚔ The BARRIER FALLS! The path is open. Order the CHARGE and lead your army to destroy the enemy base! ⏩ Time sped up ×2 (top-right button).",es:"⚔ ¡La BARRERA CAE! El camino está libre. Ordena la CARGA y lleva a tu ejército a destruir la base enemiga! ⏩ Tiempo acelerado ×2 (botón arriba a la derecha).",de:"⚔ Die BARRIERE FÄLLT! Der Weg ist frei. Befiehl den ANGRIFF und führe deine Armee zur Zerstörung der feindlichen Basis! ⏩ Zeit auf ×2 beschleunigt (Button oben rechts).",it:"⚔ La BARRIERA CADE! La strada è libera. Ordina la CARICA e guida il tuo esercito a distruggere la base nemica! ⏩ Tempo accelerato ×2 (pulsante in alto a destra).",pt:"⚔ A BARREIRA CAI! O caminho está livre. Ordene o ATAQUE e leve seu exército para destruir a base inimiga! ⏩ Tempo acelerado ×2 (botão no canto superior direito).",ru:"⚔ БАРЬЕР ПАДАЕТ! Путь свободен. Отдайте приказ В АТАКУ и ведите армию уничтожать вражескую базу! ⏩ Время ускорено ×2 (кнопка вверху справа).",zh:"⚔ 屏障已破！道路已开。下达 冲锋 命令，率领你的军队摧毁敌方基地！ ⏩ 时间已加速 ×2（右上角按钮）。",ar:"⚔ الحاجز يسقط! الطريق مفتوح الآن. أصدر أمر الهجوم وقُد جيشك لتدمير قاعدة العدو! ⏩ تم تسريع الوقت ×2 (الزر أعلى اليمين)."},
+    text:{fr:"⚔ La BARRIÈRE TOMBE ! La voie est libre : votre armée charge d'elle-même vers la base ennemie. Le temps est accéléré ×2 (bouton en haut à droite).",
+          en:"⚔ The BARRIER FALLS! The path is open: your army charges the enemy base on its own. Time is sped up ×2 (top-right button)."},
     obj:{fr:"Détruisez la base ennemie",en:"Destroy the enemy base",es:"Destruye la base enemiga",de:"Zerstöre die feindliche Basis",it:"Distruggi la base nemica",pt:"Destrua a base inimiga",ru:"Уничтожьте вражескую базу",zh:"摧毁敌方基地",ar:"دمّر قاعدة العدو"},
     enter:()=>{ const e=game.e; game.tutBarrier=null;        // libère la carte
       // toute l'armée repart (efface les ordres de position / la sélection de la vague)
@@ -7966,10 +8008,24 @@ const TUT_STEPS = [
     allow:a=>a.t==='stance', noReenter:true,   // enter() remet la base à 600 PV : ne pas le rejouer
     done:()=>game.e.hp<=0,
   },
+  { // 23b — LA BASE À DEUX VIES (info) : bombe H, hiver nucléaire
+    tap:true,
+    text:{fr:"☢ En VRAIE partie, la première base qui tombe RENAÎT, plus solide, et une BOMBE H rase la carte : armées, files d'attente, bâtiments. Seules les bases et la garde du château survivent ; l'hiver nucléaire divise ensuite 🌾 et 🪙 par deux pendant quelques minutes. Il faut donc abattre la base DEUX fois : gardez des réserves et rebâtissez vite.",
+          en:"☢ In a REAL match, the first base to fall is REBORN, tougher, and an H-BOMB razes the map: armies, queues, buildings. Only the bases and the stronghold guard survive; nuclear winter then halves 🌾 and 🪙 for a few minutes. So a base must be taken down TWICE: keep reserves and rebuild fast."},
+    enter:()=>{ camFollow=false; camX=0; },
+    focus:()=>null,
+  },
+  { // 23c — RACCOURCIS, vitesse, pause (info)
+    tap:true,
+    text:{fr:"⌨ Sur PC, tout se joue aussi au clavier (touches modifiables dans les Paramètres) : 1 à 6 pour recruter, puis charger, tenir, replier, formation, évoluer, pouvoir, héros, tout réparer. En haut à droite : vitesse du jeu, pause ⏸ et réglages ⚙.",
+          en:"⌨ On PC everything can be played from the keyboard too (keys can be rebound in Settings): 1 to 6 to recruit, then charge, hold, retreat, formation, evolve, power, hero, repair all. Top right: game speed, pause ⏸ and settings ⚙."},
+    enter:()=>{ camFollow=false; camX=0; },
+    focus:()=>({x:W-116,y:3,w:116,h:32}),
+  },
   { // 24 — fin
     tap:true,
-    text:{fr:"🎉 Victoire ! Tutoriel terminé : économie, armée, contrôle, défense, garnisons, expérience, pouvoirs, évolution, base et héros — tout est à vous. Bonne guerre, commandant !",
-          en:"🎉 Victory! Tutorial complete: economy, army, control, defense, garrisons, experience, powers, evolution, base and hero — it's all yours. Good war, commander!",es:"🎉 ¡Victoria! Tutorial completado: economía, ejército, control, defensa, guarniciones, experiencia, poderes, evolución, base y héroe — todo es tuyo. ¡Buena guerra, comandante!",de:"🎉 Sieg! Tutorial abgeschlossen: Wirtschaft, Armee, Steuerung, Verteidigung, Garnisonen, Erfahrung, Fähigkeiten, Evolution, Basis und Held — alles gehört jetzt dir. Guten Krieg, Kommandant!",it:"🎉 Vittoria! Tutorial completato: economia, esercito, controllo, difesa, guarnigioni, esperienza, poteri, evoluzione, base ed eroe — tutto è tuo. Buona guerra, comandante!",pt:"🎉 Vitória! Tutorial concluído: economia, exército, controle, defesa, guarnições, experiência, poderes, evolução, base e herói — tudo é seu. Boa guerra, comandante!",ru:"🎉 Победа! Обучение завершено: экономика, армия, управление, оборона, гарнизоны, опыт, способности, эволюция, база и герой — теперь всё в ваших руках. Удачной войны, командир!",zh:"🎉 胜利！教程已完成：经济、军队、操控、防御、驻防、经验、能力、进化、基地与英雄——全部都已掌握。祝你征战顺利，指挥官！",ar:"🎉 النصر! اكتمل البرنامج التعليمي: الاقتصاد، الجيش، التحكم، الدفاع، الحاميات، الخبرة، القدرات، التطور، القاعدة والبطل — كل ذلك أصبح ملكك الآن. حرباً موفقة أيها القائد!"},
+    text:{fr:"🎉 Base abattue ! Tutoriel terminé : économie, armée, contrôle, défense, garnisons, expérience, pouvoirs, évolution, base et héros — tout est à vous. Bonne guerre, commandant !",
+          en:"🎉 Base down! Tutorial complete: economy, army, control, defense, garrisons, experience, powers, evolution, base and hero — it's all yours. Good war, commander!"},
     enter:()=>{ camFollow=false; camX=0; game.flash=0.6; sfx('evolve'); },
     focus:()=>null,
   },
@@ -8014,8 +8070,7 @@ function startTutorial(){
   game.tutBarrier = barrierX;
   // 2 socles de DÉFENSE en arrière de la barrière (muraille + tourelle) — l'ennemi n'étant pas
   // bloqué par la barrière, il vient jusqu'à eux : la tourelle aura toujours des cibles à portée.
-  p.slots.push({ x: barrierX - 295, b:null, owner:null });
-  p.slots.push({ x: barrierX - 235, b:null, owner:null });
+  // (ces deux socles sont posés à l'étape de la barrière — voir tutDefSlots)
   // PAS de socles neutres en tuto : le socle neutre par défaut à WORLD*0.33 (≈1188) tombe
   // PILE entre les deux socles de défense ci-dessus (1155/1215) — un 3e cercle « TERRAIN
   // LIBRE » s'affichait donc en chevauchement, jamais enseigné et jamais nécessaire.
@@ -8104,7 +8159,7 @@ function tutUpgAllowed(){
 function tutBuildAllowed(key){       // option de menu de construction visible en tuto ?
   if (!game || !game.tut || !TUT) return true;
   const step = TUT.steps[TUT.i], d = {t:'build', type:key};
-  return (step && step.allow && step.allow(d)) || TUT.revealed.some(p => p(d));
+  return !!(step && step.allow && step.allow(d));    // uniquement la construction de l'étape : chaque socle garde son rôle
 }
 function tutBuildCurrent(key){       // option à mettre en surbrillance dans le menu
   if (!game || !game.tut || !TUT) return false;

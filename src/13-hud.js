@@ -568,6 +568,9 @@ function drawUnitCard(b){
   }
   ctx.textBaseline = 'middle';
 }
+// rappel du raccourci clavier RÉEL (touches reconfigurables) — rien sur un écran tactile sans clavier
+const HK_TOUCH = !!(window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches);
+function hk(action){ const c = SETTINGS.keys[action]; return (HK_TOUCH || !c)? '' : ' ['+keyName(c)+']'; }
 function drawBtn(b){
   const A0 = ctx.globalAlpha, pal = uiPal();
   const p=game.p;
@@ -585,19 +588,19 @@ function drawBtn(b){
       const siegeOk = p.heroAlive && p.era>=4 && p.siegeT<=0 && p.specialCd<=0 && canPay(p,SIEGE_COST);
       ok = siegeOk || (p.specialCd<=0 && p.xp>=xc);
       if (siegeOk) label = tr('ev_siege');
-      sub = siegeOk? costStr(p,SIEGE_COST)+' [ESP]' : (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+' [ESP]';
+      sub = siegeOk? costStr(p,SIEGE_COST)+hk('special') : (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+hk('special');
       prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc));
     }
   } else if (b.type==='evolve'){
     label=tr('hud_evolve').replace(/^⚡\s*/,''); glyph='⚡';
-    if (p.era<4){ ok = p.xp>=EVOLVE_XP[p.era+1]; sub='✦'+EVOLVE_XP[p.era+1]+' [E]';
+    if (p.era<4){ ok = p.xp>=EVOLVE_XP[p.era+1]; sub='✦'+EVOLVE_XP[p.era+1]+hk('evolve');
       prog = Math.min(1,p.xp/EVOLVE_XP[p.era+1]); }
     else if (!p.trans){ ok=false; sub='✦'+TRANS_XP+' → '+p.fac.sym; prog=Math.min(1,p.xp/TRANS_XP); }
     else { ok=false; sub=tr('hud_trans'); prog=1; }
   } else if (b.type==='cap'){
     label=tr('hud_cap').replace(/^👥\s*/,''); glyph='👥';
     ok = !p.capUp && canPay(p,{m:350,w:100});
-    sub = p.capUp? tr('hud_owned'):costStr(p,{m:350,w:100})+' [U]';
+    sub = p.capUp? tr('hud_owned'):costStr(p,{m:350,w:100})+hk('capup');
     prog = 1;
   } else if (b.type==='stance'){
     label=b.label; ok = game.sel.size? false : p.stance===b.st;
@@ -609,7 +612,7 @@ function drawBtn(b){
     label=tr('hud_repall').replace(/^🔧\s*/,''); glyph='🔧';
     const rc = repairAllCost(p);
     ok = rc.f>0 || rc.m>0;
-    sub = ok? costStr(p, rc)+' [R]' : tr('hud_norep');
+    sub = ok? costStr(p, rc)+hk('repairall') : tr('hud_norep');
   } else if (b.type==='cam'){
     label=b.label; ok = b.go==='follow' && camFollow;
   } else if (b.type==='zoom'){
@@ -717,6 +720,7 @@ function drawBuildMenu(){
   // TUTORIEL : sur un SOCLE VIDE, ne proposer que la construction de l'étape + celles déjà
   // enseignées. (Sur un bâtiment existant — réparer / améliorer / GARNISON — on ne filtre rien.)
   if (game.tut && TUT && !buildMenu.base && !slot.b) opts = opts.filter(o => tutBuildAllowed(o.key));
+  if (!opts.length){ buildMenu = null; return; }      // tuto : rien à bâtir ici à cette étape
   const bw=210, bh=Math.max(1,opts.length)*34+12;
   const anchorX = buildMenu.base? p.x : slot.x;
   let bx = clamp(w2sX(anchorX)-bw/2, 8, W-bw-8);

@@ -76,9 +76,11 @@ console.log('\nTUTORIEL');
     const sim = n => { for (let i=0;i<n;i++) update(0.05); R(); };
     const C = r => [r.x+r.w/2, r.y+r.h/2];
     startTutorial(); R();
-    const times = []; let last = -1, it = 0, guard = 0, simT = 0;
+    const times = [], named = {}; let last = -1, it = 0, guard = 0, simT = 0, lastSrc = '';
     while (TUT && guard++ < 6000){
-      if (TUT.i !== last){ if (last>=0) times.push(+(simT).toFixed(1)); last = TUT.i; it = 0; simT = 0; }
+      if (TUT.i !== last){ if (last>=0){ times.push(+(simT).toFixed(1));
+          if (lastSrc.includes('e.units.length===0')) named.wave = +(simT).toFixed(1); if (lastSrc.includes('e.hp<=0')) named.assault = +(simT).toFixed(1); }
+        last = TUT.i; it = 0; simT = 0; lastSrc = String(TUT.steps[TUT.i].done); }
       if (++it > 500) return { stuck: TUT.i, text: (TUT.steps[TUT.i].obj||{}).fr };
       if (TUT.celebrating){ sim(5); simT += 0.25; continue; }
       const st = TUT.steps[TUT.i], A = d => !!(st.allow && st.allow(d)), f = st.focus && st.focus(), src = String(st.done);
@@ -92,7 +94,13 @@ console.log('\nTUTORIEL');
       if (A({t:'lasso'})){ if (!selMode){ handleTap(...C(f)); R(); }
         const xs = game.p.units.filter(u=>!u.fly).map(u=>w2sX(u.x)), gy = w2sY(gY(game.p.x+400));
         selBox = { x0:Math.min(...xs)-30, y0:gy-90, x1:Math.max(...xs)+30, y1:gy+20 }; finishLasso(); sim(4); continue; }
-      const btn = ['formation','cap','special','evolve','hero','stance'].find(t => A({t, st:'charge'}))
+      if (src.includes('camStart')){ handleTap(...C(f)); sim(6);                       // caméra : bouton « Front », puis défilement
+        if (Math.abs(camX-(TUT.camStart||0))<=200){ camX += 320; camClamp(); } sim(2); continue; }
+      if (src.includes('lvl||1)>=2')){                                                   // amélioration de la ferme
+        if (!buildMenu){ handleTap(f.x+f.w/2, f.y+f.h*0.6); R(); }
+        const o = buildMenu && buildMenu.rects.find(r=>r.key==='upgrade');
+        if (o) handleTap(...C(o)); sim(6); continue; }
+      const btn = ['formation','cap','special','evolve','hero','stance','repairall'].find(t => A({t, st:'charge'}))
                || [0,1,2,3,4,5].map(i=>'buy'+i).find(b => A({t:'buy', i:+b[3]}));
       if (btn && f){ handleTap(...C(f)); sim(8); simT += 0.4; continue; }
       if (src.includes('sel.size>=1')){ handleTap(f.x+f.w/2, f.y+f.h-40); sim(4); continue; }
@@ -104,11 +112,11 @@ console.log('\nTUTORIEL');
       if (src.includes('e.units.length===0')){ sim(20); simT += 1; continue; }
       return { unknown: TUT.i };
     }
-    return { done: !TUT, n: times.length+1, times, menu: document.getElementById('menu').style.display,
+    return { done: !TUT, n: times.length+1, times, named, menu: document.getElementById('menu').style.display,
              seen: localStorage.getItem('agi_tutoSeen') };
   });
   check(r.done && r.menu==='flex' && !errs.length,
-    r.done? `tutoriel joué de bout en bout par clics (${r.n} étapes ; vague ${r.times[r.times.length-9]} s, assaut ${r.times[r.times.length-1]} s de jeu)`
+    r.done? `tutoriel joué de bout en bout par clics (${r.n} étapes ; vague ${r.named.wave} s, assaut ${r.named.assault} s de jeu)`
           : 'tutoriel BLOQUÉ : '+JSON.stringify(r)+(errs[0]? ' — '+errs[0] : ''));
   if (r.done){ const slow = r.times.filter(t=>t>45); check(!slow.length, 'aucune étape interminable (> 45 s de jeu) : '+(slow.join(', ')||'ok')); }
   await page.close();
