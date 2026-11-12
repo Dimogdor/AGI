@@ -1032,25 +1032,34 @@ function drawZone(z, dev, t, vw){
   for (const u of game.p.units){ const d=Math.abs(u.x-z.x); if(d<90){ pN++; if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
   for (const u of game.e.units){ const d=Math.abs(u.x-z.x); if(d<90){ eN++; if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
   const combat = pN>0 && eN>0, pulse=0.65+0.35*Math.sin(t*3+z.x), flick=(combat||game.cata)?(0.55+0.45*Math.sin(t*22+z.x)):1;
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  // halo + anneau au sol
-  const g=ctx.createRadialGradient(x,y,2,x,y,42); g.addColorStop(0,rgbaC(acc,0.3*pulse)); g.addColorStop(1,rgbaC(acc,0));
-  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y,42,15,0,0,6.283); ctx.fill();
-  ctx.strokeStyle=rgbaC(acc,0.6); ctx.lineWidth=2.5; ctx.beginPath(); ctx.ellipse(x,y,26,9,0,0,6.283); ctx.stroke();
-  // anneau de progression de capture
-  if (Math.abs(z.prog)>0.01 && Math.abs(z.prog)<1){ const pc=z.prog>0?game.p.fac.accent:game.e.fac.accent;
-    ctx.strokeStyle=rgbaC(pc,0.95); ctx.lineWidth=3.4; ctx.beginPath(); ctx.ellipse(x,y,26,9,0,-Math.PI/2,-Math.PI/2+6.283*Math.abs(z.prog)); ctx.stroke(); }
-  // colonne holographique + glyphe de contrôle
-  const hh=50; const cg=ctx.createLinearGradient(x,y,x,y-hh); cg.addColorStop(0,rgbaC(acc,0.55*flick)); cg.addColorStop(1,rgbaC(acc,0));
-  ctx.fillStyle=cg; ctx.fillRect(x-4,y-hh,8,hh);
-  ctx.save(); ctx.translate(x,y-hh-2); ctx.rotate(t*1.2); ctx.globalAlpha=flick; ctx.fillStyle=rgbaC(acc,0.95); ctx.fillRect(-5,-5,10,10); ctx.restore();
+  // ZONE (v1.14) : cercle peint au sol, mât, et un DRAPEAU qu'on hisse — il monte à mesure de la
+  // capture et prend la couleur du camp. Plus de colonne holographique ni de losange tournant.
+  ctx.save();
+  ctx.strokeStyle=rgbaC(acc,0.75); ctx.lineWidth=2.2; ctx.setLineDash([7,5]);
+  ctx.beginPath(); ctx.ellipse(x,y+1,27,9,0,0,6.283); ctx.stroke(); ctx.setLineDash([]);
   // onde au passage d'unités lourdes
   if (heavy>0.1){ const ph=(t*1.5)%1, rr2=10+ph*36; ctx.strokeStyle=rgbaC(acc,0.5*heavy*(1-ph)); ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(x,y,rr2,rr2*0.36,0,0,6.283); ctx.stroke(); }
+  const hh=54, capt = Math.abs(z.prog)>0.01 && Math.abs(z.prog)<1;
+  ctx.fillStyle='rgba(8,6,10,0.28)'; ctx.beginPath(); ctx.ellipse(x+6,y+2,11,2.6,0,0,6.283); ctx.fill();
+  for (const sx of [-7,-2.5,2,6.5]){ ctx.fillStyle = sx%2? '#8a7a5c' : '#9a8a68'; ctx.beginPath(); ctx.ellipse(x+sx, y-1.5, 4, 2.6, 0, 0, 6.283); ctx.fill(); }   // sacs de sable au pied
+  ctx.strokeStyle='#4a3e34'; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x,y-1); ctx.lineTo(x,y-hh); ctx.stroke();
+  ctx.fillStyle='#c8b890'; ctx.beginPath(); ctx.arc(x,y-hh-1.5,2,0,6.283); ctx.fill();
+  // hauteur du drapeau : en haut s'il est tenu, en cours de hissage pendant la capture, en berne si neutre
+  const pc = capt? (z.prog>0? game.p.fac.accent : game.e.fac.accent) : acc;
+  const up = capt? 0.25+0.75*Math.abs(z.prog) : owner? 1 : 0.5;
+  const fy = y - 14 - (hh-26)*up, fw = 24, fhh = 13, wv = Math.sin(t*3.2+z.x)*2.2*(combat? 2 : 1), wv2 = Math.sin(t*3.2+z.x+1.4)*2.4*(combat? 2 : 1);
+  ctx.fillStyle = pc;
+  ctx.beginPath(); ctx.moveTo(x, fy-fhh); ctx.quadraticCurveTo(x+fw*0.5, fy-fhh-2+wv, x+fw, fy-fhh+1+wv2);
+  ctx.lineTo(x+fw, fy+1+wv2); ctx.quadraticCurveTo(x+fw*0.5, fy-1+wv, x, fy); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.moveTo(x, fy-3); ctx.quadraticCurveTo(x+fw*0.5, fy-4+wv, x+fw, fy-2+wv2);
+  ctx.lineTo(x+fw, fy+1+wv2); ctx.quadraticCurveTo(x+fw*0.5, fy-1+wv, x, fy); ctx.closePath(); ctx.fill();
+  if (game.cata || combat){ ctx.globalAlpha = flick*0.5; ctx.fillStyle='#fff'; ctx.fillRect(x+fw*0.3, fy-fhh+2+wv*0.5, 3, 2); }
   ctx.restore();
   // étiquette de contrôle
-  ctx.font=HF(9); ctx.textAlign='center'; ctx.fillStyle=rgbaC(acc,0.92);
-  ctx.fillText(owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral'), x, y-hh-9);
+  const zl = owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral');
+  ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
+  ctx.strokeText(zl, x, y-64); ctx.fillStyle=owner? acc : '#e6dcc4'; ctx.fillText(zl, x, y-64);
 }
 // chaîne de montagnes lointaine : silhouette dentelée, très embrumée, parallaxe ultra-lente.
 // neige sur les sommets quand le monde est sain ; teinte cendrée quand il agonise.
@@ -2995,30 +3004,36 @@ function drawSlot(slot, side, neutral){
   const gy = gY(slot.x), t = game.t;
   const owner = neutral? slot.owner : side;
   if (!slot.b){
-    const canB = neutral? true : side===game.p, pulse = 0.5+0.5*Math.sin(t*2.6);
-    const ac = neutral? '#e8d8a0' : '#ffd34a';
-    // halo de sol doux + anneau lumineux NET (cuits une fois — plus aucun flou par image)
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    ctx.globalAlpha=0.55+0.45*pulse;
-    ctx.drawImage(fxSprite('SLH'+ac, 72, 28, g => { g.save(); g.translate(36,14); g.scale(1,11/30);
-      const r=g.createRadialGradient(0,0,2,0,0,30); r.addColorStop(0,rgbaC(ac,0.28)); r.addColorStop(1,rgbaC(ac,0));
-      g.fillStyle=r; g.beginPath(); g.arc(0,0,30,0,6.283); g.fill(); g.restore(); }), x-36, gy-14, 72, 28);
-    if (canB){ ctx.globalAlpha=0.6+0.4*pulse;
-      ctx.drawImage(fxSprite('SLR'+ac, 64, 32, g => { g.strokeStyle=rgbaC(ac,0.95); g.lineWidth=2; g.shadowColor=ac; g.shadowBlur=8;
-        g.beginPath(); g.ellipse(32,16,24,9,0,0,6.283); g.stroke(); }), x-32, gy-16, 64, 32); }
+    const canB = neutral? true : side===game.p;
+    const ac = neutral? '#e8d8a0' : '#f0e6c8';
+    // EMPLACEMENT (v1.14) : tracé à la chaux au sol + piquet d'arpenteur et son panonceau « + »
+    // (objets posés dans le décor — plus d'anneau lumineux ni de symbole flottant)
+    ctx.save();
+    ctx.strokeStyle = rgbaC(ac, canB? 0.8 : 0.3); ctx.lineWidth = 1.8; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.ellipse(x, gy+1, 24, 8, 0, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+    if (canB){
+      const sw = Math.sin(t*1.7+slot.x)*0.07;
+      ctx.fillStyle='rgba(8,6,10,0.28)'; ctx.beginPath(); ctx.ellipse(x+5, gy+2, 9, 2.4, 0, 0, 6.283); ctx.fill();
+      ctx.strokeStyle='#5a4630'; ctx.lineWidth=2.6; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(x, gy+1); ctx.lineTo(x, gy-30); ctx.stroke();                 // piquet
+      ctx.strokeStyle='#7a6244'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-0.8, gy-2); ctx.lineTo(x-0.8, gy-29); ctx.stroke();
+      ctx.translate(x, gy-29); ctx.rotate(sw);                                                    // panonceau qui se balance
+      ctx.fillStyle='rgba(8,6,10,0.3)'; ctx.fillRect(-8.5, 1.5, 19, 15);
+      ctx.fillStyle=ac; ctx.fillRect(-10, 0, 19, 15);
+      ctx.fillStyle='rgba(120,90,50,0.25)'; ctx.fillRect(-10, 11, 19, 4);
+      ctx.strokeStyle='#2a2018'; ctx.lineWidth=2.4; ctx.lineCap='butt';
+      ctx.beginPath(); ctx.moveTo(-5, 7.5); ctx.lineTo(4, 7.5); ctx.moveTo(-0.5, 3); ctx.lineTo(-0.5, 12); ctx.stroke();
+      ctx.fillStyle='#3a2c1e'; ctx.fillRect(-1.2, -1.5, 2.4, 3);                                  // clou
+    }
     ctx.restore();
     if (canB){
-      const fy=gy-26+Math.sin(t*2.6)*2;     // « + » flottant (aucun support)
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      ctx.drawImage(fxSprite('SLP'+ac, 28, 28, g => { g.strokeStyle=ac; g.lineWidth=3; g.lineCap='round'; g.shadowColor=ac; g.shadowBlur=8;
-        g.beginPath(); g.moveTo(8,14); g.lineTo(20,14); g.moveTo(14,8); g.lineTo(14,20); g.stroke(); }), x-14, fy-14, 28, 28);
-      ctx.restore();
       // ÉTIQUETTE anti-chevauchement : des socles côte à côte (éco de base, tuto) partageaient
       // le même texte illisible — on n'écrit le libellé que si aucun voisin ne l'a déjà posé.
       if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){
         SLOT_LABELS.push(slot.x);
-        ctx.font=HF(9); ctx.textAlign='center'; ctx.fillStyle=rgbaC(ac,0.92);
-        ctx.fillText(neutral?tr('free_land'):tr('build_here'), x, gy-40);
+        const lb = neutral?tr('free_land'):tr('build_here');
+        ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
+        ctx.strokeText(lb, x, gy-40); ctx.fillStyle=ac; ctx.fillText(lb, x, gy-40);
       }
     }
     return;
