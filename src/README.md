@@ -37,7 +37,8 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `13-hud.js` | HUD (barres, boutons, menus de construction) |
 | `14-loop.js` | boucle de jeu `loop()` + `update`/`render` |
 | `15-tutorial.js` | tutoriel scripté interactif (`TUT_STEPS`, gel doux) |
-| `16-campaign.js` | mode histoire (campagne, missions, POI, triggers) |
+| `16-news.js` | fil d'actualités du monde |
+| `16b-campaign.js` | campagne « Les carnets de Germinal » (5 missions, radio, objectifs, progression) |
 | `17-endgame.js` | fin de partie |
 | `18-net-core.js` | multijoueur : hôte autoritaire / invité miroir |
 | `19-net-speed.js` | vitesse de jeu (vote en ligne) |

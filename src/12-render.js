@@ -50,9 +50,6 @@ function mix(a,b,t){ a=toRGB(a); b=toRGB(b); return colS(lerpColArr(a,b,t)); }
 // bloc accroché à la grille (le cœur du style)
 function pb(x,y,w,h,col){ TC.fillStyle=col; TC.fillRect(qz(x),qz(y),Math.max(PX,qz(w)),Math.max(PX,qz(h))); }
 // rectangle plein + liseré sombre (donne le contour « pixel »)
-function pbo(x,y,w,h,col,line){ x=qz(x); y=qz(y); w=Math.max(PX,qz(w)); h=Math.max(PX,qz(h));
-  TC.fillStyle=line||shade(col,0.45); TC.fillRect(x-PX,y-PX,w+PX*2,h+PX*2);
-  TC.fillStyle=col; TC.fillRect(x,y,w,h); }
 // cache de sprites hors écran : key -> canvas. draw() utilise pb/pbo/… qui ciblent TC.
 // SURÉCHANTILLONNAGE : on cuit chaque sprite à SS× la taille logique (≈ densité de pixels de
 // l'écran) puis on le blitte à sa taille logique → net en 4K au lieu d'un bitmap basse-déf
@@ -2978,7 +2975,8 @@ function drawBase(side){
   } else {
     // œil scrutateur qui suit le front
     let frontX = side.x - d*200;
-    for (const u of game.p.units.concat(game.e.units)) if (Math.abs(u.x-side.x)<500) frontX=u.x;
+    for (const u of game.p.units) if (Math.abs(u.x-side.x)<500) frontX=u.x;
+    for (const u of game.e.units) if (Math.abs(u.x-side.x)<500) frontX=u.x;
     const look = clamp((frontX-side.x)/500,-1,1)*4, ey = gy-IA_EYE_Y[era];
     sculptT(x-13, ey-8, 26, 16, 6, '#cfe0ee');
     bloomT(side.trans?'#ff4ad0':col, 8, ()=>{ ctx.fillStyle=side.trans?'#ff4ad0':col; ctx.beginPath(); ctx.arc(x+look,ey,5,0,6.283); ctx.fill(); });

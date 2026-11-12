@@ -123,7 +123,7 @@ const nativeBoot = `window.addEventListener('load',function(){try{var u=window.C
 // + rechargement AUTOMATIQUE quand une nouvelle version prend la main : plus jamais
 //   d'ancienne version coincée en cache chez un joueur de retour.
 const swReg = `if('serviceWorker'in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',function(){`+
-  `var reloaded=false,had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded||!had)return;var go=function(){var g=null;try{g=game}catch(e){}if(g&&!g.over){setTimeout(go,5000);return}reloaded=true;location.reload()};go();});`+
+  `var reloaded=false,had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded||!had)return;var go=function(){var g=null;try{g=game||net}catch(e){}if(g){setTimeout(go,5000);return}reloaded=true;location.reload()};go();});`+
   `navigator.serviceWorker.register('sw.js').then(function(reg){reg.update();setInterval(function(){reg.update();},60000);}).catch(function(){});`+
   `});}`;
 
@@ -189,7 +189,7 @@ self.addEventListener('fetch',e=>{
   if(u.origin!==self.location.origin)return; // autres domaines (liste des salons Firebase…) : réseau direct, jamais de cache
   const isDoc=u.pathname.endsWith('/')||u.pathname.endsWith('index.html');
   if(isDoc){ // réseau d'abord : la page la plus récente quand on est connecté
-    e.respondWith(fetch(req).then(res=>{if(res.ok&&res.type==='basic'){const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));}return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
+    e.respondWith(fetch(req).then(res=>{if(res.ok&&res.type==='basic'&&/text\/html/.test(res.headers.get('content-type')||'')){const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));}return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
     return;
   }
   // ressources statiques : cache d'abord + rafraîchissement en arrière-plan

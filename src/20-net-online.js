@@ -33,7 +33,7 @@ function onPauseMsg(d){
   } else if (d.act==='yes'){       // l'adversaire a accepté de prolonger
     if (netPause && netPause.byMe && netPause.voting){ netPause.voting=false; netPause.timer=PAUSE_WINDOW; }
     onlineVoteRects=null;
-  } else if (d.act==='no' || d.act==='end'){
+  } else if ((d.act==='no' || d.act==='end') && netPause){
     onlineVoteRects=null; netPause=null; paused=false; settingsOpen=false;
     if (!game.over) announce(t('np_resumed'), '#9dc88a');
   }
@@ -405,7 +405,7 @@ function lobbyClean(l){
   return { code, name: typeof l.name==='string'? l.name.slice(0,40) : '', fac: l.fac==='IA'? 'IA' : 'HUM',
            speed: SPEEDS.includes(+l.speed)? +l.speed : 1, hasPw: l.hasPw===true, ts: Number.isFinite(+l.ts)? +l.ts : 0 };
 }
-const lobbySeen = {};   // code → { ts, at, first } : dernière évolution observée de l'horodatage (temps monotone)
+const lobbySeen = Object.create(null);   // code → { ts, at, first } : dernière évolution observée de l'horodatage (temps monotone)
 async function lobbyList(){
   if (!NET_CONFIG.firebaseDb) return [];
   try {
@@ -422,7 +422,7 @@ async function lobbyList(){
     // salon est vivant dès qu'on a VU son horodatage changer — l'hôte republie toutes les 20 s —,
     // mesuré en temps monotone. Avant, un appareil décalé de plus d'une minute ne voyait aucun salon.
     const loc = Date.now(), mono = performance.now();
-    let tsMax = 0; for (const v of Object.values(j)) if (v && Number.isFinite(+v.ts) && +v.ts > tsMax) tsMax = +v.ts;
+    let tsMax = 0; for (const v of Object.values(j)) if (v && Number.isFinite(+v.ts) && +v.ts > tsMax && +v.ts < loc + 600000) tsMax = +v.ts;   // une entrée « du futur » ne sert jamais de référence
     const clockOk = tsMax>0 && Math.abs(loc - tsMax) < 90000;
     for (const v of Object.values(j)){ if (!v || !v.code) continue; const k = String(v.code), s = lobbySeen[k];
       if (!s) lobbySeen[k] = { ts:+v.ts, at:-1e12, first:mono };

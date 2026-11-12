@@ -323,7 +323,7 @@ function demolish(slot, killGar=false){
   // chantier ANNULÉ par le joueur : le coût est rendu (un chantier qui s'effondre seul ne rend rien)
   if (slot.b && slot.b.type==='site' && !killGar && slot.owner && slot.b.buildType && BUILDS[slot.b.buildType]){
     const c = BUILDS[slot.b.buildType].cost, sd = slot.owner;
-    for (const r in c) sd[r] += c[r];
+    for (const r in c){ if (r==='m' && sd.trans) continue; sd[r] += c[r]; }
   }
   if (slot.b && slot.b.gar && slot.b.gar.length && slot.owner){
     // les troupes sortent (à 60 % de vie si destruction)

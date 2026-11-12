@@ -120,7 +120,7 @@ function nukeBlast(cx, r){
   for (const side of [g.p,g.e]){
     for (const u of side.units) if (Math.abs(u.x-cx)<r){ u.hp=0; burst(u.x, gY(u.x)-16, '#fff0a0', 5); }
     for (const s of side.slots) if (s.b && Math.abs(s.x-cx)<r){
-      s.b.hp -= s.b.maxhp*0.85; if (s.b.hp<=0){ demolish(s,true); s.owner=null; } }
+      s.b.hp -= s.b.maxhp*0.85; if (s.b.hp<=0){ demolish(s,true); s.owner=null; for (const u of side.units) if (Math.abs(u.x-cx)<r) u.hp=0; } }
   }
   for (const n of g.neut) if (n.b && Math.abs(n.x-cx)<r){ demolish(n,true); n.owner=null; }
   addLight(cx, gY(cx)-50, '#fff0c0', r*2.4, 0.9);                 // grande lumière d'explosion

@@ -37,6 +37,7 @@ function createWindow() {
     e.preventDefault();
     if (/^mailto:/i.test(url)) shell.openExternal(url);
   });
+  win.webContents.on('will-redirect', (e, url) => { if (url.split(/[?#]/)[0] !== INDEX_URL) e.preventDefault(); });
   win.loadFile(INDEX);
 }
 
