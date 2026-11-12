@@ -297,6 +297,7 @@ function handleTap(sx, sy, shift, opts){
     const slot = buildMenu.slot, base = buildMenu.base;
     buildMenu = null;
     if (!hit) return;
+    if (!base && slot.b && slot.owner && slot.owner!==p) return;   // bâtiment ennemi apparu pendant que le menu était ouvert
     if (base){
       if (hit==='repairBase') tryRepairBase(p);
       else if (hit==='repairAll') tryRepairAll(p);
@@ -349,6 +350,7 @@ function handleTap(sx, sy, shift, opts){
   }
   // boutons HUD
   for (const b of HUD.btns) if (!btnHidden(b) && inRect(sx,sy,b)){
+    HUD.press = { b, t:performance.now() };          // la fiche touchée s'enfonce un instant (retour tactile)
     if (b.type==='unit'){ tryBuy(p, b.i); }
     else if (b.type==='hero'){ if (!heroBtnReady(p)) continue; tryHero(p); }
     else if (b.type==='special'){ trySpecial(p); }

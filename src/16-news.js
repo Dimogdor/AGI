@@ -178,6 +178,7 @@ function newsTick(dt){
   if (NEWSF.cur && NEWSF.cur.demo){ NEWSF.cur.t += dt; return; }   // tutoriel : démo de l'étape « monde »
   if (!SETTINGS.newsFeed){ NEWSF.cur = null; NEWSF.queue.length = 0; return; }
   if (game.tut) return;                                            // pas de fil pendant le tutoriel
+  if (game.camp){ NEWSF.cur = null; NEWSF.queue.length = 0; return; }   // campagne : la radio de la mission occupe ce coin
   newsObserve();
   if (NEWSF.cur){
     NEWSF.cur.t += dt;

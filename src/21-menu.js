@@ -15,6 +15,7 @@ document.querySelectorAll('.tab').forEach(tb=>{
     tb.classList.add('on');
     $('page-'+tb.dataset.page).classList.add('on');
     if (tb.dataset.page==='tuto') refreshTutoPage();
+    if (tb.dataset.page==='camp') campRenderMenu();
   });
 });
 // choix du camp : le menu entier change d'identité (tract de la Résistance ↔ listing d'Omnicorp)
@@ -88,6 +89,10 @@ function fsBtnHidden(){
   return (typeof game!=='undefined' && game && !game.over) || (typeof intro!=='undefined' && intro>=0);
 }
 function refreshFsBtn(){
+  // en jeu, le zoom navigateur est replafonné (Android le ramène à 1) ; il est rendu aux menus ensuite
+  try { const vp = document.querySelector('meta[name="viewport"]'), inPlay = (game && !game.over) || intro>=0,
+      want = 'width=device-width, initial-scale=1.0, viewport-fit=cover' + (inPlay? ', maximum-scale=1.0, user-scalable=no' : '');
+    if (vp && vp.content!==want) vp.content = want; } catch(e){}
   const b = $('fsBtn'); if (!b) return;
   if (fsBtnHidden()){ b.style.display='none'; return; }
   b.textContent = (IS_IOS ? '⤢' : (isFullscreen()? '✕' : '⛶'));
@@ -126,9 +131,12 @@ $('storyBtn').addEventListener('click', ()=>{
   $('menu').style.display = 'none';
   pendingStart = null; intro = 0; introT = 0; introOut = 0;
 });
+$('campNextBtn').addEventListener('click', ()=>{ const i = +$('campNextBtn').dataset.i || 0; game = null; campLaunch(i); });
 $('replayBtn').addEventListener('click', ()=>{
+  const wasCamp = !!(game && game.camp);
   $('endscreen').style.display = 'none';
   $('menu').style.display = 'flex';
+  if (wasCamp){ campView = -1; const tb = document.querySelector('.tab[data-page="camp"]'); if (tb) tb.click(); }   // retour au carnet
   netDisconnect();
   game = null; paused = false; settingsOpen = false; netPause = null; buildMenu = null; selMode = false; selBox = null; intro = -1; pendingStart = null;
 });

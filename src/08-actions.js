@@ -133,6 +133,7 @@ function tryEvolve(side){
   if (isGuest(side)){ guestCmd({c:'evo'}); return true; }
   if (side.era>=4 || side.era>=(game.eraCap!=null?game.eraCap:4) || side.xp < EVOLVE_XP[side.era+1]) return false;
   side.era++;
+  warmArms(side);                               // cuit les bras animés de la nouvelle ère (étalé sur quelques images)
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
   burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
@@ -319,6 +320,11 @@ function tryAutoRepair(side){
   return true;
 }
 function demolish(slot, killGar=false){
+  // chantier ANNULÉ par le joueur : le coût est rendu (un chantier qui s'effondre seul ne rend rien)
+  if (slot.b && slot.b.type==='site' && !killGar && slot.owner && slot.b.buildType && BUILDS[slot.b.buildType]){
+    const c = BUILDS[slot.b.buildType].cost, sd = slot.owner;
+    for (const r in c){ if (r==='m' && sd.trans) continue; sd[r] += c[r]; }
+  }
   if (slot.b && slot.b.gar && slot.b.gar.length && slot.owner){
     // les troupes sortent (à 60 % de vie si destruction)
     for (const g of slot.b.gar){
@@ -327,7 +333,8 @@ function demolish(slot, killGar=false){
       slot.owner.units.push(g);
     }
   }
-  slot.b = null;
+  slot.b = null; slot._w = null;
+  for (const sd of [game.p, game.e]) for (const u of sd.units) if (u.task && u.task.slot===slot) u.task = null;
   if (!game.p.slots.includes(slot) && !game.e.slots.includes(slot)) slot.owner=null;
 }
 function repairCost(curHp, maxHp, scale){

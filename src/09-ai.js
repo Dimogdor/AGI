@@ -53,7 +53,9 @@ function aiUpdate(dt){
   // tant que l'IA met de l'argent de côté pour son héros)
   if (e.hp < e.maxhp*0.7) tryRepairBase(e);
   if (!e.autoRepair && e.m>500 && !heroSave) tryAutoRepair(e);
-  if ((e.fortLvl||1)<3 && e.m>700 && !heroSave) tryFortify(e);
+  // fortification selon la difficulté : jamais en Facile, une fois en Normal, deux en Difficile, trois en Brutal
+  // (avant : toujours au maximum — le multiplicateur de PV de la difficulté ne pesait presque plus)
+  if ((e.fortLvl||1)<1+game.diff && e.m>700 && !heroSave) tryFortify(e);
   if (!heroSave) for (const s of sideBuildSlots(e))
     if (s.b && s.b.type!=='site' && s.b.hp<s.b.maxhp*0.6){ tryRepair(e,s); break; }
   // améliore la classe la moins montée en continu

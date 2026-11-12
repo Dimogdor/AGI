@@ -287,3 +287,9 @@ v1.0 — Lancement.
 • 9 langues
 • Plein écran mobile et défilement du menu
 ```
+
+## Notes de version — v1.14
+
+**FR** — Nouvelle campagne « Les carnets de Germinal » : cinq missions scénarisées, de la première nuit d'émeute à la dernière bataille. Interface de jeu refaite en bureau de campagne (fiches papier, encre, pochoir). Bras et armes animés, drapeaux à hisser, piquets d'arpenteur. Tutoriel complété (caméra, réparation, base à deux vies). Difficultés recalibrées ; les parties ne s'éternisent plus : passé 26 minutes, le monde s'effondre.
+
+**EN** — New campaign "The Germinal Notebooks": five story missions, from the first night of rioting to the last battle. In-game interface redone as a field desk (paper cards, ink, stencil). Animated arms and weapons, flags to raise, surveyor's stakes. Extended tutorial (camera, repairs, two-life bases). Difficulty levels recalibrated; matches no longer drag on: after 26 minutes the world collapses.

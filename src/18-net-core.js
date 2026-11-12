@@ -25,7 +25,7 @@ function serialize(){
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
   return {
-    t:game.t, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
+    t:game.t, sv:game.speed||1, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
     wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
@@ -140,6 +140,7 @@ function applySnapshot(snap){
   if (!game || game.net!=='guest' || !snap || typeof snap!=='object') return;
   const g = game;
   g.t = SN(snap.t, 0, 1e7); g.dev = SN(snap.dev, 0, 1);
+  if (snap.sv !== undefined) g.speed = clampSpeed(snap.sv);   // la vitesse de l'hôte fait foi (un vote accepté trop tard ne désynchronise plus)
   g.weather = SNAP_WEATHER.includes(snap.we)? snap.we : null; g.boon = SNAP_BOON.includes(snap.bo)? snap.bo : null;
   g.kills = SN(snap.ekills, 0, 1e7)|0; g.eKills = SN(snap.kills, 0, 1e7)|0;
   // cataclysme en cours (vue miroir : x → WORLD-x)
@@ -169,6 +170,7 @@ function applySnapshot(snap){
   // unités : mirroir x = WORLD-x, side inversé
   const keep = new Set([...g.sel].map(u=>u.id));
   g.p.units.length = 0; g.e.units.length = 0;
+  const GV2 = {};
   const addU = (a)=>{
     if (!Array.isArray(a)) return;
     const role = CODE_ROLES[a[1]]; if (!role) return;
@@ -181,10 +183,19 @@ function applySnapshot(snap){
       tx, x:(GX[id]!==undefined? GX[id]:tx), hp:SN(a[3], 0, maxhp), maxhp,
       fly:!!a[8], flyH:SN(a[9], 0, 200)|0, vet:!!a[10], tiredT:a[11]?1:0, trans:!!a[12],
       atkT:a[13]?1:0, rate:1, bob:Math.random()*6.28, flash:0, range:role==='ranged'||role==='siege'||role==='air'?150:16 };
+    // CONTINUITÉ D'ANIMATION : l'unité est recréée à chaque instantané — on reprend la phase de marche
+    // et l'état de rendu de son prédécesseur (sinon la démarche hachait et l'apparition rejouait sans fin)
+    const pv = GV[id];
+    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
+      if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
+      // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
+      if (!(a[13] && pv.atkT<0.75)) u.atkT = pv.atkT; }
+    GV2[id] = u;
     loc.units.push(u);
   };
   for (const a of SA(snap.pu, 300)) addU(a);
   for (const a of SA(snap.eu, 300)) addU(a);
+  GV = GV2;                                 // ne garde que les unités encore en vie
   g.sel = new Set(g.p.units.filter(u=>keep.has(u.id)));
   // spots neutres (mirroir owner) et lacs (mirroir prog/owner)
   const sn = SA(snap.neut, 16), sd = SA(snap.nodes, 16), sz = SA(snap.zones, 16);
@@ -227,6 +238,7 @@ function netGuestTick(dt){
   for (const side of [game.p, game.e]) for (const u of side.units){
     u.x += (u.tx - u.x)*ease; GX[u.id] = u.x;
     u.bob += dt*7; if (u.flash>0) u.flash-=dt;
+    u.atkT -= dt; if (u.atkT<0.6 && u.atkT>-0.5) u.atkT = -1;                  // geste terminé → repos (pas de faux armement)
   }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
@@ -254,6 +266,7 @@ function startHostGame(){
   if (net.hbTimer){ clearInterval(net.hbTimer); net.hbTimer=null; }
   if (net.pub) lobbyRemove(net.code);                 // salon plein : on le retire de la liste
   resetSpeedNet();
+  net.cmdQ.length = 0;                                 // rien de ce qui a été envoyé avant le départ ne s'exécute
   net.sendStart({hostFac:net.myFac, guestFac:net.foeFac, v:NET_PROTO, speed:game.speed});
   $('menu').style.display='none'; closeNetUI();
   announce(fmt('a_net_start',{a:FACTIONS[net.myFac].name, b:FACTIONS[net.foeFac].name}), '#9dc88a');
@@ -276,7 +289,7 @@ function startGuestGame(data){
   game.zones = [ {x:WORLD*0.70,owner:null,prog:0}, {x:WORLD*0.50,owner:null,prog:0}, {x:WORLD*0.30,owner:null,prog:0} ];
   game.neut = [ {x:WORLD*0.67,b:null,owner:null}, {x:WORLD*0.58,b:null,owner:null},
                 {x:WORLD*0.42,b:null,owner:null}, {x:WORLD*0.33,b:null,owner:null} ];
-  GX = {};
+  GX = {}; GV = {};
   $('menu').style.display='none'; closeNetUI();
   announce(fmt('a_net_conn',{name:FACTIONS[data.guestFac].name}), '#9dc88a');
 }

@@ -76,9 +76,11 @@ console.log('\nTUTORIEL');
     const sim = n => { for (let i=0;i<n;i++) update(0.05); R(); };
     const C = r => [r.x+r.w/2, r.y+r.h/2];
     startTutorial(); R();
-    const times = []; let last = -1, it = 0, guard = 0, simT = 0;
+    const times = [], named = {}; let last = -1, it = 0, guard = 0, simT = 0, lastSrc = '';
     while (TUT && guard++ < 6000){
-      if (TUT.i !== last){ if (last>=0) times.push(+(simT).toFixed(1)); last = TUT.i; it = 0; simT = 0; }
+      if (TUT.i !== last){ if (last>=0){ times.push(+(simT).toFixed(1));
+          if (lastSrc.includes('e.units.length===0')) named.wave = +(simT).toFixed(1); if (lastSrc.includes('e.hp<=0')) named.assault = +(simT).toFixed(1); }
+        last = TUT.i; it = 0; simT = 0; lastSrc = String(TUT.steps[TUT.i].done); }
       if (++it > 500) return { stuck: TUT.i, text: (TUT.steps[TUT.i].obj||{}).fr };
       if (TUT.celebrating){ sim(5); simT += 0.25; continue; }
       const st = TUT.steps[TUT.i], A = d => !!(st.allow && st.allow(d)), f = st.focus && st.focus(), src = String(st.done);
@@ -92,7 +94,13 @@ console.log('\nTUTORIEL');
       if (A({t:'lasso'})){ if (!selMode){ handleTap(...C(f)); R(); }
         const xs = game.p.units.filter(u=>!u.fly).map(u=>w2sX(u.x)), gy = w2sY(gY(game.p.x+400));
         selBox = { x0:Math.min(...xs)-30, y0:gy-90, x1:Math.max(...xs)+30, y1:gy+20 }; finishLasso(); sim(4); continue; }
-      const btn = ['formation','cap','special','evolve','hero','stance'].find(t => A({t, st:'charge'}))
+      if (src.includes('camStart')){ handleTap(...C(f)); sim(6);                       // caméra : bouton « Front », puis défilement
+        if (Math.abs(camX-(TUT.camStart||0))<=200){ camX += 320; camClamp(); } sim(2); continue; }
+      if (src.includes('lvl||1)>=2')){                                                   // amélioration de la ferme
+        if (!buildMenu){ handleTap(f.x+f.w/2, f.y+f.h*0.6); R(); }
+        const o = buildMenu && buildMenu.rects.find(r=>r.key==='upgrade');
+        if (o) handleTap(...C(o)); sim(6); continue; }
+      const btn = ['formation','cap','special','evolve','hero','stance','repairall'].find(t => A({t, st:'charge'}))
                || [0,1,2,3,4,5].map(i=>'buy'+i).find(b => A({t:'buy', i:+b[3]}));
       if (btn && f){ handleTap(...C(f)); sim(8); simT += 0.4; continue; }
       if (src.includes('sel.size>=1')){ handleTap(f.x+f.w/2, f.y+f.h-40); sim(4); continue; }
@@ -104,11 +112,11 @@ console.log('\nTUTORIEL');
       if (src.includes('e.units.length===0')){ sim(20); simT += 1; continue; }
       return { unknown: TUT.i };
     }
-    return { done: !TUT, n: times.length+1, times, menu: document.getElementById('menu').style.display,
+    return { done: !TUT, n: times.length+1, times, named, menu: document.getElementById('menu').style.display,
              seen: localStorage.getItem('agi_tutoSeen') };
   });
   check(r.done && r.menu==='flex' && !errs.length,
-    r.done? `tutoriel joué de bout en bout par clics (${r.n} étapes ; vague ${r.times[r.times.length-9]} s, assaut ${r.times[r.times.length-1]} s de jeu)`
+    r.done? `tutoriel joué de bout en bout par clics (${r.n} étapes ; vague ${r.named.wave} s, assaut ${r.named.assault} s de jeu)`
           : 'tutoriel BLOQUÉ : '+JSON.stringify(r)+(errs[0]? ' — '+errs[0] : ''));
   if (r.done){ const slow = r.times.filter(t=>t>45); check(!slow.length, 'aucune étape interminable (> 45 s de jeu) : '+(slow.join(', ')||'ok')); }
   await page.close();
@@ -325,6 +333,68 @@ console.log('\nCORRECTIFS D\'AUDIT (v1.11)');
   check(r.gar, 'garnison : des taps rapides ne recrutent pas au-delà des places libres');
   check(r.news && r.msg, 'fil d\'actualités sous la file de production ; annonces lisibles à ×3');
   check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
+  await page.close();
+}
+
+console.log('\nCAMPAGNE (v1.14)');
+{ // carnet de missions : verrouillage, dossier, sauvegarde corrompue
+  const { page, errs } = await open();
+  const r = await page.evaluate(() => {
+    document.getElementById('menu').style.display = 'flex';
+    document.querySelector('.tab[data-page="camp"]').click();
+    const rows = [...document.querySelectorAll('#campBox .mis')];
+    const o = { n: rows.length, locked: rows.filter(b=>b.disabled).length };
+    rows[0].click(); o.brief = document.querySelectorAll('#campBox .campStory p').length; o.go = !!document.querySelector('#campBox .go');
+    SETTINGS.lang = 'en'; applyLang(); o.en = document.querySelector('#campBox .campHead').textContent;
+    SETTINGS.lang = 'fr'; applyLang();
+    return o; });
+  check(r.n===5 && r.locked===4 && r.brief>=3 && r.go && /meters/i.test(r.en) && !errs.length,
+    `carnet : ${r.n} missions, ${r.locked} verrouillées au départ, dossier de ${r.brief} paragraphes, traduit à la volée`+(errs[0]? ' — '+errs[0] : ''));
+  await page.close();
+  const p2 = await browser.newPage(); const e2 = []; p2.on('pageerror', e => e2.push(e.message));
+  await p2.addInitScript(() => { window.requestAnimationFrame = () => 0; localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_camp', '{"done":99,"lvl":"x","best":{"0":-5,"__proto__":{"a":1}}}'); });
+  await p2.goto(GAME); await p2.waitForTimeout(300);
+  const sv = await p2.evaluate(() => ({ done: CAMP_SAVE.done, lvl: CAMP_SAVE.lvl, best: Object.keys(CAMP_SAVE.best).length, pol: ({}).a }));
+  check(sv.done===5 && sv.lvl>=0 && sv.lvl<=2 && sv.best===0 && sv.pol===undefined && !e2.length, 'sauvegarde de campagne falsifiée : bornée et nettoyée au chargement');
+  await p2.close();
+}
+{ // les 5 missions jouées jusqu'à leur dénouement (règles propres, radio, sauvegarde, enchaînement)
+  const { page, errs } = await open();
+  const r = await page.evaluate(() => {
+    const out = {}, R = () => { ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); };
+    const safe = () => { game.p.maxhp = 1e9; game.p.hp = 1e9; };
+    const run = (sec, each) => { for (let k=0;k<sec*20;k++){ if (each) each(); update(0.05); if (k%60===0) R(); if (game.over) break; } };
+    const kill = ph => { for (let k=0;k<200 && !game.over && (game.e.phase||1)===ph;k++){ game.e.hp = -1e6; update(0.05); } };
+    CAMP_SAVE.done = 0; CAMP_SAVE.best = {}; CAMP_SAVE.lvl = 1;
+    campLaunch(0); run(100, safe);
+    out.m1 = { radio: game.camp.fired.filter(Boolean).length, cap: game.eraCap, one: game.e.phase===2 };
+    game.p.xp = 9e6; out.m1.noEvo = tryEvolve(game.p)===false;
+    kill(2); showEnd(); out.m1.win = game.over && game.win; out.m1.done = CAMP_SAVE.done;
+    out.m1.title = document.getElementById('endtitle').textContent; out.m1.btn = document.getElementById('campNextBtn').style.display;
+    document.getElementById('campNextBtn').click(); out.m2start = game && game.camp && game.camp.i;      // « mission suivante »
+    run(365, safe); showEnd();
+    out.m2 = { win: game.over && game.win, t: Math.round(game.camp.t), waves: game.camp.waveN, radio: game.camp.fired.filter(Boolean).length, done: CAMP_SAVE.done };
+    campLaunch(2); out.m3 = { far: game.nodes[2].owner }; run(160, safe); out.m3.cata = game.cata;
+    run(70, ()=>{ safe(); for (const n of game.nodes){ n.owner='p'; n.prog=1; } }); showEnd(); out.m3.win = game.over && game.win; out.m3.done = CAMP_SAVE.done;
+    campLaunch(3); run(310, ()=>{ safe(); game.e.hp = game.e.maxhp; }); out.m4 = { hero: game.e.units.some(u=>u.role==='hero'), winter: game.winter };
+    run(800, ()=>{ safe(); game.e.hp = game.e.maxhp; }); showEnd();
+    out.m4.lose = game.over && !game.win; out.m4.t = Math.round(game.camp.t); out.m4.done = CAMP_SAVE.done; out.m4.retry = document.getElementById('campNextBtn').dataset.i;
+    campLaunch(3); run(20, safe); kill(2); showEnd(); out.m4.win = game.over && game.win;
+    campLaunch(4); run(170, safe); out.m5 = { cells: game.camp.cell, era: game.p.era };
+    kill(1); out.m5.reborn = game.e.phase===2 && !!game.hbombDone && !game.over;
+    run(20, safe); kill(2); showEnd(); out.m5.win = game.over && game.win; out.m5.done = CAMP_SAVE.done;
+    // retour au carnet puis escarmouche : plus aucune trace de la campagne
+    document.getElementById('replayBtn').click(); out.back = document.getElementById('menu').style.display + '/' + document.querySelector('.tab.on').dataset.page;
+    newGame('HUM', 1, false); for (let k=0;k<40;k++) update(0.05); R(); out.clean = !game.camp && !game.devBase && game.eraCap===4 && (game.p.phase||1)===1;
+    return out; });
+  check(r.m1.radio>=2 && r.m1.cap===0 && r.m1.one && r.m1.noEvo && r.m1.win && r.m1.done===1 && r.m1.btn!=='none',
+    'mission I : ère plafonnée, base à une vie, radio, victoire enregistrée — '+r.m1.title);
+  check(r.m2start===1 && r.m2.win && r.m2.t===360 && r.m2.waves>20 && r.m2.radio>=6 && r.m2.done===2, `mission II : « mission suivante » enchaîne, ${r.m2.waves} assaillants en vagues, tenue 6 min`);
+  check(r.m3.far==='e' && r.m3.cata==='heat' && r.m3.win && r.m3.done===3, 'mission III : lac ennemi au départ, canicule annoncée, victoire en tenant les 3 lacs');
+  check(r.m4.hero && r.m4.winter && r.m4.lose && r.m4.t===900 && r.m4.done===3 && r.m4.retry==='3' && r.m4.win,
+    'mission IV : hiver permanent, prototype, échec au terme du compte à rebours prolongé (15 min), puis victoire');
+  check(r.m5.cells>=2 && r.m5.era===3 && r.m5.reborn && r.m5.win && r.m5.done===5, 'mission V : renforts, base ennemie à deux vies, campagne terminée');
+  check(r.back==='flex/camp' && r.clean && !errs.length, 'retour au carnet, puis escarmouche sans reste de campagne'+(errs[0]? ' — '+errs[0] : ''));
   await page.close();
 }
 

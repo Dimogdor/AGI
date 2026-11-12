@@ -581,8 +581,17 @@ function update(dt){
 
   // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
   // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement.
-  game.dev = game.tut? 0 : clamp(game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);
+  game.dev = game.tut? 0 : clamp((game.devBase||0) + game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);   // devBase : état du monde au début d'une mission de campagne
   if (!game.tut) updateCata(dt);
+  // EFFONDREMENT (v1.14) : passé 26 min, le monde ne tient plus debout — les DEUX bases se délabrent,
+  // de plus en plus vite. Sans cela, une fois la santé du monde à zéro, les cataclysmes fauchaient
+  // les vagues avant qu'elles n'arrivent et la partie pouvait ne jamais finir (15 à 55 % des parties
+  // simulées atteignaient 40 min). La base la plus entamée tombe la première.
+  if (!game.tut && game.t > COLLAPSE_T){
+    if (!game.collapse){ game.collapse = true; announce(tr('ev_collapse'), '#ff7a5a'); sfx('boom'); game.shake = Math.max(game.shake, 10); }
+    const k = 0.0015*(1 + (game.t-COLLAPSE_T)/300)*dt;
+    p.hp -= p.maxhp*k; e.hp -= e.maxhp*k;
+  }
 
   for (let i=projectiles.length-1;i>=0;i--){
     const pr=projectiles[i]; pr.t+=dt;
@@ -643,6 +652,8 @@ function update(dt){
     tutTick(dt); return;   // détection des actions, jamais de victoire/défaite « normale »
   }
 
+  if (game.camp && campTick(dt)) return;      // campagne : radio, règles et objectifs propres à la mission
+
   if (p.hp<=0 || e.hp<=0){
     const faller = p.hp<=0? p : e;
     // SECONDE CHANCE — INDÉPENDANTE PAR CAMP : la 1re fois qu'une base tombe, elle renaît
@@ -657,7 +668,7 @@ function update(dt){
       else { game.flash=Math.max(game.flash||0,1.2); game.shake=Math.max(game.shake,20);
         nukeBlast(faller.x, 220); announce(tr('ev_reborn'), '#bfe6ff'); sfx('boom'); }
     } else {
-      game.over=true; game.win = e.hp<=0;
+      game.over=true; game.win = e.hp/e.maxhp <= p.hp/p.maxhp;   // les deux bases à terre au même instant : la plus entamée perd
       game.shake=20;
       const fx2=(game.win?e:p).x; explode(fx2, gY(fx2)-40, 2.2, '#fff0c0'); burst(fx2, gY(fx2)-60, '#fff', 30, 1.6);
       sfx(game.win?'evolve':'boom');
@@ -666,6 +677,7 @@ function update(dt){
   }
 }
 // Bombe H : rase tout (sauf bases), bascule en Hiver nucléaire (production réduite, neige)
+const COLLAPSE_T = 1560;  // début de l'effondrement du monde (26 min de jeu)
 const WINTER_DUR = 360;   // l'hiver nucléaire dure 6 min puis le monde revient à la normale
 function triggerNuclearWinter(){
   const g=game;

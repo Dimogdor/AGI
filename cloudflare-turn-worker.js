@@ -48,7 +48,7 @@ function corsHeaders(origin) {
     "Access-Control-Allow-Origin": ok ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
+    "Access-Control-Max-Age": "86400", "Vary": "Origin",
   };
 }
 

@@ -120,9 +120,9 @@ function nukeBlast(cx, r){
   for (const side of [g.p,g.e]){
     for (const u of side.units) if (Math.abs(u.x-cx)<r){ u.hp=0; burst(u.x, gY(u.x)-16, '#fff0a0', 5); }
     for (const s of side.slots) if (s.b && Math.abs(s.x-cx)<r){
-      s.b.hp -= s.b.maxhp*0.85; if (s.b.hp<=0){ s.b=null; s.owner=null; } }
+      s.b.hp -= s.b.maxhp*0.85; if (s.b.hp<=0){ demolish(s,true); s.owner=null; for (const u of side.units) if (Math.abs(u.x-cx)<r) u.hp=0; } }
   }
-  for (const n of g.neut) if (n.b && Math.abs(n.x-cx)<r){ n.b=null; n.owner=null; }
+  for (const n of g.neut) if (n.b && Math.abs(n.x-cx)<r){ demolish(n,true); n.owner=null; }
   addLight(cx, gY(cx)-50, '#fff0c0', r*2.4, 0.9);                 // grande lumière d'explosion
   addCrater(cx, r*0.85);                                          // cratère persistant
 }
@@ -137,6 +137,8 @@ function razeMap(){
   const g=game;
   for (const side of [g.p,g.e]){
     for (const u of side.units) burst(u.x, gY(u.x)-16, '#fff0a0', 4);
+    // les unités en file d'attente étaient déjà payées : on les rembourse avant de vider la file
+    for (const ri of side.queue){ const c = unitCost(side, ri); for (const r in c){ if (r==='m' && side.trans) continue; side[r] += c[r]; } }
     side.units.length = 0; side.queue.length = 0;
     for (const s of side.slots) s.b = null;
   }
@@ -311,6 +313,7 @@ function drawWinter(){
   }
   ctx.globalCompositeOperation='source-over';
   ctx.font=HF(12); ctx.textAlign='center'; ctx.fillStyle='#bfe6ff';
-  ctx.fillText(fmt('ev_winter_now',{min:Math.ceil((game.winterT||0)/60)}), W/2, 78);
+  if (!(game.camp && game.camp.m.oneLife))            // campagne « Rochefroide » : l'hiver ne se lève pas, pas de décompte
+    ctx.fillText(fmt('ev_winter_now',{min:Math.ceil((game.winterT||0)/60)}), W/2, 78);
   ctx.restore();
 }

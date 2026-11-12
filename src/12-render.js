@@ -50,9 +50,6 @@ function mix(a,b,t){ a=toRGB(a); b=toRGB(b); return colS(lerpColArr(a,b,t)); }
 // bloc accroché à la grille (le cœur du style)
 function pb(x,y,w,h,col){ TC.fillStyle=col; TC.fillRect(qz(x),qz(y),Math.max(PX,qz(w)),Math.max(PX,qz(h))); }
 // rectangle plein + liseré sombre (donne le contour « pixel »)
-function pbo(x,y,w,h,col,line){ x=qz(x); y=qz(y); w=Math.max(PX,qz(w)); h=Math.max(PX,qz(h));
-  TC.fillStyle=line||shade(col,0.45); TC.fillRect(x-PX,y-PX,w+PX*2,h+PX*2);
-  TC.fillStyle=col; TC.fillRect(x,y,w,h); }
 // cache de sprites hors écran : key -> canvas. draw() utilise pb/pbo/… qui ciblent TC.
 // SURÉCHANTILLONNAGE : on cuit chaque sprite à SS× la taille logique (≈ densité de pixels de
 // l'écran) puis on le blitte à sa taille logique → net en 4K au lieu d'un bitmap basse-déf
@@ -1032,25 +1029,34 @@ function drawZone(z, dev, t, vw){
   for (const u of game.p.units){ const d=Math.abs(u.x-z.x); if(d<90){ pN++; if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
   for (const u of game.e.units){ const d=Math.abs(u.x-z.x); if(d<90){ eN++; if((u.role==='tank'||u.role==='siege'||u.role==='hero')&&d<55) heavy=Math.max(heavy,1-d/55); } }
   const combat = pN>0 && eN>0, pulse=0.65+0.35*Math.sin(t*3+z.x), flick=(combat||game.cata)?(0.55+0.45*Math.sin(t*22+z.x)):1;
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  // halo + anneau au sol
-  const g=ctx.createRadialGradient(x,y,2,x,y,42); g.addColorStop(0,rgbaC(acc,0.3*pulse)); g.addColorStop(1,rgbaC(acc,0));
-  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(x,y,42,15,0,0,6.283); ctx.fill();
-  ctx.strokeStyle=rgbaC(acc,0.6); ctx.lineWidth=2.5; ctx.beginPath(); ctx.ellipse(x,y,26,9,0,0,6.283); ctx.stroke();
-  // anneau de progression de capture
-  if (Math.abs(z.prog)>0.01 && Math.abs(z.prog)<1){ const pc=z.prog>0?game.p.fac.accent:game.e.fac.accent;
-    ctx.strokeStyle=rgbaC(pc,0.95); ctx.lineWidth=3.4; ctx.beginPath(); ctx.ellipse(x,y,26,9,0,-Math.PI/2,-Math.PI/2+6.283*Math.abs(z.prog)); ctx.stroke(); }
-  // colonne holographique + glyphe de contrôle
-  const hh=50; const cg=ctx.createLinearGradient(x,y,x,y-hh); cg.addColorStop(0,rgbaC(acc,0.55*flick)); cg.addColorStop(1,rgbaC(acc,0));
-  ctx.fillStyle=cg; ctx.fillRect(x-4,y-hh,8,hh);
-  ctx.save(); ctx.translate(x,y-hh-2); ctx.rotate(t*1.2); ctx.globalAlpha=flick; ctx.fillStyle=rgbaC(acc,0.95); ctx.fillRect(-5,-5,10,10); ctx.restore();
+  // ZONE (v1.14) : cercle peint au sol, mât, et un DRAPEAU qu'on hisse — il monte à mesure de la
+  // capture et prend la couleur du camp. Plus de colonne holographique ni de losange tournant.
+  ctx.save();
+  ctx.strokeStyle=rgbaC(acc,0.75); ctx.lineWidth=2.2; ctx.setLineDash([7,5]);
+  ctx.beginPath(); ctx.ellipse(x,y+1,27,9,0,0,6.283); ctx.stroke(); ctx.setLineDash([]);
   // onde au passage d'unités lourdes
   if (heavy>0.1){ const ph=(t*1.5)%1, rr2=10+ph*36; ctx.strokeStyle=rgbaC(acc,0.5*heavy*(1-ph)); ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(x,y,rr2,rr2*0.36,0,0,6.283); ctx.stroke(); }
+  const hh=54, capt = Math.abs(z.prog)>0.01 && Math.abs(z.prog)<1;
+  ctx.fillStyle='rgba(8,6,10,0.28)'; ctx.beginPath(); ctx.ellipse(x+6,y+2,11,2.6,0,0,6.283); ctx.fill();
+  for (const sx of [-7,-2.5,2,6.5]){ ctx.fillStyle = sx%2? '#8a7a5c' : '#9a8a68'; ctx.beginPath(); ctx.ellipse(x+sx, y-1.5, 4, 2.6, 0, 0, 6.283); ctx.fill(); }   // sacs de sable au pied
+  ctx.strokeStyle='#4a3e34'; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x,y-1); ctx.lineTo(x,y-hh); ctx.stroke();
+  ctx.fillStyle='#c8b890'; ctx.beginPath(); ctx.arc(x,y-hh-1.5,2,0,6.283); ctx.fill();
+  // hauteur du drapeau : en haut s'il est tenu, en cours de hissage pendant la capture, en berne si neutre
+  const pc = capt? (z.prog>0? game.p.fac.accent : game.e.fac.accent) : acc;
+  const up = capt? 0.25+0.75*Math.abs(z.prog) : owner? 1 : 0.5;
+  const fy = y - 14 - (hh-26)*up, fw = 24, fhh = 13, wv = Math.sin(t*3.2+z.x)*2.2*(combat? 2 : 1), wv2 = Math.sin(t*3.2+z.x+1.4)*2.4*(combat? 2 : 1);
+  ctx.fillStyle = pc;
+  ctx.beginPath(); ctx.moveTo(x, fy-fhh); ctx.quadraticCurveTo(x+fw*0.5, fy-fhh-2+wv, x+fw, fy-fhh+1+wv2);
+  ctx.lineTo(x+fw, fy+1+wv2); ctx.quadraticCurveTo(x+fw*0.5, fy-1+wv, x, fy); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.moveTo(x, fy-3); ctx.quadraticCurveTo(x+fw*0.5, fy-4+wv, x+fw, fy-2+wv2);
+  ctx.lineTo(x+fw, fy+1+wv2); ctx.quadraticCurveTo(x+fw*0.5, fy-1+wv, x, fy); ctx.closePath(); ctx.fill();
+  if (game.cata || combat){ ctx.globalAlpha = flick*0.5; ctx.fillStyle='#fff'; ctx.fillRect(x+fw*0.3, fy-fhh+2+wv*0.5, 3, 2); }
   ctx.restore();
   // étiquette de contrôle
-  ctx.font=HF(9); ctx.textAlign='center'; ctx.fillStyle=rgbaC(acc,0.92);
-  ctx.fillText(owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral'), x, y-hh-9);
+  const zl = owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral');
+  ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
+  ctx.strokeText(zl, x, y-64); ctx.fillStyle=owner? acc : '#e6dcc4'; ctx.fillText(zl, x, y-64);
 }
 // chaîne de montagnes lointaine : silhouette dentelée, très embrumée, parallaxe ultra-lente.
 // neige sur les sommets quand le monde est sain ; teinte cendrée quand il agonise.
@@ -1651,14 +1657,64 @@ function unitPart(kind, fac, role, era, trans, part, pose){
   if (part==='legs'){ const h = unitHeavy(kind, role);
     return sprite('SL'+kind+(h?'h':'n')+era+'p'+pose, LEGS.W, LEGS.H, ()=>{ TC.translate(-(USP.cx+LEGS.ox), -(USP.foot+LEGS.oy));
       bakePart(kind, fac, h? 'tank' : 'melee', era, false, 'legs', pose); }); }
-  return sprite((part==='back'?'SB':'S')+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
+  return sprite(PART_KEY[part]+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
 }
+const PART_KEY = { back:'SB', front:'S', body:'SY', armb:'SQ', arm:'SA' };
 // dessine un personnage complet (couches) au repère courant : pieds en (0,0), tourné vers +x
-function drawUnitLayers(kind, fac, role, era, trans, pose, g){
+// BRAS ANIMÉS (v1.14) : si un angle `aa` est fourni, le haut du corps est rendu en trois couches —
+// bras arrière, tronc + tête, arme + bras avant — et les deux couches de bras pivotent à l'épaule
+// (armement, frappe, recul du tir, arme portée bas en marche). Sans angle : couche 'front' unique.
+function drawUnitLayers(kind, fac, role, era, trans, pose, g, aa){
   g = g || ctx;
   if (unitHasBack(kind, role, era)) g.drawImage(unitPart(kind,fac,role,era,trans,'back'), -USP.cx, -USP.foot, USP.W, USP.H);
+  if (aa===undefined){
+    g.drawImage(unitPart(kind,fac,role,era,trans,'legs',pose), LEGS.ox, LEGS.oy, LEGS.W, LEGS.H);
+    g.drawImage(unitPart(kind,fac,role,era,trans,'front'), -USP.cx, -USP.foot, USP.W, USP.H);
+    return;
+  }
+  // (les bras n'ont pas de variante « transcendée » : une seule cuisson par rôle et par ère)
+  const limb = (part, px) => { g.save(); g.translate(px, -42); g.rotate(aa); g.translate(-px, 42);
+    g.drawImage(unitPart(kind,fac,role,era,false,part), -USP.cx, -USP.foot, USP.W, USP.H); g.restore(); };
+  limb('armb', -3);
   g.drawImage(unitPart(kind,fac,role,era,trans,'legs',pose), LEGS.ox, LEGS.oy, LEGS.W, LEGS.H);
-  g.drawImage(unitPart(kind,fac,role,era,trans,'front'), -USP.cx, -USP.foot, USP.W, USP.H);
+  g.drawImage(unitPart(kind,fac,role,era,trans,'body'), -USP.cx, -USP.foot, USP.W, USP.H);
+  limb('arm', 2);
+}
+// angle des bras d'une unité (rad, sens horaire = arme vers le bas, unité tournée vers +x)
+function armAngle(u, moving, ph){
+  const mult = u.tiredT>0? (u.fac==='IA'? 1.5 : 1.3) : 1;
+  const ts = u.rate*mult - u.atkT;                                   // temps écoulé depuis le dernier coup
+  const wind = (u.atkT>0 && u.atkT<0.24)? 1-u.atkT/0.24 : 0;         // armement, juste avant de frapper
+  const w2 = wind*wind*(3-2*wind);
+  let fast = 0, base = 0.022*Math.sin(u.bob*0.37);
+  switch (u.role){
+    case 'melee':
+      if (ts<0.07) fast = lerp(-0.9, 0.95, Math.max(0,ts)/0.07);
+      else if (ts<0.36){ const k=(ts-0.07)/0.29; fast = 0.95*(1-k)*(1-k); }
+      else if (wind) fast = -0.9*w2;
+      else if (moving) base = Math.sin(ph)*0.2;
+      break;
+    case 'tank':
+      if (ts<0.09) fast = lerp(-0.1, 0.2, Math.max(0,ts)/0.09);
+      else if (ts<0.32) fast = 0.2*(1-(ts-0.09)/0.23);
+      else if (wind) fast = -0.1*w2;
+      else if (moving) base = Math.sin(ph)*0.035;
+      break;
+    case 'ranged':
+      if (ts<0.04) fast = -0.26*Math.max(0,ts)/0.04;
+      else if (ts<0.3){ const k=(ts-0.04)/0.26; fast = -0.26*(1-k)*(1-k); }
+      if (moving && u.atkT<-0.35) base = 0.24 + Math.sin(ph*2)*0.03;   // marche : arme portée bas
+      break;
+    case 'siege':
+      if (ts<0.05) fast = -0.16*Math.max(0,ts)/0.05;
+      else if (ts<0.5){ const k=(ts-0.05)/0.45; fast = -0.16*(1-k)*(1-k); }
+      if (moving && u.atkT<-0.35) base = 0.05 + Math.sin(ph*2)*0.02;
+      break;
+    default:
+      if (moving) base = Math.sin(ph)*0.12;
+  }
+  u._ab = u._ab===undefined? base : u._ab + (base-u._ab)*0.2;        // les poses lentes sont lissées
+  return u._ab + fast;
 }
 function drawUnitSprite(kind, fac, role, era, trans){
   if (kind==='bot') drawBotSprite(fac, role, era, trans, false); else drawHumSprite(fac, role, era, trans, false);
@@ -1720,12 +1776,14 @@ function drawHumSprite(fac, role, era, trans, hero){
   if (SPART==='back') return;
   // --- jambe arrière (plus sombre : côté opposé à la lumière)
   if (SPART==='full') legB();
-  // --- bras arrière
-  limbT(P.b, aw-0.4, shade(uni,0.66));
-  TC.fillStyle=shade(glove,0.8); TC.beginPath(); TC.arc(P.b[4],P.b[5],aw*0.45,0,6.283); TC.fill();
+  // --- bras arrière (couche 'armb' : pivote avec l'arme)
+  if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, aw-0.4, shade(uni,0.66));
+    TC.fillStyle=shade(glove,0.8); TC.beginPath(); TC.arc(P.b[4],P.b[5],aw*0.45,0,6.283); TC.fill(); }
+  if (SPART==='armb') return;
   // --- jambe avant + botte
   if (SPART==='full') legF();
-  // --- torse
+  // --- torse + tête (sautés pour la couche 'arm' : arme et bras avant seuls)
+  if (SPART!=='arm'){
   plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw,F-41, cx+sw-2,F-23, cx-sw+2,F-23, cx-sw,F-41], uni);
   TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=1;
   if (era===0){
@@ -1808,6 +1866,8 @@ function drawHumSprite(fac, role, era, trans, hero){
     bloomT(vc,6,()=>{ TC.fillStyle=vc; rrectT(hx+1,hy-2.6,8.6,2.6,1.2); TC.fill(); });              // visière
     if (role==='support') crossT(hx-3,hy-5,4,RED);
   }
+  }
+  if (SPART==='body') return;
   // --- arme (rôle × ère) puis bras avant par-dessus
   const fh = [P.f[4], P.f[5]];
   if (tank){ drawArm(); humShield(); return; }
@@ -1947,11 +2007,13 @@ function drawBotSprite(fac, role, era, trans, hero){
   if (SPART==='back') return;
   // --- jambe arrière (digitigrade)
   if (SPART==='full') legB();
-  // --- bras arrière
-  limbT(P.b, 4.4, shade(frame,0.85));
-  TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill();
+  // --- bras arrière (couche 'armb')
+  if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, 4.4, shade(frame,0.85));
+    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill(); }
+  if (SPART==='armb') return;
   // --- jambe avant : cuisse blindée, genou articulé, vérin
   if (SPART==='full') legF();
+  if (SPART!=='arm'){                          // châssis + tête : sautés pour la couche 'arm'
   // --- bassin + colonne
   plateT([cx-6,F-30, cx+6,F-30, cx+5,F-23, cx-5,F-23], frame);
   TC.fillStyle=joint; TC.fillRect(cx-3,F-33,6,4);
@@ -1989,7 +2051,7 @@ function drawBotSprite(fac, role, era, trans, hero){
   }
   if (trans) glowDot(cx+2,F-40,2.4,'#39ff6a',8);
   // --- tête
-  const hx=cx+1, hy=F-54+hy0;
+  var hx=cx+1, hy=F-54+hy0;
   TC.fillStyle=frame; TC.fillRect(cx-1.5,hy+3.5,4,4);
   if (era===0){
     plateT([hx-6,hy-6, hx+6,hy-6, hx+6,hy+4, hx-6,hy+4], plate);
@@ -2017,6 +2079,8 @@ function drawBotSprite(fac, role, era, trans, hero){
     bloomT(lite,7,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(hx,hy-12,6.5,1.8,0,0,6.283); TC.stroke(); });  // auréole
   }
   if (trans) bloomT('#39ff6a',7,()=>{ TC.fillStyle='#39ff6a'; for (let i=0;i<3;i++){ rrectT(hx-5+i*4.4,hy-(era===4?16.5:era===3?15:13)-(i===1?2:0),1.8,4.4,0.8); TC.fill(); } });
+  }
+  if (SPART==='body') return;
   // --- bras avant + arme intégrée
   const fh=[P.f[4],P.f[5]];
   const arm = (pts) => { limbT(pts, 4.6, frame); plateT([pts[0]-2.4,pts[1]-2.6, pts[0]+3,pts[1]-2.4, pts[2]+1.6,pts[3]+1, pts[2]-1.8,pts[3]+1.4], shade(plate,1.05)); };
@@ -2087,7 +2151,10 @@ function attackFX(u, x, bodyY, imp, mx){
     ctx.fillStyle=col; ctx.beginPath(); ctx.arc(fx,bodyY,2+2*imp,0,6.283); ctx.fill();                 // bouche à feu
     ctx.strokeStyle=rgbaC(col,0.65*imp); ctx.lineWidth=2; ctx.beginPath();                              // traceur nerveux
     ctx.moveTo(fx,bodyY); ctx.lineTo(fx+dir*(46+u.range*0.12), bodyY-2); ctx.stroke();
-    ctx.fillStyle=rgbaC('#ffcf8a',0.8*imp); ctx.beginPath(); ctx.arc(x+dir*14, bodyY+3, 1.6, 0,6.283); ctx.fill(); // douille
+    if (glow && imp>0.8 && u.role==='ranged' && u.fac==='HUM' && u.era<3 && u._csg!==u.atkT && particles.length<480){   // douille éjectée
+      u._csg = u.atkT;
+      particles.push({k:'d', x:u.x+dir*12, y:bodyY+1, vx:-dir*(30+Math.random()*30), vy:-70-Math.random()*40, g:520, dr:0.4, life:0.7, t:0,
+        r:1.1, rot:Math.random()*6, vr:(Math.random()-0.5)*30, color:'#d8b050'}); }
   } else if (u.role==='siege'){
     const fx=x+dir*(mx!=null?mx:24), fy=mx!=null? bodyY : bodyY-4;
     const r=7+10*imp; ctx.globalAlpha=Math.min(1,0.3+imp); ctx.drawImage(PF.fire, fx-r, fy-r, r*2, r*2); ctx.globalAlpha=1;
@@ -2182,22 +2249,27 @@ function blitHumanoid(u, x, gy, kind){
   const sp = Math.sin(ph), pose = (!moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);
   let sy = 1 + 0.03*Math.sin(t*2.6);                               // léger tassement, PIEDS ANCRÉS au sol
   if (u.flash>0) sy *= 0.86;                                       // ÉCRASEMENT bref à l'impact (feedback)
+  // VICTOIRE : les survivants du camp vainqueur sautent de joie, arme levée
+  const cheer = game.over && ((u.side===1)===!!game.win) && u.role!=='support';
+  const hop = cheer? -Math.abs(Math.sin(performance.now()/190 + u.bob))*7 : 0;
   const atk = u.atkT > u.rate-0.16;
   const imp = atk ? clamp((u.atkT-(u.rate-0.16))/0.16, 0, 1) : 0;   // 1 à l'impact → 0
   const fwd = (u.role==='melee'||u.role==='tank');                  // mêlée : jab avant ; tir/siège : recul
   const lunge = fwd ? dir*9*imp : (atk? -dir*5*imp : 0);
-  const tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);       // bascule (poids/impact)
+  let tilt = fwd ? dir*imp*0.12 : (atk? -dir*imp*0.06 : 0);         // bascule (poids/impact)
+  if (u.flash>0 && !atk) tilt -= dir*Math.min(0.14, u.flash*0.5);   // touché : le buste part en arrière
   if (qFx()) unitShadow(kind, fac, u.role, u.era, x, gy, dir); else projShadow(x, gy, 15);
   // POUSSIÈRE DE PAS : petites volutes au sol quand l'unité marche (cosmétique, plafonné)
   if (moving && qFx() && particles.length<440 && Math.random()<0.09){
     particles.push({ x:u.x-dir*7, y:gy-1, vx:-dir*6+(Math.random()*6-3), vy:-8-Math.random()*8,
       r:1.4+Math.random()*1.6, life:0.4+Math.random()*0.3, t:0, color:'rgba(198,184,156,0.5)' });
   }
-  ctx.save(); ctx.translate(x+lunge, gy+stepBob); ctx.rotate(tilt);
+  ctx.save(); ctx.translate(x+lunge, gy+stepBob+hop); ctx.rotate(tilt);
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
-  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose); }
+  const aa = !qFx()? undefined : cheer? -1.05+0.25*Math.sin(performance.now()/190 + u.bob) : armAngle(u, moving, ph);
+  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
   ctx.restore();
   if (atk){ const m=muzzleOf(u); attackFX(u, x+lunge, gy+m[1], imp, m[0]); }
 }
@@ -2257,7 +2329,12 @@ function drawAir(u, x, gy){
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
   const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
-  ctx.save(); ctx.translate(x,y); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
+  // ASSIETTE (v1.14) : l'appareil pique du nez quand il avance, se cabre au tir, se redresse en vol stationnaire
+  const mvA = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
+  const kick = u.atkT>u.rate-0.2? (u.atkT-(u.rate-0.2))/0.2 : 0;
+  const want = (mvA>0.04? 0.13 : 0) - kick*0.1 + Math.sin(t*0.9)*0.02;
+  u._pit = u._pit===undefined? want : u._pit + (want-u._pit)*0.12;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(dir*u._pit); ctx.scale(dir*AS,AS); ctx.drawImage(spr, -32, -22, 64, 44);
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
@@ -2311,6 +2388,16 @@ function prewarmSprites(){
     }
   }
   while (WARMQ.length && WARMQ[0].era===0 && !WARMQ[0].trans) WARMQ.shift().fn();
+  if (game){ warmArms(game.p, true); warmArms(game.e, true); }
+}
+// couches de bras animés (v1.14) : cuites seulement pour les ères en jeu (au départ, puis à chaque
+// évolution), jamais d'avance pour toutes — trois toiles par rôle, la mémoire resterait prise
+function warmArms(side, now){
+  if (!qFx()) return;
+  const kind = side.facKey==='HUM'? 'hum':'bot', era = side.era;
+  for (const role of ['melee','tank','ranged','siege','support']){
+    const fn = ()=>{ unitPart(kind,side.facKey,role,era,side.trans,'body'); unitPart(kind,side.facKey,role,era,false,'armb'); unitPart(kind,side.facKey,role,era,false,'arm'); };
+    if (now) fn(); else WARMQ.unshift({ era, trans:false, fn }); }
 }
 function warmTick(budgetMs){
   const t0 = performance.now();
@@ -2372,10 +2459,17 @@ function drawUnit(u){
     ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x, gy+2, 14, 4.5, 0,0,6.28); ctx.fill();
     ctx.restore(); ctx.globalAlpha=1;
   }
+  // APPARITION (v1.14) : l'unité sort de l'ombre de sa base en 0,4 s, dans un nuage de poussière
+  if (u._born===undefined){ u._born = game.t;
+    if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
+      for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
+  const bornA = clamp((game.t-u._born)/0.4, 0, 1);
+  if (bornA<1) ctx.globalAlpha = 0.15+0.85*bornA;
   if (u.role==='hero') drawHero(u,x,gy);
   else if (u.role==='air') drawAir(u,x,gy);
   else if (u.fac==='HUM') drawHuman(u,x,gy);
   else drawBot(u,x,gy);
+  ctx.globalAlpha = 1;
   // galons d'amélioration de classe
   const side = u.side===1? game.p : game.e;
   const ulvl = side.upg[u.role]||0;
@@ -2410,6 +2504,8 @@ function drawUnit(u){
   if (frac<1){
     const w = u.role==='gremlin'? 14:24, yy = gy-top-fh;
     ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-w/2,yy,w,3.4);
+    u._hpS = (u._hpS===undefined || u._hpS<frac)? frac : u._hpS + (frac-u._hpS)*0.08;      // traîne des dégâts récents
+    if (u._hpS>frac+0.01){ ctx.fillStyle='rgba(255,240,220,0.85)'; ctx.fillRect(x-w/2,yy,w*u._hpS,3.4); }
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }
@@ -2879,7 +2975,8 @@ function drawBase(side){
   } else {
     // œil scrutateur qui suit le front
     let frontX = side.x - d*200;
-    for (const u of game.p.units.concat(game.e.units)) if (Math.abs(u.x-side.x)<500) frontX=u.x;
+    for (const u of game.p.units) if (Math.abs(u.x-side.x)<500) frontX=u.x;
+    for (const u of game.e.units) if (Math.abs(u.x-side.x)<500) frontX=u.x;
     const look = clamp((frontX-side.x)/500,-1,1)*4, ey = gy-IA_EYE_Y[era];
     sculptT(x-13, ey-8, 26, 16, 6, '#cfe0ee');
     bloomT(side.trans?'#ff4ad0':col, 8, ()=>{ ctx.fillStyle=side.trans?'#ff4ad0':col; ctx.beginPath(); ctx.arc(x+look,ey,5,0,6.283); ctx.fill(); });
@@ -2916,30 +3013,36 @@ function drawSlot(slot, side, neutral){
   const gy = gY(slot.x), t = game.t;
   const owner = neutral? slot.owner : side;
   if (!slot.b){
-    const canB = neutral? true : side===game.p, pulse = 0.5+0.5*Math.sin(t*2.6);
-    const ac = neutral? '#e8d8a0' : '#ffd34a';
-    // halo de sol doux + anneau lumineux NET (cuits une fois — plus aucun flou par image)
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    ctx.globalAlpha=0.55+0.45*pulse;
-    ctx.drawImage(fxSprite('SLH'+ac, 72, 28, g => { g.save(); g.translate(36,14); g.scale(1,11/30);
-      const r=g.createRadialGradient(0,0,2,0,0,30); r.addColorStop(0,rgbaC(ac,0.28)); r.addColorStop(1,rgbaC(ac,0));
-      g.fillStyle=r; g.beginPath(); g.arc(0,0,30,0,6.283); g.fill(); g.restore(); }), x-36, gy-14, 72, 28);
-    if (canB){ ctx.globalAlpha=0.6+0.4*pulse;
-      ctx.drawImage(fxSprite('SLR'+ac, 64, 32, g => { g.strokeStyle=rgbaC(ac,0.95); g.lineWidth=2; g.shadowColor=ac; g.shadowBlur=8;
-        g.beginPath(); g.ellipse(32,16,24,9,0,0,6.283); g.stroke(); }), x-32, gy-16, 64, 32); }
+    const canB = neutral? true : side===game.p;
+    const ac = neutral? '#e8d8a0' : '#f0e6c8';
+    // EMPLACEMENT (v1.14) : tracé à la chaux au sol + piquet d'arpenteur et son panonceau « + »
+    // (objets posés dans le décor — plus d'anneau lumineux ni de symbole flottant)
+    ctx.save();
+    ctx.strokeStyle = rgbaC(ac, canB? 0.8 : 0.3); ctx.lineWidth = 1.8; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.ellipse(x, gy+1, 24, 8, 0, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+    if (canB){
+      const sw = Math.sin(t*1.7+slot.x)*0.07;
+      ctx.fillStyle='rgba(8,6,10,0.28)'; ctx.beginPath(); ctx.ellipse(x+5, gy+2, 9, 2.4, 0, 0, 6.283); ctx.fill();
+      ctx.strokeStyle='#5a4630'; ctx.lineWidth=2.6; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(x, gy+1); ctx.lineTo(x, gy-30); ctx.stroke();                 // piquet
+      ctx.strokeStyle='#7a6244'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-0.8, gy-2); ctx.lineTo(x-0.8, gy-29); ctx.stroke();
+      ctx.translate(x, gy-29); ctx.rotate(sw);                                                    // panonceau qui se balance
+      ctx.fillStyle='rgba(8,6,10,0.3)'; ctx.fillRect(-8.5, 1.5, 19, 15);
+      ctx.fillStyle=ac; ctx.fillRect(-10, 0, 19, 15);
+      ctx.fillStyle='rgba(120,90,50,0.25)'; ctx.fillRect(-10, 11, 19, 4);
+      ctx.strokeStyle='#2a2018'; ctx.lineWidth=2.4; ctx.lineCap='butt';
+      ctx.beginPath(); ctx.moveTo(-5, 7.5); ctx.lineTo(4, 7.5); ctx.moveTo(-0.5, 3); ctx.lineTo(-0.5, 12); ctx.stroke();
+      ctx.fillStyle='#3a2c1e'; ctx.fillRect(-1.2, -1.5, 2.4, 3);                                  // clou
+    }
     ctx.restore();
     if (canB){
-      const fy=gy-26+Math.sin(t*2.6)*2;     // « + » flottant (aucun support)
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      ctx.drawImage(fxSprite('SLP'+ac, 28, 28, g => { g.strokeStyle=ac; g.lineWidth=3; g.lineCap='round'; g.shadowColor=ac; g.shadowBlur=8;
-        g.beginPath(); g.moveTo(8,14); g.lineTo(20,14); g.moveTo(14,8); g.lineTo(14,20); g.stroke(); }), x-14, fy-14, 28, 28);
-      ctx.restore();
       // ÉTIQUETTE anti-chevauchement : des socles côte à côte (éco de base, tuto) partageaient
       // le même texte illisible — on n'écrit le libellé que si aucun voisin ne l'a déjà posé.
       if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){
         SLOT_LABELS.push(slot.x);
-        ctx.font=HF(9); ctx.textAlign='center'; ctx.fillStyle=rgbaC(ac,0.92);
-        ctx.fillText(neutral?tr('free_land'):tr('build_here'), x, gy-40);
+        const lb = neutral?tr('free_land'):tr('build_here');
+        ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
+        ctx.strokeText(lb, x, gy-40); ctx.fillStyle=ac; ctx.fillText(lb, x, gy-40);
       }
     }
     return;
