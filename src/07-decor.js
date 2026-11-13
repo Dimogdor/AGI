@@ -259,7 +259,7 @@ function dispatchBaseGarrison(side, role){
 // bonus du territoire : plus fort près de sa propre base (jusqu'à +45 %)
 function homeBuff(u){
   const bx = u.side===1? game.p.x : game.e.x;
-  return 1 + 0.45*Math.max(0, 1 - Math.abs(u.x-bx)/900);
+  return 1 + 0.45*Math.max(0, 1 - Math.abs(u.x-bx)/900)*(game.camp && game.camp.homeK? game.camp.homeK(u) : 1);   // campagne : bonus de territoire modulé par la mission
 }
 // production par seconde (pour l'affichage HUD)
 function calcRates(side){

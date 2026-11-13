@@ -9,7 +9,7 @@
    Les cellules alliées arrivent en renfort (et sur appel). Tout l'arsenal de l'escarmouche est
    ouvert (ères III à V, héros, transcendance). À la fin, « nous » renouvelle son offre : le
    joueur CHOISIT (abattre la tour / la couper du monde et veiller) — deux épilogues.            */
-const M5 = { cells:[7,6,5], wMul:[0.55,0.7,0.85], wave:[80,68,58], guard:[5,7,9], spCd:[110,85,65], eMul:[0.35,0.45,0.55], cap:[8,10,12], reinf:[45,50,55], gate:[[1300,1800,2300],[1300,1800,2300],[1600,2200,2900]], hero:[0.3,0.45,0.62], rw:[46,40,34] };
+const M5 = { cells:[7,9,10], wMul:[0.7,0.85,0.88], wave:[80,68,62], guard:[3,4,5], spCd:[110,85,75], eMul:[0.4,0.5,0.56], cap:[8,10,11], reinf:[45,50,52], gate:[[1300,1800,1900],[1300,1800,1900],[1600,2200,2500]], hero:[0.2,0.3,0.38], rw:[46,40,37] };
 const m5Act = () => (game && game.camp && game.camp.act) || 1;
 const m5Owned = g => g.zones.reduce((n,z)=> n+(z.owner==='p'? 1 : 0), 0);
 
@@ -249,12 +249,13 @@ const M5_PLATES = {
 /* ---------- changement d'acte : la carte se transforme ---------- */
 function m5Cell(g, c, n){ if (!(c.cellsLeft > 0)) return 0; const p = g.p, pat = [[0,2,1,0],[1,2,0,2,3],[1,0,2,3,4]][c.act-1]; let k = 0;
   for (let i=0;i<(n||pat.length);i++) if (unitTotal(p) < p.cap+3){ spawnUnit(p, pat[i%pat.length], false); k++; }
-  if (k){ c.cellsLeft--; g.p.f += 160; g.p.m += 120; addFloater(g.p.x+80, gY(g.p.x)-90, '+160', '#e8d8a0', 14);   // chaque cellule apporte ses vivres
+  if (k){ if (--c.cellsLeft<=0) c.dry = c.t; if (c.act===1) c.sap = (c.sap|0)+1; g.p.f += 160; g.p.m += 120; addFloater(g.p.x+80, gY(g.p.x)-90, '+160', '#e8d8a0', 14);   // chaque cellule apporte ses vivres
     campRadio('sol', cT(CAMP_UI.reinf).replace('{name}', CAMP_CELLS[c.cell++ % CAMP_CELLS.length])); sfx('evolve'); }
   return k; }
 // la garnison de la porte, au début de chaque acte, et les sorties : des colonnes qui foncent sur notre base
-function m5Guard(g, c){ const e = g.e, k0 = e.units.length; for (let i=0;i<M5.guard[c.lvl];i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x-60-i*20); for (let j=k0;j<e.units.length;j++) e.units[j].ord = null; }
-function m5Sortie(g, c){ const e = g.e, k0 = e.units.length, n = Math.round((2 + c.act*2 + Math.floor((c.t-c.t0)/120)) * [0.8,1,1.25][c.lvl]); campWave(Math.min(n, 24));   // plus on attend, plus elles impriment
+function m5Guard(g, c){ const e = g.e, k0 = e.units.length; for (let i=0;i<M5.guard[c.lvl];i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x-60-i*20); const k = M5.wMul[c.lvl];
+  for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; u.ord = 'hold'; u.holdX = u.x; } }
+function m5Sortie(g, c){ const e = g.e, k0 = e.units.length, n = Math.round((1 + c.act*2 + (c.cellsLeft>0? 0 : Math.floor((c.t-c.dry)/60)*2)) * [0.7,0.9,0.98][c.lvl]); if (e.units.length < 26) campWave(Math.min(n, 16));   // plus on attend, plus elles impriment
   const k = M5.wMul[c.lvl]; for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
 function m5Transform(g, c){
   const p = g.p, e = g.e, a = c.act;
@@ -263,7 +264,6 @@ function m5Transform(g, c){
   for (const s of e.slots){ s.b = null; s.owner = null; }
   p.units.forEach((u,i)=>{ u.x = p.x + 70 + (i%10)*18 + ((i/10)|0)*6; u.ord = null; u.px = null; u.task = null; u.hp = Math.min(u.maxhp, u.hp + u.maxhp*0.4); });
   p.adv = p.x; p.hp = Math.min(p.maxhp, p.hp + p.maxhp*0.35);
-  if (e.era < a+1) campEra(e, a+1);
   e.cap = M5.cap[c.lvl] + (a-1)*3;                                    // la garnison grossit à mesure qu'on s'enfonce
   e.maxhp = c.gateMax = M5.gate[a-1][c.lvl]; e.hp = e.maxhp; e.f += 300; e.m += 300; e.w += 100; e.mode = 'build';
   g.zones = a===2? [0.34,0.52,0.70].map(k=>({ x:WORLD*k, owner:null, prog:0 })) : [];
@@ -287,8 +287,8 @@ function m5ActCine(g, c){ const a = c.act, boom = n => () => { for (let i=0;i<n;
   ]; }
 
 campExtend(4, {
-  biome:'citadel', theme:'citadel1', diff:[0,1,2], dev0:0.3, era0:2, eraCap:4, oneLife:false,
-  dm:[{inc:0.2, cheat:0.55}, {inc:0.28, cheat:0.65}, {inc:0.4, cheat:0.8}],
+  biome:'citadel', theme:'citadel1', diff:[0,1,1], dev0:0.1, era0:2, eraCap:4, oneLife:false,
+  dm:[{inc:0.2, cheat:0.55}, {inc:0.28, cheat:0.65}, {inc:0.31, cheat:0.7, eraLag:0.75}],
   place:{fr:"Valmont, la citadelle d'Omnicorp", en:"Valmont, the Omnicorp citadel"},
   brief:{fr:[
     "Août 2038. Il n'y a plus de front : il y a la citadelle, posée sur la plaine de Valmont comme un couvercle — eux dedans, nous dehors. Tout ce que le pays compte de cellules converge ici. Germinal n'est plus une cellule, c'est un rendez-vous.",
@@ -299,18 +299,20 @@ campExtend(4, {
     "\"We\" offered peace this morning. The terms fit on one line: we stop deciding, it stops killing. The committee voted. One vote in favour — mine, I owe you the truth: I am seventy-one and I am tired. All the others against.",
     "So here we are. Three doors: the outer wall, the computing halls, the core. Reinforcements will come from the other cells for as long as the radio holds. I will hold it. It has been an honour, commander. Let us finish this."]},
   goal:{fr:"Percer le mur, éteindre les halles, atteindre le noyau de la Singularité.", en:"Breach the wall, put out the halls, reach the Singularity's core."},
-  rule:{fr:"Trois actes, trois lieux. I — le mur : abattez la porte. II — les halles : tenez les trois baies, sinon la porte du noyau reste blindée et les baies fabriquent des machines. III — le noyau : la Singularité « réécrit » le terrain ; reculez quand le sol blanchit. À chaque acte, quelques cellules alliées arrivent en renfort — ou sur appel — puis plus personne : ne les gaspillez pas. Plus vous tardez, plus les sorties ennemies grossissent. Tout l'arsenal est ouvert ; votre base a deux vies.",
-        en:"Three acts, three places. I — the wall: bring down the gate. II — the halls: hold the three bays, or the core door stays armoured and the bays keep building machines. III — the core: the Singularity \"rewrites\" the ground; pull back when the floor turns white. In each act a few allied cells arrive as reinforcements — or on call — and then nobody: do not waste them. The longer you wait, the bigger the enemy sorties grow. The whole arsenal is open; your base has two lives."},
+  rule:{fr:"Trois actes, trois lieux. I — le mur : chaque cellule qui arrive apporte des charges  ; à quatre, la porte cède sous vos coups. II — les halles : éteignez les trois baies (une baie éteinte le reste), sinon la porte du noyau reste blindée et les baies fabriquent des machines. III — le noyau : la Singularité « réécrit » le terrain ; reculez quand le sol blanchit. À chaque acte, quelques cellules alliées arrivent en renfort — ou sur appel — puis plus personne : ne les gaspillez pas. Quand elles sont épuisées, les sorties ennemies grossissent de minute en minute. Tout l'arsenal est ouvert ; votre base a deux vies.",
+        en:"Three acts, three places. I — the wall: every cell that arrives brings charges; with four, the gate gives way under your blows. II — the halls: put out the three bays (a bay put out stays dark), or the core door stays armoured and the bays keep building machines. III — the core: the Singularity \"rewrites\" the ground; pull back when the floor turns white. In each act a few allied cells arrive as reinforcements — or on call — and then nobody: do not waste them. Once they are spent, the enemy sorties grow minute by minute. The whole arsenal is open; your base has two lives."},
   action:{ label:{fr:"APPEL AUX CELLULES", en:"CALL THE CELLS"}, cd:95, can:(g, c)=> c.cellsLeft>0, use(g, c){ if (!m5Cell(g, c)) c.actCd = 4; } },
   setup(g, c){
     const p = g.p, e = g.e;
     c.act = 1; c.cell = 0; c.t0 = 0; c.owned = 0; c.rw = null; c.nextRw = 1e9; c.rack = 1e9; c.ending = null;
     campGrant(p, 620, 620, 240); campGrant(e, 300, 300, 120); campSquad(p, [1,0,0,2,2]);
+    e.heroCd = 1e9;                                                     // la Singularité ne sort qu'à l'acte III, quand on vient la chercher
     e.slots = [];                                                       // la citadelle ne bâtit pas devant sa porte : ses défenses sont celles de chaque acte
     e.phase = 2; g.hbombDone = true;                                   // la porte ne « renaît » pas : ce sont les actes qui la remplacent
     campEra(e, 2); e.cap = M5.cap[c.lvl]; e.maxhp = c.gateMax = M5.gate[0][c.lvl]; e.hp = e.maxhp; c.lastE = e.hp;
-    g.zones = []; g.cataCd = 150; c.nextReinf = M5.reinf[c.lvl]; c.nextWave = 75; m5Guard(g, c); c.cellsLeft = M5.cells[c.lvl];
+    g.zones = []; g.cataCd = 1e9; c.nextReinf = M5.reinf[c.lvl]; c.nextWave = 75; m5Guard(g, c); c.cellsLeft = M5.cells[c.lvl];
     for (const k of [2,3]){ const s = g.neut[k]; s.b = mkB(e, 'turret'); s.owner = e; s.b.lvl = 1 + (c.lvl>0? 1 : 0); s.b.hp = s.b.maxhp *= 1 + 0.4*c.lvl; }   // les deux batteries du mur
+    c.homeK = u => u.side===-1? 0 : 1;                                   // les défenseurs de la citadelle ne sont pas chez eux : ce sont des outils
     c.rangeMul = null; this.light(g, c);
   },
   light(g, c){ const Ls = c.lights; Ls.length = 0; if (c.act!==2) return;
@@ -322,22 +324,27 @@ campExtend(4, {
     for (let i=LIGHTS.length-1, k=0; i>=0 && k<8; i--, k++){ const L = LIGHTS[i]; Ls.push({x:L.x, y:L.y, r:L.r*0.9, a:1-L.t/L.life}); } },
   tick(g, c, dt){
     const p = g.p, e = g.e, T = c.t;
+    e.f = e.m = e.w = 0; g.cataCd = 1e9;                                  // pas de cataclysme : ici, le seul fléau, c'est elle
+                                                    // la citadelle n'achète rien : tout ce qui en sort est écrit ici (garnison, sorties, baies, la Singularité)
+    const era = Math.max(2, Math.min(c.act===1? (T-c.t0 < 180? 2 : 3) : c.act+1, p.era)); if (e.era!==era) e.era = era;   // jamais plus d'une ère d'avance sur nous
     if (e.specialCd > (c.eSp||0) + 1) e.specialCd = M5.spCd[c.lvl];   // leurs frappes d'ère sont plus rares ici : la citadelle se garde de tirer sur ses propres halles
     c.eSp = e.specialCd; e.lastUsed = true;
     for (const u of e.units) if (!u.m5 && u.role!=='hero'){ u.m5 = 1; const k = M5.eMul[c.lvl]; u.hp *= k; u.maxhp *= k; u.dmg *= k; }   // des machines montées à la hâte, sans rodage
     // renforts : une cellule alliée toutes les 70-80 s
     if (T >= c.nextWave){ c.nextWave = T + M5.wave[c.lvl]; m5Sortie(g, c); }
     if (T >= c.nextReinf){ c.nextReinf = T + M5.reinf[c.lvl]; m5Cell(g, c); }
+    if (c.act===1 && e.hp < c.lastE) e.hp = c.lastE - (c.lastE-e.hp)*((c.sap|0)>=4? 1 : 0.08);   // LE MUR : sans les charges des sapeurs, on égratigne le béton
     if (c.act===2){                                                    // LES HALLES : les baies blindent la porte et fabriquent
-      const own = m5Owned(g); if (own > c.owned) sfx('evolve'); c.owned = own;
+      for (const z of g.zones){ if (z.owner==='p') z.dead = 1; if (z.dead){ z.owner = 'p'; z.prog = 1; } }   // une baie éteinte le reste : on a arraché les câbles
+      const own = m5Owned(g); if (own > c.owned){ sfx('evolve'); g.shake = Math.max(g.shake, 6); } c.owned = own;
       if (e.hp < c.lastE) e.hp = c.lastE - (c.lastE-e.hp)*(0.25 + 0.25*own);
-      if (T >= c.rack){ c.rack = T + [40,34,28][c.lvl];
+      if (T >= c.rack){ c.rack = T + [40,34,31][c.lvl];
         for (const z of g.zones) if (z.owner!=='p' && e.units.length<60){ spawnUnit(e, [0,2,1][(z.x|0)%3], false, z.x+30); e.units[e.units.length-1].ord = 'charge'; burst(z.x, gY(z.x)-40, '#9fd6ea', 8, 0.8); } } }
     if (c.act===3){                                                    // LE NOYAU : réécritures
       if (!c.rw && T >= c.nextRw){ let fx = p.x+300; for (const u of p.units) if (u.x>fx) fx = u.x; c.rw = { x:clamp(fx-150, p.x+260, e.x-420), w:420, t:0 }; sfx('deny'); }
       const r = c.rw; if (r){ r.t += dt;
         if (r.t >= 4 && !r.done){ r.done = 1; g.flash = Math.max(g.flash||0, 0.7); g.shake = Math.max(g.shake, 10); sfx('boom');
-          for (const u of p.units) if (u.x > r.x && u.x < r.x+r.w){ u.hp -= u.maxhp*[0.14,0.2,0.26][c.lvl]*(u.role==='hero'? 0.4 : 1); u.x = Math.max(p.x+60, u.x-190); u.flash = 0.5; } }
+          for (const u of p.units) if (u.x > r.x && u.x < r.x+r.w){ u.hp -= u.maxhp*[0.14,0.2,0.23][c.lvl]*(u.role==='hero'? 0.4 : 1); u.x = Math.max(p.x+60, u.x-190); u.flash = 0.5; } }
         if (r.t >= 4.8){ c.rw = null; c.nextRw = T + M5.rw[c.lvl]; } } }
     e.maxhp = c.gateMax; if (e.hp > c.lastE) e.hp = c.lastE;                                   // la porte ne se répare pas : chaque brèche reste ouverte
     c.lastE = e.hp;
@@ -350,7 +357,7 @@ campExtend(4, {
   },
   hud(g, c){ const e = g.e;
     return { prog:(c.act-1)/3 + (1-clamp(e.hp/e.maxhp,0,1))/3,
-      label: (c.act===1? cT({fr:'I · le mur', en:'I · the wall'}) : c.act===2? cT({fr:'II · baies ', en:'II · bays '})+c.owned+'/3' : cT({fr:'III · le noyau', en:'III · the core'}))+' · ✊'+c.cellsLeft }; },
+      label: (c.act===1? cT({fr:'I · charges ', en:'I · charges '})+Math.min(4, c.sap|0)+'/4' : c.act===2? cT({fr:'II · baies ', en:'II · bays '})+c.owned+'/3' : cT({fr:'III · le noyau', en:'III · the core'}))+' · ✊'+c.cellsLeft }; },
   // acte II : une baie de calcul à la place du drapeau de zone
   drawZone(z, t, vw){ const x = z.x-camX; if (x<-80 || x>vw+80) return; const y = gY(z.x), mine = z.owner==='p';
     ctx.save(); ctx.translate(x, y);
@@ -420,6 +427,7 @@ campExtend(4, {
       { cam:{x:g.p.x+160, t:1.2}, live:true, dur:1.6 },
       { cam:{x:g.p.x+160}, who:'malik', txt:{fr:"Fructidor est là ! On a marché toute la nuit. Dites-nous où taper, commandant — et si ça presse, appelez : il y a toujours une cellule à portée de voix.", en:"Fructidor is here! We walked all night. Tell us where to hit, commander — and if it is urgent, call: there is always a cell within earshot."} },
     ]; }},
+    {when:(g,c)=>c.act===1 && c.sap>=4, who:'malik', txt:{fr:"Les sapeurs ont posé toutes les charges au pied de la porte. Maintenant, elle ne tiendra plus — frappez !", en:"The sappers have laid every charge at the foot of the gate. Now it will not hold — strike!"}},
     {when:(g,c)=>c.act===2 && c.owned>=1, who:'sol', txt:{fr:"Une baie éteinte ! La porte du noyau commence à marquer. Les deux autres, commandant.", en:"One bay out! The core door is starting to show marks. The other two, commander."}},
     {when:(g,c)=>c.act===2 && c.owned>=3, who:'sol', txt:{fr:"Les trois baies sont à nous : la porte n'a plus de blindage. Enfoncez-la !", en:"All three bays are ours: the door has no armour left. Break it down!"}},
     {when:(g,c)=>c.act===3 && !!c.rw, who:'sol', txt:{fr:"Le sol blanchit — elle réécrit ! Reculez, reculez !", en:"The floor is turning white — it is rewriting! Back, back!"}},

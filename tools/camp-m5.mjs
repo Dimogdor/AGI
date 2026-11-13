@@ -20,7 +20,7 @@ const play = (bot) => {
     if (p.hp < p.maxhp*0.55) tryRepairBase(p);
     if (p.era < g.eraCap && p.xp >= EVOLVE_XP[p.era+1]) tryEvolve(p);
     if (!p.capUp && unitTotal(p) >= 24) tryCapUp(p);
-    if (p.heroCd<=0 && !p.units.some(u=>u.role==='hero') && c.act===3) tryHero(p);
+    if (p.heroCd<=0 && !p.units.some(u=>u.role==='hero') && c.act>=2) tryHero(p);
     if (p.specialCd<=0 && e.units.some(u=>Math.abs(u.x-p.x)<900)) trySpecial(p);
     const pat = [1,2,0,2,3,0,2,1,4,5]; tryBuy(p, pat[buyI++%pat.length]);
     if (!(c.actCd > 0)) campAct();
@@ -28,7 +28,7 @@ const play = (bot) => {
     const n = p.units.length; let tx = null;
     if (c.act===2){ const z = g.zones.find(z=>z.owner!=='p'); if (z && n>=8) tx = z.x+20; }
     if (c.rw && !c.rw.done) tx = c.rw.x - 60;
-    if (push && n<=6) push = false; else if (!push && n>=18) push = true;            // on se regroupe, puis on pousse en masse
+    if (push && n<=5) push = false; else if (!push && n>=14) push = true;            // on se regroupe, puis on pousse en masse
     if (tx==null && !push) tx = e.units.some(u=>u.x<p.x+700)? p.x+260 : p.x+520;
     if (tx!=null) orderPoint(p, tx); else { for (const u of p.units) u.ord = null; setStance(p, 'charge'); }
   }
