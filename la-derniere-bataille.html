@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/uBUrDoxN18FdpQtfvATtL7DHpP4GVXrX/acLlH1VfI=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mrLxFdrT9hyqVwvm4zhuGujbLKh7PWMn9467kdWjosw=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10543,7 +10543,7 @@ const M3_PLATES = {
     for (let k=0;k<12;k++) inkLine(g, [172+k*12, 106+Math.abs(k-5.5)*0.8, 176+k*12, 244], n, 0.5);
     for (let k=0;k<3;k++){ const x = 196+k*34; inkWash(g, [x,248, x,218, x+22,218, x+22,248], '#1f1b17', 0.85); }
     const m = clamp((t-2)/1.4, 0, 1); if (m>0) for (let k=0;k<3;k++){ const x = 207+k*34; inkLine(g, [x-6,250, x-14,262], m, 1.2, '#2f6f9a'); inkLine(g, [x+6,250, x+14,262], m, 1.2, '#2f6f9a'); }
-    inkFolk(g, 240, 96, 12, '#1f1b17', 1);
+    inkFolk(g, 252, 109, 12, '#1f1b17', 1);
     plateEnd(g, w, h); },
   fountain(g, w, h, t){ plateBase(g, w, h);                                             // la fontaine du village recoule
     inkLine(g, [0,220, 480,220], 1, 2.2); inkHatch(g, 0, 220, 480, 50, 7, '#1f1b17', 0.2);
@@ -10601,7 +10601,7 @@ function m3DrawWater(c, t, vw){
       ctx.fillStyle = '#e9dfc6'; ctx.fillRect(x-2, y-34, 4, 34); ctx.fillStyle = '#c42a1c'; for (let k=0;k<4;k++) ctx.fillRect(x-2, y-32+k*8, 4, 3);
       if (siren && Math.sin(t*12)>0){ ctx.fillStyle = '#c42a1c'; ctx.beginPath(); ctx.arc(x, y-38, 3.5, 0, 6.283); ctx.fill(); } }
     if (siren){ const x0 = Math.max(a, camX-10), x1 = Math.min(b, camX+vw+10); if (x1 > x0){
-      ctx.save(); ctx.globalAlpha = 0.25 + 0.15*Math.sin(t*10); ctx.strokeStyle = '#c42a1c'; ctx.lineWidth = 1.4; ctx.beginPath();
+      ctx.save(); ctx.globalAlpha = 0.5 + 0.25*Math.sin(t*10); ctx.strokeStyle = '#c42a1c'; ctx.lineWidth = 2; ctx.beginPath();
       for (let x=x0 - (x0%14); x<x1; x+=14){ const y = gY(x); ctx.moveTo(x-camX, y); ctx.lineTo(x-camX+10, y-14); } ctx.stroke(); ctx.restore(); } }
   }
   if (!f) return;
