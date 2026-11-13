@@ -3,8 +3,7 @@
 // vérifie que toutes les cinématiques (ouverture, en mission, clôture) démarrent, se déroulent ou
 // se passent et finissent sans erreur. Sortie non nulle en cas d'échec.
 //   usage : import { campRun } from './_camp-run.mjs'; await campRun({ mission, bot, info })
-import { createRequire } from 'node:module';
-const { chromium } = createRequire(import.meta.url)('playwright');
+import { chromium } from 'playwright-core';
 const GAME = new URL('../la-derniere-bataille.html', import.meta.url).href;
 
 // une méthode abrégée « bot(g){…} » devient une expression de fonction

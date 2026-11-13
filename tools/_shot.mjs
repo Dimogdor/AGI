@@ -1,4 +1,4 @@
-import { createRequire } from 'node:module'; const { chromium } = createRequire(import.meta.url)('playwright');
+import { chromium } from 'playwright-core';
 const SP = process.argv[2], mis = +(process.argv[3]||0);
 const b = await chromium.launch(); const p = await b.newPage({ viewport:{width:1280,height:640} });
 const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if (m.type()==='error') errs.push(m.text()); });
