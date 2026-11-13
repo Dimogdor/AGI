@@ -53,6 +53,8 @@ jobs:
       - run: npx playwright-core install --with-deps chromium
       - run: npm run dev
       - run: npm test
+      # bancs d'essai de la campagne : chaque mission gagnée par un joueur scripté et perdue par un joueur passif, à chaque niveau
+      - run: npm run test:camp
 
   deploy:
     needs: [build, test]

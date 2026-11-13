@@ -35,6 +35,7 @@ capacitor.config.json  ← config mobile (iOS/Android + OTA)
 electron/              ← app desktop (PC)
 tools/                 ← regression (suite de tests : npm test), gen-assets (icônes/visuels),
                           store-screens (les 6 captures de store, intro comprise)
+                          camp-m1…m5 (bancs d'essai de la campagne : npm run test:camp), _shot (captures)
 resources/             ← icônes, feature graphic, splash, captures d'écran,
                           fonts/ (polices libres du menu, intégrées au build — voir son README)
 www/                   ← bundle généré (git-ignoré, ne pas éditer)

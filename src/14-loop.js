@@ -16,6 +16,7 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
+  if (game.camp && game.camp.m.draw) game.camp.m.draw(game, game.camp, VW());   // objets propres à la mission
   if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
@@ -65,8 +66,7 @@ function render(dt){
     if (d.fly){ const s=1.5*(1-k*0.25); ctx.translate(x, gy-d.flyH*(1-k*k)-6); ctx.rotate(k*6*d.side); ctx.scale(d.side*s,s);
       ctx.drawImage(sprite('AIR'+d.fac+d.era+(d.trans?'T':''),64,44,()=>airSprite(d.fac,d.era,d.trans)),-32,-22,64,44); }
     else if (d.role==='gremlin'){ ctx.translate(x, gy-2); ctx.rotate(k*1.5*d.side); ctx.fillStyle=FACTIONS[d.fac].eraCols[d.era]; ctx.fillRect(-7,-12,14,12); }
-    else if (d.role==='hero'){ ctx.translate(x-d.side*fall*8, gy); ctx.rotate(-d.side*fall*1.4); ctx.scale(d.side,1);
-      ctx.drawImage(sprite('HERO'+d.fac,HERO_SW,100,()=>heroSprite(d.fac)),-HERO_SW/2,-92,HERO_SW,100); }
+    else if (d.role==='hero') drawHeroDeath(d, x, gy, k);
     else { const kind=d.fac==='HUM'?'hum':'bot';
       ctx.translate(x-d.side*fall*6, gy);
       if (d.role==='tank'){ ctx.rotate(-d.side*fall*0.35); ctx.scale(d.side, 1-0.5*fall); }   // les lourds s'affaissent
@@ -123,6 +123,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
+  if (game.biome) biomeFront(dt);                 // lieu de campagne : nuit éclairée, pluie, neige
   drawWinter();
   drawCata();
   if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit
@@ -143,7 +144,7 @@ function render(dt){
     ctx.globalAlpha=(0.25+0.3*Math.min(1,beat))*(paused? 0.5 : 1)*(1-php/0.30*0.4); ctx.fillStyle=VIGN_RED; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }
   drawFilmGrade();               // étalonnage cinéma (ombres froides / hautes lumières chaudes) + grain
-  drawHUD();
+  if (CINE.on) drawCine(); else drawHUD();   // cinématique de campagne : bandes noires et sous-titres à la place du HUD
   drawSpeedOverlays();
   ctx.restore();
 }
@@ -240,6 +241,10 @@ function loop(now){
   if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
   const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
   if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
+  else if (game && CINE.on){                           // cinématique : le monde est figé (sauf plan « vivant »), la scène avance en temps réel
+    if (!paused){ if (cineLive() && !game.over){ let rem = dt; while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; } } else if (game.over) update(dt);
+      cineTick(dt); }
+  }
   else if (game && !game.over && !paused){
     // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
     let rem = dt * sp;

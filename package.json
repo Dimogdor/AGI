@@ -1,12 +1,13 @@
 {
   "name": "agi-la-derniere-bataille",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "AGI — La Dernière Bataille de l'Humanité : jeu de stratégie style Age of War (web, iOS, Android, PC).",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "dev": "node build.mjs dev",
     "test": "node tools/regression.mjs",
+    "test:camp": "for f in tools/camp-m*.mjs; do node \"$f\" || exit 1; done",
     "build": "node build.mjs",
     "serve": "node build.mjs && npx --yes serve www",
     "sync": "node build.mjs && cap sync",

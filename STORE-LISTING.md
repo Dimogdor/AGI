@@ -288,6 +288,12 @@ v1.0 — Lancement.
 • Plein écran mobile et défilement du menu
 ```
 
+## Notes de version — v1.15
+
+**FR** — La campagne « Les carnets de Germinal » est entièrement refaite. Chaque mission a son lieu, sa musique et sa règle : la nuit des compteurs dans une banlieue sans courant, l'escorte d'un cortège de grévistes sur le port, les vannes d'un barrage de montagne, le froid d'une ville minière sous le blizzard, et une citadelle en trois actes qui se termine par un choix et deux fins. Cinématiques à l'encre avant, pendant et après chaque mission, nouveaux personnages, doctrine à choisir entre les missions. Les héros (le Che et l'AGI) changent d'allure à chaque ère, ont de vraies animations, des sons variés et trois postures : prudent, normal, offensif.
+
+**EN** — The "Germinal Notebooks" campaign has been rebuilt from scratch. Each mission has its own place, music and rule: a night in a blacked-out suburb, escorting a strikers' march along the docks, the sluice gates of a mountain dam, the cold of a mining town in a blizzard, and a three-act citadel that ends with a choice and two endings. Ink-drawn cutscenes before, during and after each mission, new characters, a doctrine to choose between missions. The heroes (Che and the AGI) change look with each era, have real animations, varied sounds and three stances: cautious, normal, aggressive.
+
 ## Notes de version — v1.14
 
 **FR** — Nouvelle campagne « Les carnets de Germinal » : cinq missions scénarisées, de la première nuit d'émeute à la dernière bataille. Interface de jeu refaite en bureau de campagne (fiches papier, encre, pochoir). Bras et armes animés, drapeaux à hisser, piquets d'arpenteur. Tutoriel complété (caméra, réparation, base à deux vies). Difficultés recalibrées ; les parties ne s'éternisent plus : passé 26 minutes, le monde s'effondre.

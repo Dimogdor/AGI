@@ -178,6 +178,7 @@ function layoutHUD(){
   HUD.btns.push({type:'lasso',  x:254, y:sy, w:74, h:oh, label:tr('btn_lasso')});
   HUD.btns.push({type:'formation', x:332, y:sy, w:98, h:oh, label:tr('btn_formation')});
   HUD.btns.push({type:'hero', x:434, y:sy, w:48, h:oh});
+  HUD.btns.push({type:'hstance', x:486, y:sy, w:108, h:oh});     // posture du héros (cycle prudent → normal → offensif)
   HUD.btns.push({type:'cam', go:'base',  x:W-300, y:sy, w:64, h:oh, label:tr('cam_base')});
   HUD.btns.push({type:'cam', go:'front', x:W-232, y:sy, w:64, h:oh, label:tr('cam_front')});
   HUD.btns.push({type:'cam', go:'follow',x:W-164, y:sy, w:72, h:oh, label:tr('cam_auto')});
@@ -605,6 +606,9 @@ function drawBtn(b){
     prog = 1;
   } else if (b.type==='stance'){
     label=b.label; ok = game.sel.size? false : p.stance===b.st;
+  } else if (b.type==='hstance'){
+    const hs = p.heroStance||'normal';
+    label = (hs==='prudent'? '🛡 ' : hs==='offensive'? '⚔ ' : '★ ') + tr('hst_'+hs) + hk('herostance'); ok = hs!=='normal';
   } else if (b.type==='lasso'){
     label=b.label; ok=selMode;
   } else if (b.type==='formation'){
@@ -631,7 +635,13 @@ function drawBtn(b){
     ctx.fillStyle = ok? pal.red : (b.type==='stance' && game.sel.size)? pal.bad : pal.ink;
     const smallLbl = b.label||label;
     fitFont(smallLbl, b.w-8, HF(12), 8);
-    ctx.fillText(smallLbl, b.x+b.w/2, y+h/2+(ok? -0.5 : 0.5));
+    ctx.fillText(smallLbl, b.x+b.w/2, y+h/2+(ok? -0.5 : 0.5)+(b.type==='hstance'? 2 : 0));
+    if (b.type==='hstance'){                             // trois crans : la posture courante est encrée
+      const i0 = HERO_STANCES.indexOf(p.heroStance||'normal');
+      for (let i=0;i<3;i++){ const px = x+w/2-13+i*10; ctx.fillStyle = i===i0? (ok? pal.red : pal.ink) : pal.ink2; ctx.globalAlpha = A0*(i===i0? 1 : 0.4);
+        ctx.fillRect(px, y+3.5, 7, 2.4); }
+      ctx.globalAlpha = A0;
+    }
     return;
   }
   // BON D'ACTION (pouvoir, évolution, capacité, réparation) : kraft à cadre pointillé, encre, jauge

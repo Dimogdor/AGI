@@ -336,7 +336,20 @@ console.log('\nCORRECTIFS D\'AUDIT (v1.11)');
   await page.close();
 }
 
-console.log('\nCAMPAGNE (v1.14)');
+console.log('\nCAMPAGNE (v1.15)');
+{ // chaque texte de campagne {fr, en, …} porte les 9 langues (lecture statique des sources)
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const dir = new URL('../src/', import.meta.url), miss = [];
+  for (const f of readdirSync(dir).filter(f=>/^16[a-h]/.test(f))){
+    const s = readFileSync(new URL(f, dir), 'utf8'), re = /\{\s*fr\s*:/g; let m;
+    while ((m = re.exec(s))){ let i = m.index, d = 0, j = i;
+      for (; j<s.length; j++){ const ch = s[j];
+        if (ch==='{') d++; else if (ch==='}'){ if (--d===0) break; }
+        else if (ch==='"' || ch==="'" || ch==='`'){ const q = ch; for (j++; j<s.length && s[j]!==q; j++) if (s[j]==='\\') j++; } }
+      const o = s.slice(i, j+1), lack = ['es','de','it','pt','ru','zh','ar'].filter(k=>!new RegExp('\\b'+k+'\\s*:').test(o));
+      if (lack.length) miss.push(f+':'+(s.slice(0,i).split('\n').length)+' ('+lack.join(',')+')'); } }
+  check(!miss.length, 'campagne : tous les textes existent dans les 9 langues'+(miss.length? ' — manquent : '+miss.slice(0,4).join(' ; ') : ''));
+}
 { // carnet de missions : verrouillage, dossier, sauvegarde corrompue
   const { page, errs } = await open();
   const r = await page.evaluate(() => {
@@ -358,42 +371,39 @@ console.log('\nCAMPAGNE (v1.14)');
   check(sv.done===5 && sv.lvl>=0 && sv.lvl<=2 && sv.best===0 && sv.pol===undefined && !e2.length, 'sauvegarde de campagne falsifiée : bornée et nettoyée au chargement');
   await p2.close();
 }
-{ // les 5 missions jouées jusqu'à leur dénouement (règles propres, radio, sauvegarde, enchaînement)
+{ // chaque mission (v1.15) : cinématique d'ouverture rendue plan par plan, lieu + musique propres,
+  // doctrine appliquée, partie jouée et rendue, fin forcée → cinématique de clôture → écran de fin,
+  // sauvegarde, enchaînement. Les issues gagner/perdre par niveau sont jouées par tools/camp-m*.mjs.
   const { page, errs } = await open();
   const r = await page.evaluate(() => {
-    const out = {}, R = () => { ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); };
-    const safe = () => { game.p.maxhp = 1e9; game.p.hp = 1e9; };
-    const run = (sec, each) => { for (let k=0;k<sec*20;k++){ if (each) each(); update(0.05); if (k%60===0) R(); if (game.over) break; } };
-    const kill = ph => { for (let k=0;k<200 && !game.over && (game.e.phase||1)===ph;k++){ game.e.hp = -1e6; update(0.05); } };
-    CAMP_SAVE.done = 0; CAMP_SAVE.best = {}; CAMP_SAVE.lvl = 1;
-    campLaunch(0); run(100, safe);
-    out.m1 = { radio: game.camp.fired.filter(Boolean).length, cap: game.eraCap, one: game.e.phase===2 };
-    game.p.xp = 9e6; out.m1.noEvo = tryEvolve(game.p)===false;
-    kill(2); showEnd(); out.m1.win = game.over && game.win; out.m1.done = CAMP_SAVE.done;
-    out.m1.title = document.getElementById('endtitle').textContent; out.m1.btn = document.getElementById('campNextBtn').style.display;
-    document.getElementById('campNextBtn').click(); out.m2start = game && game.camp && game.camp.i;      // « mission suivante »
-    run(365, safe); showEnd();
-    out.m2 = { win: game.over && game.win, t: Math.round(game.camp.t), waves: game.camp.waveN, radio: game.camp.fired.filter(Boolean).length, done: CAMP_SAVE.done };
-    campLaunch(2); out.m3 = { far: game.nodes[2].owner }; run(160, safe); out.m3.cata = game.cata;
-    run(70, ()=>{ safe(); for (const n of game.nodes){ n.owner='p'; n.prog=1; } }); showEnd(); out.m3.win = game.over && game.win; out.m3.done = CAMP_SAVE.done;
-    campLaunch(3); run(310, ()=>{ safe(); game.e.hp = game.e.maxhp; }); out.m4 = { hero: game.e.units.some(u=>u.role==='hero'), winter: game.winter };
-    run(800, ()=>{ safe(); game.e.hp = game.e.maxhp; }); showEnd();
-    out.m4.lose = game.over && !game.win; out.m4.t = Math.round(game.camp.t); out.m4.done = CAMP_SAVE.done; out.m4.retry = document.getElementById('campNextBtn').dataset.i;
-    campLaunch(3); run(20, safe); kill(2); showEnd(); out.m4.win = game.over && game.win;
-    campLaunch(4); run(170, safe); out.m5 = { cells: game.camp.cell, era: game.p.era };
-    kill(1); out.m5.reborn = game.e.phase===2 && !!game.hbombDone && !game.over;
-    run(20, safe); kill(2); showEnd(); out.m5.win = game.over && game.win; out.m5.done = CAMP_SAVE.done;
+    const out = [], R = () => { ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); };
+    const playCine = () => { let n = 0; while (CINE.on && n++ < 60){ CINE.t = cineDur(cineShot())*0.6; R(); cineNext(); } return n; };
+    CAMP_SAVE.done = 0; CAMP_SAVE.best = {}; CAMP_SAVE.lvl = 1; CAMP_SAVE.doc = {2:1};
+    for (let i=0;i<CAMPAIGN.length;i++){
+      const o = { i };
+      if (i===0) campLaunch(0); else { document.getElementById('campNextBtn').click(); }
+      o.started = !!(game && game.camp && game.camp.i===i);
+      o.biome = !!game.biome && !!MUSIC_THEMES[game.biome.music];
+      o.introOn = CINE.on; o.intro = playCine();
+      o.doc = i===2? game.camp.actMul===0.65 || !game.camp.m.action : true;              // doctrine « radio libre » choisie pour la III
+      for (let k=0;k<60*20 && !game.over;k++){ game.p.hp = game.p.maxhp; update(0.05); if (k%100===0) R(); if (CINE.on) playCine(); }
+      o.alive = !game.over;
+      game.over = true; game.win = true; campEndCine();                                 // victoire forcée
+      o.outro = playCine(); o.end = document.getElementById('endscreen').style.display!=='none';
+      o.done = CAMP_SAVE.done; o.next = document.getElementById('campNextBtn').style.display;
+      out.push(o);
+    }
+    // échec : cinématique d'échec puis « réessayer » relance la même mission
+    campLaunch(1); cineEnd(); game.over = true; game.win = false; campEndCine(); const f = playCine();
+    const retry = document.getElementById('campNextBtn').dataset.i;
     // retour au carnet puis escarmouche : plus aucune trace de la campagne
-    document.getElementById('replayBtn').click(); out.back = document.getElementById('menu').style.display + '/' + document.querySelector('.tab.on').dataset.page;
-    newGame('HUM', 1, false); for (let k=0;k<40;k++) update(0.05); R(); out.clean = !game.camp && !game.devBase && game.eraCap===4 && (game.p.phase||1)===1;
-    return out; });
-  check(r.m1.radio>=2 && r.m1.cap===0 && r.m1.one && r.m1.noEvo && r.m1.win && r.m1.done===1 && r.m1.btn!=='none',
-    'mission I : ère plafonnée, base à une vie, radio, victoire enregistrée — '+r.m1.title);
-  check(r.m2start===1 && r.m2.win && r.m2.t===360 && r.m2.waves>20 && r.m2.radio>=6 && r.m2.done===2, `mission II : « mission suivante » enchaîne, ${r.m2.waves} assaillants en vagues, tenue 6 min`);
-  check(r.m3.far==='e' && r.m3.cata==='heat' && r.m3.win && r.m3.done===3, 'mission III : lac ennemi au départ, canicule annoncée, victoire en tenant les 3 lacs');
-  check(r.m4.hero && r.m4.winter && r.m4.lose && r.m4.t===900 && r.m4.done===3 && r.m4.retry==='3' && r.m4.win,
-    'mission IV : hiver permanent, prototype, échec au terme du compte à rebours prolongé (15 min), puis victoire');
-  check(r.m5.cells>=2 && r.m5.era===3 && r.m5.reborn && r.m5.win && r.m5.done===5, 'mission V : renforts, base ennemie à deux vies, campagne terminée');
+    document.getElementById('replayBtn').click(); const back = document.getElementById('menu').style.display + '/' + document.querySelector('.tab.on').dataset.page;
+    newGame('HUM', 1, false); for (let k=0;k<40;k++) update(0.05); R();
+    const clean = !game.camp && !game.biome && !game.devBase && game.eraCap===4 && (game.p.phase||1)===1 && !CINE.on;
+    return { out, f, retry, back, clean }; });
+  for (const o of r.out) check(o.started && o.biome && o.introOn && o.intro>=3 && o.doc && o.alive && o.outro>=1 && o.end && o.done===o.i+1,
+    `mission ${['I','II','III','IV','V'][o.i]} : lieu et musique propres, ouverture de ${o.intro} plans, 60 s jouées, clôture de ${o.outro} plans, progression enregistrée`);
+  check(r.f>=1 && r.retry==='1', 'échec : cinématique d’échec puis « réessayer » relance la même mission');
   check(r.back==='flex/camp' && r.clean && !errs.length, 'retour au carnet, puis escarmouche sans reste de campagne'+(errs[0]? ' — '+errs[0] : ''));
   await page.close();
 }
@@ -522,6 +532,60 @@ console.log('\nSÉCURITÉ');
   await page.close();
 }
 
+console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
+{ const { page, errs } = await open();
+  const r = await page.evaluate(() => { const out = {};
+    const R = () => { ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); };
+    const setup = (stance, hpFrac) => { newGame('HUM', 1, false); game.aiThink = 1e9; const p = game.p; p.heroStance = stance;
+      spawnHero(p); const h = p.units.find(u=>u.role==='hero'); h.x = 1500; h.hp = h.maxhp*hpFrac; return h; };
+    const run = n => { for (let i=0;i<n;i++){ game.e.units.length = 0; game.aiThink = 1e9; update(0.05); } };
+    // PRUDENT : sous 35 % de PV il rentre vers sa base et y reste ; soigné (≥ 60 %), il repart
+    let h = setup('prudent', 0.3); const p0 = game.p; run(200);
+    out.flee = h.hstate==='flee' && Math.abs(h.x-(p0.x+150)) < 40;
+    h.hp = h.maxhp*0.5; run(20); out.stay = h.hstate==='flee';                      // 50 % : pas encore (hystérésis)
+    h.hp = h.maxhp; spawnUnit(p0, 0, false, 1200); const m = p0.units[p0.units.length-1]; run(60);
+    out.back = h.hstate===null && h.x > p0.x+300;
+    out.behind = (m.x - h.x) > 20;                                                // … et se tient derrière la ligne
+    // OFFENSIF : mêmes PV, armée en repli → il avance quand même, jamais de fuite
+    h = setup('offensive', 0.3); setStance(game.p, 'retreat'); run(60);
+    out.lead = h.x > 1700 && h.hstate!=='flee';
+    // NORMAL : comportement historique (obéit au repli de l'armée, ne fuit pas de lui-même)
+    h = setup('normal', 0.3); run(40); const adv = h.x > 1500; setStance(game.p, 'retreat'); run(200);
+    out.normal = adv && h.hstate==null && Math.abs(h.x-(game.p.x+150)) < 40;
+    // statistiques inchangées par la posture ; aura identique
+    const a = setup('prudent', 1), sA = [a.maxhp, a.dmg, a.spd, a.range, a.rate].join(); run(2); const powA = game.p.heroPow;
+    const b = setup('normal', 1), sB = [b.maxhp, b.dmg, b.spd, b.range, b.rate].join(); run(2);
+    out.stats = sA===sB && powA===game.p.heroPow && powA===1;
+    // commande : bouton du HUD, touche, valeur invalide refusée côté hôte
+    newGame('HUM', 1, false); R(); const bt = HUD.btns.find(b=>b.type==='hstance');
+    handleTap(bt.x+bt.w/2, bt.y+bt.h/2); const s1 = game.p.heroStance;
+    window.dispatchEvent(new KeyboardEvent('keydown', {code:'KeyJ'})); const s2 = game.p.heroStance; R();
+    out.ui = !!bt && s1==='offensive' && s2==='prudent';
+    applyCmd({c:'hst', st:'prudent'}); const c1 = game.e.heroStance; applyCmd({c:'hst', st:'__proto__'}); applyCmd({c:'hst'});
+    out.cmd = c1==='prudent' && game.e.heroStance==='prudent';
+    // chaque héros, à chaque ère : toutes les couches cuites, rendu vivant / en attaque / blessé / mort sans erreur ; l'ère suit le camp
+    out.draw = true; out.era = true;
+    try { for (const fac of ['HUM','IA']){ newGame(fac, 1, false); game.aiThink = 1e9; const p = game.p; spawnHero(p); const u = p.units[0]; u.x = 600; camX = 300; camFollow = false;
+        for (let era=0; era<5; era++){ p.era = era; game.e.units.length = 0; update(0.05); if (u.era!==era) out.era = false;
+          for (const [t, n] of [[-1,0],[0.75,1],[0.75,2],[0.1,3]]){ u.atkT = t; u.atkN = n; u.flash = n===3? 0.1 : 0; u._wx = u.x-(n? 0 : 3); R(); }
+          deaths.push({x:700, fac, era, role:'hero', fly:false, flyH:0, side:1, t:0.9, life:1.8}); R(); deaths.length = 0;
+          const c = heroFullSprite(fac, era); if (!(c.width>0)) out.draw = false; } } } catch(e){ out.draw = e.message; }
+    // instantané réseau : posture et état d'animation du héros transmis à l'invité
+    newGame('HUM', 1, false); game.e.heroStance = 'offensive'; spawnHero(game.e); const eh = game.e.units.find(u=>u.role==='hero'); eh.atkN = 3; eh.hstate = 'flee';
+    const snap = JSON.parse(JSON.stringify(serialize()));
+    game.net = 'guest'; applySnapshot(snap); const gh = game.p.units.find(u=>u.role==='hero');
+    out.snap = game.p.heroStance==='offensive' && !!gh && gh.atkN===3 && gh.hstate==='flee' && game.p.heroAlive===true; R(); game.net = null;
+    return out; });
+  check(r.flee && r.stay && r.back && r.behind, 'posture PRUDENT : repli vers la base sous 35 % de PV, retour une fois soigné (≥ 60 %), reste derrière la ligne');
+  check(r.lead, 'posture OFFENSIF : avance malgré 30 % de PV et une armée en repli, ne fuit jamais');
+  check(r.normal && r.stats, 'posture NORMAL : comportement historique ; statistiques et aura identiques quelle que soit la posture');
+  check(r.ui && r.cmd, 'posture : bouton du HUD, touche J, commande réseau validée (valeur inconnue ignorée)');
+  check(r.draw===true && r.era, 'héros : 2 camps × 5 ères rendus (repos, deux attaques, blessure, mort), l\'apparence suit l\'ère du camp'+(r.draw!==true? ' — '+r.draw : ''));
+  check(r.snap, 'instantané : posture, n° d\'attaque et repli du héros reçus par l\'invité');
+  check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
+  await page.close();
+}
+
 console.log('\nMODE EN LIGNE DE BOUT EN BOUT (deux pages reliées)');
 { const A = await open(), B = await open();                       // A = hôte (Humanité), B = invité (G·P·T)
   const link = async (from, to) => from.page.exposeFunction('__wire', msg => to.page.evaluate(m => nrecv(m), msg).catch(()=>{}));
@@ -543,10 +607,13 @@ console.log('\nMODE EN LIGNE DE BOUT EN BOUT (deux pages reliées)');
   check(st.g==='guest' && st.fac==='IA' && st.t>0, 'lancement : l\'invité reçoit le départ et les instantanés (t='+(st.t||0).toFixed(1)+' s)');
   // commandes de l'invité : recruter, construire, ordre — appliquées chez l'hôte, visibles chez l'invité
   await A.page.evaluate(() => { game.e.f = game.e.m = game.e.w = 2000; });                  // de quoi payer les trois ordres
-  await B.page.evaluate(() => { tryBuy(game.p, 0); tryBuy(game.p, 2); tryBuild(game.p, game.p.slots[0], 'farmF'); setStance(game.p, 'hold'); });
+  await B.page.evaluate(() => { tryBuy(game.p, 0); tryBuy(game.p, 2); tryBuild(game.p, game.p.slots[0], 'farmF'); setStance(game.p, 'hold'); setHeroStance(game.p, 'prudent'); });
+  await A.page.evaluate(() => spawnHero(game.e));
   await tick(40);
   const cmd = { host: await A.page.evaluate(() => ({ u: game.e.units.length + game.e.queue.length, b: !!game.e.slots[0].b, st: game.e.stance })),
                 guest: await B.page.evaluate(() => ({ u: game.p.units.length + (game.p.queueLen||0), b: !!game.p.slots[0].b, st: game.p.stance })) };
+  const hst = [await A.page.evaluate(() => game.e.heroStance), await B.page.evaluate(() => game.p.heroStance + '/' + game.p.units.some(u=>u.role==='hero'))];
+  check(hst[0]==='prudent' && hst[1]==='prudent/true', 'posture du héros de l\'invité : commande appliquée par l\'hôte, héros et posture visibles chez l\'invité ('+hst.join(' · ')+')');
   check(cmd.host.u>=2 && cmd.host.b && cmd.host.st==='hold' && cmd.guest.u>=2 && cmd.guest.b && cmd.guest.st==='hold',
     'commandes de l\'invité (recruter, construire, tenir) : appliquées par l\'hôte et reflétées chez l\'invité');
   // vitesse : proposition de l'invité, acceptée par l'hôte
