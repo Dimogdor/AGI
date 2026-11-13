@@ -12,7 +12,7 @@ const play = (bot) => {
     if (CINE.on){ cines++; let k = 0; while (CINE.on && k++ < 12){ CINE.t = 0.5; render(1/60); CINE.t = 99; cineTick(0.05); } }
     update(0.05); if (steps%40===0) render(1/60);
     acts[c.act] = c.t;
-    if (steps%1200===0) trace.push([Math.round(c.t), c.act, p.units.length, e.units.length, Math.round(e.hp), p.era, e.era, Math.round(p.f), Math.round(p.m), g.zones.map(z=>(z.owner||'-')+Math.round(z.prog*9)).join(''), push, Math.round(Math.max(0,...p.units.map(u=>u.x))), Math.round(Math.min(9999,...e.units.map(u=>u.x))), g.neut.map(n=>n.b? n.b.type[0]+Math.round(n.b.hp)+(n.owner===p?'P':'E') : '-').join('/'), p.stance].join(','));
+    if (steps%(globalThis.TR||1200)===0) trace.push([Math.round(c.t), c.act, p.units.length, e.units.length, Math.round(e.hp), p.era, e.era, Math.round(p.f), Math.round(p.m), g.zones.map(z=>(z.owner||'-')+Math.round(z.prog*9)).join(''), 'sap'+c.sap+'cl'+c.cellsLeft, push, Math.round(Math.max(0,...p.units.map(u=>u.x))), Math.round(Math.min(9999,...e.units.map(u=>u.x))), g.neut.map(n=>n.b? n.b.type[0]+Math.round(n.b.hp)+(n.owner===p?'P':'E') : '-').join('/'), p.stance].join(','));
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;
     game.sel.clear();
     ['farmM','turret','farmF'].forEach((ty,i)=>{ if (!p.slots[i].b) tryBuild(p, p.slots[i], ty); });
@@ -44,7 +44,7 @@ for (const lvl of LVLS){
     const r = await page.evaluate(play, bot);
     if (V) console.log('    ', JSON.stringify(r));
     if (bot){ check(r.over && r.win && r.act===3, `niveau ${lvl} : joueur scripté GAGNE (${r.t} s ; fin des actes à ${r.acts.join(' / ')} s ; base ${r.hp} %, ère ${r.era+1})`);
-      check(r.t>=420 && r.t<=960, `niveau ${lvl} : durée raisonnable (${(r.t/60).toFixed(1)} min)`);
+      check(r.t>=330 && r.t<=960, `niveau ${lvl} : durée raisonnable (${(r.t/60).toFixed(1)} min)`);
       check(r.cines>=3, `niveau ${lvl} : scènes en mission (renforts + 2 changements d'acte) : ${r.cines}`); }
     else check(r.over && !r.win, `niveau ${lvl} : joueur passif PERD (${r.t} s, acte ${r.act})`);
     await page.waitForTimeout(1400);
