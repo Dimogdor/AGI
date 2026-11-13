@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dwCpn83LlHpZT/aKrl7hW2+wYnHuVYkXuFmWsQc2eqU=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XwQl9AJMQge2vHwIBDoUzrFXi+VROHDhcz0k/N0u7T4=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10427,8 +10427,9 @@ BIOMES.dam = {
         g.fillStyle = 'rgba(40,56,72,0.25)'; for (let x=0;x<w;x+=6){ const y = ridge(x); if (Math.sin(x*P*5+1) < -0.2) g.fillRect(x, y, 6, 40); }   // versants à l'ombre
         g.strokeStyle = 'rgba(40,56,72,0.3)'; g.lineWidth = 0.8; g.beginPath(); for (let i=0;i<60;i++){ const x = rnd()*w, y = ridge(x)+10+rnd()*60; g.moveTo(x,y); g.lineTo(x+8,y+6); } g.stroke();
         const cx = 640, cy = ridge(cx)+16;                                                 // la cascade (le trait d'eau est animé à part)
-        g.fillStyle = '#5b6f80'; g.fillRect(cx-16, cy, 32, h-cy-40);
-        g.fillStyle = '#e8f0f2'; g.fillRect(cx-4, cy, 8, h-cy-44); g.fillStyle = 'rgba(232,240,242,0.6)'; g.beginPath(); g.ellipse(cx, h-44, 22, 7, 0, 0, 6.283); g.fill();
+        g.fillStyle = '#566a7a'; g.beginPath(); g.moveTo(cx-22, h-40); g.lineTo(cx-14, cy-6); g.lineTo(cx-4, cy-12); g.lineTo(cx+8, cy-4); g.lineTo(cx+18, cy+30); g.lineTo(cx+24, h-40); g.closePath(); g.fill();   // falaise
+        g.fillStyle = 'rgba(232,240,242,0.92)'; g.beginPath(); g.moveTo(cx-3, cy-4); g.lineTo(cx+3, cy-4); g.lineTo(cx+6, h-46); g.lineTo(cx-6, h-46); g.closePath(); g.fill();   // le voile d'eau
+        g.fillStyle = 'rgba(232,240,242,0.55)'; g.beginPath(); g.ellipse(cx, h-44, 20, 6, 0, 0, 6.283); g.fill();
         m3Pines(g, rnd, w, x => h-30-6*Math.sin(x*P*4), 160, 14, 26, '#45604f'); g.fillStyle = '#45604f'; g.fillRect(0, h-30, w, 30); } },
     { par:0.17, w:1280, h:170, off:2, paint(g, w, h, rnd){                          // collines boisées, chapelle Sainte-Aube, hameau
         const P = 6.283/w, hill = x => h-70-22*Math.sin(x*P*3+2)-10*Math.sin(x*P*7);
@@ -10492,7 +10493,6 @@ function m3DrawDam(vw, t){
   ctx.drawImage(m3DamSprite(), x, y, 520, 300);
   if (c){ const lv = clamp(c.water/100, 0, 1);                                              // niveau du réservoir sur l'échelle de la crête
     ctx.fillStyle = 'rgba(232,240,242,0.7)'; ctx.fillRect(x+112, y+80-26*lv, 296, 2);
-    ctx.fillStyle = '#e9dfc6'; ctx.fillRect(x+426, y+96, 8, 120); ctx.fillStyle = '#2f6f9a'; ctx.fillRect(x+427, y+96+120*(1-lv), 6, 120*lv);
     const open = c.siren>0 || (c.flood && c.flood.t < 5);
     if (open) for (let k=0;k<3;k++){ const gx = x+200+k*48;                                  // gerbes blanches aux vannes ouvertes
       ctx.fillStyle = 'rgba(240,246,248,0.85)'; for (let i=0;i<5;i++){ const ph = (t*3 + i*0.2 + k*0.3)%1; ctx.fillRect(gx+3+i*5, y+266+ph*30, 3, 8); } } }
@@ -10590,7 +10590,7 @@ function m3Flood(g, c, dt){
     f.hit.add(u); u.hp -= u.maxhp*k; u.flash = 0.3; u.tiredT = 3; u.x = Math.min(WORLD-40, u.x + push);
     if (qFx()) burst(u.x, gY(u.x)-12, '#d8eef4', 6, 0.6); }
   for (const n of g.neut) if (n.b && !f.hit.has(n) && n.x <= f.x && m3Low(n.x)){ f.hit.add(n); n.b.hp -= n.b.maxhp*0.3*f.pow; }
-  if (!f.base && f.x >= g.e.x-60){ f.base = true; const dmg = g.e.maxhp*[0.12,0.1,0.08][c.lvl]*f.pow; g.e.hp -= dmg;   // la crue frappe la station de pompage
+  if (!f.base && f.x >= g.e.x-60){ f.base = true; const dmg = g.e.maxhp*[0.15,0.12,0.1][c.lvl]*f.pow; g.e.hp -= dmg;   // la crue frappe la station de pompage
     explode(g.e.x-40, gY(g.e.x)-30, 1.4, '#d8eef4'); g.shake = 10; addFloater(g.e.x-40, gY(g.e.x)-110, '−'+Math.round(dmg), '#2f6f9a', 15); }
   if (f.t > 11) c.flood = null;
 }
@@ -10651,6 +10651,7 @@ campExtend(2, {
   },
   tick(g, c, dt){
     g.cataCd = Math.max(g.cataCd, 600);                                                   // seule la canicule annoncée frappe
+    if (c.eHp==null || g.e.hp < c.eHp) c.eHp = g.e.hp; else g.e.hp = c.eHp;              // la station ne se répare pas : chaque crue compte
     const fill = [1.5,1.25,1.05][c.lvl] * (g.cata==='heat'? 0.35 : 1);
     if (!(c.siren>0) && !c.flood) c.water = Math.min(100, c.water + fill*dt);
     if (c.heatAt && c.t >= c.heatAt){ c.heatAt = 0; if (!g.cata) startCata('heat'); }
