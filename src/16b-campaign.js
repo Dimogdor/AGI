@@ -62,7 +62,7 @@ function campPatch(){ game.wClock = 90; game.weather = 'patch'; }          // mi
 
 const CAMPAIGN = [
   { // ---------- I ----------
-    year:"2025", theme:'plains', diff:[0,1,2], eraCap:0, oneLife:true, dev0:0,
+    year:"2025", theme:'plains', diff:[0,1,1], eraCap:0, oneLife:true, dev0:0,
     title:{fr:"La nuit des compteurs", en:"The night of the meters", es:"La noche de los contadores", de:"Die Nacht der Zähler", it:"La notte dei contatori", pt:"A noite dos medidores", ru:"Ночь счётчиков", zh:"水表之夜", ar:"ليلة العدّادات"},
     place:{fr:"Valmont, quartier des Tanneurs", en:"Valmont, the Tanners' district", es:"Valmont, barrio de los Curtidores", de:"Valmont, Gerberviertel", it:"Valmont, quartiere dei Conciatori", pt:"Valmont, bairro dos Curtidores", ru:"Valmont, квартал Кожевников", zh:"Valmont，制革工区", ar:"Valmont، حيّ الدبّاغين"},
     brief:{fr:[

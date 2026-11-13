@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-12we8QKsKs84ZBEbBwGGGhwRq1TcUoAkZ4Av9YB2+M4=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wFubJ1x9z0Lq4HLOxfsKbRQmwiueTu5ZT521FywgLQQ=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -9827,7 +9827,7 @@ function campPatch(){ game.wClock = 90; game.weather = 'patch'; }          // mi
 
 const CAMPAIGN = [
   { // ---------- I ----------
-    year:"2025", theme:'plains', diff:[0,1,2], eraCap:0, oneLife:true, dev0:0,
+    year:"2025", theme:'plains', diff:[0,1,1], eraCap:0, oneLife:true, dev0:0,
     title:{fr:"La nuit des compteurs", en:"The night of the meters", es:"La noche de los contadores", de:"Die Nacht der Zähler", it:"La notte dei contatori", pt:"A noite dos medidores", ru:"Ночь счётчиков", zh:"水表之夜", ar:"ليلة العدّادات"},
     place:{fr:"Valmont, quartier des Tanneurs", en:"Valmont, the Tanners' district", es:"Valmont, barrio de los Curtidores", de:"Valmont, Gerberviertel", it:"Valmont, quartiere dei Conciatori", pt:"Valmont, bairro dos Curtidores", ru:"Valmont, квартал Кожевников", zh:"Valmont，制革工区", ar:"Valmont، حيّ الدبّاغين"},
     brief:{fr:[
@@ -10677,7 +10677,7 @@ campExtend(0, {
   setup(g, c){
     campGrant(g.p, 240, 200, 70); g.e.hp = g.e.maxhp = Math.round([550,850,1000][c.lvl]*g.d.hpMul);
     c.hidden = u => u.side===-1 && !campInLight(u.x);
-    const dim = [0.85, 0.78, 0.72][c.lvl];                                  // dans le noir, nos tireurs visent moins loin (moins durement en récit « Veillée »)
+    const dim = [0.85, 0.8, 0.72][c.lvl];                                  // dans le noir, nos tireurs visent moins loin (moins durement en récit « Veillée »)
     c.rangeMul = u => (u.side===1 && u.range>60 && !campInLight(u.x, true))? dim : 1;
     c.owned = 0; this.light(g, c);
   },

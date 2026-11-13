@@ -113,7 +113,7 @@ campExtend(0, {
   setup(g, c){
     campGrant(g.p, 240, 200, 70); g.e.hp = g.e.maxhp = Math.round([550,850,1000][c.lvl]*g.d.hpMul);
     c.hidden = u => u.side===-1 && !campInLight(u.x);
-    const dim = [0.85, 0.78, 0.72][c.lvl];                                  // dans le noir, nos tireurs visent moins loin (moins durement en récit « Veillée »)
+    const dim = [0.85, 0.8, 0.72][c.lvl];                                  // dans le noir, nos tireurs visent moins loin (moins durement en récit « Veillée »)
     c.rangeMul = u => (u.side===1 && u.range>60 && !campInLight(u.x, true))? dim : 1;
     c.owned = 0; this.light(g, c);
   },
