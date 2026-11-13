@@ -19,7 +19,7 @@ const CINE = { on:false, script:null, i:0, t:0, done:null, bar:0, cam0:0, camBac
 const CINE_WHO = {                                   // nom affiché et encre de chaque voix
   sol:  { name:'SOL', ink:'#c42a1c' },
   k55:  { name:'55', ink:'#0b6fa8' },
-  nous: { name:{fr:'« NOUS »', en:'"WE"'}, ink:'#3a4a58' },
+  nous: { name:{fr:'« NOUS »', en:'"WE"', es:'«NOSOTROS»', de:'„WIR“', it:'«NOI»', pt:'«NÓS»', ru:'«МЫ»', zh:'“我们”', ar:'«نحن»'}, ink:'#3a4a58' },
   nar:  { name:null, ink:'#1f1b17' },
 };
 const CINE_PORTRAITS = {};                           // id → peintre (g) sur une vignette 64×64 (encre sur papier)
