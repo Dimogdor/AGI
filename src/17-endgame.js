@@ -59,8 +59,8 @@ function drawEndArt(){
   const era = side.era, trans = !!side.trans;
   for (const [role, dx, s] of [['ranged',-170,0.9],['tank',-105,0.98],['melee',105,0.98],['support',170,0.9]]){
     c.save(); c.translate(260+dx, gy); c.scale(dx<0? s : -s, s); drawUnitLayers(kind, fk, role, era, trans, 0, c); c.restore(); }
-  const hs = sprite('HERO'+fk, HERO_SW, 100, ()=>heroSprite(fk)), hk = 1.32;
-  c.save(); c.translate(260, gy+2); c.scale(win? hk : -hk, hk); c.drawImage(hs, -HERO_SW/2, -92, HERO_SW, 100); c.restore();
+  const hs = heroFullSprite(fk, era), hk = 1.0;
+  c.save(); c.translate(260, gy+2); c.scale(win? hk : -hk, hk); c.drawImage(hs, -HSP.cx, -HSP.foot, HSP.W, HSP.H); c.restore();
   if (!win){                                                                               // drapeau du joueur à terre
     c.save(); c.globalCompositeOperation='source-atop'; c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(0,0,520,200); c.restore();
     const pc = game.p.fac.accent;

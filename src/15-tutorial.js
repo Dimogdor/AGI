@@ -56,6 +56,7 @@ function tutDesc(b){
     case 'repairall': return {t:'repairall'};
     case 'formation': return {t:'formation'};
     case 'hero':      return {t:'hero'};
+    case 'hstance':   return {t:'hero'};      // la posture du héros apparaît avec la leçon du héros
     case 'lasso':     return {t:'lasso'};
     default:          return {t:b.type};
   }

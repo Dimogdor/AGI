@@ -65,8 +65,7 @@ function render(dt){
     if (d.fly){ const s=1.5*(1-k*0.25); ctx.translate(x, gy-d.flyH*(1-k*k)-6); ctx.rotate(k*6*d.side); ctx.scale(d.side*s,s);
       ctx.drawImage(sprite('AIR'+d.fac+d.era+(d.trans?'T':''),64,44,()=>airSprite(d.fac,d.era,d.trans)),-32,-22,64,44); }
     else if (d.role==='gremlin'){ ctx.translate(x, gy-2); ctx.rotate(k*1.5*d.side); ctx.fillStyle=FACTIONS[d.fac].eraCols[d.era]; ctx.fillRect(-7,-12,14,12); }
-    else if (d.role==='hero'){ ctx.translate(x-d.side*fall*8, gy); ctx.rotate(-d.side*fall*1.4); ctx.scale(d.side,1);
-      ctx.drawImage(sprite('HERO'+d.fac,HERO_SW,100,()=>heroSprite(d.fac)),-HERO_SW/2,-92,HERO_SW,100); }
+    else if (d.role==='hero') drawHeroDeath(d, x, gy, k);
     else { const kind=d.fac==='HUM'?'hum':'bot';
       ctx.translate(x-d.side*fall*6, gy);
       if (d.role==='tank'){ ctx.rotate(-d.side*fall*0.35); ctx.scale(d.side, 1-0.5*fall); }   // les lourds s'affaissent

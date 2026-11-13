@@ -17,13 +17,16 @@ function serSide(s){
     w:Math.round(s.w), xp:Math.round(s.xp), era:s.era, tr:s.trans?1:0, cap:s.cap, st:s.stance,
     fl:s.fortLvl||1, ar:s.autoRepair?1:0, scd:Math.round(s.specialCd*10)/10, lr:s.lastReady?1:0,
     lu:s.lastUsed?1:0, fm:s.formation?1:0, pm:Math.round((s.prodMul||1)*100)/100,
-    hcd:Math.round(s.heroCd||0), q:s.queue?s.queue.length:0,
+    hcd:Math.round(s.heroCd||0), hs:Math.max(0, HERO_STANCES.indexOf(s.heroStance)), q:s.queue?s.queue.length:0,
     upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)) };
 }
 function serialize(){
-  const u2 = u => [u.id, ROLE_CODES[u.role], Math.round(u.x), Math.round(u.hp), Math.round(u.maxhp),
+  // héros : un 15e champ — n° d'attaque (3 bits, choisit l'animation), repli prudent (8), geste de ralliement (16)
+  const u2 = u => { const a = [u.id, ROLE_CODES[u.role], Math.round(u.x), Math.round(u.hp), Math.round(u.maxhp),
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
+    if (u.role==='hero') a.push(((u.atkN|0)&7) | (u.hstate==='flee'? 8:0) | ((u.gestT!=null && game.t-u.gestT<1.1)? 16:0));
+    return a; };
   return {
     t:game.t, sv:game.speed||1, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
@@ -93,6 +96,7 @@ function applyCmd(cmd){
     switch(cmd.c){
       case 'buy':    if (isIdx(cmd.ri, ROLES.length)) tryBuy(e, cmd.ri); break;
       case 'hero':   tryHero(e); break;
+      case 'hst':    if (HERO_STANCES.includes(cmd.st)) e.heroStance = cmd.st; break;
       case 'evo':    tryEvolve(e); break;
       case 'ult':    trySpecial(e); break;
       case 'cap':    tryCapUp(e); break;
@@ -159,6 +163,7 @@ function applySnapshot(snap){
     loc.formation=!!ser.fm; loc.prodMul=SN(ser.pm, 0, 10, 1);
     const upg = {}; if (ser.upg && typeof ser.upg==='object') for (const r of ROLES) upg[r.key] = SN(ser.upg[r.key], 0, 3)|0;
     loc.upg = upg;
+    if (!(loc._hsLock>performance.now())) loc.heroStance = HERO_STANCES[SN(ser.hs, 0, 2, 1)|0];
     loc.heroCd=SN(ser.hcd, 0, 1e4); loc.queueLen=SN(ser.q, 0, 99)|0;
     loc.gar = new Array(SN(ser.gn, 0, 3)|0).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
     const sl = SA(ser.slots, 64);
@@ -185,7 +190,9 @@ function applySnapshot(snap){
       atkT:a[13]?1:0, rate:1, bob:Math.random()*6.28, flash:0, range:role==='ranged'||role==='siege'||role==='air'?150:16 };
     // CONTINUITÉ D'ANIMATION : l'unité est recréée à chaque instantané — on reprend la phase de marche
     // et l'état de rendu de son prédécesseur (sinon la démarche hachait et l'apparition rejouait sans fin)
+    if (role==='hero'){ const hb = SN(a[14], 0, 31)|0; u.atkN = hb&7; u.hstate = (hb&8)? 'flee' : null; u._hg = !!(hb&16); }
     const pv = GV[id];
+    if (role==='hero'){ if (pv){ u._h = pv._h; u.gestT = pv.gestT; } if (u._hg && !(pv && pv._hg)) u.gestT = g.t; }
     if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
       if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
       // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
@@ -195,6 +202,10 @@ function applySnapshot(snap){
   };
   for (const a of SA(snap.pu, 300)) addU(a);
   for (const a of SA(snap.eu, 300)) addU(a);
+  // un héros disparu de l'instantané est tombé : sa mort se joue aussi chez l'invité
+  for (const id in GV){ const pv = GV[id]; if (pv.role==='hero' && !GV2[id] && qFx() && deaths.length<60)
+    deaths.push({x:pv.x, fac:pv.fac, era:pv.era, role:'hero', fly:false, flyH:0, side:pv.side, t:0, life:1.8, trans:false}); }
+  for (const s of [g.p, g.e]) s.heroAlive = s.units.some(u=>u.role==='hero');
   GV = GV2;                                 // ne garde que les unités encore en vie
   g.sel = new Set(g.p.units.filter(u=>keep.has(u.id)));
   // spots neutres (mirroir owner) et lacs (mirroir prog/owner)
@@ -224,6 +235,7 @@ function applyEvents(ev){
     else if (e.k==='f') addFloater(x, y, String(e.t==null? '' : e.t).slice(0, 48), SCOL(e.c), SN(e.s, 6, 40, 13));
     else if (e.k==='a'){ game.msg={txt:String(e.t==null? '' : e.t).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
     else if (e.k==='s' && NET_SFX.has(e.n)) sfx(e.n, SN(e.p, 0, 8));
+    else if (e.k==='h' && typeof e.n==='string' && HSFX_GAP.hasOwnProperty(e.n)) heroSfx(e.f? 'IA':'HUM', e.n, x, true);
   }
 }
 function onSnapshot(data){
@@ -243,6 +255,7 @@ function netGuestTick(dt){
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
   stepParticles(dt);
+  for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if (deaths[i].t>deaths[i].life) deaths.splice(i,1); }
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if (f.t>1.6) floaters.splice(i,1); }
   if (game.msgT>0) game.msgT-=dt;
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);

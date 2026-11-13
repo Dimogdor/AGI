@@ -2,7 +2,7 @@
 const DEFKEYS = { buy1:'Digit1', buy2:'Digit2', buy3:'Digit3', buy4:'Digit4', buy5:'Digit5', buy6:'Digit6',
   evolve:'KeyE', special:'Space', charge:'KeyC', hold:'KeyV', retreat:'KeyB', formation:'KeyG',
   follow:'KeyF', left:'ArrowLeft', right:'ArrowRight', zoomin:'Equal', zoomout:'Minus',
-  capup:'KeyU', repairall:'KeyR', hero:'KeyH', softpause:'KeyP', pause:'Escape' };
+  capup:'KeyU', repairall:'KeyR', hero:'KeyH', herostance:'KeyJ', softpause:'KeyP', pause:'Escape' };
 // touches réservées (profileur F8, panneau dev F9) : jamais attribuables à une action
 const RESERVED_KEYS = { F8:1, F9:1 };
 const LANG_CODES = ['fr','en','es','de','it','pt','ru','zh','ar'];

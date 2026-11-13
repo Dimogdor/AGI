@@ -72,6 +72,78 @@ function sfx(kind, p=0){
   if (kind==='sel')   tone(520,t,.04,'triangle',.03);
   if (kind==='trans') { for(let i=0;i<5;i++) tone(330*Math.pow(1.25,i), t+i*.14, .5, 'triangle', .06); }
 }
+/* --- HÉROS (v1.15) : voix synthétiques propres à chaque légende ---
+   kind : spawn · atkA (attaque principale, 2 timbres alternés) · atkB (attaque secondaire) · hurt ·
+   death · bark (réplique de loin en loin, 3 variantes). Le Che sonne cuivre, caisse claire et
+   poudre ; la Singularité sonne verre, laser et modem. Chaque son est BRIDÉ (HSFX_GAP, en temps de
+   jeu) pour ne jamais marteler, panoramiqué, et coupé hors champ (sauf entrée en scène et mort). */
+const HSFX_GAP = { spawn:1, atkA:0.25, atkB:0.25, hurt:1.3, death:1, bark:6 };
+const HSFX_T = {}, HSFX_N = {};
+function heroSfx(fac, kind, wx, fromNet){
+  const key = fac+kind;
+  if (!fromNet){
+    const now = game? game.t : 0, last = HSFX_T[key];
+    if (last!==undefined && now>=last && now-last < (HSFX_GAP[kind]||0.25)) return false;
+    HSFX_T[key] = now;
+    netEv({k:'h', f:fac==='HUM'?0:1, n:kind, x:Math.round(wx||0)});     // l'invité l'entend aussi
+  }
+  if (!AC || !SETTINGS.sfx) return true;
+  const big = kind==='spawn' || kind==='death';
+  let V = 1, pan = 0;
+  if (wx!=null && typeof camX!=='undefined'){
+    const px = (wx - camX) / (VW()||960);
+    if (px<-0.25 || px>1.25){ if (!big) return true; V = 0.55; }       // hors champ : seuls l'entrée et la mort portent
+    pan = clamp((px-0.5)*1.6, -0.92, 0.92);
+  }
+  const n = HSFX_N[key] = ((HSFX_N[key]|0)+1) % 6, t = AC.currentTime;
+  let bus = null;
+  if (AC.createStereoPanner){ bus = AC.createStereoPanner(); bus.pan.value = pan; bus.connect(master); sfxBus = bus; }
+  try {
+    if (fac==='HUM'){
+      if (kind==='spawn'){                                             // roulement de caisse claire puis sonnerie de clairon
+        for (let i=0;i<7;i++) noise(t+i*0.055, 0.05, (0.03+i*0.006)*V, 1500);
+        tone(82, t+0.4, 0.34, 'sine', 0.13*V, -42);
+        [392,523,659,784].forEach((f,i)=> tone(f, t+0.4+i*0.13, i===3? 0.55 : 0.2, 'sawtooth', 0.06*V, 0, 0.015, 1900));
+        tone(392, t+0.79, 0.55, 'triangle', 0.04*V, 0, 0.02);
+      } else if (kind==='atkA'){
+        if (n%2===0){ noise(t, 0.09, 0.1*V, 2300); tone(175, t, 0.12, 'square', 0.05*V, -115); noise(t+0.03, 0.22, 0.025*V, 400); }   // claquement sec
+        else { noise(t, 0.07, 0.085*V, 1700); tone(132, t, 0.16, 'sawtooth', 0.055*V, -80, 0, 900); tone(940, t+0.09, 0.05, 'triangle', 0.02*V, -300); }   // détonation plus grave + culasse
+      } else if (kind==='atkB'){                                       // souffle de la fente, acier qui mord
+        noise(t, 0.13, 0.035*V, 900); tone(1250, t+0.07, 0.07, 'triangle', 0.04*V, -520); tone(205, t+0.07, 0.1, 'square', 0.04*V, -120);
+      } else if (kind==='hurt'){ tone(168, t, 0.17, 'sawtooth', 0.06*V, -72, 0, 800); noise(t, 0.05, 0.03*V, 600);
+      } else if (kind==='death'){                                      // sonnerie aux morts, grosse caisse
+        tone(70, t, 0.6, 'sine', 0.13*V, -32);
+        [[392,0,0.32],[330,0.3,0.32],[262,0.6,0.85]].forEach(([f,d,l])=> tone(f, t+d, l, 'sawtooth', 0.055*V, f===262? -14 : 0, 0.02, 1400));
+        noise(t+0.62, 0.3, 0.03*V, 300);
+      } else if (kind==='bark'){
+        if (n%3===0){ tone(523, t, 0.09, 'square', 0.035*V, 0, 0, 2200); tone(523, t+0.11, 0.09, 'square', 0.035*V, 0, 0, 2200); tone(659, t+0.22, 0.26, 'square', 0.035*V, 0, 0.01, 2200); }   // clairon
+        else if (n%3===1){ tone(1400, t, 0.18, 'sine', 0.04*V, 480, 0.02); tone(1750, t+0.2, 0.14, 'sine', 0.035*V, -260, 0.02); }                                                     // sifflet de ralliement
+        else { tone(215, t, 0.12, 'sawtooth', 0.06*V, 45, 0.01, 950); tone(262, t+0.13, 0.22, 'sawtooth', 0.06*V, -66, 0.01, 950); }                                                 // « ¡Adelante! »
+      }
+    } else {
+      if (kind==='spawn'){                                             // infra-basse qui enfle, arpège de verre, trille numérique
+        tone(55, t, 1.15, 'sine', 0.14*V, 38, 0.3);
+        for (let i=0;i<7;i++) tone(440*Math.pow(2, i*5/12), t+0.12+i*0.09, 0.36, 'triangle', 0.034*V, 0, 0.01);
+        tone(2400, t+0.82, 0.13, 'square', 0.028*V, -1800); tone(3520, t+0.97, 0.3, 'sine', 0.024*V, 0, 0.02);
+      } else if (kind==='atkA'){
+        if (n%2===0){ noise(t, 0.07, 0.04*V, 5000); tone(2300, t, 0.19, 'triangle', 0.035*V, -320); tone(3450, t, 0.12, 'sine', 0.02*V); }       // lame qui chante
+        else { noise(t, 0.06, 0.035*V, 3600); tone(1720, t, 0.16, 'triangle', 0.035*V, -500); tone(620, t+0.02, 0.1, 'square', 0.028*V, -400); }  // taille plus lourde
+      } else if (kind==='atkB'){                                       // faisceau : glissando + coup sourd
+        tone(1500, t, 0.24, 'sawtooth', 0.04*V, -1150, 0, 3000); tone(92, t, 0.2, 'sine', 0.09*V, -32); tone(3000, t, 0.05, 'square', 0.02*V);
+      } else if (kind==='hurt'){ [900,340,1300].forEach((f,i)=> tone(f*(1+0.08*((n+i)%3)), t+i*0.036, 0.032, 'square', 0.034*V));
+      } else if (kind==='death'){                                      // extinction : la tension s'effondre, grésillements, dernier bip
+        tone(420, t, 1.15, 'sawtooth', 0.07*V, -394, 0, 1200);
+        for (let i=0;i<5;i++) noise(t+0.1+i*0.17, 0.045, 0.04*V, 3000);
+        tone(1200, t+1.12, 0.09, 'sine', 0.04*V);
+      } else if (kind==='bark'){
+        if (n%3===0){ tone(1320, t, 0.06, 'square', 0.025*V); tone(990, t+0.08, 0.06, 'square', 0.025*V); tone(660, t+0.16, 0.16, 'triangle', 0.03*V); }   // motif froid descendant
+        else if (n%3===1){ for (let i=0;i<5;i++) tone(1800+((i*7+n*3)%5)*210, t+i*0.045, 0.04, 'sine', 0.028*V); }                                         // rafale de modem
+        else { tone(110, t, 0.42, 'sawtooth', 0.05*V, 0, 0.1, 500); tone(1760, t+0.32, 0.06, 'sine', 0.022*V); }                                           // bourdon + bip
+      }
+    }
+  } finally { sfxBus = null; }
+  return true;
+}
 /* --- Musique : 4 modes — menu / guerre (accélère) / hymne humain / break IA --- */
 // Réglage global de la bande-son : plus grave (transposition) et un peu plus lente,
 // pour une ambiance moins criarde et moins pressante (retour joueur v1.5).
