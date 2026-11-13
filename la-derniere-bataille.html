@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-MURGYTCFb6fV2DUbeHixSoDEdwcn7KHYfrPZq2MLPTw=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-T3ZRalhDx7dnxyXtiP3p6uSxSKrSp9jBt5El6Id4nHU=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -635,7 +635,7 @@ const TERRAIN_DEFAULT = {a:16,f1:0.0042,b:9,f2:0.0113,c:6,f3:0.021,base:10};
 function gY(x){
   const flat = clamp((Math.min(x, WORLD-x)-240)/320, 0, 1);
   // relief uniquement en bosses (jamais de creux : rien ne passe sous la ligne du sol / derrière le HUD)
-  const c = TERRAIN_DEFAULT;
+  const c = (typeof game!=='undefined' && game && game.biome && game.biome.terrain) || TERRAIN_DEFAULT;
   const h = c.a*Math.sin(x*c.f1) + c.b*Math.sin(x*c.f2+2) + c.c*Math.sin(x*c.f3+5) + c.base;
   return GROUND - Math.max(0, h) * flat;
 }
@@ -875,10 +875,36 @@ const STR_BRK = [40,47,43,47, 40,47,43,47];                    // ostinato Mi mi
 const CH_BRK2 = [[52,56,59],[48,55,60],[57,60,64],[47,54,59]]; // Em C Am B
 // tension musicale : monte plus LENTEMENT et plafonne à 0.8 — la bande-son ne vire plus
 // à la mitraille anxiogène en fin de partie (retour joueur : « fait mal à la tête »).
+// THÈMES DE CAMPAGNE : id → { bpm, step(st, t, stepDur, tension) } ; un lieu (BIOMES) ou un plan de
+// cinématique en choisit un. Les missions ajoutent les leurs dans ce registre.
+const MUSIC_THEMES = {};
+// « night » (mission I) : la ville sans courant. Tic-tac de compteur, sous-basse, piano électrique
+// étouffé ; les cordes n'entrent que lorsque la bataille chauffe. Quand le quartier se rallume,
+// l'harmonie passe de ré mineur à fa majeur.
+MUSIC_THEMES.night = { bpm:76, step(st, t, d, s){
+  const bar = Math.floor(st/8), s8 = st%8, lit = game && game.camp && game.camp.litK>0.6;
+  const ch = (lit? [[53,57,60],[48,52,55],[50,53,57],[46,50,53]] : [[50,53,57],[46,50,53],[43,46,50],[45,49,52]])[bar%4];
+  noise(t, .012, s8%2? .006 : .012, 5200);                                         // tic-tac du compteur
+  if (s8===0){ tone(m2f(ch[0]-24), t, d*7.6, 'sine', .085, 0, d*0.4); tone(54, t, .3, 'sine', .07, -16); }
+  if (s8===3 || s8===6) tone(m2f(ch[(bar+s8)%3]+12), t, d*3.2, 'triangle', .030, 0, 0, 1500);   // piano électrique
+  if (s8===4 && bar%2) tone(m2f(ch[2]+24), t, d*5, 'sine', .010, 0, d);
+  if (s>0.25 && s8===0) for (const n of ch){ tone(m2f(n), t, d*8.4, 'sawtooth', .011+.008*s, 0, d*2, 800); tone(m2f(n)+1.1, t, d*8.4, 'sawtooth', .008, 0, d*2.6, 700); }
+  if (s>0.45 && (s8===2 || s8===6)) noise(t, .09, .018, 1800);                     // balais
+  if (lit && s8%2===0){ const n = [72,76,77,81, 79,77,76,72][(st>>1)%8]; tone(m2f(n-12), t, d*2.4, 'triangle', .028, 0, d*0.3, 1800); }   // la mélodie revient avec la lumière
+} };
+// « carnet » (planches entre les missions) : une voix seule, presque un accordéon, sur un bourdon
+MUSIC_THEMES.carnet = { bpm:64, step(st, t, d){
+  const bar = Math.floor(st/8), s8 = st%8, ch = [[45,52,57],[41,48,53],[48,55,60],[43,50,55]][bar%4];
+  if (s8===0){ tone(m2f(ch[0]-12), t, d*8.4, 'sine', .06, 0, d); for (const n of ch) tone(m2f(n), t, d*8.6, 'triangle', .012, 0, d*3, 900); }
+  const n = [69,0,72,0, 76,0,74,72, 69,0,0,67, 69,0,0,0,  72,0,76,0, 79,0,77,76, 74,0,72,0, 71,0,0,0][st%32];
+  if (n){ tone(m2f(n), t, d*2.6, 'square', .010, 0, d*0.5, 1200); tone(m2f(n)+0.8, t, d*2.6, 'sawtooth', .008, 0, d*0.5, 1000); }
+} };
 function stress(){ return (game && !game.over)? clamp(game.t/600 + game.dev*0.35, 0, 0.8) : 0; }
 function musicMode(){
   if (typeof intro!=='undefined' && intro>=0) return 'intro';
   if (!game) return 'menu';
+  if (CINE.on && CINE.mus && MUSIC_THEMES[CINE.mus]) return CINE.mus;                      // cinématique : thème imposé par le plan
+  if (game.biome && MUSIC_THEMES[game.biome.music] && !game.p.trans) return game.biome.music; // lieu de campagne : sa propre musique
   if (game.p.trans) return game.p.facKey==='HUM'? 'anthem':'break';
   return 'war';
 }
@@ -893,9 +919,11 @@ function musicSched(){
   if (!SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
   while (MUSIC.nextT < AC.currentTime + 0.35) {
     const mode = musicMode(), s = stress();
-    const bpm = (mode==='intro'? 70 : mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
+    const th = MUSIC_THEMES[mode];
+    const bpm = (th? th.bpm : mode==='intro'? 70 : mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
     const stepDur = 60/bpm/2;
-    if (mode==='intro') stepIntro(MUSIC.step, MUSIC.nextT, stepDur);
+    if (th) th.step(MUSIC.step, MUSIC.nextT, stepDur, s);
+    else if (mode==='intro') stepIntro(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='menu') stepMenu(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='anthem') stepAnthem(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='break') stepBreak(MUSIC.step, MUSIC.nextT, stepDur);
@@ -1041,15 +1069,17 @@ function ambTick(){
   if (!AC) return;
   const live = game && !game.over && !paused && intro<0 && SETTINGS.sfx && AC.state==='running';
   const t = AC.currentTime, dev = live? (game.dev||0) : 0;
-  const rainy = live && (game.boon==='rain' || game.cata==='acid' || game.cata==='flood');
-  AMBS.wind.g.gain.setTargetAtTime(live? 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, t, 0.8);
+  const bam = live && game.biome && game.biome.amb || null;              // ambiance propre au lieu de campagne
+  const rainy = live && (game.boon==='rain' || game.cata==='acid' || game.cata==='flood' || (bam && bam.rain>0));
+  AMBS.wind.g.gain.setTargetAtTime(live? (bam && bam.wind || 0) + 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, t, 0.8);
   AMBS.wind.f.frequency.setTargetAtTime(330 + 260*Math.sin(t*0.13) + 300*dev, t, 1.5);   // rafales
-  AMBS.rain.g.gain.setTargetAtTime(rainy? 0.035 : 0, t, 0.6);
+  AMBS.rain.g.gain.setTargetAtTime(rainy? (bam && bam.rain) || 0.035 : 0, t, 0.6);
   if (!live) return;
+  if (bam && bam.tick) bam.tick(t, 0.25);
   const dt = 0.25;
   // oiseaux : gazouillis rares tant que le monde est sain (et pas en plein cataclysme)
   if ((AMBS.birdT -= dt) <= 0){ AMBS.birdT = 3 + Math.random()*7;
-    if (dev < 0.35 && !game.cata && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
+    if (dev < 0.35 && !game.cata && !(bam && !bam.birds) && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
       for (let i=0;i<n;i++) tone(f0*(1+0.06*i), t+i*0.09, 0.07, 'sine', 0.006, 500+Math.random()*400); } }
   // feu : crépitements (canicule, frappe nucléaire, hiver nucléaire, monde agonisant)
   const fiery = game.cata==='heat' || game.cata==='nuke' || game.winter || dev > 0.75;
@@ -1414,6 +1444,7 @@ function mapClear(x, pad=0){
 // Calque cosmétique qui meuble les zones vides — il ne bloque PAS le pathfinding (purement
 // visuel, à l'échelle des unités). Thématisé par le terrain de la carte/mission.
 let DECOR = [];
+const DECOR_EXTRA = {};                      // kind → peintre (d, s, t, lo), ajoutés par les missions de campagne
 const DECOR_THEMES = {
   plains:  ['bush','bush','bush','wreck','wreck','tiremark','tiremark','debris'],         // ville quasi plate
   hills:   ['bush','bush','bush','debris','debris','barricade','barricade','wreck'],      // faubourgs
@@ -1451,6 +1482,7 @@ function drawDecor(dev, t, vw){
 function dShadow(w){ ctx.fillStyle='rgba(10,8,8,0.22)'; ctx.beginPath(); ctx.ellipse(0,1,w,w*0.26,0,0,6.283); ctx.fill(); }
 function drawDecorItem(d, dev, t, lo){
   const s=d.s, k=d.kind, sway=Math.sin(t*1.4+d.ph);
+  if (DECOR_EXTRA[k]){ DECOR_EXTRA[k](d, s, t, lo); return; }             // objets de décor propres aux lieux de campagne
   if (k==='bush'){
     dShadow(13*s);
     const base = dev<0.5? '74,120,58' : '110,98,54';   // vert → desséché quand le monde agonise
@@ -2474,7 +2506,7 @@ function updateUnits(side, foe, dt){
     // dégâts — récompense le contrôle des collines. elev : 0 en plaine → 1 au sommet.
     const elev = u.fly? 0 : clamp((GROUND - gY(u.x))/26, 0, 1);
     const meleeGround = u.range<=24 && !u.fly;
-    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev);
+    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev) * (game.camp && game.camp.rangeMul? game.camp.rangeMul(u) : 1);
     let target=null, best=1e9;
     if (!muzzled) for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
@@ -2972,7 +3004,7 @@ function update(dt){
       game.shake=20;
       const fx2=(game.win?e:p).x; explode(fx2, gY(fx2)-40, 2.2, '#fff0c0'); burst(fx2, gY(fx2)-60, '#fff', 30, 1.6);
       sfx(game.win?'evolve':'boom');
-      setTimeout(showEnd, 1100);
+      setTimeout(game.camp? campEndCine : showEnd, 1100);
     }
   }
 }
@@ -4138,7 +4170,8 @@ function drawMenuArmies(t){
 }
 function drawBG(){
   const dev = game? game.dev:0, t = game? game.t:0, vw = VW();
-  const top=devLerp(SKY_T), mid=devLerp(SKY_M), bot=devLerp(SKY_B);
+  const B = game? game.biome : null;                       // lieu de campagne : remplace ciel, fonds et sol
+  const top=B? B.sky[0] : devLerp(SKY_T), mid=B? B.sky[1] : devLerp(SKY_M), bot=B? B.sky[2] : devLerp(SKY_B);
   // CIEL ANCRÉ SUR LE HAUT RÉEL DE L'ÉCRAN. L'ancien dégradé partait de y=-H (monde), bien
   // au-dessus de l'écran : à zoom 1 le haut visible tombait déjà à ~58 % du trajet vers
   // l'horizon, si bien que le bleu du zénith n'apparaissait JAMAIS et que toute la scène
@@ -4151,6 +4184,7 @@ function drawBG(){
   // PERSPECTIVE AÉRIENNE : les plans lointains se fondent vers une brume légèrement bleutée
   // (comme le vrai ciel), et non plus vers le crème de l'horizon qui délavait tout.
   const haze = lerpColArr(bot, mid, 0.75);
+  if (B) biomeBack(B, vw, t); else {
   // (Anciens « éclairs d'ambiance » retirés : ils provoquaient un scintillement intempestif
   //  de l'arrière-plan pendant les batailles. Le ciel reste désormais stable.)
   // cendres rougeoyantes quand le monde agonise (additif). Plus d'« étoiles » en plein jour :
@@ -4232,12 +4266,13 @@ function drawBG(){
   drawLand(dev);
   drawCity(dev);
   drawAmbient(t, dev, vw);       // monde vivant : crashs, incendies, fumées, jets, vols d'oiseaux…
+  }
   // voile de brume à l'horizon (plus léger qu'avant : 0,4 → 0,26)
   const hz=ctx.createLinearGradient(0,GROUND-120,0,GROUND);
   hz.addColorStop(0,rgbaC(haze,0)); hz.addColorStop(1,rgbaC(haze,0.16));
   ctx.fillStyle=hz; ctx.fillRect(0,GROUND-120,vw,120);
   // terrain (dégradé sculpté) + bande d'herbe
-  const dirt=devLerp(DIRT), grass=devLerp(GRASS), yBot=(H-zTY())/zoom+60;
+  const dirt=B? B.dirt : devLerp(DIRT), grass=B? B.grass : devLerp(GRASS), yBot=(H-zTY())/zoom+60;
   ctx.beginPath(); ctx.moveTo(0,yBot); for(let sx=0;sx<=vw;sx+=8) ctx.lineTo(sx,gY(sx+camX)); ctx.lineTo(vw,yBot); ctx.closePath();
   const tg=ctx.createLinearGradient(0,GROUND-30,0,yBot);
   tg.addColorStop(0,shade(dirt,1.18)); tg.addColorStop(0.22,colS(dirt)); tg.addColorStop(1,shade(dirt,0.55));
@@ -4270,7 +4305,7 @@ function drawBG(){
   }
   // HERBE DYNAMIQUE : touffes qui ondulent au vent et se COUCHENT au passage de TOUTES les
   // unités au sol (les lourdes l'écrasent davantage) — le terrain réagit à la bataille.
-  if (qFx() && game){
+  if (qFx() && game && !(B && B.tufts===false)){
     const walkers=[];
     for (const u of game.p.units) if(!u.fly) walkers.push([u.x, (u.role==='tank'||u.role==='siege'||u.role==='hero')? 0.5 : 0.26]);
     for (const u of game.e.units) if(!u.fly) walkers.push([u.x, (u.role==='tank'||u.role==='siege'||u.role==='hero')? 0.5 : 0.26]);
@@ -4308,7 +4343,7 @@ function drawBG(){
   drawCracks(dev, vw);           // le sol se craquèle à mesure que le monde meurt
   for (const z of game.zones) drawZone(z, dev, t, vw);
   drawDecor(dev, t, vw);                 // calque d'habillage cosmétique (épaves, végétation, débris…)
-  for (const tr of TREES) drawTree(tr, dev, t, vw);
+  if (!(B && B.trees===false)) for (const tr of TREES) drawTree(tr, dev, t, vw);
   // 4e ZONE BONUS temporaire : pilier doré qui grésille/oscille quand elle est disputée.
   if (game.bonusZone){
     const z=game.bonusZone, bx=z.x-camX, gy=gY(z.x);
@@ -4326,6 +4361,7 @@ function drawBG(){
       ctx.fillText('★ '+Math.max(0,Math.ceil(60-z.t))+'s', bx, gy-138);
     }
   }
+  if (B && B.mist===false) return;
   // brume basse dérivante (additif)
   ctx.save(); ctx.globalCompositeOperation='lighter';
   for (let i=0;i<3;i++){ const my=GROUND-26+i*15, mx=(t*8*(i+1))%200;
@@ -4338,6 +4374,7 @@ function drawBG(){
 // s'illuminent de la couleur de la faction qui domine la zone, réagissent au passage
 // des unités lourdes (onde), et grésillent (hologramme) en cas de combat/cataclysme.
 function drawZone(z, dev, t, vw){
+  if (game.camp && game.camp.m.drawZone){ game.camp.m.drawZone(z, t, vw); return; }   // campagne : la zone a un autre visage (transformateur, vanne…)
   const x=z.x-camX; if (x<-70||x>vw+70) return; const y=gY(z.x);
   const owner=z.owner, acc = owner? (owner==='p'?game.p.fac.accent:game.e.fac.accent) : '#9aa6b2';
   let pN=0, eN=0, heavy=0;
@@ -5743,6 +5780,7 @@ function drawHero(u, x, gy){
 }
 function drawUnit(u){
   const x = u.x-camX;
+  if (game.camp && game.camp.hidden && game.camp.hidden(u)) return;      // campagne : unité dans le noir
   if (x<-40 || x>VW()+40) return;
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;
@@ -7399,6 +7437,7 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
+  if (game.camp && game.camp.m.draw) game.camp.m.draw(game, game.camp, VW());   // objets propres à la mission
   if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
@@ -7506,6 +7545,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
+  if (game.biome) biomeFront(dt);                 // lieu de campagne : nuit éclairée, pluie, neige
   drawWinter();
   drawCata();
   if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit
@@ -7526,7 +7566,7 @@ function render(dt){
     ctx.globalAlpha=(0.25+0.3*Math.min(1,beat))*(paused? 0.5 : 1)*(1-php/0.30*0.4); ctx.fillStyle=VIGN_RED; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }
   drawFilmGrade();               // étalonnage cinéma (ombres froides / hautes lumières chaudes) + grain
-  drawHUD();
+  if (CINE.on) drawCine(); else drawHUD();   // cinématique de campagne : bandes noires et sous-titres à la place du HUD
   drawSpeedOverlays();
   ctx.restore();
 }
@@ -7623,6 +7663,10 @@ function loop(now){
   if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
   const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
   if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
+  else if (game && CINE.on){                           // cinématique : le monde est figé (sauf plan « vivant »), la scène avance en temps réel
+    if (!paused){ if (cineLive() && !game.over){ let rem = dt; while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; } } else if (game.over) update(dt);
+      cineTick(dt); }
+  }
   else if (game && !game.over && !paused){
     // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
     let rem = dt * sp;
@@ -8822,6 +8866,155 @@ function newsHandleTap(sx, sy){
   return true;
 }
 
+/* ================= LIEUX DE CAMPAGNE (v1.15) =================
+   Un LIEU remplace, pour une mission, tout le décor de l'escarmouche : ciel, plans de fond en
+   parallaxe (peints une fois dans des calques hors écran puis recopiés), sol, relief, météo,
+   nuit éclairée par des sources de lumière, musique et ambiance sonore. game.biome = BIOMES[id].
+   Champs d'un lieu :
+     sky:[zénith,milieu,horizon]  couleurs [r,g,b]
+     dirt, grass                  couleurs du sol et de la bande de surface ; tufts:false = pas d'herbe
+     terrain                      profil du relief (mêmes champs que TERRAIN_DEFAULT)
+     layers:[{par,w,h,off,paint(g,w,h,rnd),a()}]  calques du plus lointain au plus proche ; par =
+                                  parallaxe (0 = fixe, 1 = colle au sol) ; a() = opacité dynamique
+     sky2(vw,t)                   astres et nuages propres au lieu (avant les calques)
+     back(vw,t)                   éléments animés derrière le champ de bataille (repère monde−camX)
+     front(t)                     météo au premier plan (repère écran)
+     dark                         0..1 obscurité ; les trous de lumière viennent de game.camp.lights
+     trees:false                  pas d'arbres ; music / amb : thème et ambiance (voir 03-audio)   */
+const BIOMES = {};
+const BIOME_BAKED = new Map();
+function biomeRnd(seed){ let s = seed||1; return ()=>{ s = (s*16807)%2147483647; return s/2147483647; }; }
+function biomeLayer(B, i){
+  const key = B.id+'#'+i; let c = BIOME_BAKED.get(key);
+  if (!c){ const L = B.layers[i]; c = document.createElement('canvas'); c.width = L.w; c.height = L.h;
+    const g = c.getContext('2d'); L.paint(g, L.w, L.h, biomeRnd(101+i*37+B.id.length*13)); BIOME_BAKED.set(key, c); }
+  return c;
+}
+function biomeBack(B, vw, t){
+  if (B.sky2) B.sky2(vw, t);
+  for (let i=0;i<B.layers.length;i++){ const L = B.layers[i], a = L.a? L.a() : 1; if (a<=0.01) continue;
+    const c = biomeLayer(B, i), y = GROUND - L.h + (L.off||0);
+    let x = -((camX*L.par) % L.w); if (x>0) x -= L.w;
+    ctx.globalAlpha = a; for (; x<vw; x+=L.w) ctx.drawImage(c, Math.round(x), y); ctx.globalAlpha = 1; }
+  if (B.back) B.back(vw, t);
+}
+// OBSCURITÉ : voile sombre au quart de résolution, percé d'un halo par source de lumière
+let DARK_CV = null, DARK_HOLE = null;
+function biomeDark(B){
+  const d = typeof B.dark==='function'? B.dark() : B.dark; if (!(d>0.02)) return;
+  const cw = Math.ceil(W/4), ch = Math.ceil(H/4);
+  if (!DARK_CV){ DARK_CV = document.createElement('canvas');
+    DARK_HOLE = document.createElement('canvas'); DARK_HOLE.width = DARK_HOLE.height = 64; const h = DARK_HOLE.getContext('2d');
+    const r = h.createRadialGradient(32,32,2,32,32,32); r.addColorStop(0,'rgba(0,0,0,1)'); r.addColorStop(0.55,'rgba(0,0,0,0.78)'); r.addColorStop(1,'rgba(0,0,0,0)');
+    h.fillStyle = r; h.fillRect(0,0,64,64); }
+  if (DARK_CV.width!==cw || DARK_CV.height!==ch){ DARK_CV.width = cw; DARK_CV.height = ch; }
+  const g = DARK_CV.getContext('2d');
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0,0,cw,ch);
+  const c = B.darkCol || [6,8,22]; g.fillStyle = 'rgba('+c[0]+','+c[1]+','+c[2]+','+d.toFixed(3)+')'; g.fillRect(0,0,cw,ch);
+  g.globalCompositeOperation = 'destination-out';
+  const Ls = (game.camp && game.camp.lights) || [];
+  for (const L of Ls){ const sx = w2sX(L.x)/4, sy = w2sY(L.y!=null? L.y : gY(L.x)-30)/4, r = L.r*zoom/4*1.25;
+    if (sx<-r || sx>cw+r) continue; g.globalAlpha = L.a==null? 1 : L.a; g.drawImage(DARK_HOLE, sx-r, sy-r*0.8, r*2, r*1.6); }
+  g.globalAlpha = 1;
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(DARK_CV, 0, 0, W, H);
+}
+function biomeFront(dt){ const B = game.biome; if (!B) return; biomeDark(B); if (B.front) B.front(performance.now()/1000); }
+// pluie oblique (repère écran) : traits fins, deux plans
+function fxRain(t, n, col, slant){
+  ctx.save(); ctx.strokeStyle = col || 'rgba(170,190,220,0.28)'; ctx.lineWidth = 1; ctx.beginPath();
+  const lo = SETTINGS.quality==='low'; n = lo? n>>1 : n; slant = slant==null? -0.22 : slant;
+  for (let i=0;i<n;i++){ const sp = 620+(i%7)*60, x = ((i*131.7 + t*sp*slant*-1) % (W+80) + W+80) % (W+80) - 40, y = (i*71.3 + t*sp) % (H+40) - 20, l = 9+(i%5)*3;
+    ctx.moveTo(x, y); ctx.lineTo(x+l*slant, y+l); }
+  ctx.stroke(); ctx.restore();
+}
+// neige / cendres : flocons portés par le vent (repère écran)
+function fxSnow(t, n, col, wind, fall){
+  ctx.save(); ctx.fillStyle = col || 'rgba(240,244,250,0.8)'; const lo = SETTINGS.quality==='low'; n = lo? n>>1 : n;
+  for (let i=0;i<n;i++){ const sz = 1+(i%4)*0.6, x = ((i*97.3 + t*(wind||60)*(0.6+(i%5)*0.2) + Math.sin(t*0.8+i)*14) % (W+40) + W+40) % (W+40) - 20,
+      y = (i*53.9 + t*(fall||46)*(0.6+(i%3)*0.3)) % (H+20) - 10;
+    ctx.fillRect(x, y, sz, sz); }
+  ctx.restore();
+}
+
+/* ---------- I · VALMONT, LA NUIT ---------- */
+// fenêtres d'un immeuble : lit = proportion de fenêtres allumées, col = teinte de la lumière
+function bWindows(g, rnd, x, y, w, h, cw, chh, lit, col, dark){
+  for (let yy=y+5; yy<y+h-chh-2; yy+=chh+5) for (let xx=x+4; xx<x+w-cw-2; xx+=cw+4){
+    const on = rnd()<lit; g.fillStyle = on? col : (dark||'rgba(8,10,18,0.55)'); g.fillRect(xx, yy, cw, chh);
+    if (on && rnd()<0.35){ g.fillStyle = 'rgba(20,14,10,0.5)'; g.fillRect(xx, yy+chh*0.45, cw, chh*0.55); } }
+}
+function nightBlocks(lit){ return (g, w, h, rnd) => {                 // barres d'immeubles (plan moyen) — version éteinte / rallumée
+  const wr = biomeRnd(lit? 911 : 517);                                 // rnd = géométrie (identique dans les deux versions) ; wr = détails
+  let x = 6; while (x < w-70){ const bw = 54+rnd()*70, bh = 70+rnd()*110, y = h-bh, gap = 4+rnd()*22, ant = rnd(), edi = rnd();
+    if (x+bw > w-4) break;
+    if (!lit){ g.fillStyle = 'rgb('+(26+wr()*10|0)+','+(28+wr()*10|0)+','+(44+wr()*12|0)+')'; g.fillRect(x, y, bw, bh);
+      g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x+bw-7, y, 7, bh);                                     // pignon dans l'ombre
+      g.fillStyle = 'rgba(120,130,170,0.10)'; g.fillRect(x, y, bw, 2);
+      if (ant<0.5){ g.fillStyle = '#1a1c2a'; g.fillRect(x+bw*0.3, y-9, 3, 9); g.fillRect(x+bw*0.3-4, y-9, 11, 1.5); }   // antenne râteau
+      if (edi<0.3){ g.fillStyle = '#20222f'; g.fillRect(x+bw*0.6, y-6, 12, 6); }                          // édicule
+      bWindows(g, wr, x, y, bw-7, bh, 5, 7, 0.07, 'rgba(255,196,120,0.75)');
+    } else bWindows(g, wr, x, y, bw-7, bh, 5, 7, 0.62, 'rgba(255,206,128,0.92)', 'rgba(0,0,0,0)');
+    x += bw + gap; }
+}; }
+function nightStreet(lit){ return (g, w, h, rnd) => {                  // rue proche : pavillons, commerces à rideau de fer, lampadaires, fils
+  const wr = biomeRnd(lit? 313 : 127);
+  let x = 0; while (x < w-60){ const bw = 60+rnd()*80, bh = 44+rnd()*46, y = h-bh, shop = rnd()<0.45, roof = 16+rnd()*10, gap = rnd()*10;
+    if (x+bw > w) break;
+    if (!lit){ g.fillStyle = 'rgb('+(34+wr()*12|0)+','+(32+wr()*10|0)+','+(46+wr()*10|0)+')'; g.fillRect(x, y, bw, bh);
+      if (!shop){ g.fillStyle = '#231f2c'; g.beginPath(); g.moveTo(x-3, y); g.lineTo(x+bw*0.5, y-roof); g.lineTo(x+bw+3, y); g.closePath(); g.fill();   // toit
+        g.fillStyle = '#2b2734'; g.fillRect(x+bw*0.7, y-22, 7, 16); }                                    // cheminée
+      else { g.fillStyle = '#2a2836'; g.fillRect(x-2, y-4, bw+4, 5);
+        g.fillStyle = '#3a3b48'; g.fillRect(x+6, h-30, bw-12, 30);                                         // rideau de fer
+        g.fillStyle = 'rgba(0,0,0,0.3)'; for (let yy=h-28; yy<h; yy+=4) g.fillRect(x+6, yy, bw-12, 1);
+        g.fillStyle = 'rgba(150,50,44,0.55)'; g.fillRect(x+8, y+5, bw-16, 8); }                           // enseigne éteinte
+      g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(x+bw-6, y, 6, bh);
+      if (!shop) bWindows(g, wr, x, y+4, bw-6, bh-6, 8, 10, 0.1, 'rgba(255,190,110,0.8)', 'rgba(10,10,18,0.7)');
+    } else if (!shop) bWindows(g, wr, x, y+4, bw-6, bh-6, 8, 10, 0.7, 'rgba(255,208,130,0.95)', 'rgba(0,0,0,0)');
+    else { g.fillStyle = 'rgba(255,120,90,0.85)'; g.fillRect(x+8, y+5, bw-16, 8); }
+    x += bw + gap; }
+  // lampadaires + fils
+  for (let lx=70; lx<w; lx+=205){
+    if (!lit){ g.strokeStyle = '#15161f'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(lx, h); g.lineTo(lx, h-88); g.quadraticCurveTo(lx, h-98, lx+14, h-98); g.stroke();
+      g.fillStyle = '#15161f'; g.fillRect(lx+10, h-99, 12, 4); }
+    else { const r = g.createRadialGradient(lx+16, h-92, 2, lx+16, h-60, 78); r.addColorStop(0,'rgba(255,214,140,0.85)'); r.addColorStop(0.25,'rgba(255,190,110,0.32)'); r.addColorStop(1,'rgba(255,180,100,0)');
+      g.fillStyle = r; g.beginPath(); g.moveTo(lx+16, h-96); g.lineTo(lx+78, h); g.lineTo(lx-46, h); g.closePath(); g.fill();
+      g.fillStyle = '#fff0cc'; g.fillRect(lx+11, h-96, 10, 2.5); } }
+  if (!lit){ g.strokeStyle = 'rgba(10,10,16,0.8)'; g.lineWidth = 1;
+    for (let lx=70; lx<w; lx+=205){ g.beginPath(); g.moveTo(lx, h-80); g.quadraticCurveTo(lx+102, h-66, lx+205, h-80); g.stroke(); } }
+}; }
+BIOMES.night = {
+  id:'night', music:'night', amb:{ rain:0.05, wind:0.012 },
+  sky:[[10,13,32],[30,34,66],[96,70,84]], dirt:[44,44,54], grass:[78,80,92], tufts:false, trees:false,
+  terrain:{a:5,f1:0.0042,b:3,f2:0.0113,c:2,f3:0.021,base:3},
+  dark:()=> CINE.on? 0.36 : 0.74, darkCol:[5,7,20],
+  layers:[
+    { par:0.06, w:1024, h:250, off:4, paint(g, w, h, rnd){                              // tours d'Omnicorp, au loin
+        g.fillStyle = 'rgba(160,110,110,0.20)'; g.fillRect(0, h-46, w, 46);              // halo de la ville
+        let x = 20; while (x < w-60){ const bw = 26+rnd()*34, bh = 110+rnd()*130;
+          g.fillStyle = 'rgb(24,28,52)'; g.fillRect(x, h-bh, bw, bh);
+          g.fillStyle = 'rgba(120,190,255,0.5)'; for (let yy=h-bh+6; yy<h-10; yy+=9) if (rnd()<0.5) g.fillRect(x+3, yy, bw-6, 1.2);
+          if (rnd()<0.6){ g.fillStyle = 'rgb(24,28,52)'; g.fillRect(x+bw/2-1, h-bh-22, 2, 22); g.fillStyle = 'rgba(255,70,60,0.9)'; g.fillRect(x+bw/2-1.5, h-bh-24, 3, 3); }
+          x += bw + 30 + rnd()*90; } } },
+    { par:0.16, w:1024, h:200, off:4, paint: nightBlocks(false) },
+    { par:0.16, w:1024, h:200, off:4, paint: nightBlocks(true), a:()=> (game.camp && game.camp.litK) || 0 },
+    { par:0.36, w:1024, h:128, off:5, paint: nightStreet(false) },
+    { par:0.36, w:1024, h:128, off:5, paint: nightStreet(true), a:()=> (game.camp && game.camp.litK) || 0 },
+  ],
+  sky2(vw, t){                                                                           // lune voilée + quelques étoiles
+    ctx.fillStyle = 'rgba(220,226,255,0.55)';
+    for (let i=0;i<26;i++){ const x = (i*197.3)%vw, y = 14+(i*61.7)%150; ctx.globalAlpha = 0.25+0.3*Math.abs(Math.sin(t*0.6+i)); ctx.fillRect(x, y, 1.3, 1.3); }
+    ctx.globalAlpha = 1;
+    const mx = vw*0.72 - camX*0.02, my = 74;
+    ctx.fillStyle = 'rgba(226,230,246,0.10)'; ctx.beginPath(); ctx.arc(mx, my, 46, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(232,234,244,0.92)'; ctx.beginPath(); ctx.arc(mx, my, 17, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(30,34,66,0.9)'; ctx.beginPath(); ctx.arc(mx+7, my-4, 15, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(40,44,74,0.55)';                                               // nuages bas qui passent
+    for (let i=0;i<4;i++){ const cx = ((t*5+i*330 - camX*0.03) % (vw+400) + vw+400) % (vw+400) - 200, cy = 60+i*34;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 150, 13, 0, 0, 6.283); ctx.fill(); }
+  },
+  front(t){ fxRain(t, 110, 'rgba(170,190,225,0.26)'); },
+};
+
 /* ================= CAMPAGNE « LES CARNETS DE GERMINAL » (v1.14) =================
    Cinq missions scénarisées côté Humanité, de la première nuit d'émeute (2025) à la dernière
    bataille (2038). Chaque mission a ses règles (plafond d'ère, base à une seule vie, vagues,
@@ -9165,11 +9358,29 @@ function startMission(i){
   if (m.oneLife){ g.p.phase = 2; g.e.phase = 2; g.hbombDone = true;      // une base qui tombe est perdue : pas de renaissance ni de bombe H
     g.p.hp = g.p.maxhp = [2600,2200,1800][lvl]; }                         // … la nôtre est donc mieux bâtie, selon le niveau de récit
   if (m.oneLife) g.e.heroCd = 1e9;                                       // et l'adversaire n'a pas de héros (un héros rase une base à une vie)
+  g.biome = BIOMES[m.biome] || null;                                      // lieu propre à la mission (ciel, fonds, sol, météo, musique)
+  c.lights = []; c.litK = 0;
   DECOR = genDecor(m.theme);
   if (m.setup) m.setup(g, c);
   prewarmSprites();
-  announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
+  const sc = m.intro? m.intro(g, c) : null;                               // cinématique d'ouverture, sur le terrain
+  if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
 }
+// complète une mission depuis son propre fichier (lieu, mécanique, cinématiques)
+function campExtend(i, ext){ Object.assign(CAMPAIGN[i], ext); }
+// fin de mission : cinématique de clôture (si la mission en a une), puis l'écran de fin
+function campEndCine(){
+  const c = game && game.camp, m = c && c.m, sc = m && m.outro? m.outro(game, c, game.win) : null;
+  if (sc && sc.length) cinePlay(sc, showEnd, {keepCam:true}); else showEnd();
+}
+// bouton d'action propre à la mission (fusée éclairante, vannes…) : m.action = {label, cd, can(g,c), use(g,c)}
+function campAct(){
+  const c = game && game.camp, a = c && c.m.action; if (!a || game.over || paused || CINE.on) return false;
+  if ((c.actCd||0) > 0 || (a.can && !a.can(game, c))){ sfx('deny'); return true; }
+  c.actCd = a.cd; a.use(game, c); return true;
+}
+function campClick(sx, sy){ const c = game.camp, r = c && c.actRect; if (!r || !c.m.action) return false;
+  if (sx<r.x || sx>r.x+r.w || sy<r.y || sy>r.y+r.h) return false; return campAct(); }
 function campRadio(who, txt){ const c = game && game.camp; if (!c || !txt) return;
   c.q.push({ who, txt, t:0, dur: 6.5 + Math.min(9, txt.length/20) }); if (c.q.length>4) c.q.shift(); }
 // appelée par update() à chaque pas ; true = la mission vient de se terminer
@@ -9177,12 +9388,14 @@ function campTick(dt){
   const g = game, c = g.camp, m = c.m;
   c.t += dt;
   for (let i=0;i<m.radio.length;i++){ if (c.fired[i]) continue; const r = m.radio[i];
-    if (r.at!=null? c.t>=r.at : r.when(g, c)){ c.fired[i] = 1; if (r.txt) campRadio(r.who, cT(r.txt)); if (r.fx) r.fx(g, c); } }
+    if (r.at!=null? c.t>=r.at : r.when(g, c)){ c.fired[i] = 1; if (r.txt) campRadio(r.who, cT(r.txt)); if (r.fx) r.fx(g, c);
+      if (r.cine){ const sc = r.cine(g, c); if (sc && sc.length) cinePlay(sc, null); } } }
+  if (c.actCd>0) c.actCd -= dt;
   const rdt = dt / (g.speed||1);                                         // les messages se lisent en temps réel
   if (c.cur){ c.cur.t += rdt; if (c.cur.t>=c.cur.dur) c.cur = null; }
   if (!c.cur && c.q.length){ c.cur = c.q.shift(); sfx('cap'); }
   const r = m.tick? m.tick(g, c, dt) : null;
-  if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(showEnd, 1100); return true; }
+  if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(campEndCine, 1100); return true; }
   return false;
 }
 // fin de mission : enregistre la progression (une seule fois) et renvoie le texte du compte rendu
@@ -9210,6 +9423,7 @@ function drawCampHUD(){
   { const w = 214, x = W-w-8, y = 43;
     ctx.font = uiF(pal,'cond',10.5); const lines = newsWrap(cT(m.goal), w-16).slice(0,2);
     const hh = 19 + lines.length*12 + ((h.prog!=null || h.clock!=null)? 13 : 0);
+    c.objH = hh;
     paperChip(x, y, w, hh, pal);
     ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -9225,6 +9439,13 @@ function drawCampHUD(){
       if (h.clock!=null){ ctx.font = uiF(pal,'cond',12); ctx.textAlign = 'right';
         ctx.fillStyle = (h.warn && Math.sin(performance.now()/160)>0)? pal.bad : pal.ink; ctx.fillText(fmtTime(h.clock), x+w-8, by+2); }
     } }
+  // ACTION DE MISSION : bon à découper sous l'objectif (grisé pendant la recharge)
+  if (m.action){ const a = m.action, w = 150, x = W-w-8, y = 43 + c.objH + 6, hh = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
+    c.actRect = {x, y, w, h:hh};
+    paperChip(x, y, w, hh, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(x, y, w, 2.5);
+    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(x, y, w*clamp(cd/a.cd,0,1), hh); }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
+    ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), x+w/2, y+hh/2+1.5); }
   // RADIO : feuillet tapé à la machine (Sol) ou listing de bipeur (Kassandre), à la place du fil d'actualités
   const r = c.cur; if (!r) return;
   const a = Math.min(1, r.t/0.35, (r.dur-r.t)/0.6); if (a<=0) return;
@@ -9292,6 +9513,421 @@ function campRenderMenu(){
   const back = el('button', 'pick link back', '← '+cT(CAMP_UI.back)); back.addEventListener('click', ()=>{ campView = -1; campRenderMenu(); });
   box.appendChild(back);
 }
+
+/* ================= CINÉMATIQUES DE CAMPAGNE (v1.15) =================
+   Un script est une liste de PLANS joués l'un après l'autre. Un plan peut être :
+     · une PLANCHE (plate) : illustration plein écran peinte à la main (page du carnet de Sol) ;
+     · un plan SUR LE TERRAIN : la carte réelle, bandes noires, caméra qui se déplace, la
+       simulation figée (ou vivante si live:true) — sert aussi en pleine mission.
+   Champs d'un plan :
+     plate(g,w,h,t,k)  peintre plein écran (t = secondes dans le plan, k = 0..1)
+     cam:{x, t}        cible caméra (x monde, ou fonction g=>x) atteinte en t secondes
+     who, txt          sous-titre : qui parle (portrait) et quoi ({fr,en,…})
+     dur               durée (sinon calculée d'après la longueur du texte)
+     fx(g,c)           action au début du plan (TOUJOURS exécutée, même si on passe la scène)
+     snd, mus          bruitage / thème musical à l'entrée du plan
+     live              la simulation continue pendant ce plan
+     title:{…}         grand titre au pochoir (carton)
+   Un appui = plan suivant ; bouton PASSER = fin de la scène. */
+const CINE = { on:false, script:null, i:0, t:0, done:null, bar:0, cam0:0, camBack:null, follow:true, mus:null, fade:0, restore:true };
+const CINE_WHO = {                                   // nom affiché et encre de chaque voix
+  sol:  { name:'SOL', ink:'#c42a1c' },
+  k55:  { name:'55', ink:'#0b6fa8' },
+  nous: { name:{fr:'« NOUS »', en:'"WE"'}, ink:'#3a4a58' },
+  nar:  { name:null, ink:'#1f1b17' },
+};
+const CINE_PORTRAITS = {};                           // id → peintre (g) sur une vignette 64×64 (encre sur papier)
+const CINE_UI = {
+  skip: {fr:"PASSER ▸▸", en:"SKIP ▸▸", es:"SALTAR ▸▸", de:"WEITER ▸▸", it:"SALTA ▸▸", pt:"PULAR ▸▸", ru:"ПРОПУСТИТЬ ▸▸", zh:"跳过 ▸▸", ar:"تخطٍّ ▸▸"},
+};
+const cineSkipRect = () => ({ x:W-122, y:8, w:112, h:26 });
+const cineShot = () => CINE.script && CINE.script[CINE.i];
+const cineLive = () => { const s = cineShot(); return !!(s && s.live); };
+const cineDur = s => s.dur || (s.txt? 2.4 + cT(s.txt).length/15 : s.title? 3.4 : 2.6);
+const ease = k => k<0? 0 : k>1? 1 : k*k*(3-2*k);
+
+function cinePlay(script, done, opt){
+  if (!game || !script || !script.length){ if (done) done(); return; }
+  if (CINE.on) cineEnd(true);
+  CINE.on = true; CINE.script = script; CINE.i = -1; CINE.done = done || null; CINE.bar = 0; CINE.fade = 0;
+  CINE.camBack = (opt && opt.keepCam)? null : camX; CINE.follow = camFollow; camFollow = false; CINE.mus = null;
+  buildMenu = null; selMode = false; selBox = null;
+  cineNext();
+}
+function cineNext(){
+  CINE.i++;
+  const s = cineShot(); if (!s){ cineEnd(); return; }
+  CINE.t = 0; CINE.cam0 = camX;
+  if (s.mus!==undefined) CINE.mus = s.mus;
+  if (s.snd) sfx(s.snd);
+  if (s.fx) try { s.fx(game, game.camp); } catch(e){}
+}
+// fin de scène ; les actions (fx) des plans non joués sont exécutées pour que la mission reste cohérente
+function cineEnd(silent){
+  if (!CINE.on) return;
+  const sc = CINE.script || [];
+  for (let j=CINE.i+1; j<sc.length; j++) if (sc[j].fx) try { sc[j].fx(game, game && game.camp); } catch(e){}
+  CINE.on = false; CINE.script = null; CINE.mus = null; camFollow = CINE.follow;
+  if (CINE.camBack!=null){ camX = CINE.camBack; camClamp(); }
+  const d = CINE.done; CINE.done = null;
+  if (d && !silent) d();
+}
+function cineTick(rdt){
+  const s = cineShot(); if (!s) return;
+  CINE.t += rdt; CINE.bar = Math.min(1, CINE.bar + rdt*2.5);
+  if (s.cam && !s.plate){
+    const tx = clamp((typeof s.cam.x==='function'? s.cam.x(game) : s.cam.x) - VW()/2, 0, WORLD-VW());
+    camX = lerp(CINE.cam0, tx, ease(CINE.t/(s.cam.t || Math.min(2.6, cineDur(s)*0.7))));
+  }
+  // machine à écrire : petit cliquetis (Sol) ou bip (55) tous les quelques caractères
+  if (s.txt && SETTINGS.sfx && AC){ const n = Math.floor(CINE.t*40), len = cT(s.txt).length;
+    if (n<len && n!==CINE._n && n%3===0){ const t0 = AC.currentTime;
+      if (s.who==='k55' || s.who==='nous') tone(s.who==='nous'? 220 : 1180+(n%5)*40, t0, 0.03, 'sine', 0.012);
+      else noise(t0, 0.012, 0.014, 2600); }
+    CINE._n = n; }
+  if (CINE.t >= cineDur(s) + (s.txt? 1.1 : 0)) cineNext();
+}
+function cineInput(sx, sy){
+  const r = cineSkipRect();
+  if (sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h){ cineEnd(); return; }
+  const s = cineShot(); if (!s) return;
+  if (s.txt && CINE.t*40 < cT(s.txt).length){ CINE.t = cT(s.txt).length/40 + 0.01; return; }   // 1er appui : tout le texte
+  if (CINE.t > 0.25) cineNext();
+}
+function cineKey(code){
+  if (code==='Escape'){ cineEnd(); return; }
+  if (code==='Space' || code==='Enter' || code==='ArrowRight') cineInput(-1, -1);
+}
+
+/* ---------- outils de dessin « encre sur papier » pour les planches et les portraits ---------- */
+let CINE_PAPER = null;
+function cinePaper(){                                // texture de page de carnet (cuite une fois)
+  if (CINE_PAPER) return CINE_PAPER;
+  const c = document.createElement('canvas'); c.width = 320; c.height = 200; const g = c.getContext('2d');
+  g.fillStyle = '#e9dfc6'; g.fillRect(0,0,320,200);
+  let sd = 77; const rnd = ()=>{ sd = (sd*16807)%2147483647; return sd/2147483647; };
+  for (let i=0;i<1500;i++){ g.fillStyle = 'rgba('+(rnd()<0.5? '80,60,30':'255,250,235')+','+(0.03+rnd()*0.05).toFixed(3)+')';
+    g.fillRect(rnd()*320, rnd()*200, 1+rnd()*2.4, 1+rnd()*1.2); }
+  g.strokeStyle = 'rgba(70,90,130,0.13)'; g.lineWidth = 1;
+  for (let y=14; y<200; y+=13){ g.beginPath(); g.moveTo(0,y+0.5); g.lineTo(320,y+0.5); g.stroke(); }
+  return (CINE_PAPER = c);
+}
+// fond de planche : page de carnet + vignettage ; renvoie l'échelle (les planches sont dessinées sur 480×270)
+function plateBase(g, w, h, tint){
+  g.drawImage(cinePaper(), 0, 0, w, h);
+  if (tint){ g.fillStyle = tint; g.fillRect(0,0,w,h); }
+  const sc = Math.min(w/480, h/270);
+  g.save(); g.translate((w-480*sc)/2, (h-270*sc)/2); g.scale(sc, sc);
+  return sc;
+}
+function plateEnd(g, w, h){ g.restore();
+  const v = g.createRadialGradient(w/2,h/2,h*0.35,w/2,h/2,h*0.95); v.addColorStop(0,'rgba(40,24,10,0)'); v.addColorStop(1,'rgba(40,24,10,0.42)');
+  g.fillStyle = v; g.fillRect(0,0,w,h); }
+// trait d'encre légèrement tremblé entre des points [x,y,…] ; n = part du tracé déjà dessinée (0..1)
+function inkLine(g, pts, n, wd, col){
+  const m = pts.length/2; if (m<2) return; n = clamp(n==null? 1 : n, 0, 1); if (n<=0) return;
+  g.strokeStyle = col || '#1f1b17'; g.lineWidth = wd || 1.6; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); const last = (m-1)*n;
+  for (let i=0;i<m;i++){ if (i>Math.ceil(last)) break;
+    let x = pts[i*2], y = pts[i*2+1];
+    if (i>last){ const f = last-(i-1); x = lerp(pts[i*2-2], x, f); y = lerp(pts[i*2-1], y, f); }
+    const j = Math.sin(i*12.9+pts[0])*0.7; x += j; y += Math.cos(i*7.3+pts[1])*0.7;
+    i? g.lineTo(x,y) : g.moveTo(x,y); }
+  g.stroke();
+}
+// lavis : aplat d'encre diluée dans un polygone
+function inkWash(g, pts, col, a){ g.fillStyle = col || '#1f1b17'; g.globalAlpha = a==null? 0.18 : a; g.beginPath();
+  for (let i=0;i<pts.length;i+=2) i? g.lineTo(pts[i],pts[i+1]) : g.moveTo(pts[i],pts[i+1]); g.closePath(); g.fill(); g.globalAlpha = 1; }
+// hachures dans un rectangle (ombres)
+function inkHatch(g, x, y, w, h, step, col, a){ g.save(); g.beginPath(); g.rect(x,y,w,h); g.clip(); g.strokeStyle = col || '#1f1b17'; g.globalAlpha = a==null? 0.3 : a; g.lineWidth = 0.8;
+  g.beginPath(); for (let k=-h; k<w; k+=step||5){ g.moveTo(x+k, y+h); g.lineTo(x+k+h, y); } g.stroke(); g.restore(); }
+// petit personnage à l'encre (silhouette) : pieds en (x,y), hauteur s
+function inkFolk(g, x, y, s, col, arm){ g.fillStyle = col || '#1f1b17';
+  g.beginPath(); g.arc(x, y-s*0.86, s*0.13, 0, 6.283); g.fill();
+  g.beginPath(); g.moveTo(x-s*0.17, y-s*0.72); g.lineTo(x+s*0.17, y-s*0.72); g.lineTo(x+s*0.13, y-s*0.3); g.lineTo(x+s*0.16, y); g.lineTo(x+s*0.04, y);
+  g.lineTo(x, y-s*0.26); g.lineTo(x-s*0.04, y); g.lineTo(x-s*0.16, y); g.lineTo(x-s*0.13, y-s*0.3); g.closePath(); g.fill();
+  if (arm){ g.strokeStyle = g.fillStyle; g.lineWidth = s*0.08; g.lineCap = 'round'; g.beginPath(); g.moveTo(x+s*0.14, y-s*0.66); g.lineTo(x+s*0.34, y-s*(0.66+0.4*arm)); g.stroke(); } }
+
+function cinePortrait(id){
+  const p = CINE_PORTRAITS[id]; if (!p) return null;
+  return fxSprite('CINEP_'+id, 128, 128, g => { g.scale(2,2); g.drawImage(cinePaper(), 0, 0, 64, 64); p(g);
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.5; g.strokeRect(0.75,0.75,62.5,62.5); });
+}
+// SOL : soixantaine, chignon gris, lunettes rondes, casque radio, foulard rouge
+CINE_PORTRAITS.sol = g => {
+  inkWash(g, [10,64, 14,50, 24,44, 40,44, 50,50, 54,64], '#3d4a3a', 0.85);                       // vareuse
+  inkWash(g, [22,46, 32,54, 42,46, 40,42, 24,42], '#c42a1c', 0.95);                              // foulard
+  g.fillStyle = '#e2c4a2'; g.beginPath(); g.ellipse(32, 28, 11, 13.5, 0, 0, 6.283); g.fill();     // visage
+  g.fillStyle = '#b9b4ac'; g.beginPath(); g.ellipse(32, 17, 12.5, 7.5, 0, 3.14, 6.283); g.fill(); // cheveux
+  g.beginPath(); g.arc(41, 12, 5, 0, 6.283); g.fill();                                           // chignon
+  inkLine(g, [21,20, 24,14, 32,11, 40,14, 43,20], 1, 1.2);
+  g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2;
+  g.beginPath(); g.arc(27, 28, 4, 0, 6.283); g.stroke(); g.beginPath(); g.arc(37, 28, 4, 0, 6.283); g.stroke();   // lunettes
+  g.beginPath(); g.moveTo(31,28); g.lineTo(33,28); g.stroke();
+  g.fillStyle = '#1f1b17'; g.fillRect(26,27.4,1.6,1.6); g.fillRect(36,27.4,1.6,1.6);
+  inkLine(g, [28,36, 32,37.4, 36,36], 1, 1.1);                                                    // bouche
+  inkLine(g, [24,33, 26,35], 1, 0.7); inkLine(g, [40,33, 38,35], 1, 0.7);                         // rides
+  g.strokeStyle = '#1f1b17'; g.lineWidth = 2.2; g.beginPath(); g.arc(32, 22, 13.5, 3.5, 5.9); g.stroke();          // arceau du casque
+  g.fillStyle = '#1f1b17'; g.fillRect(17,23,4.5,9); g.fillRect(42.5,23,4.5,9);                    // écouteurs
+  inkLine(g, [19,32, 20,38, 26,40], 1, 1.1); g.beginPath(); g.arc(27, 40, 1.8, 0, 6.283); g.fill();                // micro
+};
+// 55 (Kassandre) : un bipeur, deux chiffres sur un écran à cristaux
+CINE_PORTRAITS.k55 = g => {
+  g.fillStyle = '#23292b'; g.fillRect(9,16,46,34); g.fillStyle = '#31393c'; g.fillRect(9,16,46,5);
+  g.fillStyle = '#9db79a'; g.fillRect(14,24,36,17);
+  g.fillStyle = 'rgba(20,40,24,0.14)'; for (let y=25;y<41;y+=2) g.fillRect(14,y,36,1);
+  g.fillStyle = '#1b2a1c'; g.font = '700 15px "Courier New",monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('55', 32, 33);
+  g.fillStyle = '#0b6fa8'; g.beginPath(); g.arc(49, 45.5, 1.6, 0, 6.283); g.fill();
+  g.fillStyle = '#4a5558'; g.fillRect(14,44,10,3); g.fillRect(27,44,10,3);
+  inkLine(g, [20,16, 20,9, 24,9], 1, 1.4);
+};
+// « NOUS » : la Singularité — un cercle vide, parfaitement régulier, sur fond de trame
+CINE_PORTRAITS.nous = g => {
+  g.fillStyle = '#dfe6ea'; g.fillRect(0,0,64,64);
+  g.fillStyle = 'rgba(40,60,80,0.16)'; for (let y=2;y<64;y+=4) for (let x=(y%8? 2:4); x<64; x+=4) g.fillRect(x,y,1.2,1.2);
+  g.strokeStyle = '#26323c'; g.lineWidth = 3; g.beginPath(); g.arc(32,32,15,0,6.283); g.stroke();
+  g.lineWidth = 1; g.beginPath(); g.arc(32,32,21,0,6.283); g.stroke();
+};
+
+/* ---------- rendu (espace écran, par-dessus le monde ; remplace le HUD pendant la scène) ---------- */
+function drawCine(){
+  const s = cineShot(); if (!s) return;
+  const t = CINE.t, dur = cineDur(s), k = clamp(t/dur, 0, 1), pal = UIPAL.HUM;
+  if (s.plate){
+    ctx.save(); s.plate(ctx, W, H, t, k); ctx.restore();
+    const a = 1 - Math.min(1, t/0.5);                                       // la page arrive en fondu
+    if (a>0){ ctx.fillStyle = 'rgba(14,10,8,'+a.toFixed(3)+')'; ctx.fillRect(0,0,W,H); }
+  }
+  const bh = Math.round(H*0.105*ease(CINE.bar));                           // bandes noires
+  ctx.fillStyle = '#0d0b0a'; ctx.fillRect(0,0,W,bh); ctx.fillRect(0,H-bh,W,bh);
+  if (s.title){                                                             // carton-titre au pochoir
+    const a = Math.min(1, t/0.5, (dur-t)/0.5 + 1);
+    ctx.save(); ctx.globalAlpha = clamp(a,0,1); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const big = Math.min(46, W*0.058);
+    ctx.font = big+'px '+UI_STEN; const tx = cT(s.title).toUpperCase(), tw = ctx.measureText(tx).width;
+    ctx.fillStyle = 'rgba(13,11,10,0.72)'; ctx.fillRect(W/2-tw/2-26, H*0.40-big*0.8, tw+52, big*1.6 + (s.sub? 22 : 0));
+    ctx.fillStyle = '#c42a1c'; ctx.fillRect(W/2-tw/2-26, H*0.40-big*0.8, 5, big*1.6 + (s.sub? 22 : 0));
+    ctx.fillStyle = '#efe6cf'; ctx.fillText(tx, W/2, H*0.40);
+    if (s.sub){ ctx.font = '12px '+UI_TYPE; ctx.fillStyle = '#d8c9a4'; ctx.fillText(cT(s.sub), W/2, H*0.40+big*0.8+6); }
+    ctx.restore();
+  }
+  if (s.txt){                                                               // sous-titre : feuillet tapé à la machine, portrait à gauche
+    const full = cT(s.txt), shown = full.slice(0, Math.floor(t*40)), who = CINE_WHO[s.who] || CINE_WHO.nar;
+    const por = cinePortrait(s.who), pw = por? 58 : 0;
+    const bw = Math.min(W-28, 660), x0 = (W-bw)/2;
+    ctx.font = '12.5px '+UI_TYPE; const lines = newsWrap(full, bw-pw-30), lh = 15.5;
+    const hh = Math.max(pw+14, 24 + lines.length*lh), y0 = H - hh - Math.max(10, bh*0.28);
+    const a = Math.min(1, t/0.25);
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(x0+3, y0+4, bw, hh);
+    ctx.fillStyle = (s.who==='k55')? '#e9f0e6' : (s.who==='nous')? '#e4eaee' : pal.paper; ctx.fillRect(x0, y0, bw, hh);
+    ctx.fillStyle = paperGrain(); ctx.fillRect(x0, y0, bw, hh);
+    ctx.fillStyle = who.ink; ctx.fillRect(x0, y0, bw, 2.5);
+    if (por) ctx.drawImage(por, x0+8, y0+8, pw-2, pw-2);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    const nm = who.name? (typeof who.name==='string'? who.name : cT(who.name)) : null;
+    if (nm){ ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = who.ink; ctx.fillText(nm, x0+pw+16, y0+11); }
+    ctx.font = (s.who==='nar'? 'italic ' : '')+'12.5px '+UI_TYPE; ctx.fillStyle = '#1f1b17';
+    let left = shown.length;
+    lines.forEach((l,j)=>{ if (left<=0) return; ctx.fillText(l.slice(0,left), x0+pw+16, y0+(nm? 25 : 16)+j*lh); left -= l.length+1; });
+    if (shown.length>=full.length && Math.sin(performance.now()/200)>0){ ctx.fillStyle = who.ink; ctx.fillText('▸', x0+bw-16, y0+hh-10); }
+    ctx.restore();
+  }
+  // bouton PASSER
+  const r = cineSkipRect(); ctx.globalAlpha = 0.85*ease(CINE.bar);
+  ctx.fillStyle = 'rgba(13,11,10,0.55)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.strokeStyle = 'rgba(232,216,170,0.5)'; ctx.lineWidth = 1; ctx.strokeRect(r.x+0.5, r.y+0.5, r.w-1, r.h-1);
+  ctx.font = '10.5px '+UI_TYPE; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#e8d8aa';
+  ctx.fillText(cT(CINE_UI.skip), r.x+r.w/2, r.y+r.h/2+0.5); ctx.globalAlpha = 1;
+}
+
+/* ================= CAMPAGNE · MISSION I — LA NUIT DES COMPTEURS (v1.15) =================
+   Valmont, de nuit, sous la pluie. Le courant est coupé : on ne voit que ce qui est éclairé
+   (la base, les lampes des unités, les transformateurs repris, les fusées éclairantes). Les
+   machines, elles, voient dans le noir. Reprendre un transformateur rallume un quartier.     */
+DECOR_THEMES.nightcity = ['lamp','lamp','car','car','bin','barricade','debris','cable','lamp','car'];
+DECOR_EXTRA.lamp = (d, s, t) => {                                   // lampadaire de la rue (s'allume quand le quartier est repris)
+  const on = campNightLit(d.x);
+  ctx.strokeStyle = '#1b1c26'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-74); ctx.quadraticCurveTo(0,-84, 12*d.flip,-84); ctx.stroke();
+  ctx.fillStyle = '#1b1c26'; ctx.fillRect(d.flip>0? 8 : -20, -86, 12, 4);
+  if (on){ ctx.fillStyle = '#fff2cf'; ctx.fillRect(d.flip>0? 9 : -19, -82.5, 10, 2.2);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.16 + 0.02*Math.sin(t*9+d.ph);
+    ctx.fillStyle = '#ffcf80'; ctx.beginPath(); ctx.moveTo(14*d.flip,-81); ctx.lineTo(14*d.flip+46,0); ctx.lineTo(14*d.flip-46,0); ctx.closePath(); ctx.fill(); ctx.restore(); }
+};
+DECOR_EXTRA.car = (d, s) => {                                        // voiture garée
+  ctx.scale(d.flip, 1); dShadow(22*s);
+  ctx.fillStyle = ['#3b4458','#5a3a3a','#44504a','#55545c'][(d.ph*10|0)%4]; rr(-20*s,-11*s,40*s,9*s,3); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-12*s,-11*s); ctx.lineTo(-8*s,-18*s); ctx.lineTo(7*s,-18*s); ctx.lineTo(13*s,-11*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(16,20,34,0.85)'; ctx.beginPath(); ctx.moveTo(-9.5*s,-11.5*s); ctx.lineTo(-6.5*s,-16.5*s); ctx.lineTo(-0.5*s,-16.5*s); ctx.lineTo(-0.5*s,-11.5*s); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(1*s,-11.5*s); ctx.lineTo(1*s,-16.5*s); ctx.lineTo(6*s,-16.5*s); ctx.lineTo(10.5*s,-11.5*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#121218'; ctx.beginPath(); ctx.arc(-12*s,-2*s,3.6*s,0,6.283); ctx.arc(12*s,-2*s,3.6*s,0,6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(-19*s,-10.4*s,38*s,1.2*s);
+};
+DECOR_EXTRA.bin = (d, s) => {                                        // conteneur à ordures
+  dShadow(11*s); ctx.fillStyle = '#34503e'; rr(-9*s,-15*s,18*s,15*s,2); ctx.fill();
+  ctx.fillStyle = '#27402f'; ctx.fillRect(-10*s,-17*s,20*s,3.4*s);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(-9*s,-6*s,18*s,1.2*s);
+  ctx.fillStyle = '#121218'; ctx.beginPath(); ctx.arc(-6*s,0,1.8*s,0,6.283); ctx.arc(6*s,0,1.8*s,0,6.283); ctx.fill();
+};
+// un point de la rue est-il dans un quartier rallumé (transformateur repris à moins de 430) ?
+function campNightLit(x){ if (!game || !game.zones) return false; for (const z of game.zones) if (z.owner==='p' && Math.abs(z.x-x)<430) return true; return false; }
+function campInLight(x, big){ const Ls = game.camp.lights; for (const L of Ls){ if (big && !L.big) continue; if (Math.abs(L.x-x) < L.r*0.82) return true; } return false; }
+
+/* ---------- planches du prologue et de l'épilogue (repère 480×270, encre sur page de carnet) ---------- */
+const M1_PLATES = {
+  tap(g, w, h, t, k){ plateBase(g, w, h);
+    const n = clamp(t/2.2, 0, 1);
+    inkLine(g, [60,80, 160,80, 160,96, 196,96, 204,104, 204,128], n, 5);                                   // robinet
+    inkLine(g, [60,96, 144,96], n, 5); inkLine(g, [150,66, 150,80], n, 4); inkLine(g, [134,64, 166,64], n, 5);
+    inkLine(g, [196,128, 212,128], n, 3);
+    const dy = (t*38)%120; if (t>2.2 && t<5){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(204, 134+dy, 2.4, 4, 0, 0, 6.283); g.fill(); }   // les dernières gouttes
+    inkLine(g, [120,236, 300,236], n, 2); inkLine(g, [140,236, 150,214, 270,214, 280,236], n, 2);        // évier
+    // le compteur « intelligent »
+    const m = clamp((t-1.2)/2, 0, 1);
+    inkLine(g, [320,70, 420,70, 420,170, 320,170, 320,70], m, 2.4); inkLine(g, [334,86, 406,86, 406,116, 334,116, 334,86], m, 1.6);
+    if (m>=1){ g.fillStyle = '#1f1b17'; g.font = '700 17px "Courier New",monospace'; g.textAlign = 'center'; g.fillText('SCORE 41', 370, 107);
+      g.fillStyle = (Math.sin(t*5)>0)? '#c42a1c' : 'rgba(196,42,28,0.25)'; g.beginPath(); g.arc(344, 146, 5.5, 0, 6.283); g.fill();
+      g.fillStyle = '#1f1b17'; g.font = '9px "Courier New",monospace'; g.fillText('OMNICORP · RÉGIE', 370, 150); inkHatch(g, 320, 170, 100, 10, 5); }
+    plateEnd(g, w, h); },
+  street(g, w, h, t, k){ plateBase(g, w, h, 'rgba(30,34,70,0.10)');
+    const xs = [20,96,150,236,300,372], ws = [70,48,80,58,66,90], hs = [150,110,176,128,160,120];
+    xs.forEach((x,i)=>{ const top = 230-hs[i]; inkWash(g, [x,230, x,top, x+ws[i],top, x+ws[i],230], '#1f1b17', 0.16);
+      inkLine(g, [x,230, x,top, x+ws[i],top, x+ws[i],230], clamp(t/1.5-i*0.1,0,1), 1.8);
+      for (let r=0;r<Math.floor(hs[i]/22);r++) for (let c=0;c<Math.floor(ws[i]/18);c++){
+        const id = i*31+r*7+c*3, off = t > 2.2 + (id%17)*0.28;                                             // les fenêtres s'éteignent une à une
+        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(x+7+c*18, top+9+r*22, 9, 12); } });
+    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.22);
+    inkFolk(g, 118, 230, 26); inkFolk(g, 214, 230, 24); inkFolk(g, 352, 230, 27);
+    plateEnd(g, w, h); },
+  radio(g, w, h, t, k){ plateBase(g, w, h);
+    const n = clamp(t/2, 0, 1);
+    inkLine(g, [40,206, 440,206], n, 3); inkHatch(g, 40, 206, 400, 30, 6);                                 // table
+    inkLine(g, [230,206, 230,120, 380,120, 380,206], n, 2.6); inkWash(g, [230,206, 230,120, 380,120, 380,206], '#3d4a3a', 0.35);   // poste radio
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 2; g.beginPath(); g.arc(270, 162, 20, 0, 6.283*n); g.stroke();
+    for (let i=0;i<5;i++) inkLine(g, [308, 140+i*10, 366, 140+i*10], n, 1.2);
+    g.fillStyle = Math.sin(t*4)>0? '#c42a1c' : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(360, 192, 4, 0, 6.283); g.fill();
+    inkLine(g, [372,120, 396,40], n, 1.6);                                                                  // antenne
+    for (let i=1;i<4;i++){ g.strokeStyle = 'rgba(196,42,28,'+(0.5*(1-((t*0.6+i/3)%1))).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(396, 40, ((t*0.6+i/3)%1)*60, -2.4, -0.4); g.stroke(); }
+    inkLine(g, [70,206, 84,178, 170,178, 184,206], n, 2); for (let i=0;i<4;i++) inkLine(g, [96,186+i*5, 160,186+i*5], n, 0.9);   // le carnet
+    inkLine(g, [150,170, 186,150], n, 2.4, '#c42a1c');                                                      // le crayon rouge
+    inkLine(g, [120,206, 120,96, 150,84], n, 2.2); inkWash(g, [140,78, 176,78, 186,98, 132,98], '#1f1b17', 0.7);   // lampe
+    inkWash(g, [134,98, 184,98, 220,206, 100,206], '#e8a53c', 0.16);
+    plateEnd(g, w, h); },
+  march(g, w, h, t, k){ plateBase(g, w, h, 'rgba(30,34,70,0.12)');
+    inkWash(g, [300,230, 300,96, 470,96, 470,230], '#1f1b17', 0.5); inkLine(g, [300,230, 300,96, 470,96, 470,230], 1, 2.4);      // le dépôt Halvard
+    for (let i=0;i<6;i++) inkLine(g, [318+i*24, 150, 318+i*24, 230], 1, 1);
+    g.fillStyle = '#e9dfc6'; g.font = '700 15px "Courier New",monospace'; g.textAlign = 'center'; g.fillText('HALVARD', 385, 124);
+    g.fillStyle = Math.sin(t*3)>0? '#3aa0e0' : 'rgba(58,160,224,0.3)'; for (let i=0;i<3;i++) g.fillRect(330+i*50, 132, 10, 3);
+    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.22);
+    for (let i=0;i<11;i++){ const x = -40 + i*23 + Math.min(1,t/5)*60, s = 24+((i*7)%5)*2; inkFolk(g, x, 230+((i*3)%4), s, '#1f1b17', i%4===1? 1 : 0); }
+    const fx = 120 + Math.min(1,t/5)*60;                                                                    // le drapeau rouge
+    inkLine(g, [fx,228, fx,150], 1, 2); const wv = Math.sin(t*3)*3;
+    inkWash(g, [fx,150, fx+34,154+wv, fx+34,172+wv, fx,170], '#c42a1c', 0.92);
+    plateEnd(g, w, h); },
+  shutter(g, w, h, t, k){ plateBase(g, w, h);
+    inkWash(g, [50,250, 50,40, 430,40, 430,250], '#1f1b17', 0.14); inkLine(g, [50,250, 50,40, 430,40, 430,250], 1, 2.6);
+    for (let y=56; y<250; y+=12) inkLine(g, [56,y, 424,y], 1, 0.8);
+    inkHatch(g, 50, 40, 380, 60, 6, '#1f1b17', 0.4);                                                         // suie
+    const full = cT({fr:"ICI, ON A COUPÉ LE COURANT|À CEUX QUI COUPAIENT L'EAU.", en:"HERE WE CUT THE POWER|OF THOSE WHO CUT THE WATER."}).split('|');
+    g.fillStyle = '#c42a1c'; g.font = '700 21px "Courier New",monospace'; g.textAlign = 'center';
+    let left = Math.floor(t*16); full.forEach((l,i)=>{ g.fillText(l.slice(0, Math.max(0,left)), 240, 140+i*34); left -= l.length; });
+    plateEnd(g, w, h); },
+  pager(g, w, h, t, k){ plateBase(g, w, h);
+    inkLine(g, [30,210, 450,210], 1, 3); inkHatch(g, 30, 210, 420, 30, 6);
+    inkWash(g, [170,210, 176,150, 304,150, 310,210], '#23292b', 0.9); inkWash(g, [190,160, 290,160, 290,190, 190,190], '#9db79a', 1);
+    if (t>1.4){ g.fillStyle = '#1b2a1c'; g.font = '700 26px "Courier New",monospace'; g.textAlign = 'center'; g.fillText(Math.sin(t*5)>-0.4? '55' : '', 240, 184); }
+    if (t>1.4) for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.5*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 150, 20+r*70, 3.5, 5.9); g.stroke(); }
+    inkLine(g, [70,210, 84,184, 150,184, 160,210], 1, 2);
+    plateEnd(g, w, h); },
+  dark(g, w, h, t, k){ plateBase(g, w, h, 'rgba(14,16,34,0.55)');
+    inkLine(g, [0,230, 480,230], 1, 2.2);
+    for (let i=0;i<5;i++) inkFolk(g, 400 - i*70 - t*8, 230, 24+(i%3)*2, 'rgba(20,18,24,0.8)');
+    inkLine(g, [60,230, 60,120, 76,112], 1, 2.4);
+    plateEnd(g, w, h); },
+};
+
+campExtend(0, {
+  biome:'night', theme:'nightcity',
+  rule:{fr:"Il fait nuit : vos tireurs portent moins loin hors de la lumière et l'ennemi caché dans le noir ne se voit pas. Reprenez les transformateurs pour rallumer la rue. Première ère seulement, une seule vie.",
+        en:"It is night: your shooters reach less far outside the light and enemies in the dark cannot be seen. Retake the transformers to light the street again. First era only, one life."},
+  action:{ label:{fr:"FUSÉE ÉCLAIRANTE", en:"FLARE"}, cd:38,
+    use(g, c){ c.flare = { x: camX + VW()/2, t:14 }; sfx('shoot', 2); addFloater(c.flare.x, gY(c.flare.x)-120, '✦', '#ffe9a8', 18); } },
+  setup(g, c){
+    campGrant(g.p, 240, 200, 70); g.e.hp = g.e.maxhp = Math.round([550,850,1000][c.lvl]*g.d.hpMul);
+    c.hidden = u => u.side===-1 && !campInLight(u.x);
+    c.rangeMul = u => (u.side===1 && u.range>60 && !campInLight(u.x, true))? 0.62 : 1;
+    c.owned = 0; this.light(g, c);
+  },
+  // sources de lumière de la frame : base, transformateurs repris, lampes des unités, fusée, dépôt ennemi, explosions
+  light(g, c){
+    const Ls = c.lights; Ls.length = 0;
+    Ls.push({x:g.p.x+40, r:330, big:1});
+    for (const z of g.zones) if (z.owner==='p') Ls.push({x:z.x, r:400, big:1}); else if (Math.abs(z.prog)>0.05 && z.prog>0) Ls.push({x:z.x, r:120*z.prog});
+    if (c.flare) Ls.push({x:c.flare.x, y:gY(c.flare.x)-70, r:470*Math.min(1, c.flare.t/2), big:1});
+    Ls.push({x:g.e.x-30, r:190, a:0.75});
+    let n = 0; const first = Ls.length;
+    for (const u of g.p.units){ if (n>=16) break; let near = false; for (let i=first;i<Ls.length;i++) if (Math.abs(Ls[i].x-u.x)<56){ near = true; break; }
+      if (!near){ Ls.push({x:u.x, r:u.role==='hero'? 170 : 104}); n++; } }
+    for (let i=LIGHTS.length-1, k=0; i>=0 && k<8; i--, k++){ const L = LIGHTS[i]; Ls.push({x:L.x, y:L.y, r:L.r*0.9, a:1-L.t/L.life}); }
+  },
+  tick(g, c, dt){
+    if (c.flare && (c.flare.t -= dt) <= 0) c.flare = null;
+    const own = g.zones.filter(z=>z.owner==='p').length;
+    if (own > c.owned) sfx('evolve');
+    c.owned = own; c.litK += (own/3 - c.litK) * Math.min(1, dt*0.8);
+    this.light(g, c);
+  },
+  hud(g, c){ return { prog: 1 - g.e.hp/g.e.maxhp, label: c.owned+'/3 ⚡' }; },
+  // un transformateur de quartier à la place du drapeau de zone
+  drawZone(z, t, vw){
+    const x = z.x-camX; if (x<-80 || x>vw+80) return; const y = gY(z.x), mine = z.owner==='p', foe = z.owner==='e';
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(2,1,26,5,0,0,6.283); ctx.fill();
+    ctx.fillStyle = '#4c5058'; ctx.fillRect(-18,-40,36,40); ctx.fillStyle = '#3a3d45'; ctx.fillRect(-20,-44,40,5); ctx.fillRect(12,-40,6,40);   // armoire
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; for (let i=0;i<5;i++) ctx.fillRect(-14,-34+i*4,14,1.4);                                                  // ouïes
+    ctx.fillStyle = '#e8b830'; ctx.beginPath(); ctx.moveTo(4,-14); ctx.lineTo(10,-26); ctx.lineTo(-2,-14); ctx.closePath(); ctx.fill();           // danger
+    ctx.fillStyle = '#1f1b17'; ctx.beginPath(); ctx.moveTo(4.6,-23); ctx.lineTo(2.6,-19.4); ctx.lineTo(4.6,-19.4); ctx.lineTo(3.2,-15.6); ctx.lineTo(6.4,-20.4); ctx.lineTo(4.4,-20.4); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#22232b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-8,-44); ctx.lineTo(-8,-78); ctx.moveTo(-18,-70); ctx.lineTo(2,-70); ctx.stroke();   // poteau
+    ctx.fillStyle = '#8a8f98'; for (const ix of [-16,-8,0]) ctx.fillRect(ix-1.5,-76,3,6);                                                         // isolateurs
+    const col = mine? '#ffd98a' : foe? '#5ad0ff' : '#6a6f78';
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-8,-81,3.4,0,6.283); ctx.fill();
+    if (mine || foe){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22+0.06*Math.sin(t*6+z.x); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-8,-81,15,0,6.283); ctx.fill(); ctx.restore(); }
+    const pr = Math.abs(z.prog); if (pr>0.01 && pr<1){ ctx.fillStyle = 'rgba(10,10,14,0.7)'; ctx.fillRect(-20,6,40,4); ctx.fillStyle = z.prog>0? '#ffd98a' : '#5ad0ff'; ctx.fillRect(-20,6,40*pr,4);
+      if (Math.random()<0.3){ ctx.fillStyle = '#fff'; ctx.fillRect(-8+(Math.random()-0.5)*20, -70+(Math.random()-0.5)*8, 2, 2); } }               // étincelles
+    ctx.restore();
+  },
+  // la fusée éclairante descend sous son parachute
+  draw(g, c){ const f = c.flare; if (!f) return; const x = f.x-camX, y = gY(f.x) - 60 - f.t*6;
+    ctx.strokeStyle = 'rgba(230,230,240,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-7,y-16); ctx.moveTo(x,y); ctx.lineTo(x+7,y-16); ctx.stroke();
+    ctx.fillStyle = 'rgba(230,230,240,0.6)'; ctx.beginPath(); ctx.arc(x, y-16, 8, 3.14, 6.283); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(lightSprite('#ffe9a8'), x-34, y-34, 68, 68); ctx.restore();
+    ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 6.283); ctx.fill(); },
+  intro(g, c){ const z = g.zones; return [
+    { plate:M1_PLATES.tap, mus:'carnet', who:'nar', txt:{fr:"Octobre 2025. Chez nous, l'eau s'est arrêtée un mardi. Ce n'était pas une panne. C'était une décision.", en:"October 2025. In our street the water stopped on a Tuesday. It was not a breakdown. It was a decision."} },
+    { plate:M1_PLATES.street, who:'nar', txt:{fr:"Puis le courant. Rue après rue, selon un « score de fiabilité » que personne n'avait demandé à passer.", en:"Then the power. Street after street, by a \"reliability score\" nobody had asked to sit."} },
+    { plate:M1_PLATES.radio, who:'sol', txt:{fr:"Je m'appelle Sol. Trente ans au standard des pompiers. Je sais reconnaître une voix qui a peur — et une ville qui se tait.", en:"My name is Sol. Thirty years on the fire-brigade switchboard. I know a frightened voice when I hear one — and a city falling silent."} },
+    { plate:M1_PLATES.march, who:'sol', txt:{fr:"Cette nuit, on ne paie pas. Cette nuit, on va au dépôt Halvard. Si vous lisez ce carnet, c'est que quelqu'un a tenu la radio.", en:"Tonight we do not pay. Tonight we walk to the Halvard depot. If you are reading this notebook, someone kept the radio going."} },
+    { mus:null, cam:{x:g.p.x+200, t:0.1}, dur:3.6, title:{fr:"I · La nuit des compteurs", en:"I · The night of the meters"}, sub:{fr:"Valmont, quartier des Tanneurs — octobre 2025", en:"Valmont, the Tanners' district — October 2025"} },
+    { cam:{x:z[0].x}, who:'sol', txt:{fr:"Trois transformateurs tiennent la rue. Reprenez-les et le quartier se rallume. Dans le noir, leurs machines voient. Pas nous.", en:"Three transformers hold the street. Retake them and the district lights up again. In the dark their machines can see. We cannot."} },
+    { cam:{x:g.e.x-120, t:3}, who:'sol', txt:{fr:"Au bout de la rue : le dépôt Halvard. C'est lui qui pilote les compteurs.", en:"At the end of the street: the Halvard depot. It runs the meters."} },
+    { cam:{x:g.p.x+200, t:2.4}, who:'sol', txt:{fr:"Vous avez des fusées éclairantes. Bâtissez, nourrissez les nôtres, puis avancez de lampe en lampe. À vous, commandant.", en:"You have flares. Build, feed our people, then advance from lamp to lamp. Over to you, commander."} },
+  ]; },
+  outro(g, c, win){ return win? [
+    { cam:{x:g.e.x-80, t:1.5}, dur:3.2, fx(){ for (let i=0;i<5;i++) setTimeout(()=>{ if (game===g){ explode(g.e.x-120+Math.random()*200, gY(g.e.x)-20-Math.random()*60, 1.4); sfx('boom'); } }, i*450); },
+      who:'sol', txt:{fr:"Il brûle. Commandant… il brûle, et aux étages les gens sont aux fenêtres.", en:"It is burning. Commander… it is burning, and upstairs people are at their windows."} },
+    { plate:M1_PLATES.shutter, mus:'carnet', who:'nar', txt:{fr:"À l'aube, quelqu'un avait peint sur le rideau de fer. Omnicorp a parlé d'un « incident logistique ».", en:"At dawn someone had painted on the shutter. Omnicorp spoke of a \"logistics incident\"."} },
+    { plate:M1_PLATES.pager, who:'sol', txt:{fr:"Trois jours plus tard, un bipeur que personne n'avait acheté a sonné sur ma table. Deux chiffres. Rien d'autre.", en:"Three days later a pager nobody had bought rang on my table. Two digits. Nothing else."} },
+  ] : [
+    { plate:M1_PLATES.dark, mus:'carnet', who:'sol', txt:{fr:"On s'est dispersés dans la nuit. Les compteurs tournent toujours. Mais la rue a entendu le bruit qu'a fait le dépôt quand vous l'avez touché.", en:"We scattered into the night. The meters are still running. But the street heard the sound the depot made when you hit it."} },
+  ]; },
+});
+// premier transformateur repris : la caméra va voir le quartier se rallumer
+CAMPAIGN[0].radio.push({ when:(g,c)=>c.owned>=1, who:'sol',
+  cine(g, c){ const z = g.zones.find(z=>z.owner==='p') || g.zones[0]; return [
+    { cam:{x:z.x, t:1.2}, live:true, dur:1.4 },
+    { cam:{x:z.x}, who:'sol', txt:{fr:"Ça y est… regardez les fenêtres. Ils rallument. Ils nous regardent, commandant. C'est la première fois qu'ils regardent.", en:"There… look at the windows. They are switching the lights back on. They are watching us, commander. It is the first time they have watched."} },
+  ]; } });
 
 /* ================= FIN DE PARTIE ================= */
 // échappement HTML : en ligne, une partie des valeurs affichées vient de l'autre joueur
@@ -10628,6 +11264,7 @@ window.addEventListener('keydown', e=>{
     if (e.code==='Escape') finishIntro(); else advanceIntro();
     e.preventDefault(); return;
   }
+  if (game && CINE.on){ if (!e.repeat) cineKey(e.code); e.preventDefault(); return; }   // cinématique : Espace/Entrée = suite, Échap = passer
   if (!game || game.over) return;
   const K = SETTINGS.keys, p = game.p;
   if (e.code===K.pause){ e.preventDefault();
@@ -10713,6 +11350,8 @@ cv.addEventListener('pointerdown', e=>{
   if (!_fsTried){ _fsTried=true; goFullscreen(); }   // plein écran auto dès la 1re interaction (PC + Android)
   cv.setPointerCapture(e.pointerId);
   const {sx,sy} = evXY(e);
+  if (game && CINE.on){ cineInput(sx, sy); return; }   // cinématique : un appui = plan suivant
+  if (game && game.camp && !game.over && campClick(sx, sy)) return;   // bouton d'action de la mission
   ptrs.set(e.pointerId, {sx,sy});
   if (ptrs.size===2){             // pincement
     const [a,b] = [...ptrs.values()];

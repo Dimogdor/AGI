@@ -23,3 +23,4 @@ android-signing/
 *.jks
 keystore.properties
 KEYSTORE-SECRETS.txt
+.claude/worktrees/

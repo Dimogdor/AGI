@@ -45,3 +45,19 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `20-net-online.js` | pause négociée, transport PeerJS, salons publics |
 | `21-menu.js` | menu (DOM), plein écran, navigation en ligne |
 | `22-input.js` | clavier, souris/tactile, amorçage du tutoriel |
+
+## Campagne (v1.15) — comment est faite une mission
+
+| Fichier | Rôle |
+|---|---|
+| `16a-biomes.js` | LIEUX : `BIOMES[id]` (ciel, calques de fond cuits, sol, relief, nuit éclairée, météo `fxRain`/`fxSnow`, `music`, `amb`). `game.biome` remplace tout le décor d'escarmouche. |
+| `16b-campaign.js` | Cœur : textes des 5 missions (9 langues), cycle de vie (`startMission`, `campTick`, `campEndCine`), sauvegarde, HUD (objectif, radio, bouton d'action), menu. |
+| `16c-cine.js` | CINÉMATIQUES : `cinePlay(script, done)` ; plans sur le terrain (caméra, bandes noires) ou PLANCHES plein écran à l'encre (`plateBase`, `inkLine`, `inkWash`, `inkHatch`, `inkFolk`) ; portraits `CINE_PORTRAITS`, voix `CINE_WHO`. |
+| `16d-camp-m1.js` … | Une mission par fichier : `campExtend(i, {...})` ajoute lieu, mécanique et cinématiques à `CAMPAIGN[i]`. **Modèle à suivre : `16d-camp-m1.js`.** |
+| `03-audio.js` | `MUSIC_THEMES[id] = {bpm, step(st,t,stepDur,tension)}` : un thème par lieu ; `biome.amb = {rain, wind, birds, tick(t,dt)}`. |
+
+Champs d'une mission (en plus des textes) : `biome`, `theme` (pool `DECOR_THEMES`, objets `DECOR_EXTRA[kind]`),
+`setup(g,c)`, `tick(g,c,dt)` (renvoie `'win'`/`'lose'` pour finir), `hud(g,c)` → `{prog,label,clock,warn}`,
+`action {label,cd,can,use}` (bouton sous l'objectif), `draw(g,c,vw)` (objets de mission, repère monde−`camX`),
+`drawZone(z,t,vw)`, `intro(g,c)` / `outro(g,c,win)` → scripts de cinématique, `radio[]` (entrées `{at|when, who, txt, fx, cine}`).
+État de mission dans `game.camp` (`c`) : `c.lights` (sources de lumière), `c.litK`, `c.hidden(u)`, `c.rangeMul(u)`, `c.t`.

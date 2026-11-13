@@ -823,7 +823,8 @@ function drawMenuArmies(t){
 }
 function drawBG(){
   const dev = game? game.dev:0, t = game? game.t:0, vw = VW();
-  const top=devLerp(SKY_T), mid=devLerp(SKY_M), bot=devLerp(SKY_B);
+  const B = game? game.biome : null;                       // lieu de campagne : remplace ciel, fonds et sol
+  const top=B? B.sky[0] : devLerp(SKY_T), mid=B? B.sky[1] : devLerp(SKY_M), bot=B? B.sky[2] : devLerp(SKY_B);
   // CIEL ANCRÉ SUR LE HAUT RÉEL DE L'ÉCRAN. L'ancien dégradé partait de y=-H (monde), bien
   // au-dessus de l'écran : à zoom 1 le haut visible tombait déjà à ~58 % du trajet vers
   // l'horizon, si bien que le bleu du zénith n'apparaissait JAMAIS et que toute la scène
@@ -836,6 +837,7 @@ function drawBG(){
   // PERSPECTIVE AÉRIENNE : les plans lointains se fondent vers une brume légèrement bleutée
   // (comme le vrai ciel), et non plus vers le crème de l'horizon qui délavait tout.
   const haze = lerpColArr(bot, mid, 0.75);
+  if (B) biomeBack(B, vw, t); else {
   // (Anciens « éclairs d'ambiance » retirés : ils provoquaient un scintillement intempestif
   //  de l'arrière-plan pendant les batailles. Le ciel reste désormais stable.)
   // cendres rougeoyantes quand le monde agonise (additif). Plus d'« étoiles » en plein jour :
@@ -917,12 +919,13 @@ function drawBG(){
   drawLand(dev);
   drawCity(dev);
   drawAmbient(t, dev, vw);       // monde vivant : crashs, incendies, fumées, jets, vols d'oiseaux…
+  }
   // voile de brume à l'horizon (plus léger qu'avant : 0,4 → 0,26)
   const hz=ctx.createLinearGradient(0,GROUND-120,0,GROUND);
   hz.addColorStop(0,rgbaC(haze,0)); hz.addColorStop(1,rgbaC(haze,0.16));
   ctx.fillStyle=hz; ctx.fillRect(0,GROUND-120,vw,120);
   // terrain (dégradé sculpté) + bande d'herbe
-  const dirt=devLerp(DIRT), grass=devLerp(GRASS), yBot=(H-zTY())/zoom+60;
+  const dirt=B? B.dirt : devLerp(DIRT), grass=B? B.grass : devLerp(GRASS), yBot=(H-zTY())/zoom+60;
   ctx.beginPath(); ctx.moveTo(0,yBot); for(let sx=0;sx<=vw;sx+=8) ctx.lineTo(sx,gY(sx+camX)); ctx.lineTo(vw,yBot); ctx.closePath();
   const tg=ctx.createLinearGradient(0,GROUND-30,0,yBot);
   tg.addColorStop(0,shade(dirt,1.18)); tg.addColorStop(0.22,colS(dirt)); tg.addColorStop(1,shade(dirt,0.55));
@@ -955,7 +958,7 @@ function drawBG(){
   }
   // HERBE DYNAMIQUE : touffes qui ondulent au vent et se COUCHENT au passage de TOUTES les
   // unités au sol (les lourdes l'écrasent davantage) — le terrain réagit à la bataille.
-  if (qFx() && game){
+  if (qFx() && game && !(B && B.tufts===false)){
     const walkers=[];
     for (const u of game.p.units) if(!u.fly) walkers.push([u.x, (u.role==='tank'||u.role==='siege'||u.role==='hero')? 0.5 : 0.26]);
     for (const u of game.e.units) if(!u.fly) walkers.push([u.x, (u.role==='tank'||u.role==='siege'||u.role==='hero')? 0.5 : 0.26]);
@@ -993,7 +996,7 @@ function drawBG(){
   drawCracks(dev, vw);           // le sol se craquèle à mesure que le monde meurt
   for (const z of game.zones) drawZone(z, dev, t, vw);
   drawDecor(dev, t, vw);                 // calque d'habillage cosmétique (épaves, végétation, débris…)
-  for (const tr of TREES) drawTree(tr, dev, t, vw);
+  if (!(B && B.trees===false)) for (const tr of TREES) drawTree(tr, dev, t, vw);
   // 4e ZONE BONUS temporaire : pilier doré qui grésille/oscille quand elle est disputée.
   if (game.bonusZone){
     const z=game.bonusZone, bx=z.x-camX, gy=gY(z.x);
@@ -1011,6 +1014,7 @@ function drawBG(){
       ctx.fillText('★ '+Math.max(0,Math.ceil(60-z.t))+'s', bx, gy-138);
     }
   }
+  if (B && B.mist===false) return;
   // brume basse dérivante (additif)
   ctx.save(); ctx.globalCompositeOperation='lighter';
   for (let i=0;i<3;i++){ const my=GROUND-26+i*15, mx=(t*8*(i+1))%200;
@@ -1023,6 +1027,7 @@ function drawBG(){
 // s'illuminent de la couleur de la faction qui domine la zone, réagissent au passage
 // des unités lourdes (onde), et grésillent (hologramme) en cas de combat/cataclysme.
 function drawZone(z, dev, t, vw){
+  if (game.camp && game.camp.m.drawZone){ game.camp.m.drawZone(z, t, vw); return; }   // campagne : la zone a un autre visage (transformateur, vanne…)
   const x=z.x-camX; if (x<-70||x>vw+70) return; const y=gY(z.x);
   const owner=z.owner, acc = owner? (owner==='p'?game.p.fac.accent:game.e.fac.accent) : '#9aa6b2';
   let pN=0, eN=0, heavy=0;
@@ -2428,6 +2433,7 @@ function drawHero(u, x, gy){
 }
 function drawUnit(u){
   const x = u.x-camX;
+  if (game.camp && game.camp.hidden && game.camp.hidden(u)) return;      // campagne : unité dans le noir
   if (x<-40 || x>VW()+40) return;
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;

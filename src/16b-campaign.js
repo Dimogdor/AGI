@@ -341,11 +341,29 @@ function startMission(i){
   if (m.oneLife){ g.p.phase = 2; g.e.phase = 2; g.hbombDone = true;      // une base qui tombe est perdue : pas de renaissance ni de bombe H
     g.p.hp = g.p.maxhp = [2600,2200,1800][lvl]; }                         // … la nôtre est donc mieux bâtie, selon le niveau de récit
   if (m.oneLife) g.e.heroCd = 1e9;                                       // et l'adversaire n'a pas de héros (un héros rase une base à une vie)
+  g.biome = BIOMES[m.biome] || null;                                      // lieu propre à la mission (ciel, fonds, sol, météo, musique)
+  c.lights = []; c.litK = 0;
   DECOR = genDecor(m.theme);
   if (m.setup) m.setup(g, c);
   prewarmSprites();
-  announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
+  const sc = m.intro? m.intro(g, c) : null;                               // cinématique d'ouverture, sur le terrain
+  if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
 }
+// complète une mission depuis son propre fichier (lieu, mécanique, cinématiques)
+function campExtend(i, ext){ Object.assign(CAMPAIGN[i], ext); }
+// fin de mission : cinématique de clôture (si la mission en a une), puis l'écran de fin
+function campEndCine(){
+  const c = game && game.camp, m = c && c.m, sc = m && m.outro? m.outro(game, c, game.win) : null;
+  if (sc && sc.length) cinePlay(sc, showEnd, {keepCam:true}); else showEnd();
+}
+// bouton d'action propre à la mission (fusée éclairante, vannes…) : m.action = {label, cd, can(g,c), use(g,c)}
+function campAct(){
+  const c = game && game.camp, a = c && c.m.action; if (!a || game.over || paused || CINE.on) return false;
+  if ((c.actCd||0) > 0 || (a.can && !a.can(game, c))){ sfx('deny'); return true; }
+  c.actCd = a.cd; a.use(game, c); return true;
+}
+function campClick(sx, sy){ const c = game.camp, r = c && c.actRect; if (!r || !c.m.action) return false;
+  if (sx<r.x || sx>r.x+r.w || sy<r.y || sy>r.y+r.h) return false; return campAct(); }
 function campRadio(who, txt){ const c = game && game.camp; if (!c || !txt) return;
   c.q.push({ who, txt, t:0, dur: 6.5 + Math.min(9, txt.length/20) }); if (c.q.length>4) c.q.shift(); }
 // appelée par update() à chaque pas ; true = la mission vient de se terminer
@@ -353,12 +371,14 @@ function campTick(dt){
   const g = game, c = g.camp, m = c.m;
   c.t += dt;
   for (let i=0;i<m.radio.length;i++){ if (c.fired[i]) continue; const r = m.radio[i];
-    if (r.at!=null? c.t>=r.at : r.when(g, c)){ c.fired[i] = 1; if (r.txt) campRadio(r.who, cT(r.txt)); if (r.fx) r.fx(g, c); } }
+    if (r.at!=null? c.t>=r.at : r.when(g, c)){ c.fired[i] = 1; if (r.txt) campRadio(r.who, cT(r.txt)); if (r.fx) r.fx(g, c);
+      if (r.cine){ const sc = r.cine(g, c); if (sc && sc.length) cinePlay(sc, null); } } }
+  if (c.actCd>0) c.actCd -= dt;
   const rdt = dt / (g.speed||1);                                         // les messages se lisent en temps réel
   if (c.cur){ c.cur.t += rdt; if (c.cur.t>=c.cur.dur) c.cur = null; }
   if (!c.cur && c.q.length){ c.cur = c.q.shift(); sfx('cap'); }
   const r = m.tick? m.tick(g, c, dt) : null;
-  if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(showEnd, 1100); return true; }
+  if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(campEndCine, 1100); return true; }
   return false;
 }
 // fin de mission : enregistre la progression (une seule fois) et renvoie le texte du compte rendu
@@ -386,6 +406,7 @@ function drawCampHUD(){
   { const w = 214, x = W-w-8, y = 43;
     ctx.font = uiF(pal,'cond',10.5); const lines = newsWrap(cT(m.goal), w-16).slice(0,2);
     const hh = 19 + lines.length*12 + ((h.prog!=null || h.clock!=null)? 13 : 0);
+    c.objH = hh;
     paperChip(x, y, w, hh, pal);
     ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -401,6 +422,13 @@ function drawCampHUD(){
       if (h.clock!=null){ ctx.font = uiF(pal,'cond',12); ctx.textAlign = 'right';
         ctx.fillStyle = (h.warn && Math.sin(performance.now()/160)>0)? pal.bad : pal.ink; ctx.fillText(fmtTime(h.clock), x+w-8, by+2); }
     } }
+  // ACTION DE MISSION : bon à découper sous l'objectif (grisé pendant la recharge)
+  if (m.action){ const a = m.action, w = 150, x = W-w-8, y = 43 + c.objH + 6, hh = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
+    c.actRect = {x, y, w, h:hh};
+    paperChip(x, y, w, hh, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(x, y, w, 2.5);
+    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(x, y, w*clamp(cd/a.cd,0,1), hh); }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
+    ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), x+w/2, y+hh/2+1.5); }
   // RADIO : feuillet tapé à la machine (Sol) ou listing de bipeur (Kassandre), à la place du fil d'actualités
   const r = c.cur; if (!r) return;
   const a = Math.min(1, r.t/0.35, (r.dur-r.t)/0.6); if (a<=0) return;

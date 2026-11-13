@@ -16,6 +16,7 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
+  if (game.camp && game.camp.m.draw) game.camp.m.draw(game, game.camp, VW());   // objets propres à la mission
   if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
@@ -123,6 +124,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
+  if (game.biome) biomeFront(dt);                 // lieu de campagne : nuit éclairée, pluie, neige
   drawWinter();
   drawCata();
   if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit
@@ -143,7 +145,7 @@ function render(dt){
     ctx.globalAlpha=(0.25+0.3*Math.min(1,beat))*(paused? 0.5 : 1)*(1-php/0.30*0.4); ctx.fillStyle=VIGN_RED; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }
   drawFilmGrade();               // étalonnage cinéma (ombres froides / hautes lumières chaudes) + grain
-  drawHUD();
+  if (CINE.on) drawCine(); else drawHUD();   // cinématique de campagne : bandes noires et sous-titres à la place du HUD
   drawSpeedOverlays();
   ctx.restore();
 }
@@ -240,6 +242,10 @@ function loop(now){
   if (netPause && netPause.active) tickNetPause(dt);   // le décompte de pause tourne en temps réel
   const sp = (game && game.speed) ? game.speed : 1;    // vitesse de jeu (×0.75…×3)
   if (game && game.net==='guest') netGuestTick(dt);    // l'invité ne simule pas : la cadence vient des snapshots de l'hôte
+  else if (game && CINE.on){                           // cinématique : le monde est figé (sauf plan « vivant »), la scène avance en temps réel
+    if (!paused){ if (cineLive() && !game.over){ let rem = dt; while (rem > 1e-4){ const st = Math.min(rem, 0.05); update(st); rem -= st; } } else if (game.over) update(dt);
+      cineTick(dt); }
+  }
   else if (game && !game.over && !paused){
     // on sous-découpe le pas pour le borner (≤0.05 s) : indispensable à ×2/×3 (anti-tunneling)
     let rem = dt * sp;

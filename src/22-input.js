@@ -26,6 +26,7 @@ window.addEventListener('keydown', e=>{
     if (e.code==='Escape') finishIntro(); else advanceIntro();
     e.preventDefault(); return;
   }
+  if (game && CINE.on){ if (!e.repeat) cineKey(e.code); e.preventDefault(); return; }   // cinématique : Espace/Entrée = suite, Échap = passer
   if (!game || game.over) return;
   const K = SETTINGS.keys, p = game.p;
   if (e.code===K.pause){ e.preventDefault();
@@ -111,6 +112,8 @@ cv.addEventListener('pointerdown', e=>{
   if (!_fsTried){ _fsTried=true; goFullscreen(); }   // plein écran auto dès la 1re interaction (PC + Android)
   cv.setPointerCapture(e.pointerId);
   const {sx,sy} = evXY(e);
+  if (game && CINE.on){ cineInput(sx, sy); return; }   // cinématique : un appui = plan suivant
+  if (game && game.camp && !game.over && campClick(sx, sy)) return;   // bouton d'action de la mission
   ptrs.set(e.pointerId, {sx,sy});
   if (ptrs.size===2){             // pincement
     const [a,b] = [...ptrs.values()];

@@ -84,7 +84,7 @@ const TERRAIN_DEFAULT = {a:16,f1:0.0042,b:9,f2:0.0113,c:6,f3:0.021,base:10};
 function gY(x){
   const flat = clamp((Math.min(x, WORLD-x)-240)/320, 0, 1);
   // relief uniquement en bosses (jamais de creux : rien ne passe sous la ligne du sol / derrière le HUD)
-  const c = TERRAIN_DEFAULT;
+  const c = (typeof game!=='undefined' && game && game.biome && game.biome.terrain) || TERRAIN_DEFAULT;
   const h = c.a*Math.sin(x*c.f1) + c.b*Math.sin(x*c.f2+2) + c.c*Math.sin(x*c.f3+5) + c.base;
   return GROUND - Math.max(0, h) * flat;
 }

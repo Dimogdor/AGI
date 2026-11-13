@@ -2,6 +2,7 @@
 // Calque cosmétique qui meuble les zones vides — il ne bloque PAS le pathfinding (purement
 // visuel, à l'échelle des unités). Thématisé par le terrain de la carte/mission.
 let DECOR = [];
+const DECOR_EXTRA = {};                      // kind → peintre (d, s, t, lo), ajoutés par les missions de campagne
 const DECOR_THEMES = {
   plains:  ['bush','bush','bush','wreck','wreck','tiremark','tiremark','debris'],         // ville quasi plate
   hills:   ['bush','bush','bush','debris','debris','barricade','barricade','wreck'],      // faubourgs
@@ -39,6 +40,7 @@ function drawDecor(dev, t, vw){
 function dShadow(w){ ctx.fillStyle='rgba(10,8,8,0.22)'; ctx.beginPath(); ctx.ellipse(0,1,w,w*0.26,0,0,6.283); ctx.fill(); }
 function drawDecorItem(d, dev, t, lo){
   const s=d.s, k=d.kind, sway=Math.sin(t*1.4+d.ph);
+  if (DECOR_EXTRA[k]){ DECOR_EXTRA[k](d, s, t, lo); return; }             // objets de décor propres aux lieux de campagne
   if (k==='bush'){
     dShadow(13*s);
     const base = dev<0.5? '74,120,58' : '110,98,54';   // vert → desséché quand le monde agonise

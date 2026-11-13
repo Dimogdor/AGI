@@ -174,7 +174,7 @@ function updateUnits(side, foe, dt){
     // dégâts — récompense le contrôle des collines. elev : 0 en plaine → 1 au sommet.
     const elev = u.fly? 0 : clamp((GROUND - gY(u.x))/26, 0, 1);
     const meleeGround = u.range<=24 && !u.fly;
-    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev);
+    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev) * (game.camp && game.camp.rangeMul? game.camp.rangeMul(u) : 1);
     let target=null, best=1e9;
     if (!muzzled) for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
@@ -672,7 +672,7 @@ function update(dt){
       game.shake=20;
       const fx2=(game.win?e:p).x; explode(fx2, gY(fx2)-40, 2.2, '#fff0c0'); burst(fx2, gY(fx2)-60, '#fff', 30, 1.6);
       sfx(game.win?'evolve':'boom');
-      setTimeout(showEnd, 1100);
+      setTimeout(game.camp? campEndCine : showEnd, 1100);
     }
   }
 }

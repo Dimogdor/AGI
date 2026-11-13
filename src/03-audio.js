@@ -102,10 +102,36 @@ const STR_BRK = [40,47,43,47, 40,47,43,47];                    // ostinato Mi mi
 const CH_BRK2 = [[52,56,59],[48,55,60],[57,60,64],[47,54,59]]; // Em C Am B
 // tension musicale : monte plus LENTEMENT et plafonne à 0.8 — la bande-son ne vire plus
 // à la mitraille anxiogène en fin de partie (retour joueur : « fait mal à la tête »).
+// THÈMES DE CAMPAGNE : id → { bpm, step(st, t, stepDur, tension) } ; un lieu (BIOMES) ou un plan de
+// cinématique en choisit un. Les missions ajoutent les leurs dans ce registre.
+const MUSIC_THEMES = {};
+// « night » (mission I) : la ville sans courant. Tic-tac de compteur, sous-basse, piano électrique
+// étouffé ; les cordes n'entrent que lorsque la bataille chauffe. Quand le quartier se rallume,
+// l'harmonie passe de ré mineur à fa majeur.
+MUSIC_THEMES.night = { bpm:76, step(st, t, d, s){
+  const bar = Math.floor(st/8), s8 = st%8, lit = game && game.camp && game.camp.litK>0.6;
+  const ch = (lit? [[53,57,60],[48,52,55],[50,53,57],[46,50,53]] : [[50,53,57],[46,50,53],[43,46,50],[45,49,52]])[bar%4];
+  noise(t, .012, s8%2? .006 : .012, 5200);                                         // tic-tac du compteur
+  if (s8===0){ tone(m2f(ch[0]-24), t, d*7.6, 'sine', .085, 0, d*0.4); tone(54, t, .3, 'sine', .07, -16); }
+  if (s8===3 || s8===6) tone(m2f(ch[(bar+s8)%3]+12), t, d*3.2, 'triangle', .030, 0, 0, 1500);   // piano électrique
+  if (s8===4 && bar%2) tone(m2f(ch[2]+24), t, d*5, 'sine', .010, 0, d);
+  if (s>0.25 && s8===0) for (const n of ch){ tone(m2f(n), t, d*8.4, 'sawtooth', .011+.008*s, 0, d*2, 800); tone(m2f(n)+1.1, t, d*8.4, 'sawtooth', .008, 0, d*2.6, 700); }
+  if (s>0.45 && (s8===2 || s8===6)) noise(t, .09, .018, 1800);                     // balais
+  if (lit && s8%2===0){ const n = [72,76,77,81, 79,77,76,72][(st>>1)%8]; tone(m2f(n-12), t, d*2.4, 'triangle', .028, 0, d*0.3, 1800); }   // la mélodie revient avec la lumière
+} };
+// « carnet » (planches entre les missions) : une voix seule, presque un accordéon, sur un bourdon
+MUSIC_THEMES.carnet = { bpm:64, step(st, t, d){
+  const bar = Math.floor(st/8), s8 = st%8, ch = [[45,52,57],[41,48,53],[48,55,60],[43,50,55]][bar%4];
+  if (s8===0){ tone(m2f(ch[0]-12), t, d*8.4, 'sine', .06, 0, d); for (const n of ch) tone(m2f(n), t, d*8.6, 'triangle', .012, 0, d*3, 900); }
+  const n = [69,0,72,0, 76,0,74,72, 69,0,0,67, 69,0,0,0,  72,0,76,0, 79,0,77,76, 74,0,72,0, 71,0,0,0][st%32];
+  if (n){ tone(m2f(n), t, d*2.6, 'square', .010, 0, d*0.5, 1200); tone(m2f(n)+0.8, t, d*2.6, 'sawtooth', .008, 0, d*0.5, 1000); }
+} };
 function stress(){ return (game && !game.over)? clamp(game.t/600 + game.dev*0.35, 0, 0.8) : 0; }
 function musicMode(){
   if (typeof intro!=='undefined' && intro>=0) return 'intro';
   if (!game) return 'menu';
+  if (CINE.on && CINE.mus && MUSIC_THEMES[CINE.mus]) return CINE.mus;                      // cinématique : thème imposé par le plan
+  if (game.biome && MUSIC_THEMES[game.biome.music] && !game.p.trans) return game.biome.music; // lieu de campagne : sa propre musique
   if (game.p.trans) return game.p.facKey==='HUM'? 'anthem':'break';
   return 'war';
 }
@@ -120,9 +146,11 @@ function musicSched(){
   if (!SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
   while (MUSIC.nextT < AC.currentTime + 0.35) {
     const mode = musicMode(), s = stress();
-    const bpm = (mode==='intro'? 70 : mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
+    const th = MUSIC_THEMES[mode];
+    const bpm = (th? th.bpm : mode==='intro'? 70 : mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
     const stepDur = 60/bpm/2;
-    if (mode==='intro') stepIntro(MUSIC.step, MUSIC.nextT, stepDur);
+    if (th) th.step(MUSIC.step, MUSIC.nextT, stepDur, s);
+    else if (mode==='intro') stepIntro(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='menu') stepMenu(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='anthem') stepAnthem(MUSIC.step, MUSIC.nextT, stepDur);
     else if (mode==='break') stepBreak(MUSIC.step, MUSIC.nextT, stepDur);
@@ -268,15 +296,17 @@ function ambTick(){
   if (!AC) return;
   const live = game && !game.over && !paused && intro<0 && SETTINGS.sfx && AC.state==='running';
   const t = AC.currentTime, dev = live? (game.dev||0) : 0;
-  const rainy = live && (game.boon==='rain' || game.cata==='acid' || game.cata==='flood');
-  AMBS.wind.g.gain.setTargetAtTime(live? 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, t, 0.8);
+  const bam = live && game.biome && game.biome.amb || null;              // ambiance propre au lieu de campagne
+  const rainy = live && (game.boon==='rain' || game.cata==='acid' || game.cata==='flood' || (bam && bam.rain>0));
+  AMBS.wind.g.gain.setTargetAtTime(live? (bam && bam.wind || 0) + 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, t, 0.8);
   AMBS.wind.f.frequency.setTargetAtTime(330 + 260*Math.sin(t*0.13) + 300*dev, t, 1.5);   // rafales
-  AMBS.rain.g.gain.setTargetAtTime(rainy? 0.035 : 0, t, 0.6);
+  AMBS.rain.g.gain.setTargetAtTime(rainy? (bam && bam.rain) || 0.035 : 0, t, 0.6);
   if (!live) return;
+  if (bam && bam.tick) bam.tick(t, 0.25);
   const dt = 0.25;
   // oiseaux : gazouillis rares tant que le monde est sain (et pas en plein cataclysme)
   if ((AMBS.birdT -= dt) <= 0){ AMBS.birdT = 3 + Math.random()*7;
-    if (dev < 0.35 && !game.cata && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
+    if (dev < 0.35 && !game.cata && !(bam && !bam.birds) && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
       for (let i=0;i<n;i++) tone(f0*(1+0.06*i), t+i*0.09, 0.07, 'sine', 0.006, 500+Math.random()*400); } }
   // feu : crépitements (canicule, frappe nucléaire, hiver nucléaire, monde agonisant)
   const fiery = game.cata==='heat' || game.cata==='nuke' || game.winter || dev > 0.75;
