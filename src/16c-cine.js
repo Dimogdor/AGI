@@ -12,6 +12,8 @@
      snd, mus          bruitage / thème musical à l'entrée du plan
      live              la simulation continue pendant ce plan
      title:{…}         grand titre au pochoir (carton)
+     choice:[{label, sub, ink, pick(g,c), then(g,c)}]  CHOIX offert au joueur : le plan attend un appui sur l'un des
+                       boutons ; then() renvoie les plans qui suivent ce choix ; PASSER s'arrête sur le choix
    Un appui = plan suivant ; bouton PASSER = fin de la scène. */
 const CINE = { on:false, script:null, i:0, t:0, done:null, bar:0, cam0:0, camBack:null, follow:true, mus:null, fade:0, restore:true };
 const CINE_WHO = {                                   // nom affiché et encre de chaque voix
@@ -50,6 +52,9 @@ function cineNext(){
 function cineEnd(silent){
   if (!CINE.on) return;
   const sc = CINE.script || [];
+  const ch = silent? -1 : sc.findIndex((s,j)=> j>=CINE.i && s.choice && !s.picked);       // on ne passe pas un choix : la scène s'y arrête
+  if (ch>=0){ if (ch>CINE.i){ for (let j=CINE.i+1; j<ch; j++) if (sc[j].fx) try { sc[j].fx(game, game && game.camp); } catch(e){}
+      CINE.i = ch-1; cineNext(); } return; }
   for (let j=CINE.i+1; j<sc.length; j++) if (sc[j].fx) try { sc[j].fx(game, game && game.camp); } catch(e){}
   CINE.on = false; CINE.script = null; CINE.mus = null; camFollow = CINE.follow;
   if (CINE.camBack!=null){ camX = CINE.camBack; camClamp(); }
@@ -69,17 +74,27 @@ function cineTick(rdt){
       if (s.who==='k55' || s.who==='nous') tone(s.who==='nous'? 220 : 1180+(n%5)*40, t0, 0.03, 'sine', 0.012);
       else noise(t0, 0.012, 0.014, 2600); }
     CINE._n = n; }
-  if (CINE.t >= cineDur(s) + (s.txt? 1.1 : 0)) cineNext();
+  if (!s.choice && CINE.t >= cineDur(s) + (s.txt? 1.1 : 0)) cineNext();
 }
 function cineInput(sx, sy){
   const r = cineSkipRect();
   if (sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h){ cineEnd(); return; }
   const s = cineShot(); if (!s) return;
+  if (s.choice){ if (CINE.t>0.6) cineChoiceRects(s).forEach((q,i)=>{ if (sx>=q.x && sx<=q.x+q.w && sy>=q.y && sy<=q.y+q.h) cinePick(i); }); return; }
   if (s.txt && CINE.t*40 < cT(s.txt).length){ CINE.t = cT(s.txt).length/40 + 0.01; return; }   // 1er appui : tout le texte
   if (CINE.t > 0.25) cineNext();
 }
+// CHOIX : boutons côte à côte (empilés sur écran étroit) ; cinePick applique le choix et enchaîne sur ses plans
+function cineChoiceRects(s){ const n = s.choice.length, col = W<560, bw = col? Math.min(W-28, 320) : Math.min(300, (W-28-(n-1)*16)/n), bh = col? 58 : 78;
+  const tot = col? bw : n*bw+(n-1)*16, x0 = (W-tot)/2, y0 = H*(col? 0.20 : 0.27);
+  return s.choice.map((o,i)=> col? {x:x0, y:y0+i*(bh+10), w:bw, h:bh} : {x:x0+i*(bw+16), y:y0, w:bw, h:bh}); }
+function cinePick(i){ const s = cineShot(); if (!s || !s.choice || s.picked) return; const o = s.choice[i]; s.picked = 1; sfx('evolve');
+  if (o.pick) o.pick(game, game.camp);
+  if (o.then){ const more = o.then(game, game.camp) || []; CINE.script = CINE.script.slice(0, CINE.i+1).concat(more); }
+  cineNext(); }
 function cineKey(code){
   if (code==='Escape'){ cineEnd(); return; }
+  const s = cineShot(); if (s && s.choice){ const i = code==='Digit1' || code==='Numpad1'? 0 : code==='Digit2' || code==='Numpad2'? 1 : -1; if (i>=0 && i<s.choice.length) cinePick(i); return; }
   if (code==='Space' || code==='Enter' || code==='ArrowRight') cineInput(-1, -1);
 }
 
@@ -217,6 +232,15 @@ function drawCine(){
     if (shown.length>=full.length && Math.sin(performance.now()/200)>0){ ctx.fillStyle = who.ink; ctx.fillText('▸', x0+bw-16, y0+hh-10); }
     ctx.restore();
   }
+  if (s.choice){ const rs = cineChoiceRects(s), a = clamp((t-0.3)/0.4, 0, 1);                       // CHOIX : deux bons à tamponner
+    ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    s.choice.forEach((o,i)=>{ const q = rs[i], ink = o.ink || '#c42a1c';
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(q.x+3, q.y+4, q.w, q.h);
+      ctx.fillStyle = pal.paper; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.fillStyle = paperGrain(); ctx.fillRect(q.x, q.y, q.w, q.h);
+      ctx.fillStyle = ink; ctx.fillRect(q.x, q.y, q.w, 4); ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.strokeRect(q.x+4.5, q.y+8.5, q.w-9, q.h-13);
+      ctx.font = Math.min(22, q.w*0.085)+'px '+UI_STEN; ctx.fillStyle = ink; ctx.fillText(cT(o.label).toUpperCase(), q.x+q.w/2, q.y+q.h*0.36);
+      if (o.sub){ ctx.font = '10.5px '+UI_TYPE; ctx.fillStyle = '#1f1b17'; newsWrap(cT(o.sub), q.w-26).slice(0,2).forEach((l,k)=> ctx.fillText(l, q.x+q.w/2, q.y+q.h*0.62+k*12)); } });
+    ctx.restore(); }
   // bouton PASSER
   const r = cineSkipRect(); ctx.globalAlpha = 0.85*ease(CINE.bar);
   ctx.fillStyle = 'rgba(13,11,10,0.55)'; ctx.fillRect(r.x, r.y, r.w, r.h);
