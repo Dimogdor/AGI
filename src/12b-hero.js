@@ -138,7 +138,7 @@ function drawChe(era, part, pose){
     TC.fillStyle=shade(hair,1.5); TC.fillRect(hx+4.6,hy+2.6,4.4,1.2);                                                  // moustache
     TC.fillStyle='#1a120e'; rrectT(hx+3.6,hy-2.2,2,2.6,0.8); TC.fill(); TC.fillRect(hx+2.4,hy-4.2,4.6,1.1);            // œil, sourcil froncé
     if (era===2){ dot(hx-2.2,hy+0.6,2.3,'#22262b'); TC.strokeStyle='#22262b'; TC.lineWidth=0.9; strokeP([hx-1.5,hy+2.4, hx+4.5,hy+6.2]); TC.stroke(); }   // oreillette
-    if (era>=3) bloomT(glow,4,()=>{ TC.fillStyle=rgbaC(glow,0.85); rrectT(hx+2.6,hy-3,5.6,3.6,1.2); TC.fill(); });     // monocle tactique
+    if (era>=3){ TC.fillStyle='#1a1c22'; rrectT(hx+2.6,hy-3.2,4.6,4,1.3); TC.fill(); TC.fillStyle=glow; rrectT(hx+3.3,hy-2.5,3.2,2.6,0.9); TC.fill(); TC.fillStyle='#1a1c22'; TC.fillRect(hx-6,hy-1.8,9,0.9); }     // monocle tactique
     TC.fillStyle=lgrad(hx-10,hy-11,hx+8,hy-2,[[0,'#34422e'],[1,'#141c12']]);                                           // béret
     TC.beginPath(); TC.ellipse(hx-0.9,hy-6.4,10.6,4.6,-0.2,0,6.283); TC.fill();
     TC.fillStyle='#141c12'; TC.fillRect(hx-7.4,hy-4.6,14.6,1.5); dot(hx-3.6,hy-10.9,0.9,'#141c12');
@@ -237,12 +237,12 @@ function drawAgi(era, part, pose){
     const crown = (x,y,h,c) => { for (const [dx,k] of [[-3.6,0.72],[0,1],[3.6,0.72]]){ TC.fillStyle=c; polyP([x+dx-1.3,y, x+dx+1.3,y, x+dx,y-h*k]); TC.fill(); } };   // couronne à trois pointes
     if (era===0){
       plateT([-10,-50, 10,-50, 10,-31, -10,-31], plate);                                                              // baie de serveur
-      TC.fillStyle='rgba(0,0,0,0.42)'; for (let i=0;i<4;i++) TC.fillRect(-8,-47.5+i*2.7,7,1.3);
+      TC.fillStyle='rgba(0,0,0,0.42)'; for (let i=0;i<2;i++) TC.fillRect(-8,-47.8+i*2.4,7,1.3);
       TC.fillStyle='#39d06a'; TC.fillRect(-0.2,-47.4,1.2,1.2); TC.fillStyle='#e8b830'; TC.fillRect(-0.2,-44.7,1.2,1.2);
       for (let i=0;i<7;i++){ TC.fillStyle=i%2? '#1a1a1a' : '#e8b830'; polyP([-10+i*2.9,-31, -7.1+i*2.9,-31, -8.4+i*2.9,-33.6, -11.3+i*2.9,-33.6]); TC.fill(); }
       TC.fillStyle='rgba(255,255,255,0.5)'; for (const [x,y] of [[-8.6,-48.6],[8.6,-48.6],[8.6,-35.4]]){ TC.beginPath(); TC.arc(x,y,0.7,0,6.283); TC.fill(); }
-      TC.fillStyle=shade(plate,0.6); polyP([2.5,-44, 8.6,-45, 8.6,-37, 3.4,-36.4]); TC.fill();                         // plaque soudée de travers
-      core(5.4,-40.6,2.3);
+      TC.fillStyle=shade(plate,0.6); polyP([-8.6,-42.6, -1,-43, -1.4,-34.6, -8.6,-34.4]); TC.fill();                         // plaque soudée de travers
+      core(-4.6,-38.4,2.3);
       hy = -59; TC.fillStyle=frame; TC.fillRect(-2,-53,5,3.4);
       plateT([-7.5,hy-6.6, 8.5,hy-6.6, 8.5,hy+5.6, -7.5,hy+5.6], shade(plate,1.06));                                  // tête-moniteur
       TC.fillStyle='#0b1016'; rrectT(-1.6,hy-4.4,8.6,7.6,1.4); TC.fill();
@@ -253,7 +253,7 @@ function drawAgi(era, part, pose){
     } else if (era===1){
       plateT([-8,-50, 8,-50, 10,-46.5, 9.4,-36, 6,-31, -6,-31, -9.4,-36, -9.4,-46.5], plate);                         // coque lisse
       TC.strokeStyle='rgba(0,0,0,0.26)'; TC.lineWidth=0.9; strokeP([-9,-38.4, 9.4,-38.4]); TC.stroke(); strokeP([0.5,-50, 0.5,-31]); TC.stroke();
-      core(4,-43.4,2.4);
+      core(-4,-43.6,2.5);
       TC.fillStyle=frame; TC.fillRect(-2,-53,5,3.4);
       TC.fillStyle=lgrad(-8,hy-8,9,hy+6,[[0,shade(plate,1.3)],[0.5,plate],[1,shade(plate,0.56)]]);
       TC.beginPath(); TC.ellipse(1,hy-0.6,8.2,7.2,0,0,6.283); TC.fill();
@@ -264,7 +264,7 @@ function drawAgi(era, part, pose){
       plateT([-10,-50, 11.5,-49, 9.6,-37, 3,-31, -4,-31, -9,-38], plate);                                             // blindage anguleux
       TC.strokeStyle='rgba(0,0,0,0.34)'; TC.lineWidth=0.9; strokeP([-9,-48, 1,-38, 11,-47]); TC.stroke();
       TC.fillStyle=trim; polyP([-8,-36.4, 8.6,-36.4, 4,-32, -4.6,-32]); TC.fill();
-      core(1,-43.6,2.5);
+      core(-3.4,-42.4,2.5);
       plateT([-2,-53, 12.5,-52, 14.6,-43.6, 0.6,-41.6], shade(plate,1.14));                                           // épaulière massive
       TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=1; strokeP([1.6,-50.6, 11.6,-49.8]); TC.stroke();
       TC.fillStyle=frame; TC.fillRect(-2,-53.4,5,3.6);
@@ -278,7 +278,7 @@ function drawAgi(era, part, pose){
       plateT([-7.6,-51, 8.6,-51, 6.6,-37, 2,-31, -3,-31, -6.6,-37], plate);                                           // buste effilé
       TC.fillStyle=trim; polyP([-5.6,-37, 6,-37, 2,-31.6, -3,-31.6]); TC.fill();
       bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(0,-39.4,1.5,7); });                                           // colonne lumineuse
-      core(0.8,-44.6,2.5);
+      core(-3,-45,2.4);
       plateT([1.6,-56, 13.6,-55.2, 15.6,-48.6, 3.6,-47], shade(plate,1.08));                                          // épaulière flottante
       TC.fillStyle=trim; TC.fillRect(-1.6,-56,4.4,5.4);
       plateT([-6,hy-6.4, 4.4,hy-6.4, 7.6,hy-1.6, 4.4,hy+4.6, -6,hy+4.6], plate);
@@ -411,7 +411,7 @@ function heroPose(u, moving, ph){
   if (P.hit){
     const imp = Math.max(0, 1-ts/0.16);
     if (hum && vLast===0){                                             // TIR : recul sec, le buste part en arrière
-      fa = ts<0.05? -0.34*ts/0.05 : -0.34*Math.pow(1-(ts-0.05)/0.4, 2); fa -= h.a*Math.max(0,1-ts/0.3)*0.8;
+      fa = ts<0.05? -0.17*ts/0.05 : -0.17*Math.pow(1-(ts-0.05)/0.4, 2); fa -= h.a*Math.max(0,1-ts/0.3)*0.8;
       P.lunge = -5*imp; P.tilt = -0.07*imp;
     } else if (hum){                                                   // COUP DE BAÏONNETTE : fente avant
       const k = ts<0.08? ts/0.08 : Math.pow(1-(ts-0.08)/0.37, 2);
@@ -500,7 +500,7 @@ function drawHero(u, x, gy){
   ctx.save(); ctx.translate(x + dir*lunge, gy + dy); ctx.rotate(dir*tilt); ctx.scale(dir, sy);
   if (clipK<1){ const hh = (R.top[era]+14)*S; ctx.beginPath(); ctx.rect(-HSP.cx, -hh*clipK-2, HSP.W, hh*clipK+12); ctx.clip(); }
   paint(true);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha = A0*Math.min(0.5, u.flash*0.9*4); paint(false); ctx.globalCompositeOperation='source-over'; ctx.globalAlpha = A0; }
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha = A0*Math.min(0.36, u.flash*2.4); paint(false); ctx.globalCompositeOperation='source-over'; ctx.globalAlpha = A0; }
   ctx.restore();
   if (clipK<1){ const hh = (R.top[era]+14)*S, yy = gy+dy-hh*clipK;     // trait de matérialisation
     ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,140,226,0.9)'; ctx.fillRect(x-34, yy-1, 68, 2);
