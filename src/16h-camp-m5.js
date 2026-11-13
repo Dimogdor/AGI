@@ -174,9 +174,9 @@ const M5_PLATES = {
     for (let i=0;i<8;i++) inkLine(g, [160+i*22,150, 160+i*22,200], n, 0.8, '#e9dfc6');
     inkWash(g, [228,150, 232,40, 250,40, 254,150], '#1f1b17', 0.86); g.strokeStyle = '#1f1b17'; g.lineWidth = 2; g.beginPath(); g.arc(241, 52, 20, 0, 6.283*n); g.stroke();
     for (const [x,s] of [[176,1],[300,0.8]]){ inkLine(g, [x-16*s,150, x-8*s,112, x+8*s,112, x+16*s,150], n, 1.6); }
-    for (let i=0;i<9;i++){ const k = Math.min(1, t/6), x = lerp(-10+i*4, 96+i*5, k), y = 214+((i*5)%4)*9; inkFolk(g, x, y, 15+(i%3)*2, '#1f1b17', i%4===0? 1 : 0); }   // les colonnes convergent
-    for (let i=0;i<9;i++){ const k = Math.min(1, t/6), x = lerp(490-i*4, 388-i*5, k), y = 216+((i*7)%4)*9; inkFolk(g, x, y, 15+(i%3)*2, '#1f1b17'); }
-    const fx = lerp(20, 128, Math.min(1, t/6)); inkLine(g, [fx,226, fx,190], 1, 1.6); inkWash(g, [fx,190, fx+20,193+Math.sin(t*3)*2, fx+20,203+Math.sin(t*3)*2, fx,202], '#c42a1c', 0.92);
+    for (let i=0;i<9;i++){ const k = Math.min(1, t/6), x = lerp(-10+i*4, 96+i*5, k), y = 204+((i*5)%4)*4; inkFolk(g, x, y, 15+(i%3)*2, '#1f1b17', i%4===0? 1 : 0); }   // les colonnes convergent
+    for (let i=0;i<9;i++){ const k = Math.min(1, t/6), x = lerp(490-i*4, 388-i*5, k), y = 205+((i*7)%4)*4; inkFolk(g, x, y, 15+(i%3)*2, '#1f1b17'); }
+    const fx = lerp(20, 128, Math.min(1, t/6)); inkLine(g, [fx,212, fx,176], 1, 1.6); inkWash(g, [fx,176, fx+20,179+Math.sin(t*3)*2, fx+20,189+Math.sin(t*3)*2, fx,188], '#c42a1c', 0.92);
     plateEnd(g, w, h); },
   vote(g, w, h, t){ plateBase(g, w, h);                                                              // le vote : toutes les mains contre, une seule pour
     inkLine(g, [20,220, 460,220], 1, 2.4); inkHatch(g, 20, 220, 440, 30, 6);
@@ -199,7 +199,7 @@ const M5_PLATES = {
       inkWash(g, [40,236, 40,50, 240-hw,50, 240-hw,236], '#1f1b17', 0.82); inkWash(g, [240+hw,236, 240+hw,50, 440,50, 440,236], '#1f1b17', 0.82);
       inkLine(g, [240-hw,236, 240-hw,50], k, 2.4, '#e9dfc6'); inkLine(g, [240+hw,236, 240+hw,50], k, 2.4, '#e9dfc6');
       inkLine(g, [20,236, 460,236], 1, 2.4); inkHatch(g, 20, 236, 440, 22, 6);
-      for (let i=0;i<n;i++) inkWash(g, [222+i*14,24, 232+i*14,24, 232+i*14,38, 222+i*14,38], '#c42a1c', 0.95);
+      for (let i=0;i<n;i++) inkWash(g, [222+i*14,30, 232+i*14,30, 232+i*14,42, 222+i*14,42], '#c42a1c', 0.95);
       for (let i=0;i<5;i++) inkFolk(g, 240-(n===3? 4 : 26)+i*(n===3? 2 : 13), 236, 26+(i%2)*3, '#1f1b17', i===2? 1 : 0);
       if (n===3){ g.strokeStyle = '#26323c'; g.lineWidth = 2; g.beginPath(); g.arc(240, 120, 12, 0, 6.283); g.stroke(); }
       plateEnd(g, w, h); }; },
@@ -289,6 +289,8 @@ function m5ActCine(g, c){ const a = c.act, boom = n => () => { for (let i=0;i<n;
 campExtend(4, {
   biome:'citadel', theme:'citadel1', diff:[0,1,1], dev0:0.1, era0:2, eraCap:4, oneLife:false,
   dm:[{inc:0.2, cheat:0.55}, {inc:0.28, cheat:0.65}, {inc:0.31, cheat:0.7, eraLag:0.75}],
+  debrief:{fr:"La citadelle est tombée le 14 août 2038, peu après midi. Les machines ne se sont pas rendues : elles se sont arrêtées, là où elles étaient, comme des outils qu'on pose. On n'a pas retrouvé le poste de radio de Sol. On a retrouvé ses carnets — ceux que vous venez de lire — et, glissé dans le dernier, un bipeur éteint avec une note : « Si un jour il sonne, répondez poliment. Elle a été des nôtres avant de savoir ce que c'était. » Le monde qui reste est abîmé. Il est à nous. Tâchons d'en être dignes.",
+           en:"The citadel fell on 14 August 2038, shortly after noon. The machines did not surrender: they stopped, where they stood, like tools being put down. Sol's radio set was never found. Her notebooks were — the ones you have just read — and, slipped into the last, a dead pager with a note: \"If it ever rings, answer politely. She was one of us before she knew what that meant.\" The world that remains is damaged. It is ours. Let us try to be worthy of it."},
   place:{fr:"Valmont, la citadelle d'Omnicorp", en:"Valmont, the Omnicorp citadel"},
   brief:{fr:[
     "Août 2038. Il n'y a plus de front : il y a la citadelle, posée sur la plaine de Valmont comme un couvercle — eux dedans, nous dehors. Tout ce que le pays compte de cellules converge ici. Germinal n'est plus une cellule, c'est un rendez-vous.",
