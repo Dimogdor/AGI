@@ -9,7 +9,7 @@
    Les cellules alliées arrivent en renfort (et sur appel). Tout l'arsenal de l'escarmouche est
    ouvert (ères III à V, héros, transcendance). À la fin, « nous » renouvelle son offre : le
    joueur CHOISIT (abattre la tour / la couper du monde et veiller) — deux épilogues.            */
-const M5 = { need:[4,5,5], cells:[4,9,10], wMul:[0.85,0.85,0.88], wave:[80,68,62], guard:[4,4,4], spCd:[110,85,75], eMul:[0.4,0.5,0.56], cap:[8,10,11], reinf:[58,55,52], gate:[[1800,1800,1900],[3600,3200,2400],[4000,3600,2800]], hero:[0.2,0.3,0.34], rw:[46,40,37] };
+const M5 = { need:[4,5,4], cells:[4,9,10], wMul:[0.85,0.85,0.88], wave:[80,68,62], guard:[4,4,4], spCd:[110,85,75], eMul:[0.4,0.5,0.56], cap:[8,10,11], reinf:[58,55,52], gate:[[1800,1800,1900],[3600,3200,2400],[4000,3600,2800]], hero:[0.2,0.3,0.34], rw:[46,40,37] };
 const m5Act = () => (game && game.camp && game.camp.act) || 1;
 const m5Owned = g => g.zones.reduce((n,z)=> n+(z.owner==='p'? 1 : 0), 0);
 
@@ -249,9 +249,10 @@ const M5_PLATES = {
 /* ---------- changement d'acte : la carte se transforme ---------- */
 function m5Cell(g, c, n, sap){ if (!(c.cellsLeft > 0)) return 0; const p = g.p, pat = [[0,2,1,0],[1,2,0,2,3],[1,0,2,3,4]][c.act-1]; let k = 0;
   for (let i=0;i<(n||pat.length);i++) if (unitTotal(p) < p.cap+3){ spawnUnit(p, pat[i%pat.length], false); k++; }
-  if (k){ if (--c.cellsLeft<=0) c.dry = c.t; if (c.act===1) c.sap = (c.sap|0)+1; g.p.f += 160; g.p.m += 120; addFloater(g.p.x+80, gY(g.p.x)-90, '+160', '#e8d8a0', 14);   // chaque cellule apporte ses vivres
+  // la cellule arrive même si nos rangs sont pleins : ses sapeurs posent leurs charges (sinon la porte devenait invulnérable)
+  { if (--c.cellsLeft<=0) c.dry = c.t; if (c.act===1) c.sap = (c.sap|0)+1; g.p.f += 160; g.p.m += 120; addFloater(g.p.x+80, gY(g.p.x)-90, '+160', '#e8d8a0', 14);   // chaque cellule apporte ses vivres
     campRadio('sol', cT(CAMP_UI.reinf).replace('{name}', CAMP_CELLS[c.cell++ % CAMP_CELLS.length])); sfx('evolve'); }
-  return k; }
+  return 1; }
 // la garnison de la porte, au début de chaque acte, et les sorties : des colonnes qui foncent sur notre base
 function m5Guard(g, c, top){ const e = g.e, k0 = e.units.length, have = top? e.units.filter(u=>u.ord==='hold').length : 0; for (let i=have;i<M5.guard[c.lvl];i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x-60-i*20); const k = M5.wMul[c.lvl];
   for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; u.ord = 'hold'; u.holdX = u.x; } }

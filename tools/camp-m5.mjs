@@ -28,7 +28,8 @@ const play = (bot) => {
     const n = p.units.length; let tx = null;
     if (c.act===2){ const z = g.zones.find(z=>z.owner!=='p'); if (z && n>=8) tx = z.x+20; }
     if (c.rw && !c.rw.done) tx = c.rw.x - 60;
-    if (push && n<=5) push = false; else if (!push && n>=14) push = true;            // on se regroupe, puis on pousse en masse
+    const low = e.hp < e.maxhp*0.3;                                                  // porte presque tombée : on l'achève avec ce qu'on a
+    if (push && n<=(low? 3 : 5)) push = false; else if (!push && n>=(low? 8 : 14)) push = true;            // on se regroupe, puis on pousse en masse
     if (tx==null && !push) tx = e.units.some(u=>u.x<p.x+700)? p.x+260 : p.x+520;
     if (tx!=null) orderPoint(p, tx); else { for (const u of p.units) u.ord = null; setStance(p, 'charge'); }
   }

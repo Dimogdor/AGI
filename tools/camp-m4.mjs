@@ -17,7 +17,7 @@ const play = (bot) => {
     for (const s of p.slots) if (s.b && (s.b.type==='turret' || s.b.type==='wall') && s.b.gar.length<2) dispatchGarrison(p, s, 'ranged');
     if (!p.slots[0].b) tryBuild(p, p.slots[0], 'turret');
     const pat = [1,2,0,2,1,0,2,3]; if (tryBuy(p, pat[buyI%pat.length])) buyI++;
-    const near = e.units.filter(u=>u.x < 1500).length, house = c.houses.find(h=>!h.st), gr = c.groups[0];
+    const near = e.units.filter(u=>u.x < 1500).length, house = c.houses.find(h=>!h.st && h.x < 1800), gr = c.groups[0];   // la 4e maison, au bout de la rue, est un pari que le joueur scripté ne prend pas
     let tx = 620;
     if (gr) tx = gr.x + 50; else if (house && near < 2 && c.t < 400 && p.units.length >= 4) tx = house.x;
     orderPoint(p, tx);

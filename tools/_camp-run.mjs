@@ -20,9 +20,9 @@ export async function campRun({ mission, bot, info, maxMin = 14, levels = (proce
       try { localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1');
         localStorage.setItem('agi_settings', JSON.stringify({ quality:'high', lang:'fr', music:false, sfx:false })); } catch(e){} });
     await page.goto(GAME); await page.waitForTimeout(300);
-    const r = await page.evaluate(([mission, lvl, active, botSrc, infoSrc, maxMin, tstep]) => {
+    const r = await page.evaluate(([mission, lvl, active, botSrc, infoSrc, maxMin, tstep, DOC]) => {
       let s = 20280317 + lvl*101 + (active? 7 : 0); Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };
-      CAMP_SAVE.done = 5; CAMP_SAVE.lvl = lvl; campLaunch(mission);
+      CAMP_SAVE.done = 5; CAMP_SAVE.lvl = lvl; if (DOC) CAMP_SAVE.doc[mission] = 1; else delete CAMP_SAVE.doc[mission]; campLaunch(mission);   // DOC=1 : seconde doctrine
       const out = { intro:0, cines:0, shots:0, err:null };
       const play = skip => { if (skip){ cineEnd(); return; }                // déroule chaque plan (rendu compris) ou passe la scène
         let n = 0; while (CINE.on && n++ < 40){ const sh = cineShot(); CINE.t = cineDur(sh)*0.6; render(0.016); out.shots++; cineNext(); } };
@@ -37,7 +37,7 @@ export async function campRun({ mission, bot, info, maxMin = 14, levels = (proce
         if (st%(tstep*20)===0){ render(0.016); trace.push(Math.round(game.t)+'s '+inf(game, game.camp)); }
       }
       return { ...out, over:game.over, win:game.win, t:Math.round(game.t), info:inf(game, game.camp), trace };
-    }, [mission, lvl, active, fnSrc(bot), fnSrc(info), maxMin, +(process.env.TSTEP||60)]);
+    }, [mission, lvl, active, fnSrc(bot), fnSrc(info), maxMin, +(process.env.TSTEP||60), process.env.DOC==='1']);
     await page.waitForTimeout(1400);                                           // campEndCine part après 1,1 s (minuterie réelle)
     const o = await page.evaluate(() => { const o = { on:CINE.on, shots:0 };
       let n = 0; while (CINE.on && n++ < 40){ const sh = cineShot(); CINE.t = cineDur(sh)*0.6; render(0.016); o.shots++; cineNext(); }

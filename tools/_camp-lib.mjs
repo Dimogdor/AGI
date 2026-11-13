@@ -17,16 +17,16 @@ export async function open(lvl, mis){
     try { localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1');
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'high', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(400);
-  await page.evaluate(([lvl, mis]) => {
+  await page.evaluate(([lvl, mis, doc]) => {
     let s = 20251031 + lvl*977; Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };   // reproductible
-    CAMP_SAVE.done = 5; CAMP_SAVE.lvl = lvl; campLaunch(mis);
+    CAMP_SAVE.done = 5; CAMP_SAVE.lvl = lvl; if (doc) CAMP_SAVE.doc[mis] = 1; else delete CAMP_SAVE.doc[mis]; campLaunch(mis);   // DOC=1 : seconde doctrine
     // joue la cinématique en cours plan par plan (rendu compris) ; choix = index du bouton à presser sur un plan « choice »
     window.cineRun = (choice) => { let n = 0, guard = 0; while (CINE.on && guard++ < 80){ const s = CINE.script[CINE.i]; n++;
         CINE.t = 0.3; cineTick(0.05); render(1/60); CINE.t = 1.5; render(1/60);
         if (s && s.choice){ if (choice==null) return -n; cineEnd(); if (CINE.script[CINE.i]!==s) return -999; cineInput(-1,-1); cinePick(choice); }
         else { CINE.t = 99; cineTick(0.05); } }
       return n; };
-  }, [lvl, mis]);
+  }, [lvl, mis, process.env.DOC==='1']);
   return { page, errs };
 }
 export async function close(){ if (browser) await browser.close(); }

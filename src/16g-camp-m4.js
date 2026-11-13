@@ -13,7 +13,7 @@ const m4Lit = z => z.owner==='p';
 function m4Warm(g, x){ if (Math.abs(x-g.p.x) < 300) return true;
   const r = M4.warmR*(g.camp.stoke>0? 1.4 : 1); for (const z of g.zones) if (m4Lit(z) && Math.abs(z.x-x) < r) return true; return false; }
 function m4Wave(n, big){ const e = game.e, c = game.camp, pat = big? [1,0,2,0,3,2,0,1,4,2] : [0,0,2,0,1,2,0,3,0,2];
-  for (let i=0;i<n;i++){ if (e.units.length>=70) break; const k = e.units.length;
+  for (let i=0;i<n;i++){ if (e.units.length>=[40,44,46][c.lvl]) break; const k = e.units.length;   // plafond : la rue ne tient pas plus de machines
     spawnUnit(e, pat[(i + (c.waveN|0)) % pat.length], false, e.x - 40 - i*24);
     for (let j=k;j<e.units.length;j++) e.units[j].ord = 'charge'; }
   c.waveN = (c.waveN|0) + n; }
@@ -299,8 +299,8 @@ campExtend(3, {
           {fr:"Encore des nôtres au relais. Les gosses dorment déjà contre l'émetteur : il est tiède.", en:"More of ours at the relay. The children are already asleep against the transmitter: it is warm."},
           {fr:"Toute la cité est rentrée, commandant. Toute. Je n'osais pas le noter d'avance.", en:"The whole village is in, commander. All of it. I did not dare write it down in advance."}][Math.min(3, c.saved-1)], 1); } }
     // vagues : colonnes de plus en plus fournies ; la dernière minute, elles se suivent de près
-    if (T >= c.nextWave){ const k = c.wave++; c.nextWave += T>=415? 24 : 44;
-      m4Wave(Math.round((3 + 1.15*k) * [0.8, 0.95, 1.07][c.lvl]), k>=4); }
+    if (T >= c.nextWave){ const k = c.wave++; c.nextWave += T>=415? 28 : 44;
+      m4Wave(Math.round((3 + 1.15*k) * [0.8, 0.92, 0.98][c.lvl]), k>=4); }
     // la déneigeuse : elle enterre les braseros sur son passage
     const pl = c.plough;
     if (pl && pl.hp>0){ for (const z of g.zones) if (m4Lit(z) && Math.abs(z.x-pl.x) < 54){ z.owner = 'e'; z.prog = -1; burst(z.x, gY(z.x)-16, '#eef1f5', 22, 1.5); sfx('boom'); g.shake = Math.max(g.shake, 6); } }
