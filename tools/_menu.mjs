@@ -1,0 +1,10 @@
+import { createRequire } from 'node:module'; const { chromium } = createRequire(import.meta.url)('playwright');
+const b = await chromium.launch(); const p = await b.newPage({ viewport:{width:+(process.argv[3]||1280),height:+(process.argv[4]||720)} });
+const errs=[]; p.on('pageerror', e=>errs.push(e.message));
+await p.addInitScript(()=>{ try{ localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1'); localStorage.setItem('agi_camp', JSON.stringify({done:2,lvl:1})); localStorage.setItem('agi_settings', JSON.stringify({quality:'high',lang:'fr',music:false,sfx:false})); }catch(e){} });
+await p.goto('file:///home/user/AGI/la-derniere-bataille.html'); await p.waitForTimeout(900);
+await p.evaluate(()=>{ if (typeof finishIntro==='function' && intro>=0) finishIntro(); document.querySelector('.tab[data-page="camp"]').click(); });
+await p.waitForTimeout(400); await p.screenshot({ path: process.argv[2]+'/menu1.png' });
+await p.evaluate(()=>{ document.querySelectorAll('#campBox .mis')[1].click(); }); await p.waitForTimeout(300);
+await p.screenshot({ path: process.argv[2]+'/menu2.png' });
+console.log('errors', errs); await b.close();

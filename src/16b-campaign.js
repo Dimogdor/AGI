@@ -8,10 +8,11 @@
    et rédige les carnets ; KASSANDRE, instance 55 de la logistique d'Omnicorp, parle par bipeur. */
 const cT = o => (o && (o[SETTINGS.lang] || o.en || o.fr)) || '';
 const CAMP_KEY = 'agi_camp';
-const CAMP_SAVE = { done:0, lvl:1, best:{} };
+const CAMP_SAVE = { done:0, lvl:1, best:{}, doc:{} };
 try { const j = JSON.parse(localStorage.getItem(CAMP_KEY) || 'null');
   if (j && typeof j==='object'){
     CAMP_SAVE.done = clamp(+j.done|0, 0, 5); CAMP_SAVE.lvl = clamp(+j.lvl|0, 0, 2);
+    if (j.doc && typeof j.doc==='object') for (let i=1;i<5;i++) if (+j.doc[i]===1) CAMP_SAVE.doc[i] = 1;
     if (j.best && typeof j.best==='object') for (let i=0;i<5;i++) if (Number.isFinite(+j.best[i]) && +j.best[i]>0) CAMP_SAVE.best[i] = +j.best[i];
   } } catch(e){}
 function campSave(){ try { localStorage.setItem(CAMP_KEY, JSON.stringify(CAMP_SAVE)); } catch(e){} }
@@ -37,6 +38,7 @@ const CAMP_UI = {
   next:     {fr:"MISSION SUIVANTE", en:"NEXT MISSION", es:"SIGUIENTE MISIÓN", de:"NÄCHSTE MISSION", it:"MISSIONE SUCCESSIVA", pt:"PRÓXIMA MISSÃO", ru:"СЛЕДУЮЩАЯ МИССИЯ", zh:"下一个任务", ar:"المهمة التالية"},
   retry:    {fr:"RÉESSAYER", en:"TRY AGAIN", es:"REINTENTAR", de:"NOCHMAL VERSUCHEN", it:"RIPROVA", pt:"TENTAR DE NOVO", ru:"ПОПРОБОВАТЬ СНОВА", zh:"再试一次", ar:"حاوِل مجددًا"},
   again:    {fr:"REJOUER LA MISSION", en:"REPLAY MISSION", es:"REPETIR LA MISIÓN", de:"MISSION ERNEUT SPIELEN", it:"RIGIOCA LA MISSIONE", pt:"REJOGAR A MISSÃO", ru:"ПРОЙТИ МИССИЮ СНОВА", zh:"重玩任务", ar:"إعادة المهمة"},
+  doc:      {fr:"DOCTRINE", en:"DOCTRINE"},
   notebook: {fr:"FERMER LE CARNET", en:"CLOSE THE NOTEBOOK", es:"CERRAR EL CUADERNO", de:"NOTIZBUCH SCHLIESSEN", it:"CHIUDI IL QUADERNO", pt:"FECHAR O CADERNO", ru:"ЗАКРЫТЬ ТЕТРАДЬ", zh:"合上笔记本", ar:"إغلاق الدفتر"},
   radioSol: {fr:"RADIO · SOL", en:"RADIO · SOL", es:"RADIO · SOL", de:"FUNK · SOL", it:"RADIO · SOL", pt:"RÁDIO · SOL", ru:"РАЦИЯ · SOL", zh:"电台 · SOL", ar:"اللاسلكي · SOL"},
   radioK:   {fr:"BIPEUR · 55", en:"PAGER · 55", es:"BUSCA · 55", de:"PIEPSER · 55", it:"CERCAPERSONE · 55", pt:"PAGER · 55", ru:"ПЕЙДЖЕР · 55", zh:"寻呼机 · 55", ar:"جهاز النداء · 55"},
@@ -329,6 +331,20 @@ const CAMPAIGN = [
   },
 ];
 
+// ---- DOCTRINES : avant chaque mission (sauf la première), le comité choisit entre deux lignes ----
+const DOCTRINES = {
+  caisse:  { name:{fr:"Caisse de grève", en:"Strike fund"}, desc:{fr:"La collecte a marché : +40 % de vivres, de métal et d'eau au départ.", en:"The collection went well: +40% food, metal and water at the start."},
+             apply(g){ const p = g.p; p.f = Math.round(p.f*1.4); p.m = Math.round(p.m*1.4); p.w = Math.round(p.w*1.4); } },
+  ordre:   { name:{fr:"Service d'ordre", en:"Stewards"}, desc:{fr:"Deux CRS retournés ouvrent la marche et la base encaisse 25 % de plus.", en:"Two turned riot officers lead the way and the base takes 25% more."},
+             apply(g){ const p = g.p; p.maxhp = Math.round(p.maxhp*1.25); p.hp = p.maxhp; campSquad(p, [1,1]); } },
+  veterans:{ name:{fr:"Vétérans de Valmont", en:"Valmont veterans"}, desc:{fr:"Ceux de la première nuit reprennent du service : quatre combattants dès le départ.", en:"Those of the first night are back: four fighters from the start."},
+             apply(g){ campSquad(g.p, [0,2,0,2]); } },
+  radio:   { name:{fr:"Radio libre", en:"Free radio"}, desc:{fr:"Sol a doublé l'antenne : l'action de mission se recharge 35 % plus vite.", en:"Sol doubled the aerial: the mission action recharges 35% faster."},
+             apply(g, c){ c.actMul = 0.65; } },
+};
+const CAMP_DOCS = [null, ['caisse','ordre'], ['veterans','radio'], ['ordre','caisse'], ['veterans','radio']];
+const campDoc = i => { const pair = CAMP_DOCS[i]; return pair? DOCTRINES[pair[CAMP_SAVE.doc[i]? 1 : 0]] : null; };
+
 // ---- cycle de vie d'une mission ----
 function startMission(i){
   const m = CAMPAIGN[i]; if (!m) return;
@@ -345,6 +361,7 @@ function startMission(i){
   c.lights = []; c.litK = 0;
   DECOR = genDecor(m.theme);
   if (m.setup) m.setup(g, c);
+  { const d = campDoc(i); if (d) d.apply(g, c); }                           // doctrine choisie pour cette mission
   prewarmSprites();
   const sc = m.intro? m.intro(g, c) : null;                               // cinématique d'ouverture, sur le terrain
   if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
@@ -360,7 +377,7 @@ function campEndCine(){
 function campAct(){
   const c = game && game.camp, a = c && c.m.action; if (!a || game.over || paused || CINE.on) return false;
   if ((c.actCd||0) > 0 || (a.can && !a.can(game, c))){ sfx('deny'); return true; }
-  c.actCd = a.cd; a.use(game, c); return true;
+  c.actCd = a.cd*(c.actMul||1); a.use(game, c); return true;
 }
 function campClick(sx, sy){ const c = game.camp, r = c && c.actRect; if (!r || !c.m.action) return false;
   if (sx<r.x || sx>r.x+r.w || sy<r.y || sy>r.y+r.h) return false; return campAct(); }
@@ -426,7 +443,7 @@ function drawCampHUD(){
   if (m.action){ const a = m.action, w = 150, x = W-w-8, y = 43 + c.objH + 6, hh = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
     c.actRect = {x, y, w, h:hh};
     paperChip(x, y, w, hh, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(x, y, w, 2.5);
-    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(x, y, w*clamp(cd/a.cd,0,1), hh); }
+    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(x, y, w*clamp(cd/(a.cd*(c.actMul||1)),0,1), hh); }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
     ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), x+w/2, y+hh/2+1.5); }
   // RADIO : feuillet tapé à la machine (Sol) ou listing de bipeur (Kassandre), à la place du fil d'actualités
@@ -452,6 +469,32 @@ function drawCampHUD(){
   ctx.restore();
 }
 
+// carte de la région dessinée à l'encre : le trajet de Germinal, de Valmont à la citadelle
+const CAMP_PINS = [[58,96],[150,112],[236,56],[330,40],[420,84]];
+function campMap(){
+  const cv = document.createElement('canvas'); cv.width = 960; cv.height = 280; cv.className = 'campMap';
+  cv.style.cssText = 'width:100%;max-width:520px;display:block;margin:6px auto 10px;border:1.5px solid #1f1b17;';
+  const g = cv.getContext('2d'); g.scale(2,2); g.drawImage(cinePaper(), 0, 0, 480, 140);
+  inkWash(g, [0,140, 0,118, 60,124, 120,132, 190,128, 200,140], '#0b6fa8', 0.20);                         // l'estuaire
+  inkLine(g, [0,118, 60,124, 120,132, 190,128, 204,140], 1, 1.2, '#0b6fa8');
+  inkLine(g, [196,132, 220,96, 232,70, 240,56, 250,30, 262,8], 1, 1.4, '#0b6fa8');                         // la rivière, jusqu'au barrage
+  for (const [x,y,s] of [[250,34,16],[274,28,22],[300,22,26],[352,18,24],[380,24,18],[214,40,14]]){        // montagnes
+    inkLine(g, [x-s,y+s*0.7, x,y-s*0.5, x+s,y+s*0.7], 1, 1.3); inkHatch(g, x, y-s*0.4, s, s*1.1, 4, '#1f1b17', 0.25); }
+  for (const [x,y] of [[34,84],[46,78],[70,82],[80,92],[132,98],[166,102],[400,70],[436,72],[446,92]]){ g.fillStyle = 'rgba(31,27,23,0.55)'; g.fillRect(x, y, 7, 6+((x*7)%5)); }   // bâti
+  inkLine(g, [20,104, 110,108, 200,112, 300,104, 400,100, 470,96], 1, 0.8, 'rgba(31,27,23,0.5)');          // voie ferrée
+  for (let x=30; x<470; x+=12){ g.strokeStyle = 'rgba(31,27,23,0.4)'; g.lineWidth = 0.7; g.beginPath(); g.moveTo(x, 102+((x/90)|0)*0.8); g.lineTo(x, 108+((x/90)|0)*0.8); g.stroke(); }
+  const pts = []; CAMP_PINS.forEach(p => pts.push(p[0], p[1]));
+  g.setLineDash([5,4]); inkLine(g, pts.slice(0, Math.min(5, CAMP_SAVE.done+1)*2), 1, 1.8, '#c42a1c'); g.setLineDash([]);
+  g.font = '700 8px "Courier New",monospace'; g.textAlign = 'center';
+  CAMP_PINS.forEach(([x,y],i)=>{ const done = i<CAMP_SAVE.done, open = i<=CAMP_SAVE.done;
+    g.strokeStyle = open? '#c42a1c' : 'rgba(31,27,23,0.45)'; g.lineWidth = 1.8; g.beginPath(); g.arc(x, y, 6, 0, 6.283); g.stroke();
+    if (done){ g.beginPath(); g.moveTo(x-4,y-4); g.lineTo(x+4,y+4); g.moveTo(x+4,y-4); g.lineTo(x-4,y+4); g.stroke(); }
+    else if (open){ g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill(); }
+    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(['I','II','III','IV','V'][i]+(open? ' · '+CAMPAIGN[i].year : ''), x, y+(i===2||i===3? -11 : 18)); });
+  g.strokeStyle = '#1f1b17'; g.lineWidth = 1; g.beginPath(); g.moveTo(456,22); g.lineTo(456,8); g.lineTo(452,14); g.moveTo(456,8); g.lineTo(460,14); g.stroke(); g.fillStyle = '#1f1b17'; g.fillText('N', 456, 32);
+  return cv;
+}
+
 // ---- menu : onglet CAMPAGNE (carnet de missions → dossier de mission) ----
 let campView = -1;                                   // -1 = liste ; sinon index de la mission dont le dossier est ouvert
 function campRenderMenu(){
@@ -463,6 +506,7 @@ function campRenderMenu(){
     campView = -1;
     box.appendChild(el('div', 'campHead', cT(CAMP_UI.head)));
     box.appendChild(el('div', 'fNote', cT(CAMP_UI.sub)));
+    box.appendChild(campMap());
     const row = el('div', 'fRow'); row.appendChild(el('span', 'fLbl', cT(CAMP_UI.level)));
     const picks = el('div', 'row');
     [CAMP_UI.lvl0, CAMP_UI.lvl1, CAMP_UI.lvl2].forEach((o,k)=>{ const b = el('button', 'pick'+(CAMP_SAVE.lvl===k? ' sel':''), cT(o));
@@ -490,6 +534,11 @@ function campRenderMenu(){
   box.appendChild(story);
   const g1 = el('div', 'campGoal'); g1.appendChild(el('b', null, cT(CAMP_UI.goal))); g1.appendChild(el('span', null, cT(m.goal))); box.appendChild(g1);
   const g2 = el('div', 'campGoal'); g2.appendChild(el('b', null, cT(CAMP_UI.rules))); g2.appendChild(el('span', null, cT(m.rule))); box.appendChild(g2);
+  const pair = CAMP_DOCS[campView];
+  if (pair){ const g3 = el('div', 'campGoal'); g3.appendChild(el('b', null, cT(CAMP_UI.doc)));
+    const picks = el('div', 'row'); pair.forEach((id,k)=>{ const b = el('button', 'pick'+(((CAMP_SAVE.doc[campView]? 1 : 0)===k)? ' sel' : ''), cT(DOCTRINES[id].name));
+      b.addEventListener('click', ()=>{ if (k) CAMP_SAVE.doc[campView] = 1; else delete CAMP_SAVE.doc[campView]; campSave(); campRenderMenu(); }); picks.appendChild(b); });
+    g3.appendChild(picks); g3.appendChild(el('span', null, cT(campDoc(campView).desc))); box.appendChild(g3); }
   const sr = el('div', 'stampRow');
   const go = el('button', 'go stamp small', cT(CAMP_UI.go)); go.addEventListener('click', ()=>campLaunch(campView)); sr.appendChild(go);
   box.appendChild(sr);
