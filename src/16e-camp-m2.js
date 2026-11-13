@@ -235,9 +235,11 @@ const M2_PLATES = {
   quay(g, w, h, t){ plateBase(g, w, h, 'rgba(220,150,90,0.10)');                     // le port à l'aube, la foule se forme
     g.fillStyle = 'rgba(196,42,28,0.2)'; g.beginPath(); g.arc(110, 124, 30, 0, 6.283); g.fill();
     inkLine(g, [0,170, 480,170], 1, 1.4);
-    for (let i=0;i<3;i++){ const x0 = 220+i*84, n = clamp(t/1.6-i*0.2, 0, 1);
-      inkLine(g, [x0,214, x0+10,96, x0+42,96, x0+52,214], n, 2.2); inkLine(g, [x0-40,96, x0+96,96], n, 3);
-      inkLine(g, [x0+26,96, x0+26,64], n, 1.8); inkLine(g, [x0-40,96, x0+26,64, x0+96,96], n, 0.9); }
+    for (let i=0;i<2;i++){ const x0 = 262+i*128, n = clamp(t/1.6-i*0.25, 0, 1);              // deux portiques
+      inkLine(g, [x0,214, x0+6,100], n, 2.4); inkLine(g, [x0+50,214, x0+44,100], n, 2.4); inkLine(g, [x0+3,160, x0+47,160], n, 1.4);
+      inkLine(g, [x0-26,100, x0+96,100], n, 3.2); inkLine(g, [x0+25,100, x0+25,62], n, 1.8);
+      inkLine(g, [x0-26,100, x0+25,62, x0+96,100], n, 0.9); inkWash(g, [x0+8,100, x0+40,100, x0+40,88, x0+8,88], '#1f1b17', 0.85);
+      inkLine(g, [x0+80,101, x0+80,136], n, 0.8); inkWash(g, [x0+72,136, x0+88,136, x0+88,142, x0+72,142], '#1f1b17', 0.85); }
     inkHatch(g, 0, 172, 480, 40, 6, '#1f1b17', 0.13);
     inkLine(g, [0,214, 480,214], 1, 2.4); inkHatch(g, 0, 214, 480, 56, 7, '#1f1b17', 0.22);
     const dx = Math.min(1, t/6)*30;
@@ -245,8 +247,8 @@ const M2_PLATES = {
     for (const [bx,col] of [[54,'#c42a1c'],[180,'#1f1b17']]){ const x = bx+dx;
       inkLine(g, [x,214, x,160], 1, 1.6); inkLine(g, [x+62,214, x+62,160], 1, 1.6);
       inkWash(g, [x,160, x+62,162, x+62,176, x,174], col, 0.92); }
-    g.fillStyle = '#efe6cf'; g.font = '700 9px "Courier New",monospace'; g.textAlign = 'center';
-    g.fillText(cT(M2_BAN[0]), 85+dx, 171); g.fillText(cT(M2_BAN[2]), 211+dx, 171);
+    g.fillStyle = '#efe6cf'; g.font = '700 8px "Courier New",monospace'; g.textAlign = 'center';
+    g.fillText(cT(M2_BAN[0]), 85+dx, 171, 56); g.fillText(cT(M2_BAN[2]), 211+dx, 171, 56);
     plateEnd(g, w, h); },
   broadcast(g, w, h, t){ plateBase(g, w, h);                                          // l'appel fait le tour du pays
     const map = [150,60, 230,40, 300,58, 360,50, 392,96, 380,150, 404,200, 340,236, 268,226, 210,244, 160,214, 128,170, 140,120, 118,90];
