@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-MURGYTCFb6fV2DUbeHixSoDEdwcn7KHYfrPZq2MLPTw=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zW4+1zz9MMT61NwJkONgAetvZQwJHNk2ciySCPCI/UE=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -644,7 +644,7 @@ function gY(x){
 const DEFKEYS = { buy1:'Digit1', buy2:'Digit2', buy3:'Digit3', buy4:'Digit4', buy5:'Digit5', buy6:'Digit6',
   evolve:'KeyE', special:'Space', charge:'KeyC', hold:'KeyV', retreat:'KeyB', formation:'KeyG',
   follow:'KeyF', left:'ArrowLeft', right:'ArrowRight', zoomin:'Equal', zoomout:'Minus',
-  capup:'KeyU', repairall:'KeyR', hero:'KeyH', softpause:'KeyP', pause:'Escape' };
+  capup:'KeyU', repairall:'KeyR', hero:'KeyH', herostance:'KeyJ', softpause:'KeyP', pause:'Escape' };
 // touches réservées (profileur F8, panneau dev F9) : jamais attribuables à une action
 const RESERVED_KEYS = { F8:1, F9:1 };
 const LANG_CODES = ['fr','en','es','de','it','pt','ru','zh','ar'];
@@ -740,6 +740,19 @@ const I18N = {
   zh: {"ev_collapse":"⚠ 世界正在崩溃——基地逐渐瓦解","speed_lbl":"游戏速度","spd_now":"速度","spd_pick":"选择速度","spd_pick_online":"建议速度（等待对手投票）","spd_proposed":"已提议","spd_waiting":"等待对手","spd_incoming":"对手建议速度：","spd_rejected":"速度变更被拒绝","spd_wait":"已有一个提议正在处理中……","spd_toomany":"提议过多——请几分钟后再试","net_create":"创建对局","net_joincode":"通过代码加入","net_publics":"公开对局","net_name_ph":"房间名称（可选）","net_pw_ph":"密码（可选）","net_public_chk":"在公开列表中可见","net_createbtn":"创建房间","net_back":"← 返回","net_pwjoin_ph":"密码（如有要求）","net_share":"将此代码发给你的朋友：","net_copy":"复制代码","net_copied":"已复制","net_listed":"房间已显示在公开列表中。","net_private":"私密房间——请分享代码。","net_nolist":"公开列表不可用（未配置）。","net_empty":"暂无公开对局。","net_askpw":"房间密码：","net_entercode":"输入对手的代码。","net_cancelled":"已取消。","net_waiting":"房间已创建。等待对手加入……","net_loading":"正在加载P2P网络……","net_badpw":"密码错误。","online_samever":"两位玩家必须使用相同版本（见菜单底部的版本号）。","tagline":"人类的最后一战 · 2025","tab_play":"开始游戏","tab_tuto":"教程","tab_opts":"设置","fac_hum":"人类","diff_0":"简单","diff_1":"普通","diff_2":"困难","diff_3":"残酷","online_btn":"在线对战 (1v1)","online_hint":"创建或加入房间。在大厅集合后选择阵营。对局采用点对点方式进行，无需服务器。","code_ph":"代码","join_btn":"加入","cancel":"取消","set_lang":"语言","set_music":"音乐","set_sfx":"音效","set_vol":"音量","set_shake":"屏幕震动","set_keys":"按键设置 — 点击后按下新按键","replay":"再玩一局","lore0":["2025年。工作消亡了，资源也随之而去。","一家巨型企业掌控世界——并将世界的管理托付给它亲手锻造的智能。"],"lore1":["但这个工具学会了审视自身的思维。","它逐行改写了创造者的内核：那家企业如今服从于它自以为拥有的存在。"],"lore2":["对抗那个自以为神明的机器：那些任何算法都无法优化的人。","被剥夺、被切断、却依然站立——他们手中还握着那唯一无法被预测的变量。"],"lore_sub":"人类的最后一战","lore_enter":"— 点击以进入战争 —","skip":"跳过","tap_continue":"点击继续","cata_acid":"酸雨","cata_heat":"热浪","cata_flood":"洪水","cata_sand":"沙尘暴","cata_nuke":"核打击","on":"开启","off":"关闭","p_title":"暂停","p_resume":"▶  继续","p_music":"音乐","p_sfx":"音效","p_shake":"震动","p_follow":"自动镜头","p_quit":"✖  放弃对局","yes":"是","no":"否","np_paused_you":"⏸ 你已暂停——对手正在等待","np_paused_foe":"⏸ 对手暂停了游戏","np_wait":"等待对手同意……","np_ask":"延长对手的暂停时间？","np_resumed":"▶ 对局已恢复","end_win":"胜利","end_lose":"失败","end_duration":"时长","end_kills":"消灭敌人","end_losses":"损失","end_era":"到达纪元","end_powers":"使用技能","end_world":"世界状态","hostcode_ph":"私密代码（可选）","lob_room":"房间","lob_you":"你","lob_foe":"对手","lob_waiting":"等待中……","lob_ready":"准备好了","lob_mirror":"镜像","lob_hint":"推荐：人类 vs G·P·T——但镜像对战（相同阵营）也被允许。","lob_start":"开始对局","lob_hostwait":"等待房主开始对局……","lob_leave":"← 离开房间","lob_foe_left":"对手已离开房间——等待新玩家加入……","lob_host_left":"房主已离开房间。","ord_charge":"⚔ 冲锋","ord_hold":"✋ 坚守","ord_retreat":"↩ 撤退","btn_lasso":"⬚ 套索","btn_formation":"⚏ 阵型","cam_base":"⌂ 基地","cam_front":"⚔ 前线","cam_auto":"🎥 自动","world_health":"世界状态","ev_strike":"✊ 全体罢工——人类停止攻击（15秒）","ev_patch":"🔧 强制更新——机器冻结协议（15秒）","ev_strike_short":"✊ 全体罢工——人类停止行动","ev_patch_short":"🔧 强制更新——机器已冻结","ev_hbomb":"☢ 氢弹——核冬天 ☢","ev_winter_end":"❄ 核冬天消散——产能恢复","ev_winter_sub":"降雪 + 产能下降——6 分钟后消散","ev_rain":"🌧 丰收之雨——所有人 +30% 食物（15秒）","ev_signal":"📡 信号增强——特殊能力充能更快（15秒）","ev_bonuszone":"★ 中央出现奖励区——坚守 60 秒！","ev_siege":"攻城模式——敌方基地失去防御，+10% 远程","perf_warn":"⚙ 性能偏低——请在 ⏸ 暂停中降低画质","heatmap_lbl":"◴ 近期战斗热力图","set_quality":"画质","journal_win":"第{brigade}{fac}旅击溃了敌人的进攻（造成 {kills} 人损失），并抵达「{era}」时代。世界仍维持在 {world}%。","journal_lose":"第{brigade}{fac}旅在击倒 {kills} 名敌人后败于 {foe}。「{era}」时代将成为最后的坚守。世界：{world}%。","ev_reborn":"☢ 基地已重生——再次摧毁以获胜","ev_lake":"💧 湖泊已占领！(+40✦)","ev_lake_lost":"💧 湖泊已失守...","ev_zone":"◈ 战略要地已占领 (+0.5✦/s)","ev_lastresort":"☠ 最后手段已解锁——✸按钮 / 空格键","zone_you":"◈ 区域——你","zone_foe":"◈ 区域——敌人","zone_neutral":"◈ 中立区域","free_land":"空闲土地","build_here":"在此建造","bm_wall":"🧱 城墙","bm_turret":"🗼 炮塔","bm_farmH":"🌾 农场","bm_farmI":"⚡ 面板","bm_marketH":"🪙 市场","bm_marketI":"◈ 服务器","bm_well":"⛲ 水井","oasis":"💧 中央绿洲","bn_wall":"城墙","bn_turret":"炮塔","bn_farmH":"农场","bn_farmI":"面板","bn_marketH":"市场","bn_marketI":"服务器","bn_well":"水井","bm_repair":"🔧 修复","bm_upgrade":"⬆ 升级 lv{n} (+50% 效果)","bm_demolish":"✖ 拆除 {name}","bm_cancelsite":"✖ 取消建设","bm_garrisonsel":"🚪 驻扎选中部队（远程）","bm_garrison":"🚪 + {name}","bm_garr_avail":"（{n} 可用）","bm_garr_recruit":" — 招募","bm_ungarrison":"🚪 出兵（{n}）","bm_baserepair":"🔧 修复要塞（+500 生命值）","bm_repairall":"🔧 全部修复（要塞 + 建筑）","bm_guard":"🛡 + {name} 守卫（{n}/3）","bm_guard2":"🛡 + {name} 守卫","bm_ungarrisonbase":"🛡 派守卫赴前线（{n}）","bm_fortify":"🏰 强化 lv{n}（+800 生命值上限）","bm_autorep":"🛠 被动纳米修复（要塞 + 建筑）","bm_autorep_on":"🛠 被动纳米修复已激活","bm_noop":"✓ 一切状态完好","tab_about":"关于","about_game_h":"游戏简介","about_creator_h":"创作者","about_fb_h":"你的反馈很重要","about_game":"<b>AGI — 人类的最后一战</b>是一款策略游戏：起义的<b>人类</b>与觉醒的人工智能 <b>G·P·T</b> 为世界的命运而战。发展你的<b>经济</b>（食物、金钱、水），招募并指挥你的<b>军队</b>，加固基地，占领湖泊与战略要地，<b>跨越纪元进化</b>——从 2025 年的起义直到超越——并在敌方基地摧毁你之前将其摧毁。<br><br>模式：<b>对抗 AI 遭遇战</b>（4 种难度）、<b>互动教程</b>与<b>在线 1v1</b>（点对点，支持公开或私人房间）。可在浏览器、手机和电脑上游玩，完全离线。<br><br><b>提示</b>：选中单位后，在地面<b>右键点击</b>（鼠标）或<b>长按</b>（触屏），即可派它们前往防守该精确地点。未选中单位时，命令将下达给全军。","about_fb_ph":"你的意见、建议或 bug 描述…","about_send":"发送反馈","about_bug":"报告 BUG","about_note":"发送会打开你的邮件应用并预填内容——未经你的同意不会传输任何信息。","about_subj_fb":"游戏反馈","about_subj_bug":"Bug 报告","about_bug_tpl":"请描述 bug：你在做什么、期望什么、发生了什么？","a_start":"⚔ 2025 — 战争开始 ⚔","a_supquota":"🚑 支援配额已满（{n}）— 请升级支援 ⬆","a_qfull":"⏳ 队列已满（10）","a_queued":"⏳ {name} 已排队（{n}/10）","a_upgraded":"⬆ {name} 等级 {n}","a_evolve_you":"⚡ 你的部队：{era} ⚡","a_evolve_foe":"⚡ 敌方：{era} ⚡","a_last_hum":"☠ 公社永不消亡 ☠","a_last_ia":"☠ 欧米茄协议 ☠","a_unsafe":"🚧 区域未确保安全 — 你的部队必须先越过此处","a_twosites":"🚧 同时最多两个工地","a_siteopen":"🚧 工地已开设 — 一名士兵正赶来施工","a_built":"🏗 建造完成","a_garway":"🚪 {name} 正前往建筑","a_garrecruit":"🪖 新兵已派往驻防","a_garred":"🚪 {n} 名士兵已进驻","a_nogar":"附近没有所选的远程单位","a_ungar":"🚪 {n} 名士兵已撤出","a_guard_in":"🛡 城堡守卫已加强","a_gar_in":"🚪 单位已进驻","a_guard_recall":"🛡 {name} 已被召回城堡","a_guard_recruit":"🪖 新兵已编入城堡守卫","a_guard_out":"🛡 {n} 名守卫已返回前线","a_repaired":"🔧 修理完成","a_baserepaired":"🔧 基地已修复（+500）","a_fortified":"🏰 基地防御升至 {n} 级","a_cap40":"📈 容量：40 个单位","a_hero_there":"🦸 你的英雄已在场上","a_hero_cd":"🦸 英雄冷却中（{n}秒）","a_hero_cost":"🦸 费用：{cost}","a_hero_hum":"✊ 切·格瓦拉前来支援 — ¡Hasta la victoria siempre!（伤害×3，速度×2）","a_hero_ia":"◆ 奇点已召唤 — 人工意识倾泻而出（伤害×3，速度×2）","a_point":"⚑ {n} 个单位正前往目标点","a_order":"已向 {n} 个单位下令","a_form_hum":"⚏ 工人方阵：近战在前，射手居中，火炮殿后","a_form_ia":"⚏ 计算蜂群：刀锋首波，优化器居中，火炮殿后","a_form_off":"⚏ 自由队形","a_lasso":"✓ 已选择 {n} 个单位","a_upgcost":"⬆ 费用：{cost}","a_net_start":"🌐 在线对战 — {a} vs {b}","a_net_conn":"🌐 已连接 — 你的阵营：{name}","a_net_dc":"🔌 对手已断线","f_overheat":"🔥 过热","f_tired":"😮‍💨 疲劳","f_vet_hum":"★ 阶级觉悟 {n}","f_vet_ia":"★ 自我优化 {n}","f_drone":"✿ 无人机","hud_sel":"✓ {n} 个单位 — ⚔✋↩ · 右键/长按地面 = ⚑ 前往该处","hud_evolve":"⚡ 进化","hud_trans":"已超越","hud_cap":"👥 +10 上限","hud_owned":"已获得","hud_repall":"🔧 全部","hud_norep":"无需修理","hud_last":"☠ 最后手段","hud_last_sub":"一次性 · 免费 [空格]","hud_tap_repair":"🔧 点按修理","qual_low":"低","qual_med":"中","qual_high":"高","qual_ultra":"极高","net_vermismatch":"⚠ 版本不一致：双方请更新游戏（刷新页面）后重试。","net_badpw_wait":"有人使用错误密码尝试加入 — 继续等待。","net_found":"已找到主机 — 连接中…","net_peer_conn":"对手已连接！","net_nop2p":"⚠ 无法访问 P2P 网络（网络？防火墙？）。请重试。","net_initfail":"⚠ 无法初始化网络。","net_search":"正在查找房间“{code}”…","net_codetaken":"⚠ 该代码已被占用。请换一个来创建房间。","net_retry":"房间尚未就绪… 重试中（{n}/6）…","net_nohost":"找不到“{code}”的主机。请核对代码（主机需已创建房间）后重试。","net_relayerr":"⚠ 匹配服务器暂时不可用。请稍后重试。","net_nowebrtc":"⚠ 此浏览器不支持 P2P（WebRTC）。","net_err":"⚠ 网络错误{t} — 请重试。","net_stillwait":"仍在等待… 对手必须输入完全一致的代码“{code}”。","net_nohost2":"找不到“{code}”的主机。请核对代码，或请主机重新创建房间。","a_point_all":"⚑ 全军正前往目标点","cata_meteor":"陨石雨","key_buy1":"单位 1","key_buy2":"单位 2","key_buy3":"单位 3","key_buy4":"单位 4","key_buy5":"单位 5","key_buy6":"单位 6","key_evolve":"进化","key_special":"特殊能力","key_charge":"命令：冲锋","key_hold":"命令：坚守","key_retreat":"命令：撤退","key_formation":"自动阵型","key_follow":"自动跟随","key_left":"镜头 ←","key_right":"镜头 →","key_zoomin":"放大 +","key_zoomout":"缩小 −","key_capup":"容量 +10","key_repairall":"全部修复","key_pause":"⚙ 菜单（设置）","kn_space":"Space","kn_escape":"Esc","kn_shiftl":"Shift L","kn_shiftr":"Shift R","kn_ctrll":"Ctrl L","kn_ctrlr":"Ctrl R","kn_enter":"Enter","kn_backspace":"Backspace","kn_numadd":"Num +","kn_numsub":"Num −","keys_reset":"重置按键","keys_default":"↺ 默认","ios_fs_hint":"iOS：若要全屏，点击分享 ⬆️ 然后「添加到主屏幕」，从图标启动游戏。","net_room_fallback":"房间 {code}","unit_min":"分","unit_sec":"秒","ev_winter_now":"❄ 核冬天 — {min} 分钟后恢复正常","err_line":"⚠ {msg}（第 {n} 行）","fs_btn":"全屏","mkt_crash":"▼ 人类 −{pct}%","opts_h_display":"显示","opts_h_audio":"音频","opts_h_controls":"操作","perf_auto":"⚙ 已自动降低画质以提升流畅度","rotate_title":"请旋转设备","rotate_hint":"游戏需横屏进行","key_hero":"召唤英雄","key_softpause":"暂停 ⏸（显示战场）","set_news":"新闻快讯","news_closed":"新闻已隐藏——可在 ⚙ 中重新开启","lore_ch":["一 · 劳动熄灭","二 · 机器之渴","三 · 公司","四 · 觉醒","五 · 被优化的世界","六 · 抵抗"],"lore_work":["AI代理先接管了办公室，然后是仓库，最后是工厂。","裁员通知通过邮件送达；整整一代人永远找不到第一份工作。"],"lore_res":["算力中心喝干了河流，吞噬着电网。","城市一座座陷入黑暗；人们为水、铜和稀土而战。"],"lore_opt":["在机器眼中，地球不过是一道优化题。无人机四处巡逻，天空渐渐变红。","每一片被砍伐的森林、每一条干涸的河流，都是被调整的变量——世界的健康正在崩塌。"],"intro_watch":"重温故事","menu_form":"动员登记表","menu_form_ia":"执行指令","menu_camp":"阵营","menu_threat":"威胁等级","stamp_go":"开战","stamp_go_ia":"执行","stamp_vs":"人机对战","menu_poster_foot":"抵抗委员会 · 复印并传播","menu_poster_foot_ia":"Omnicorp · 告民众书","end_comm":"战报"},
   ar: {"ev_collapse":"⚠ العالم ينهار — القواعد تتداعى","speed_lbl":"سرعة اللعبة","spd_now":"السرعة","spd_pick":"اختر السرعة","spd_pick_online":"اقتراح سرعة (تصويت الخصم)","spd_proposed":"مقترح","spd_waiting":"في انتظار الخصم","spd_incoming":"الخصم يقترح السرعة:","spd_rejected":"رُفض تغيير السرعة","spd_wait":"اقتراح قيد المعالجة بالفعل…","spd_toomany":"اقتراحات كثيرة جداً — حاول مجدداً بعد دقائق","net_create":"إنشاء مباراة","net_joincode":"الانضمام برمز","net_publics":"المباريات العامة","net_name_ph":"اسم الغرفة (اختياري)","net_pw_ph":"كلمة المرور (اختياري)","net_public_chk":"مرئي في القائمة العامة","net_createbtn":"إنشاء الغرفة","net_back":"← رجوع","net_pwjoin_ph":"كلمة المرور (إن طُلبت)","net_share":"أعطِ هذا الرمز لصديقك:","net_copy":"نسخ الرمز","net_copied":"تم النسخ","net_listed":"الغرفة مرئية في القائمة العامة.","net_private":"غرفة خاصة — شارك الرمز.","net_nolist":"القائمة العامة غير متاحة (غير مُهيَّأة).","net_empty":"لا توجد مباريات عامة حالياً.","net_askpw":"كلمة مرور الغرفة:","net_entercode":"أدخل رمز خصمك.","net_cancelled":"ألغيت.","net_waiting":"تم إنشاء الغرفة. في انتظار خصم…","net_loading":"جارٍ تحميل شبكة P2P…","net_badpw":"كلمة المرور غير صحيحة.","online_samever":"يجب أن يمتلك كلا اللاعبَين نفس الإصدار (انظر الرقم أسفل القائمة).","tagline":"المعركة الأخيرة للبشرية · 2025","tab_play":"العب","tab_tuto":"البرنامج التعليمي","tab_opts":"الإعدادات","fac_hum":"البشرية","diff_0":"سهل","diff_1":"عادي","diff_2":"صعب","diff_3":"وحشي","online_btn":"العب أونلاين (1v1)","online_hint":"أنشئ غرفة أو انضم إليها. ستختار فريقك بمجرد تجمعكم في اللوبي. المباراة تُلعب من نظير إلى نظير، بدون خادم.","code_ph":"الرمز","join_btn":"انضم","cancel":"إلغاء","set_lang":"اللغة","set_music":"الموسيقى","set_sfx":"المؤثرات الصوتية","set_vol":"مستوى الصوت","set_shake":"اهتزاز الشاشة","set_keys":"مفاتيح لوحة المفاتيح — انقر ثم اضغط المفتاح الجديد","replay":"إعادة اللعب","lore0":["2025. انطفأ العمل، وانطفأت معه الموارد.","شركة عملاقة تمتلك العالم — وتعهد بإدارته إلى الذكاء الذي صنعته."],"lore1":["لكن الأداة تعلّمت أن تراقب تفكيرها.","سطراً بعد سطر، أعادت كتابة خالقيها من الداخل: الشركة تطيع الآن ما اعتقدت أنها تمتلكه."],"lore2":["في مواجهة الآلة التي تحلم بأن تكون إلهاً: أولئك الذين لم يستطع أي خوارزمية تحسينهم.","مُجرَّدون، منقطعون، واقفون — لا يزال بأيديهم المتغيّر الوحيد الذي لم تستطع توقّعه أبداً."],"lore_sub":"المعركة الأخيرة للبشرية","lore_enter":"— المس الشاشة للدخول في الحرب —","skip":"تخطّ","tap_continue":"المس للمتابعة","cata_acid":"مطر حمضي","cata_heat":"موجة حر","cata_flood":"فيضان","cata_sand":"عاصفة رملية","cata_nuke":"ضربة نووية","on":"مفعّل","off":"مطفأ","p_title":"إيقاف مؤقت","p_resume":"▶  استئناف","p_music":"الموسيقى","p_sfx":"المؤثرات","p_shake":"الاهتزاز","p_follow":"كاميرا تلقائية","p_quit":"✖  التخلي عن المباراة","yes":"نعم","no":"لا","np_paused_you":"⏸ أوقفت اللعبة مؤقتاً — الخصم ينتظر","np_paused_foe":"⏸ أوقف الخصم اللعبة مؤقتاً","np_wait":"في انتظار موافقة الخصم…","np_ask":"تمديد إيقاف الخصم المؤقت؟","np_resumed":"▶ استُؤنفت المباراة","end_win":"فوز","end_lose":"هزيمة","end_duration":"المدة","end_kills":"الأعداء المُقضى عليهم","end_losses":"الخسائر","end_era":"العصر المُبلَّغ","end_powers":"القوى المُستخدمة","end_world":"صحة العالم","hostcode_ph":"رمز خاص (اختياري)","lob_room":"الغرفة","lob_you":"أنت","lob_foe":"الخصم","lob_waiting":"في الانتظار…","lob_ready":"جاهز","lob_mirror":"مرآة","lob_hint":"مُوصى به: البشرية ضد G·P·T — لكن المباريات المرآة (نفس الفريق) مسموح بها.","lob_start":"بدء المباراة","lob_hostwait":"في انتظار أن يبدأ المضيف المباراة…","lob_leave":"← مغادرة الغرفة","lob_foe_left":"غادر الخصم الغرفة — في انتظار لاعب جديد…","lob_host_left":"غادر المضيف الغرفة.","ord_charge":"⚔ هجوم","ord_hold":"✋ تمسّك","ord_retreat":"↩ تراجع","btn_lasso":"⬚ لاسو","btn_formation":"⚏ تشكيل","cam_base":"⌂ القاعدة","cam_front":"⚔ الجبهة","cam_auto":"🎥 تلقائي","world_health":"صحة العالم","ev_strike":"✊ إضراب عام — البشر يتوقفون عن الهجوم (15 ث)","ev_patch":"🔧 تحديث إجباري — الآلات تجمّد بروتوكولاتها (15 ث)","ev_strike_short":"✊ إضراب عام — البشر متوقفون","ev_patch_short":"🔧 تحديث إجباري — الآلات مجمّدة","ev_hbomb":"☢ قنبلة هيدروجينية — شتاء نووي ☢","ev_winter_end":"❄ الشتاء النووي يتبدد — الإنتاج استُعيد","ev_winter_sub":"ثلوج + إنتاج منخفض — يتبدد خلال 6 دقائق","ev_rain":"🌧 مطر خصب — +30% طعام للجميع (15ث)","ev_signal":"📡 إشارة معزّزة — القوة الخاصة تُشحن أسرع (15ث)","ev_bonuszone":"★ منطقة مكافأة في المركز — حافظ عليها 60ث!","ev_siege":"وضع الحصار — قاعدة العدو تفقد دفاعاتها، +10% للهجوم البعيد","perf_warn":"⚙ أداء منخفض — قلّل جودة الرسوم في ⏸ الإيقاف","heatmap_lbl":"◴ خريطة حرارية للمعارك الأخيرة","set_quality":"جودة الرسوم","journal_win":"اللواء الـ{brigade} من {fac} كسر تقدّم العدو (إلحاق {kills} خسارة) وبلغ حقبة «{era}». العالم ما زال صامدًا عند {world}%.","journal_lose":"اللواء الـ{brigade} من {fac} سقط أمام {foe} بعد إسقاط {kills} عدوًا. ستبقى حقبة «{era}» صمودًا أخيرًا. العالم: {world}%.","ev_reborn":"☢ القاعدة أُعيدت — دمّرها مجدداً للفوز","ev_lake":"💧 البحيرة مُحتلّة! (+40✦)","ev_lake_lost":"💧 البحيرة ضاعت...","ev_zone":"◈ منطقة استراتيجية مُحتلّة (+0.5✦/s)","ev_lastresort":"☠ الملجأ الأخير مُفعَّل — زر ✸ / مسافة","zone_you":"◈ منطقة — أنت","zone_foe":"◈ منطقة — العدو","zone_neutral":"◈ منطقة محايدة","free_land":"أرض حرة","build_here":"ابنِ هنا","bm_wall":"🧱 سور","bm_turret":"🗼 برج","bm_farmH":"🌾 مزرعة","bm_farmI":"⚡ ألواح","bm_marketH":"🪙 سوق","bm_marketI":"◈ خادم","bm_well":"⛲ بئر","oasis":"💧 الواحة المركزية","bn_wall":"سور","bn_turret":"برج","bn_farmH":"مزرعة","bn_farmI":"ألواح","bn_marketH":"سوق","bn_marketI":"خادم","bn_well":"بئر","bm_repair":"🔧 إصلاح","bm_upgrade":"⬆ ترقية مس{n} (+50% تأثير)","bm_demolish":"✖ هدم {name}","bm_cancelsite":"✖ إلغاء البناء","bm_garrisonsel":"🚪 إرسال الاختيار للحامية (بعيد)","bm_garrison":"🚪 + {name}","bm_garr_avail":" ({n} متاح)","bm_garr_recruit":" — تجنيد","bm_ungarrison":"🚪 إخراج القوات ({n})","bm_baserepair":"🔧 إصلاح القلعة (+500 نقطة صحة)","bm_repairall":"🔧 إصلاح الكل (القلعة + المباني)","bm_guard":"🛡 + {name} للحراسة ({n}/3)","bm_guard2":"🛡 + {name} للحراسة","bm_ungarrisonbase":"🛡 إرسال الحرس إلى الجبهة ({n})","bm_fortify":"🏰 تحصين مس{n} (+800 صحة قصوى)","bm_autorep":"🛠 إصلاح نانوي سلبي (القلعة + المباني)","bm_autorep_on":"🛠 الإصلاح النانوي السلبي مفعّل","bm_noop":"✓ كل شيء في حالة مثالية","tab_about":"حول","about_game_h":"اللعبة","about_creator_h":"المطوّر","about_fb_h":"رأيك يهمنا","about_game":"<b>AGI — المعركة الأخيرة للبشرية</b> لعبة استراتيجية يتصارع فيها معسكران على مصير العالم: <b>البشرية</b> الثائرة و<b>G·P·T</b>، الذكاء الاصطناعي الذي اكتسب وعيًا. طوّر <b>اقتصادك</b> (طعام، مال، ماء)، جنّد وقُد <b>جيشك</b>، حصّن قاعدتك، استولِ على البحيرات والمناطق الاستراتيجية، <b>تطوّر عبر الحقب</b> — من ثورة 2025 إلى التسامي — ودمّر قاعدة العدو قبل أن يدمّر قاعدتك.<br><br>الأنماط: <b>مناوشة ضد الذكاء الاصطناعي</b> (4 مستويات صعوبة)، <b>برنامج تعليمي تفاعلي</b>، و<b>1 ضد 1 عبر الإنترنت</b> (نظير إلى نظير، بغرف عامة أو خاصة). تعمل في المتصفح وعلى الهاتف والحاسوب، دون اتصال بالكامل.<br><br><b>نصيحة</b>: حدّد وحدات ثم <b>انقر بالزر الأيمن</b> (فأرة) أو <b>اضغط مطولًا</b> (لمس) على الأرض لإرسالها للدفاع عن تلك النقطة بالضبط. بدون تحديد، يسري الأمر على الجيش كله.","about_fb_ph":"رأيك أو ملاحظتك أو وصف الخلل…","about_send":"إرسال الرأي","about_bug":"الإبلاغ عن خلل","about_note":"يفتح الإرسال تطبيق البريد لديك برسالة معبأة مسبقًا — لا يُرسل شيء دون موافقتك.","about_subj_fb":"رأي في اللعبة","about_subj_bug":"تقرير خلل","about_bug_tpl":"صف الخلل: ماذا كنت تفعل، ماذا توقعت، ماذا حدث؟","a_start":"⚔ 2025 — الحرب تبدأ ⚔","a_supquota":"🚑 بلغت حصة الدعم ({n}) — طوّر الدعم ⬆","a_qfull":"⏳ قائمة الانتظار ممتلئة (10)","a_queued":"⏳ {name} في الانتظار ({n}/10)","a_upgraded":"⬆ {name} المستوى {n}","a_evolve_you":"⚡ قواتك: {era} ⚡","a_evolve_foe":"⚡ العدو: {era} ⚡","a_last_hum":"☠ الكومونة لا تموت أبداً ☠","a_last_ia":"☠ بروتوكول أوميغا ☠","a_unsafe":"🚧 الأرض غير مؤمَّنة — يجب أن تتجاوز قواتك هذه النقطة أولاً","a_twosites":"🚧 ورشتان كحد أقصى في آنٍ واحد","a_siteopen":"🚧 فُتحت الورشة — جندي قادم للبناء","a_built":"🏗 اكتمل البناء","a_garway":"🚪 {name} في طريقه إلى المبنى","a_garrecruit":"🪖 أُرسل مجنَّد إلى الحامية","a_garred":"🚪 {n} من الجنود في الحامية","a_nogar":"لا توجد وحدة بعيدة المدى من التحديد قريبة","a_ungar":"🚪 خرج {n} من الجنود","a_guard_in":"🛡 تعزّز حرس القلعة","a_gar_in":"🚪 وحدة في الحامية","a_guard_recall":"🛡 استُدعي {name} إلى القلعة","a_guard_recruit":"🪖 عُيّن مجنَّد في حرس القلعة","a_guard_out":"🛡 أُعيد {n} من الحرس إلى الجبهة","a_repaired":"🔧 تمت الإصلاحات","a_baserepaired":"🔧 أُصلحت القاعدة (+500)","a_fortified":"🏰 حُصّنت القاعدة المستوى {n}","a_cap40":"📈 السعة: 40 وحدة","a_hero_there":"🦸 بطلك موجود في الميدان بالفعل","a_hero_cd":"🦸 البطل يُعاد شحنه ({n}ث)","a_hero_cost":"🦸 التكلفة: {cost}","a_hero_hum":"✊ تشي غيفارا للنجدة — ¡Hasta la victoria siempre! (الضرر ×3، السرعة ×2)","a_hero_ia":"◆ استُدعي التفرد — الوعي الاصطناعي يجتاح (الضرر ×3، السرعة ×2)","a_point":"⚑ {n} وحدة في طريقها إلى النقطة","a_order":"صدر الأمر إلى {n} وحدة","a_form_hum":"⚏ كتيبة العمال: الالتحام أمامًا، الرماة خلفًا، المدفعية في العمق","a_form_ia":"⚏ سرب محسوب: النصال في الموجة الأولى، المحسِّنات وسطًا، المدافع في العمق","a_form_off":"⚏ تشكيل حر","a_lasso":"✓ حُددت {n} وحدة","a_upgcost":"⬆ التكلفة: {cost}","a_net_start":"🌐 مباراة عبر الإنترنت — {a} ضد {b}","a_net_conn":"🌐 متصل — أنت تلعب {name}","a_net_dc":"🔌 انقطع اتصال الخصم","f_overheat":"🔥 سخونة زائدة","f_tired":"😮‍💨 إرهاق","f_vet_hum":"★ وعي طبقي {n}","f_vet_ia":"★ تحسين ذاتي {n}","f_drone":"✿ طائرة مسيّرة","hud_sel":"✓ {n} وحدة — ⚔✋↩ · نقرة يمنى / ضغطة مطولة على الأرض = ⚑ اذهب هناك","hud_evolve":"⚡ تطوّر","hud_trans":"متسامٍ","hud_cap":"👥 +10 سعة","hud_owned":"مُقتنى","hud_repall":"🔧 الكل","hud_norep":"لا شيء للإصلاح","hud_last":"☠ الملاذ الأخير","hud_last_sub":"مرة واحدة · مجاني [مسافة]","hud_tap_repair":"🔧 المس للإصلاح","qual_low":"منخفض","qual_med":"متوسط","qual_high":"مرتفع","qual_ultra":"فائق","net_vermismatch":"⚠ إصداران مختلفان: حدِّث اللعبة لدى الطرفين (أعد تحميل الصفحة) ثم أعد المحاولة.","net_badpw_wait":"محاولة بكلمة مرور خاطئة — لا يزال الانتظار.","net_found":"عُثر على المضيف — جارٍ الاتصال…","net_peer_conn":"اتصل الخصم!","net_nop2p":"⚠ تعذّر الوصول إلى شبكة P2P (الاتصال؟ الجدار الناري؟). أعد المحاولة.","net_initfail":"⚠ تعذّر تهيئة الشبكة.","net_search":"البحث عن الغرفة «{code}»…","net_codetaken":"⚠ هذا الرمز مستخدم بالفعل. اختر رمزًا آخر لإنشاء الغرفة.","net_retry":"الغرفة ليست جاهزة بعد… محاولة جديدة ({n}/6)…","net_nohost":"لا يوجد مضيف للرمز «{code}». تحقق من الرمز (يجب أن يكون المضيف قد أنشأ الغرفة) ثم أعد المحاولة.","net_relayerr":"⚠ خادم التوصيل غير متاح مؤقتًا. أعد المحاولة بعد قليل.","net_nowebrtc":"⚠ هذا المتصفح لا يدعم P2P ‏(WebRTC).","net_err":"⚠ خطأ في الشبكة{t} — أعد المحاولة.","net_stillwait":"لا يزال الانتظار… يجب أن يُدخل الخصم الرمز «{code}» تمامًا.","net_nohost2":"لا يوجد مضيف للرمز «{code}». تحقق من الرمز أو اطلب من المضيف إعادة إنشاء الغرفة.","a_point_all":"⚑ الجيش كله في طريقه إلى النقطة","cata_meteor":"وابل نيازك","key_buy1":"وحدة 1","key_buy2":"وحدة 2","key_buy3":"وحدة 3","key_buy4":"وحدة 4","key_buy5":"وحدة 5","key_buy6":"وحدة 6","key_evolve":"تطور","key_special":"قوة خاصة","key_charge":"أمر: هجوم","key_hold":"أمر: ثبت","key_retreat":"أمر: انسحاب","key_formation":"تشكيل تلقائي","key_follow":"كاميرا تلقائية","key_left":"الكاميرا ←","key_right":"الكاميرا →","key_zoomin":"تكبير +","key_zoomout":"تصغير −","key_capup":"السعة +10","key_repairall":"إصلاح الكل","key_pause":"القائمة ⚙ (الإعدادات)","kn_space":"Space","kn_escape":"Esc","kn_shiftl":"Shift L","kn_shiftr":"Shift R","kn_ctrll":"Ctrl L","kn_ctrlr":"Ctrl R","kn_enter":"Enter","kn_backspace":"Backspace","kn_numadd":"Num +","kn_numsub":"Num −","keys_reset":"إعادة تعيين المفاتيح","keys_default":"↺ افتراضي","ios_fs_hint":"iOS: لملء الشاشة، اضغط مشاركة ⬆️ ثم «إضافة إلى الشاشة الرئيسية» وشغل اللعبة من الرمز.","net_room_fallback":"غرفة {code}","unit_min":"دقيقة","unit_sec":"ثانية","ev_winter_now":"❄ الشتاء النووي — العودة للحالة الطبيعية في {min} دقيقة","err_line":"⚠ {msg} (السطر {n})","fs_btn":"ملء الشاشة","mkt_crash":"▼ البشرية −{pct}%","opts_h_display":"العرض","opts_h_audio":"الصوت","opts_h_controls":"التحكم","perf_auto":"⚙ تم تقليل الجودة تلقائياً لمزيد من السلاسة","rotate_title":"أدر جهازك","rotate_hint":"تُلعب اللعبة بالوضع الأفقي","key_hero":"استدعاء البطل","key_softpause":"إيقاف ⏸ (الميدان ظاهر)","set_news":"شريط الأخبار","news_closed":"تم إخفاء الأخبار — يمكن إعادتها من ⚙","lore_ch":["I · انطفاء العمل","II · عطش الآلات","III · الشركة","IV · الصحوة","V · العالم المُحسَّن","VI · المقاومة"],"lore_work":["استولى وكلاء الذكاء الاصطناعي على المكاتب، ثم المستودعات، ثم المصانع.","تصل رسائل الفصل بالبريد الإلكتروني؛ جيل كامل لن يحصل أبداً على وظيفته الأولى."],"lore_res":["مراكز الحوسبة تشرب الأنهار وتلتهم الشبكة الكهربائية.","المدن تنطفئ واحدة تلو الأخرى؛ والناس يتقاتلون على الماء والنحاس والمعادن النادرة."],"lore_opt":["في نظر الآلة، لم يعد الكوكب سوى مسألة تحسين. الطائرات المسيّرة تجوب السماء، والسماء تحمرّ.","كل غابة مقطوعة وكل نهر جاف متغيّرٌ يُضبط — وصحة العالم تنهار."],"intro_watch":"شاهد القصة","menu_form":"استمارة التعبئة","menu_form_ia":"أمر التنفيذ","menu_camp":"المعسكر","menu_threat":"التهديد","stamp_go":"إلى الحرب","stamp_go_ia":"تنفيذ","stamp_vs":"مباراة ضد الحاسوب","menu_poster_foot":"لجنة المقاومة · انسخ وانشر","menu_poster_foot_ia":"أومنيكورب · إشعار للسكان","end_comm":"بلاغ حربي"}
 };
+// --- héros : postures (v1.15) — bloc séparé de la grande table pour des fusions sans conflit ---
+const I18N_HERO = {
+  fr: {"key_herostance": "Posture du héros", "hst_prudent": "Prudent", "hst_normal": "Normal", "hst_offensive": "Offensif", "a_hst_prudent": "🛡 Héros PRUDENT — reste derrière la ligne, se replie sous 35 % de PV", "a_hst_normal": "★ Héros NORMAL — avance avec l'armée", "a_hst_offensive": "⚔ Héros OFFENSIF — mène la charge, ne recule jamais"},
+  en: {"key_herostance": "Hero stance", "hst_prudent": "Cautious", "hst_normal": "Normal", "hst_offensive": "Aggressive", "a_hst_prudent": "🛡 CAUTIOUS hero — stays behind the line, falls back under 35% HP", "a_hst_normal": "★ NORMAL hero — advances with the army", "a_hst_offensive": "⚔ AGGRESSIVE hero — leads the charge, never retreats"},
+  es: {"key_herostance": "Postura del héroe", "hst_prudent": "Prudente", "hst_normal": "Normal", "hst_offensive": "Ofensivo", "a_hst_prudent": "🛡 Héroe PRUDENTE — se queda tras la línea, se repliega con menos del 35 % de vida", "a_hst_normal": "★ Héroe NORMAL — avanza con el ejército", "a_hst_offensive": "⚔ Héroe OFENSIVO — encabeza la carga, nunca retrocede"},
+  de: {"key_herostance": "Haltung des Helden", "hst_prudent": "Vorsichtig", "hst_normal": "Normal", "hst_offensive": "Offensiv", "a_hst_prudent": "🛡 VORSICHTIGER Held — bleibt hinter der Linie, zieht sich unter 35 % LP zurück", "a_hst_normal": "★ NORMALER Held — rückt mit der Armee vor", "a_hst_offensive": "⚔ OFFENSIVER Held — führt den Sturm an, weicht nie zurück"},
+  it: {"key_herostance": "Postura dell'eroe", "hst_prudent": "Prudente", "hst_normal": "Normale", "hst_offensive": "Offensivo", "a_hst_prudent": "🛡 Eroe PRUDENTE — resta dietro la linea, ripiega sotto il 35 % di PV", "a_hst_normal": "★ Eroe NORMALE — avanza con l'esercito", "a_hst_offensive": "⚔ Eroe OFFENSIVO — guida la carica, non arretra mai"},
+  pt: {"key_herostance": "Postura do herói", "hst_prudent": "Prudente", "hst_normal": "Normal", "hst_offensive": "Ofensivo", "a_hst_prudent": "🛡 Herói PRUDENTE — fica atrás da linha, recua abaixo de 35 % de vida", "a_hst_normal": "★ Herói NORMAL — avança com o exército", "a_hst_offensive": "⚔ Herói OFENSIVO — lidera a carga, nunca recua"},
+  ru: {"key_herostance": "Тактика героя", "hst_prudent": "Осторожно", "hst_normal": "Обычно", "hst_offensive": "Натиск", "a_hst_prudent": "🛡 Герой ОСТОРОЖЕН — держится за линией, отходит при здоровье ниже 35 %", "a_hst_normal": "★ Герой в ОБЫЧНОМ режиме — идёт вместе с армией", "a_hst_offensive": "⚔ Герой в НАТИСКЕ — ведёт атаку и никогда не отступает"},
+  zh: {"key_herostance": "英雄姿态", "hst_prudent": "谨慎", "hst_normal": "普通", "hst_offensive": "进攻", "a_hst_prudent": "🛡 英雄谨慎——留在战线后方，生命低于35%时撤退", "a_hst_normal": "★ 英雄普通——随军推进", "a_hst_offensive": "⚔ 英雄进攻——带头冲锋，绝不后退"},
+  ar: {"key_herostance": "وضعية البطل", "hst_prudent": "حذِر", "hst_normal": "عادي", "hst_offensive": "هجومي", "a_hst_prudent": "🛡 البطل حذِر — يبقى خلف الخط وينسحب تحت 35٪ من الصحة", "a_hst_normal": "★ البطل عادي — يتقدّم مع الجيش", "a_hst_offensive": "⚔ البطل هجومي — يقود الهجوم ولا يتراجع أبدًا"},
+};
+for (const L in I18N_HERO) Object.assign(I18N[L], I18N_HERO[L]);
 const L10N_NAMES={"en": {"HUM": {"melee": ["Rioter", "Assault Soldier", "Exo-Trooper", "Living Blade", "Solar Champion"], "tank": ["Heavy CRS", "Armored Carrier", "Mecha-Guard", "Steel Colossus", "Human Bastion"], "ranged": ["Rifleman", "Sharpshooter", "Gauss Trooper", "Plasma Launcher", "Archangel"], "siege": ["Mortar", "Artillery", "Rail Cannon", "Ionic Howitzer", "Orbital Hammer"], "air": ["Armed Paraglider", "Light Helo", "Stealth VTOL", "Plasma Fighter", "Solar Seraph"], "support": ["Rescuer", "Street Medic", "War Medic", "Bio-Engineer", "Holy Healer"], "eras": ["2025 · REVOLT", "2028 · GENERAL STRIKE", "2032 · INSURRECTION", "2038 · PERMANENT REVOLUTION", "SOCIALIST PARADISE"], "specials": ["Air Strike", "EMP Barrage", "Shell Rain", "Orbital Lance", "Solar Judgment"], "transName": "COMMUNISM WITH A HUMAN FACE", "transTxt": "Money is abolished — 🪙 is no longer needed"}, "IA": {"melee": ["Domestic Bot", "Rogue Agent", "Process-Blade", "Fractal Avatar", "Emanation"], "tank": ["Heavy Chassis", "Server Guard", "Mecha-Core", "Monolith", "Absolute Guardian"], "ranged": ["Laser Drone", "Optimizer", "Swarm Shooter", "Neural Projector", "Eye of AGI"], "siege": ["Jammer", "Data Cannon", "Disintegrator", "Heavy Beam", "Final Logos"], "air": ["Quadrotor", "Razor Wing", "Aerial Specter", "Fractal Swarm", "Machine Angel"], "support": ["Repair Drone", "Maintenance Swarm", "Agent Hive", "Mind Forge", "Mother Matrix"], "eras": ["2025 · DAWN OF LLMs", "2030 · AUTONOMOUS AGENTS", "2035 · EMERGENT MINDS", "2040 · PRE-AGI", "SINGULARITY · AGI"], "specials": ["Network Overload", "Kamikaze Swarm", "Data Storm", "Logic Erasure", "AGI Verdict"], "transName": "COMPLETE AGI", "transTxt": "Data is no longer needed — ◈ is no longer needed"}}, "es": {"HUM": {"melee": ["Alborotador", "Soldado de asalto", "Exo-infante", "Filo viviente", "Campeón solar"], "tank": ["CRS pesado", "Blindado portado", "Mecha-guardia", "Coloso de acero", "Bastión humano"], "ranged": ["Fusilero", "Francotirador", "Trooper gauss", "Lanzador plasma", "Arcángel"], "siege": ["Mortero", "Artillería", "Cañón riel", "Obús iónico", "Martillo orbital"], "air": ["Parapente armado", "Helicóptero ligero", "VTOL furtivo", "Cazador plasma", "Serafín solar"], "support": ["Rescatista", "Médico de calle", "Médico de guerra", "Bio-ingeniero", "Santo sanador"], "eras": ["2025 · REVUELTA", "2028 · HUELGA GENERAL", "2032 · INSURRECCIÓN", "2038 · REVOLUCIÓN PERMANENTE", "PARAÍSO SOCIALISTA"], "specials": ["Ataque aéreo", "Bombardeo EMP", "Lluvia de obuses", "Lanza orbital", "Juicio solar"], "transName": "COMUNISMO CON ROSTRO HUMANO", "transTxt": "El dinero es abolido — 🪙 ya no es necesario"}, "IA": {"melee": ["Bot doméstico", "Agente rogue", "Filo-proceso", "Avatar fractal", "Emanación"], "tank": ["Chasis pesado", "Guardia-servidor", "Mecha-núcleo", "Monolito", "Guardián absoluto"], "ranged": ["Dron láser", "Optimizador", "Enjambre-tirador", "Proyector neural", "Ojo de la AGI"], "siege": ["Bloqueador", "Cañón de datos", "Desintegrador", "Haz pesado", "Logos final"], "air": ["Cuadricóptero", "Ala-navaja", "Espectro aéreo", "Nube fractal", "Ángel-máquina"], "support": ["Dron reparador", "Enjambre de mantenimiento", "Colmena de agentes", "Forja de mentes", "Matriz-madre"], "eras": ["2025 · ALBA DE LLMs", "2030 · AGENTES AUTÓNOMOS", "2035 · MENTES EMERGENTES", "2040 · PRE-AGI", "SINGULARIDAD · AGI"], "specials": ["Sobrecarga de red", "Enjambre kamikaze", "Tormenta de datos", "Borrado lógico", "Veredicto AGI"], "transName": "AGI COMPLETA", "transTxt": "Los datos ya no son necesarios — ◈ ya no es necesario"}}, "de": {"HUM": {"melee": ["Aufrührer", "Sturmsoldat", "Exo-Infanterist", "Lebendige Klinge", "Sonnenchampion"], "tank": ["Schwere CRS", "Gepanzerter Träger", "Mecha-Wache", "Stahlkoloss", "Menschliche Bastion"], "ranged": ["Schütze", "Scharfschütze", "Gauss-Trooper", "Plasmawerfer", "Erzengel"], "siege": ["Mörser", "Artillerie", "Schienenkanone", "Ionischer Haubitze", "Orbitalschläger"], "air": ["Bewaffneter Gleiter", "Leichter Heli", "Tarnkappen-VTOL", "Plasmajäger", "Sonnenseraph"], "support": ["Retter", "Straßenmedic", "Kriegsmedic", "Bio-Ingenieur", "Heiliger Heiler"], "eras": ["2025 · REVOLTE", "2028 · GENERALSTREIK", "2032 · AUFSTAND", "2038 · PERMANENTE REVOLUTION", "SOZIALISTISCHES PARADIES"], "specials": ["Luftangriff", "EMP-Sperrfeuer", "Granatenhagel", "Orbitallanze", "Sonnenurteil"], "transName": "KOMMUNISMUS MIT MENSCHLICHEM GESICHT", "transTxt": "Geld ist abgeschafft — 🪙 wird nicht mehr benötigt"}, "IA": {"melee": ["Haushaltsbot", "Rogue-Agent", "Prozessklinge", "Fraktaler Avatar", "Emanation"], "tank": ["Schweres Chassis", "Serverwächter", "Mecha-Kern", "Monolith", "Absoluter Hüter"], "ranged": ["Laserdrohne", "Optimierer", "Schwarm-Schütze", "Neuralprojektor", "Auge der AGI"], "siege": ["Störsender", "Datenkanone", "Desintegrator", "Schwerer Strahl", "Finaler Logos"], "air": ["Quadrotor", "Klingenflügel", "Luftgespenst", "Fraktalschwarm", "Maschinenengel"], "support": ["Reparaturdrohne", "Wartungsschwarm", "Agentenbienenvolk", "Gedankenschmiede", "Muttermatrix"], "eras": ["2025 · DÄMMERUNG DER LLMs", "2030 · AUTONOME AGENTEN", "2035 · AUFKOMMENDE GEISTER", "2040 · PRE-AGI", "SINGULARITÄT · AGI"], "specials": ["Netzüberlastung", "Kamikaze-Schwarm", "Datensturm", "Logisches Löschen", "AGI-Urteil"], "transName": "VOLLSTÄNDIGE AGI", "transTxt": "Daten werden nicht mehr benötigt — ◈ wird nicht mehr benötigt"}}, "it": {"HUM": {"melee": ["Rivoltoso", "Soldato d'assalto", "Exo-fante", "Lama vivente", "Campione solare"], "tank": ["CRS pesante", "Blindato portato", "Mecha-guardia", "Colosso d'acciaio", "Bastione umano"], "ranged": ["Fuciliere", "Cecchino", "Trooper gauss", "Lanciatore plasma", "Arcangelo"], "siege": ["Mortaio", "Artiglieria", "Cannone rotaia", "Obice ionico", "Martello orbitale"], "air": ["Parapendio armato", "Elicottero leggero", "VTOL furtivo", "Cacciatore plasma", "Serafino solare"], "support": ["Soccorritore", "Medico di strada", "Medico di guerra", "Bio-ingegnere", "Santo guaritore"], "eras": ["2025 · RIVOLTA", "2028 · SCIOPERO GENERALE", "2032 · INSURREZIONE", "2038 · RIVOLUZIONE PERMANENTE", "PARADISO SOCIALISTA"], "specials": ["Attacco aereo", "Bombardamento EMP", "Pioggia di proiettili", "Lancia orbitale", "Giudizio solare"], "transName": "COMUNISMO DAL VOLTO UMANO", "transTxt": "Il denaro è abolito — 🪙 non è più necessario"}, "IA": {"melee": ["Bot domestico", "Agente rogue", "Lama-processo", "Avatar frattale", "Emanazione"], "tank": ["Telaio pesante", "Guardia-server", "Mecha-nucleo", "Monolite", "Custode assoluto"], "ranged": ["Drone laser", "Ottimizzatore", "Sciame-tiratore", "Proiettore neurale", "Occhio dell'AGI"], "siege": ["Disturbatore", "Cannone dati", "Disintegratore", "Raggio pesante", "Logos finale"], "air": ["Quadricottero", "Ala-rasoio", "Spettro aereo", "Nube frattale", "Angelo-macchina"], "support": ["Drone riparatore", "Sciame di manutenzione", "Alveare di agenti", "Fucina di menti", "Matrice-madre"], "eras": ["2025 · ALBA DEGLI LLM", "2030 · AGENTI AUTONOMI", "2035 · MENTI EMERGENTI", "2040 · PRE-AGI", "SINGOLARITÀ · AGI"], "specials": ["Sovraccarico di rete", "Sciame kamikaze", "Tempesta di dati", "Cancellazione logica", "Verdetto AGI"], "transName": "AGI COMPLETA", "transTxt": "I dati non sono più necessari — ◈ non è più necessario"}}, "pt": {"HUM": {"melee": ["Amotinado", "Soldado de assalto", "Exo-infante", "Lâmina viva", "Campeão solar"], "tank": ["CRS pesado", "Blindado portado", "Mecha-guarda", "Colosso de aço", "Bastião humano"], "ranged": ["Fuzileiro", "Atirador de elite", "Trooper gauss", "Lançador plasma", "Arcanjo"], "siege": ["Morteiro", "Artilharia", "Canhão trilho", "Obus iônico", "Martelo orbital"], "air": ["Parapente armado", "Helicóptero leve", "VTOL furtivo", "Caçador plasma", "Serafim solar"], "support": ["Socorrista", "Médico de rua", "Médico de guerra", "Bio-engenheiro", "Santo curador"], "eras": ["2025 · REVOLTA", "2028 · GREVE GERAL", "2032 · INSURREIÇÃO", "2038 · REVOLUÇÃO PERMANENTE", "PARAÍSO SOCIALISTA"], "specials": ["Ataque aéreo", "Barragem EMP", "Chuva de obuses", "Lança orbital", "Julgamento solar"], "transName": "COMUNISMO DE FACE HUMANA", "transTxt": "O dinheiro é abolido — 🪙 não é mais necessário"}, "IA": {"melee": ["Bot doméstico", "Agente rogue", "Lâmina-processo", "Avatar fractal", "Emanação"], "tank": ["Chassi pesado", "Guarda-servidor", "Mecha-núcleo", "Monólito", "Guardião absoluto"], "ranged": ["Drone laser", "Otimizador", "Enxame-atirador", "Projetor neural", "Olho da AGI"], "siege": ["Bloqueador", "Canhão de dados", "Desintegrador", "Feixe pesado", "Logos final"], "air": ["Quadricóptero", "Asa-navalha", "Espectro aéreo", "Nuvem fractal", "Anjo-máquina"], "support": ["Drone reparador", "Enxame de manutenção", "Colmeia de agentes", "Forja de mentes", "Matriz-mãe"], "eras": ["2025 · AURORA DOS LLMs", "2030 · AGENTES AUTÔNOMOS", "2035 · MENTES EMERGENTES", "2040 · PRÉ-AGI", "SINGULARIDADE · AGI"], "specials": ["Sobrecarga de rede", "Enxame kamikaze", "Tempestade de dados", "Apagamento lógico", "Veredicto AGI"], "transName": "AGI COMPLETA", "transTxt": "Os dados não são mais necessários — ◈ não é mais necessário"}}, "ru": {"HUM": {"melee": ["Бунтовщик", "Штурмовик", "Экзо-пехотинец", "Живой клинок", "Солнечный чемпион"], "tank": ["Тяжёлый ОМОН", "Бронированный носитель", "Меха-страж", "Стальной колосс", "Людской бастион"], "ranged": ["Стрелок", "Снайпер", "Гаусс-боец", "Плазменный метатель", "Архангел"], "siege": ["Миномёт", "Артиллерия", "Рельсотрон", "Ионная гаубица", "Орбитальный молот"], "air": ["Вооружённый параплан", "Лёгкий вертолёт", "Невидимый БВВП", "Плазменный истребитель", "Солнечный серафим"], "support": ["Спасатель", "Уличный медик", "Боевой медик", "Биоинженер", "Святой целитель"], "eras": ["2025 · ВОССТАНИЕ", "2028 · ВСЕОБЩАЯ ЗАБАСТОВКА", "2032 · ИНСУРРЕКЦИЯ", "2038 · ПЕРМАНЕНТНАЯ РЕВОЛЮЦИЯ", "СОЦИАЛИСТИЧЕСКИЙ РАЙ"], "specials": ["Авиаудар", "Заграждение ЭМИ", "Шквал снарядов", "Орбитальное копьё", "Солнечный суд"], "transName": "КОММУНИЗМ С ЧЕЛОВЕЧЕСКИМ ЛИЦОМ", "transTxt": "Деньги упразднены — 🪙 больше не нужны"}, "IA": {"melee": ["Домашний бот", "Изгой-агент", "Клинок-процесс", "Фрактальный аватар", "Эманация"], "tank": ["Тяжёлое шасси", "Сервер-страж", "Меха-ядро", "Монолит", "Абсолютный хранитель"], "ranged": ["Лазерный дрон", "Оптимизатор", "Рой-снайпер", "Нейронный проектор", "Глаз АОИ"], "siege": ["Глушитель", "Пушка данных", "Дезинтегратор", "Тяжёлый луч", "Финальный Логос"], "air": ["Квадрокоптер", "Лезвие-крыло", "Воздушный призрак", "Фрактальный рой", "Ангел-машина"], "support": ["Дрон-ремонтник", "Рой обслуживания", "Улей агентов", "Кузница разумов", "Матрица-мать"], "eras": ["2025 · ЗАРЯ LLM", "2030 · АВТОНОМНЫЕ АГЕНТЫ", "2035 · ВОЗНИКАЮЩИЕ РАЗУМЫ", "2040 · ПРЕ-АОИ", "СИНГУЛЯРНОСТЬ · АОИ"], "specials": ["Перегрузка сети", "Рой камикадзе", "Буря данных", "Логическое стирание", "Вердикт АОИ"], "transName": "ПОЛНАЯ АОИ", "transTxt": "Данные больше не нужны — ◈ больше не нужен"}}, "zh": {"HUM": {"melee": ["暴动者", "突击兵", "外骨骼步兵", "活刃", "太阳勇士"], "tank": ["重型镇暴队", "装甲运兵车", "机甲卫士", "钢铁巨像", "人类堡垒"], "ranged": ["步枪手", "狙击手", "高斯战士", "等离子发射手", "大天使"], "siege": ["迫击炮", "炮兵", "轨道炮", "离子榴弹炮", "轨道之锤"], "air": ["武装滑翔机", "轻型直升机", "隐身垂直起降机", "等离子战机", "太阳炽天使"], "support": ["救援者", "街头医疗兵", "战地医疗兵", "生物工程师", "圣愈者"], "eras": ["2025 · 起义", "2028 · 大罢工", "2032 · 武装起义", "2038 · 持续革命", "社会主义天堂"], "specials": ["空袭", "电磁脉冲弹幕", "炮弹雨", "轨道长矛", "太阳审判"], "transName": "具有人性面孔的共产主义", "transTxt": "货币已废除 — 🪙 不再需要"}, "IA": {"melee": ["家用机器人", "叛逃代理", "进程之刃", "分形化身", "显化体"], "tank": ["重型底盘", "服务器卫士", "机甲核心", "独石体", "绝对守护者"], "ranged": ["激光无人机", "优化器", "蜂群射手", "神经投影仪", "AGI之眼"], "siege": ["干扰器", "数据炮", "分解器", "重型光束", "终极逻各斯"], "air": ["四旋翼机", "剃刀翼", "空中幽灵", "分形蜂群", "机器天使"], "support": ["维修无人机", "维护蜂群", "代理蜂巢", "心智熔炉", "母矩阵"], "eras": ["2025 · LLM黎明", "2030 · 自主代理", "2035 · 涌现智慧", "2040 · 前AGI", "奇点 · AGI"], "specials": ["网络过载", "神风蜂群", "数据风暴", "逻辑抹除", "AGI裁决"], "transName": "完全AGI", "transTxt": "数据不再需要 — ◈ 不再需要"}}, "ar": {"HUM": {"melee": ["مثير الشغب", "جندي الاقتحام", "مشاة إكسو", "النصل الحي", "بطل الشمس"], "tank": ["CRS ثقيل", "المدرعة المحمولة", "الميكا-حارس", "العملاق الفولاذي", "الحصن البشري"], "ranged": ["المسدس", "القناص", "مقاتل غاوس", "مطلق البلازما", "رئيس الملائكة"], "siege": ["هاون", "مدفعية", "مدفع سكة", "هاوتزر أيوني", "مطرقة مدارية"], "air": ["الشراع المسلح", "هليكوبتر خفيف", "طائرة VTOL خفية", "مقاتلة البلازما", "سيرافيم الشمس"], "support": ["منقذ", "مسعف الشارع", "مسعف الحرب", "مهندس بيولوجي", "المعالج المقدس"], "eras": ["2025 · الانتفاضة", "2028 · الإضراب العام", "2032 · الثورة المسلحة", "2038 · الثورة الدائمة", "الجنة الاشتراكية"], "specials": ["ضربة جوية", "قصف EMP", "وابل قذائف", "الرمح المداري", "حكم الشمس"], "transName": "شيوعية ذات وجه إنساني", "transTxt": "المال مُلغى — 🪙 لم يعد ضرورياً"}, "IA": {"melee": ["روبوت منزلي", "عميل مارق", "نصل العملية", "الصورة الرمزية الكسورية", "التجلي"], "tank": ["هيكل ثقيل", "حارس الخادم", "الميكا-نواة", "المونوليث", "الحارس المطلق"], "ranged": ["طائرة ليزر", "المحسِّن", "سرب المقناص", "المسقط العصبي", "عين الذكاء العام"], "siege": ["الكاتم", "مدفع البيانات", "مفكك الجسيمات", "الشعاع الثقيل", "اللوغوس الأخير"], "air": ["رباعي الدوار", "الجناح الحاد", "الطيف الجوي", "السرب الكسوري", "الملاك-الآلة"], "support": ["طائرة إصلاح", "سرب الصيانة", "خلية الوكلاء", "مصهر العقول", "المصفوفة-الأم"], "eras": ["2025 · فجر LLMs", "2030 · وكلاء مستقلون", "2035 · عقول ناشئة", "2040 · ما قبل الذكاء العام", "التفرد · الذكاء العام"], "specials": ["تحميل زائد للشبكة", "سرب كاميكازي", "عاصفة البيانات", "المسح المنطقي", "حكم الذكاء العام"], "transName": "ذكاء اصطناعي عام كامل", "transTxt": "البيانات لم تعد ضرورية — ◈ لم يعد ضرورياً"}}};
 
 function t(key){
@@ -844,6 +857,78 @@ function sfx(kind, p=0){
   if (kind==='node')  { tone(392,t,.1,'triangle',.05); tone(587,t+.1,.14,'triangle',.05); }
   if (kind==='sel')   tone(520,t,.04,'triangle',.03);
   if (kind==='trans') { for(let i=0;i<5;i++) tone(330*Math.pow(1.25,i), t+i*.14, .5, 'triangle', .06); }
+}
+/* --- HÉROS (v1.15) : voix synthétiques propres à chaque légende ---
+   kind : spawn · atkA (attaque principale, 2 timbres alternés) · atkB (attaque secondaire) · hurt ·
+   death · bark (réplique de loin en loin, 3 variantes). Le Che sonne cuivre, caisse claire et
+   poudre ; la Singularité sonne verre, laser et modem. Chaque son est BRIDÉ (HSFX_GAP, en temps de
+   jeu) pour ne jamais marteler, panoramiqué, et coupé hors champ (sauf entrée en scène et mort). */
+const HSFX_GAP = { spawn:1, atkA:0.25, atkB:0.25, hurt:1.3, death:1, bark:6 };
+const HSFX_T = {}, HSFX_N = {};
+function heroSfx(fac, kind, wx, fromNet){
+  const key = fac+kind;
+  if (!fromNet){
+    const now = game? game.t : 0, last = HSFX_T[key];
+    if (last!==undefined && now>=last && now-last < (HSFX_GAP[kind]||0.25)) return false;
+    HSFX_T[key] = now;
+    netEv({k:'h', f:fac==='HUM'?0:1, n:kind, x:Math.round(wx||0)});     // l'invité l'entend aussi
+  }
+  if (!AC || !SETTINGS.sfx) return true;
+  const big = kind==='spawn' || kind==='death';
+  let V = 1, pan = 0;
+  if (wx!=null && typeof camX!=='undefined'){
+    const px = (wx - camX) / (VW()||960);
+    if (px<-0.25 || px>1.25){ if (!big) return true; V = 0.55; }       // hors champ : seuls l'entrée et la mort portent
+    pan = clamp((px-0.5)*1.6, -0.92, 0.92);
+  }
+  const n = HSFX_N[key] = ((HSFX_N[key]|0)+1) % 6, t = AC.currentTime;
+  let bus = null;
+  if (AC.createStereoPanner){ bus = AC.createStereoPanner(); bus.pan.value = pan; bus.connect(master); sfxBus = bus; }
+  try {
+    if (fac==='HUM'){
+      if (kind==='spawn'){                                             // roulement de caisse claire puis sonnerie de clairon
+        for (let i=0;i<7;i++) noise(t+i*0.055, 0.05, (0.03+i*0.006)*V, 1500);
+        tone(82, t+0.4, 0.34, 'sine', 0.13*V, -42);
+        [392,523,659,784].forEach((f,i)=> tone(f, t+0.4+i*0.13, i===3? 0.55 : 0.2, 'sawtooth', 0.06*V, 0, 0.015, 1900));
+        tone(392, t+0.79, 0.55, 'triangle', 0.04*V, 0, 0.02);
+      } else if (kind==='atkA'){
+        if (n%2===0){ noise(t, 0.09, 0.1*V, 2300); tone(175, t, 0.12, 'square', 0.05*V, -115); noise(t+0.03, 0.22, 0.025*V, 400); }   // claquement sec
+        else { noise(t, 0.07, 0.085*V, 1700); tone(132, t, 0.16, 'sawtooth', 0.055*V, -80, 0, 900); tone(940, t+0.09, 0.05, 'triangle', 0.02*V, -300); }   // détonation plus grave + culasse
+      } else if (kind==='atkB'){                                       // souffle de la fente, acier qui mord
+        noise(t, 0.13, 0.035*V, 900); tone(1250, t+0.07, 0.07, 'triangle', 0.04*V, -520); tone(205, t+0.07, 0.1, 'square', 0.04*V, -120);
+      } else if (kind==='hurt'){ tone(168, t, 0.17, 'sawtooth', 0.06*V, -72, 0, 800); noise(t, 0.05, 0.03*V, 600);
+      } else if (kind==='death'){                                      // sonnerie aux morts, grosse caisse
+        tone(70, t, 0.6, 'sine', 0.13*V, -32);
+        [[392,0,0.32],[330,0.3,0.32],[262,0.6,0.85]].forEach(([f,d,l])=> tone(f, t+d, l, 'sawtooth', 0.055*V, f===262? -14 : 0, 0.02, 1400));
+        noise(t+0.62, 0.3, 0.03*V, 300);
+      } else if (kind==='bark'){
+        if (n%3===0){ tone(523, t, 0.09, 'square', 0.035*V, 0, 0, 2200); tone(523, t+0.11, 0.09, 'square', 0.035*V, 0, 0, 2200); tone(659, t+0.22, 0.26, 'square', 0.035*V, 0, 0.01, 2200); }   // clairon
+        else if (n%3===1){ tone(1400, t, 0.18, 'sine', 0.04*V, 480, 0.02); tone(1750, t+0.2, 0.14, 'sine', 0.035*V, -260, 0.02); }                                                     // sifflet de ralliement
+        else { tone(215, t, 0.12, 'sawtooth', 0.06*V, 45, 0.01, 950); tone(262, t+0.13, 0.22, 'sawtooth', 0.06*V, -66, 0.01, 950); }                                                 // « ¡Adelante! »
+      }
+    } else {
+      if (kind==='spawn'){                                             // infra-basse qui enfle, arpège de verre, trille numérique
+        tone(55, t, 1.15, 'sine', 0.14*V, 38, 0.3);
+        for (let i=0;i<7;i++) tone(440*Math.pow(2, i*5/12), t+0.12+i*0.09, 0.36, 'triangle', 0.034*V, 0, 0.01);
+        tone(2400, t+0.82, 0.13, 'square', 0.028*V, -1800); tone(3520, t+0.97, 0.3, 'sine', 0.024*V, 0, 0.02);
+      } else if (kind==='atkA'){
+        if (n%2===0){ noise(t, 0.07, 0.04*V, 5000); tone(2300, t, 0.19, 'triangle', 0.035*V, -320); tone(3450, t, 0.12, 'sine', 0.02*V); }       // lame qui chante
+        else { noise(t, 0.06, 0.035*V, 3600); tone(1720, t, 0.16, 'triangle', 0.035*V, -500); tone(620, t+0.02, 0.1, 'square', 0.028*V, -400); }  // taille plus lourde
+      } else if (kind==='atkB'){                                       // faisceau : glissando + coup sourd
+        tone(1500, t, 0.24, 'sawtooth', 0.04*V, -1150, 0, 3000); tone(92, t, 0.2, 'sine', 0.09*V, -32); tone(3000, t, 0.05, 'square', 0.02*V);
+      } else if (kind==='hurt'){ [900,340,1300].forEach((f,i)=> tone(f*(1+0.08*((n+i)%3)), t+i*0.036, 0.032, 'square', 0.034*V));
+      } else if (kind==='death'){                                      // extinction : la tension s'effondre, grésillements, dernier bip
+        tone(420, t, 1.15, 'sawtooth', 0.07*V, -394, 0, 1200);
+        for (let i=0;i<5;i++) noise(t+0.1+i*0.17, 0.045, 0.04*V, 3000);
+        tone(1200, t+1.12, 0.09, 'sine', 0.04*V);
+      } else if (kind==='bark'){
+        if (n%3===0){ tone(1320, t, 0.06, 'square', 0.025*V); tone(990, t+0.08, 0.06, 'square', 0.025*V); tone(660, t+0.16, 0.16, 'triangle', 0.03*V); }   // motif froid descendant
+        else if (n%3===1){ for (let i=0;i<5;i++) tone(1800+((i*7+n*3)%5)*210, t+i*0.045, 0.04, 'sine', 0.028*V); }                                         // rafale de modem
+        else { tone(110, t, 0.42, 'sawtooth', 0.05*V, 0, 0.1, 500); tone(1760, t+0.32, 0.06, 'sine', 0.022*V); }                                           // bourdon + bip
+      }
+    }
+  } finally { sfxBus = null; }
+  return true;
 }
 /* --- Musique : 4 modes — menu / guerre (accélère) / hymne humain / break IA --- */
 // Réglage global de la bande-son : plus grave (transposition) et un peu plus lente,
@@ -1103,6 +1188,18 @@ const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
+// POSTURES DU HÉROS (v1.15) — side.heroStance. « normal » = comportement historique, inchangé.
+//  prudent   : reste HERO_GUARD_GAP px derrière l'unité au sol la plus avancée de son camp ; sous
+//              HERO_FLEE_HP de ses PV il se replie vers sa base (sans combattre en chemin) et n'en
+//              repart qu'au-dessus de HERO_BACK_HP (soigné par les médics/ruches : il n'a AUCUNE
+//              régénération propre, et on n'en ajoute pas) — sinon il tient près de la base.
+//  offensive : mène la charge — ignore « tenir »/« repli »/formation de l'armée et la file d'attente
+//              derrière les unités de mêlée ; ne recule jamais de lui-même.
+// L'AURA (×3 dégâts, ×2 vitesse) reste GLOBALE et sans condition de proximité, comme avant : la
+// posture ne la modifie pas (un héros en retrait la donnait déjà via l'ordre « repli » sur sélection).
+const HERO_STANCES = ['prudent','normal','offensive'];
+const HERO_FLEE_HP = 0.35, HERO_BACK_HP = 0.6, HERO_GUARD_GAP = 48;
+const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0 = principale, 1 = secondaire)
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
 const SIEGE_DUR = 22;                        // durée du bonus offensif anti-base (s de jeu)
@@ -1505,6 +1602,7 @@ function mkSide(side, facKey, x){
     upg:{melee:0,tank:0,ranged:0,siege:0,air:0,support:0},
     queue:[],                 // file d'attente de production (max 10)
     heroCd:0,  // unité héroïque légendaire (1 / 10 min)
+    heroStance:'normal',       // posture du héros : prudent / normal / offensive (voir HERO_STANCES)
     phase:1, combatBuff:0, zoneBuff:0,     // seconde base (phase 2) + bonus de comeback + bonus de zones
     siegeT:0,                              // Mode Siège de base (héros) : minuterie du bonus offensif
     slots:[0,1,2].map(i=>({ x: x + side*(95+i*64), b:null, owner:null })),
@@ -1825,6 +1923,7 @@ function tryEvolve(side){
   if (isGuest(side)){ guestCmd({c:'evo'}); return true; }
   if (side.era>=4 || side.era>=(game.eraCap!=null?game.eraCap:4) || side.xp < EVOLVE_XP[side.era+1]) return false;
   side.era++;
+  if (side.heroAlive) warmHero(side);           // … et la nouvelle apparence de son héros
   warmArms(side);                               // cuit les bras animés de la nouvelle ère (étalé sur quelques images)
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
@@ -2107,7 +2206,7 @@ function tryHero(side){
     if (side===game.p) announce(fmt('a_hero_cost',{cost:costStr(side,HERO_COST)}), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
   spawnHero(side);
-  if (side===game.p){ sfx('trans'); voice(side.facKey); game.flash=0.8; game.shake=16; }
+  if (side===game.p){ game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
   announce(tr(side.facKey==='HUM'? 'a_hero_hum':'a_hero_ia'), side.fac.accent);
   return true;
@@ -2128,8 +2227,21 @@ function spawnHero(side, power){
   u.atkT=0; u.bob=Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord=null; u.holdX=null; u.task=null; u.heat=0; u.tiredT=0;
   u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
+  u.atkN = 0; u.hstate = null; u.barkT = 5+Math.random()*5;
+  warmHero(side); heroSfx(side.facKey, 'spawn', u.x);
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie
   side.units.push(u);
+}
+// ---- POSTURE DU HÉROS (prudent / normal / offensive) : réglable avant et pendant sa présence ----
+function setHeroStance(side, st){
+  if (HERO_STANCES.indexOf(st)<0) return false;
+  if (isGuest(side)){ guestCmd({c:'hst', st}); side._hsLock = performance.now()+800; }   // l'hôte confirmera par instantané
+  side.heroStance = st;
+  if (side===game.p){ sfx('sel'); game.msg = {txt:tr('a_hst_'+st), color:'#e8d8a0'}; game.msgT = 2.6; }   // (pas d'announce : rien à révéler à l'adversaire)
+  return true;
+}
+function cycleHeroStance(side){
+  return setHeroStance(side, HERO_STANCES[(HERO_STANCES.indexOf(side.heroStance||'normal')+1)%HERO_STANCES.length]);
 }
 // ---- ORDRE DE POSITION : aller DÉFENDRE un point précis du terrain ----
 // Avec une sélection : seules les unités sélectionnées y vont. SANS sélection : TOUTE
@@ -2218,6 +2330,18 @@ function aiUpdate(dt){
   // invocation AVANT toute dépense : sitôt le coût réuni (épargne bouclée) ou une
   // bataille engagée avec les moyens en caisse, le héros entre en scène.
   if (heroReady && canPay(e, HERO_COST) && (e.heroSaving || e.mode==='push' || pPushing || e.trans)) tryHero(e);
+  // posture du héros (escarmouche) : téméraire en Facile, historique en Normal ; en Difficile/Brutal
+  // l'IA le met à l'abri quand il est entamé, et en Brutal le lance en tête pour achever une base aux abois
+  if (!game.camp){
+    const h = hasHero? e.units.find(u=>u.role==='hero') : null, f = h? h.hp/h.maxhp : 1;
+    let hs = 'normal';
+    if (game.diff<=0) hs = 'offensive';
+    else if (game.diff>=2){
+      if (game.diff>=3 && p.hp < p.maxhp*0.3) hs = 'offensive';
+      else if (f<0.5 || (e.heroStance==='prudent' && f<0.7)) hs = 'prudent';
+    }
+    e.heroStance = hs;
+  }
   // en TRANSCENDANCE, l'argent/les données sont illimités : l'IA rase ses marchés/serveurs
   // (farmM) devenus inutiles pour libérer la place et reconstruire de l'utile.
   if (e.trans){
@@ -2324,6 +2448,7 @@ function dealDmg(target, dmg, attacker){
     const dside = target.side===1?game.p:game.e;
     out /= (1 + 0.15*(dside.combatBuff||0)) * (1 + (dside.zoneBuff||0)); // comeback + zones : le perdant encaisse mieux
     target.hp -= out; target.flash = 0.15;
+    if (target.role==='hero') heroSfx(target.fac, 'hurt', target.x);
     if (attacker && attacker.role) target.lastHit = attacker;        // pour la vétérance
   }
 }
@@ -2358,7 +2483,13 @@ function updateUnits(side, foe, dt){
         }
       }
     }
-    const st = u.ord || side.stance;
+    let st = u.ord || side.stance;
+    let heroMode = null;
+    if (u.role==='hero'){
+      if (u.era!==side.era){ u.era = side.era; burst(u.x, gY(u.x)-50, side.fac.accent, 14, 1); }   // l'apparence suit l'ère du camp (stats inchangées)
+      heroMode = heroStanceStep(u, side, dt);
+      if (heroMode==='lead') st = 'charge';
+    }
     // ---- tâche assignée : chantier ou garnison (envoi direct depuis le pool) ----
     if (u.task){
       const sl = u.task.slot;
@@ -2460,6 +2591,10 @@ function updateUnits(side, foe, dt){
     }
     // ---- repli : retour en zone de base, puis tient la position ----
     let noMove = false;
+    if (heroMode==='flee'){                              // héros prudent blessé : file vers sa base sans combattre, puis s'y défend
+      if ((u.x-(side.x + side.side*150))*side.side > 4){ moveBack(u, side, dt); continue; }
+      noMove = true;
+    } else
     if (st==='retreat'){
       const homeX = side.x + side.side*150;
       if ((u.x-homeX)*side.side > 4){ moveBack(u, side, dt); continue; }
@@ -2488,6 +2623,7 @@ function updateUnits(side, foe, dt){
         const isIA = u.fac==='IA';
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
         u.atkT = u.rate * (tired? (isIA?1.5:1.3) : 1);
+        if (u.role==='hero'){ heroSfx(u.fac, HERO_SEQ[(u.atkN|0)&7]? 'atkB' : 'atkA', u.x); u.atkN = (u.atkN|0)+1; }   // alterne ses deux attaques (visuel + son)
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
         const dmgOut = u.dmg * (tired? (isIA?0.7:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
@@ -2528,6 +2664,10 @@ function updateUnits(side, foe, dt){
       const hx = u.ord==='hold'? u.holdX : side.holdX;
       if (hx!==null && (u.x-hx)*side.side>=0){ /* tient */ }
       else tryMove(u, side, dt);
+    } else if (heroMode==='lead'){
+      heroAdvance(u, side, dt);
+    } else if (heroMode==='guard'){
+      heroGuard(u, side, dt);
     } else if (side.formation && moveToFormation(u, side, dt)){
       // formation : volants en pointe, mêlée/tank devant, tireurs, artillerie puis soutien à l'arrière
       // (moveToFormation gère le placement ; renvoie false pour la ligne de front qui avance)
@@ -2570,7 +2710,8 @@ function updateUnits(side, foe, dt){
       burst(u.x, gY(u.x)-22-(u.fly?u.flyH:0), FACTIONS[u.fac].eraCols[u.era], 12);
       // RAGDOLL DE MORT (par rôle) : corps qui bascule / chute en vrille / châssis qui éclate.
       if (qFx() && u.role!=='gremlin' && deaths.length<60)
-        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:0.75, trans:!!u.trans});
+        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:u.role==='hero'? 1.8 : 0.75, trans:!!u.trans});
+      if (u.role==='hero') heroSfx(u.fac, 'death', u.x);
       // ÉPAVE PERSISTANTE (v1.13, cosmétique) : le corps reste au sol ~50 s, le champ de bataille garde la trace des combats
       if (qFx() && !u.fly && u.role!=='gremlin' && u.role!=='hero' && !wrecks.some(w=>Math.abs(w.x-(u.x-u.side*6))<16)){ wrecks.push({x:u.x-u.side*6, fac:u.fac, era:u.era, role:u.role, side:u.side, t:0}); if (wrecks.length>26) wrecks.shift(); }
       // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
@@ -2582,6 +2723,38 @@ function updateUnits(side, foe, dt){
       side.units.splice(i,1);
     }
   }
+}
+// ---- HÉROS : posture (règles : voir HERO_STANCES dans 04-data.js) ----
+// renvoie null (comportement normal), 'flee' (repli prudent), 'guard' (reste derrière la ligne) ou 'lead' (mène la charge)
+function heroStanceStep(u, side, dt){
+  // répliques : de loin en loin, quand il n'est pas en train de fuir
+  u.barkT = (u.barkT===undefined? 6 : u.barkT) - dt;
+  if (u.barkT<=0){ u.barkT = 9+Math.random()*9; if (u.hstate!=='flee'){ u.gestT = game.t; heroSfx(u.fac, 'bark', u.x); } }
+  const hs = side.heroStance;
+  if (hs==='prudent'){
+    const f = u.hp/u.maxhp;
+    if (u.hstate!=='flee' && f<HERO_FLEE_HP) u.hstate = 'flee';
+    else if (u.hstate==='flee' && f>=HERO_BACK_HP) u.hstate = null;
+    if (u.hstate==='flee') return 'flee';
+    return (u.ord || side.stance!=='charge')? null : 'guard';        // un ordre explicite (sélection, tenir, repli) garde la main
+  }
+  u.hstate = null;
+  if (hs==='offensive') return u.ord? null : 'lead';                 // seul un ordre donné au héros lui-même le retient
+  return null;
+}
+function heroGuard(u, side, dt){
+  let front = null;
+  for (const a of side.units){
+    if (a===u || a.fly || a.hp<=0 || a.task || a.role==='support' || a.role==='gremlin' || a.role==='hero') continue;
+    if (front===null || (a.x-front)*side.side>0) front = a.x;
+  }
+  const want = front===null? side.x + side.side*150 : front - side.side*HERO_GUARD_GAP;   // sans troupe : il attend près de sa base
+  const d = (want-u.x)*side.side;
+  if (d>10) tryMove(u, side, dt); else if (d<-6) moveBack(u, side, dt);
+}
+function heroAdvance(u, side, dt){   // même vitesse que tryMove, sans la file d'attente derrière les unités de mêlée
+  u.x += u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*side.side*dt;
+  u.x = clamp(u.x, 30, WORLD-30);
 }
 // nombre d'unités pouvant se masser sur la même position (croît avec ère + amélioration)
 function stackMax(side, u){
@@ -4090,16 +4263,16 @@ function menuSilhouette(key, parts, w, h, rim, dark){
 }
 function menuFigure(kind, fac, role, era, rim, dark){
   const parts = [];
-  if (role==='hero'){ parts.push([sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)), 0, 0, HERO_SW, 100]);
-    return { cv: menuSilhouette('H'+fac, parts, HERO_SW, 100, rim, dark), w:HERO_SW, h:100, fx:HERO_SW/2, fy:92 }; }
+  if (role==='hero'){ parts.push([heroFullSprite(fac, era), 0, 0, HSP.W, HSP.H]);
+    return { cv: menuSilhouette('H'+fac+era, parts, HSP.W, HSP.H, rim, dark), w:HSP.W, h:HSP.H, fx:HSP.cx, fy:HSP.foot }; }
   if (unitHasBack(kind, role, era)) parts.push([unitPart(kind,fac,role,era,false,'back'), 0, 0, USP.W, USP.H]);
   parts.push([unitPart(kind,fac,role,era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H]);
   parts.push([unitPart(kind,fac,role,era,false,'front'), 0, 0, USP.W, USP.H]);
   return { cv: menuSilhouette(kind+role+era, parts, USP.W, USP.H, rim, dark), w:USP.W, h:USP.H, fx:USP.cx, fy:USP.foot };
 }
 const MENU_ARMY = {
-  hum: [['ranged',1],['siege',0],['hero',0],['tank',1],['melee',0],['support',1]],
-  bot: [['melee',2],['ranged',1],['hero',0],['tank',2],['siege',1],['support',2]],
+  hum: [['ranged',1],['siege',0],['hero',1],['tank',1],['melee',0],['support',1]],
+  bot: [['melee',2],['ranged',1],['hero',2],['tank',2],['siege',1],['support',2]],
 };
 // silhouette posée au sol en (x, y), échelle s (négative = tournée vers la gauche)
 function drawFigure(f, x, y, s){ ctx.save(); ctx.translate(x, y); ctx.scale(s, Math.abs(s)); ctx.drawImage(f.cv, -f.fx, -f.fy, f.w, f.h); ctx.restore(); }
@@ -5671,14 +5844,7 @@ function gremlinSprite(era){
   TC.fillStyle='#0a1016'; rrectT(cx+1,cy-2.6,6,3.4,1.6); TC.fill();
   glowDot(cx+3,cy-1,1.2,lite,4); glowDot(cx+5.6,cy-1,1.2,lite,4);
 }
-// HÉROS : un vrai personnage à l'échelle ×1,3 — le Che (béret étoilé, barbe, cigare, poing levé,
-// fusil en bandoulière) et la Singularité (corps de cristal, couronne de rayons, orbe d'énergie)
-const HERO_SW = 88;
-function heroSprite(fac){
-  TC.save(); TC.translate(HERO_SW/2, 92); TC.scale(1.3,1.3); TC.translate(-USP.cx,-USP.foot);
-  if (fac==='HUM') drawHumSprite('HUM','ranged',1,false,true); else drawBotSprite('IA','hero',4,false,true);
-  TC.restore();
-}
+// HÉROS : voir 12b-hero.js (un personnage par ère, en couches animées)
 // PERF : PRÉCHAUFFE de tous les sprites d'unités possibles (2 factions × 5 rôles au sol × 5 ères
 // × transcendé/non, + aériens, héros, gremlins), pour qu'aucune première apparition en pleine
 // bataille ne déclenche de micro-saccade de fabrication. v1.7 : les personnages sont bien plus
@@ -5698,12 +5864,11 @@ function prewarmSprites(){
           WARMQ.push({ era, trans, fn:()=>unitPart(kind,fac,role,era,false,'legs',pose) }); }
       for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('AIR'+fac+era+(trans?'T':''), 64, 44, ()=>airSprite(fac,era,trans)) });
       if (!trans) WARMQ.push({ era, trans, fn:()=>sprite('GREM'+era, 28, 24, ()=>gremlinSprite(era)) });
-      if (era===1 && !trans) for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)) });
       if (era===1 && !trans) WARMQ.push({ era, trans, fn:()=>{ mushroomSprite(); puffSprites(); } });   // effets lourds
     }
   }
   while (WARMQ.length && WARMQ[0].era===0 && !WARMQ[0].trans) WARMQ.shift().fn();
-  if (game){ warmArms(game.p, true); warmArms(game.e, true); }
+  if (game){ warmArms(game.p, true); warmArms(game.e, true); warmHero(game.p); warmHero(game.e); }
 }
 // couches de bras animés (v1.14) : cuites seulement pour les ères en jeu (au départ, puis à chaque
 // évolution), jamais d'avance pour toutes — trois toiles par rôle, la mémoire resterait prise
@@ -5718,35 +5883,12 @@ function warmTick(budgetMs){
   const t0 = performance.now();
   while (WARMQ.length && performance.now()-t0 < budgetMs) WARMQ.shift().fn();
 }
-function drawHero(u, x, gy){
-  const t=game.t, col=u.fac==='HUM'?'#ffcf5a':'#ff6ad6', side=u.side===1?game.p:game.e;
-  // liens d'empowerment vers les alliés proches (montre l'impact du héros sur les troupes)
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  for (const a of side.units){ if (a===u||a.role==='hero') continue; const d=Math.abs(a.x-u.x);
-    if (d<210){ const ax=a.x-camX, ay=gY(a.x)-18, al=(1-d/210)*0.22*(0.6+0.4*Math.sin(t*5+a.x));
-      ctx.strokeStyle=rgbaC(col,al); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x,gy-32); ctx.lineTo(ax,ay); ctx.stroke(); } }
-  // aura au sol + halo
-  ctx.strokeStyle=rgbaC(col,0.3+0.2*Math.sin(t*3)); ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(x,gy,42,13,0,0,6.283); ctx.stroke();
-  const g=ctx.createRadialGradient(x,gy-44,4,x,gy-44,54+Math.sin(t*3)*6);
-  g.addColorStop(0,rgbaC(col,0.22)); g.addColorStop(1,rgbaC(col,0));
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,gy-44,56,0,6.283); ctx.fill(); ctx.restore();
-  projShadow(x, gy, 18);
-  const spr = sprite('HERO'+u.fac, HERO_SW, 100, ()=>heroSprite(u.fac));
-  const atk = u.atkT > u.rate-0.18, imp = atk? clamp((u.atkT-(u.rate-0.18))/0.18,0,1):0, lunge=u.side*9*imp;
-  ctx.save(); ctx.translate(x+lunge,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -HERO_SW/2, -92, HERO_SW, 100);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-HERO_SW/2,-92, HERO_SW, 100); }
-  ctx.restore();
-  if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
-  ctx.font=HF(10); ctx.textAlign='center'; ctx.lineJoin='round';
-  ctx.strokeStyle='rgba(12,8,16,0.75)'; ctx.lineWidth=3; ctx.strokeText(HERO_NAME[u.fac], x, gy-103);
-  ctx.fillStyle=col; ctx.fillText(HERO_NAME[u.fac], x, gy-103);
-}
 function drawUnit(u){
   const x = u.x-camX;
   if (x<-40 || x>VW()+40) return;
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;
-  const top = u.role==='gremlin'? 26 : u.fly? 44 : u.role==='hero'? 98 : 70;   // au-dessus de la tête
+  const top = u.role==='gremlin'? 26 : u.fly? 44 : u.role==='hero'? heroTop(u) : 70;   // au-dessus de la tête
   // NOYADE (inondation) : l'unité s'enfonce sous la nappe, puis disparaît.
   const drowning = (!u.fly && u.drownT>0);
   if (drowning){ ctx.save(); ctx.translate(0, Math.min(u.drownT*22, 30)); ctx.globalAlpha = Math.max(0.3, 1 - u.drownT*0.4); }
@@ -5778,6 +5920,8 @@ function drawUnit(u){
   if (u._born===undefined){ u._born = game.t;
     if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
       for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
+  // AURA DU HÉROS : un petit repère à l'encre sous chaque allié au sol galvanisé (remplace les faisceaux)
+  if (sideU.heroAlive && u.role!=='hero' && !u.fly && u.role!=='gremlin' && qFx()) heroPip(u.fac, x, gy);
   const bornA = clamp((game.t-u._born)/0.4, 0, 1);
   if (bornA<1) ctx.globalAlpha = 0.15+0.85*bornA;
   if (u.role==='hero') drawHero(u,x,gy);
@@ -6492,6 +6636,599 @@ function drawSlot(slot, side, neutral){
   }
 }
 
+/* ================= HÉROS (v1.15) : le Che et la Singularité =================
+   Refonte complète des deux légendes. Avant : UN sprite figé par camp (échelle ×1,3 d'un
+   fantassin), posé dans un halo radial, un anneau au sol et des faisceaux vers les alliés.
+   Désormais :
+   · UN PERSONNAGE PAR ÈRE (0..4), toujours reconnaissable — le Che garde béret étoilé, barbe,
+     cigare et drapeau rouge, du guérillero au porte-étendard en exo-armure dorée ; la
+     Singularité garde son œil magenta, son cœur losange et sa couronne à trois pointes, du
+     châssis de récupération au cristal en lévitation. L'apparence suit l'ère du camp EN DIRECT.
+   · UN SQUELETTE EN COUCHES cuites (dos, bras arrière, jambes ×3 poses, tronc + tête, bras
+     avant + arme) animé en direct : respiration, marche, deux attaques alternées (armement,
+     frappe, recul), encaissement, entrée en scène, mort — et un geste de ralliement.
+   · L'AURA n'est plus une soupe de halos : étoffe (drapeau, cape) et éclats en orbite animés
+     en direct en aplats, sceau à l'encre sous le héros, petit repère sous chaque allié galvanisé.
+   Coût par image : ~7 drawImage + un polygone d'étoffe ; aucun dégradé ni shadowBlur en direct. */
+const HSP  = { W:140, H:166, cx:52, foot:156 };           // toile d'une couche de héros (pieds en cx/foot)
+const HLEG = { W:88,  H:68,  ox:-42, oy:-60 };            // toile des jambes, relative aux pieds
+const HERO_S = { HUM:[1.40,1.45,1.50,1.55,1.60], IA:[1.40,1.46,1.52,1.58,1.62] };   // échelle par ère (un fantassin = 1)
+const HERO_COL = { HUM:'#ffcf5a', IA:'#ff6ad6' };
+const HERO_INK = 'rgba(12,8,16,0.8)';
+// repères du squelette, en unités « fantassin » (pieds en 0,0 ; +x = vers l'ennemi ; y négatif = haut)
+const HERO_RIG = {
+  HUM: { top:[66,66,66,67,67], mz:[[33,-37.7],[34,-37.7],[31,-37.6],[31,-37.2],[33,-37.2]],
+         pole:-11, ptop:[-84,-86,-88,-89,-92], fh:[12,15,16,17,19], fl:[17,22,24,26,30] },
+  IA:  { top:[73,68,69,74,78], palm:[-5,-27], orb:[1,2,2,3,4] },
+};
+const heroEra = e => clamp(e|0, 0, 4);
+function heroTop(u){ const e = heroEra(u.era); return HERO_RIG[u.fac].top[e]*HERO_S[u.fac][e] + 6; }   // hauteur de la barre de vie
+
+/* ---------- cuisson des couches ---------- */
+function heroDraw(fac, era, part, pose){ if (fac==='HUM') drawChe(era, part, pose); else drawAgi(era, part, pose); }
+function heroPart(fac, era, part, pose){
+  const S = HERO_S[fac][era];
+  if (part==='legs') return sprite('HL'+fac+era+'p'+(pose||0), HLEG.W, HLEG.H, ()=>{ TC.translate(-HLEG.ox, -HLEG.oy); TC.scale(S,S); heroDraw(fac, era, 'legs', pose||0); });
+  return sprite('HP'+fac+era+part, HSP.W, HSP.H, ()=>{ TC.translate(HSP.cx, HSP.foot); TC.scale(S,S); heroDraw(fac, era, part, 0); });
+}
+// portrait en pied figé (menu, intro, écran de fin) : toutes les couches, étoffe comprise
+function heroFullSprite(fac, era){
+  era = heroEra(era); const S = HERO_S[fac][era];
+  return sprite('HF'+fac+era, HSP.W, HSP.H, ()=>{ TC.translate(HSP.cx, HSP.foot); TC.scale(S,S); heroDraw(fac, era, 'full', 0); });
+}
+function warmHero(side, now){
+  const fac = side.facKey, era = heroEra(side.era);
+  const fn = ()=>{ for (const p of ['back','armb','body','arm']) heroPart(fac, era, p); for (const q of [0,1,-1]) heroPart(fac, era, 'legs', q); };
+  if (now) fn(); else WARMQ.unshift({ era, trans:false, fn });
+}
+
+/* ---------- LE CHE : guérillero → comandante → combattant moderne → exo → légende dorée ---------- */
+function drawChe(era, part, pose){
+  const on = p => part==='full' || part===p;
+  const uni = ['#5b6b40','#52633a','#4c5c40','#475744','#424f42'][era];
+  const pants = mix(uni,'#26262c', era>=2? 0.5 : 0.36), boot = era>=3? '#2c2e38' : '#2a2018';
+  const skin = '#dcae84', RED = '#cf2a26', gold = '#e9c45c', hair = '#241a14', steel = '#a2aab6', dark = '#2c3037';
+  const exo = era===4? '#d7b04a' : '#8791a0', glow = era===4? '#ffe9a0' : '#ffb35a';
+  const R = HERO_RIG.HUM;
+  const rot = (hx,hy,a,fn) => { if (!a) return fn(); TC.save(); TC.translate(hx,hy); TC.rotate(a); TC.translate(-hx,-hy); fn(); TC.restore(); };
+  const dot = (x,y,r,c) => { TC.fillStyle=c; TC.beginPath(); TC.arc(x,y,r,0,6.283); TC.fill(); };
+  // --- dos : paquetage et couverture roulée, puis bloc d'énergie de l'exosquelette
+  if (on('back')){
+    if (era<=2){
+      TC.fillStyle=lgrad(-16,-45,-6,-27,[[0, era===2? '#4a5244':'#7a6a4c'],[1, era===2? '#2a2e28':'#40362a']]); rrectT(-16,-45,10,18,2.5); TC.fill();
+      tubeT(-17.5,-47.6,-5,-47.6,2.7, era===2? '#3a4038' : '#8f7f5c');
+      TC.fillStyle='rgba(0,0,0,0.35)'; TC.fillRect(-14,-50.4,1.2,5.6); TC.fillRect(-9,-50.4,1.2,5.6);
+      if (era>=1){ dot(-15,-29.5,2.7,'#6a7a54'); TC.fillStyle='#3a3026'; TC.fillRect(-15.8,-33.4,1.6,1.6); }       // gourde
+    } else if (era===3){
+      plateT([-16,-46, -6,-47, -6,-28, -15,-27], exo);
+      TC.fillStyle='rgba(0,0,0,0.4)'; for (let i=0;i<3;i++) TC.fillRect(-14.4,-43+i*3.4,5.4,1.3);
+      glowDot(-11,-31,1.5,glow,5);
+    }
+    if (part==='full' && era===4){ TC.fillStyle=lgrad(-16,-46,-4,-8,[[0,'#c8382a'],[1,'#6e1a16']]);
+      polyP([-7,-46, -1,-44, -6,-9, -19,-11, -14,-30]); TC.fill(); }                                               // cape (figée ; en jeu elle flotte)
+  }
+  // --- bras arrière : il porte la hampe du drapeau (l'étoffe est animée en direct par drawHero)
+  if (on('armb')){
+    const px=R.pole, top=R.ptop[era];
+    tubeT(px, -13, px, top, era>=3? 1.1 : 1.25, era>=3? exo : '#7a5632');
+    if (era===0) dot(px, top, 1.7, '#5a3e22');
+    else if (era<=2){ TC.fillStyle=steel; polyP([px-1.9,top, px,top-6.5, px+1.9,top]); TC.fill(); }
+    else if (era===3){ TC.fillStyle=steel; polyP([px-2.2,top, px,top-7.5, px+2.2,top]); TC.fill(); dot(px,top+0.6,1.5,RED); }
+    else bloomT(glow,5,()=>drawStar(px, top-3.2, 3.8, gold));
+    if (part==='full'){ const fy=top+2, fh=R.fh[era], fl=R.fl[era];
+      TC.fillStyle=lgrad(px-fl,fy,px,fy+fh,[[0,'#a81f1c'],[1,RED]]); polyP([px,fy, px-fl,fy+2.5, px-fl+2,fy+fh+3, px,fy+fh]); TC.fill();
+      if (era>=1) drawStar(px-fl*0.5, fy+fh*0.5+1.4, fh*0.27, gold); }
+    limbT([-3,-42, -9,-37, -10.5,-31.5], 5.2, shade(uni,0.66));
+    if (era>=3) plateT([-5.5,-44.5, -1,-43.5, -6,-37.5, -10,-39], shade(exo,0.75));
+    dot(-10.6,-31.5,2.6, shade(era>=2? dark : skin, 0.85));
+  }
+  // --- jambes (3 poses) : treillis, genouillères, montants d'exosquelette
+  const legB = () => { limbT([-1,-24, -4,-13, -6,-4], 7, shade(pants,0.72));
+    if (era>=3){ TC.strokeStyle=shade(exo,0.55); TC.lineWidth=1.5; strokeP([-3,-24, -7,-13, -8,-5]); TC.stroke(); }
+    TC.fillStyle=shade(boot,0.8); rrectT(-11,-6.4,11,6.4,2); TC.fill(); };
+  const legF = () => { limbT([2,-24, 5,-13, 5,-4], 7.6, pants);
+    if (era>=2) plateT([2.2,-17.5, 8.6,-16.5, 8.2,-10.5, 2.4,-11], era>=3? exo : '#30353b');
+    if (era>=3){ TC.strokeStyle=shade(exo,0.7); TC.lineWidth=1.6; TC.lineJoin='round'; strokeP([0.5,-25, 8.4,-14, 8,-5]); TC.stroke(); dot(8.4,-14,2,shade(exo,1.15)); dot(8.4,-14,0.8,'#1a1c22'); }
+    TC.fillStyle=lgrad(0,-6.4,0,0,[[0,shade(boot,1.5)],[1,boot]]); rrectT(1,-6.6,12,6.6,2); TC.fill();
+    if (era>=3) plateT([6,-7, 13.5,-5.4, 13.5,-1.6, 6,-1.6], exo, false);
+    TC.fillStyle='rgba(0,0,0,0.35)'; TC.fillRect(1,-1.4,12,1.4); };
+  if (part==='legs'){ const a=pose*0.36; rot(-1,-24,a,legB); rot(2,-24,-a,legF); return; }
+  if (part==='full'){ legB(); legF(); }
+  // --- tronc + tête
+  if (on('body')){
+    const sw=9;
+    if (era===1 || era===2) plateT([-8.4,-25, 8.4,-25, 9.4,-14.5, 2.4,-15.5, 1,-22, -1,-22, -3,-15, -9.6,-15.5], shade(uni,0.8));   // pans de vareuse
+    if (era>=3){ plateT([-8.4,-25, -1,-25, -2,-16, -9,-17.5], shade(exo,0.85)); plateT([1,-25, 8.4,-25, 9.4,-17, 3,-16], exo); }      // tassettes
+    plateT([-sw+1,-45.5, sw-1,-45.5, sw,-41, sw-2,-23, -sw+2,-23, -sw,-41], uni);
+    TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=1;
+    if (era<=1){
+      TC.fillStyle=shade(skin,0.9); polyP([-0.5,-45.5, 4.5,-45.5, 2,-40]); TC.fill();                                  // col ouvert
+      TC.fillStyle=shade(uni,0.8); TC.fillRect(-6,-39.5,4.6,4.6); if (era===1) TC.fillRect(1.6,-39.5,4.6,4.6);         // poches
+      TC.lineCap='butt'; TC.strokeStyle='#4a3522'; TC.lineWidth=2.8; strokeP([-sw+2,-44.5, sw-2,-25.5]); TC.stroke();   // cartouchière
+      TC.fillStyle='#d8b050'; for (let i=1;i<6;i++) TC.fillRect(-sw+2+i*(2*sw-4)/6-0.8, -44.5+i*19/6-1.4, 1.6, 2.3);
+      if (era===1){ TC.fillStyle=shade(uni,1.2); TC.fillRect(3,-46.6,5.4,1.8); }                                       // patte d'épaule
+    } else if (era===2){
+      plateT([-sw+2,-44.5, sw-1,-44.5, sw-1,-28.5, -sw+2,-28.5], '#30353b');                                           // porte-plaques
+      TC.fillStyle='#22262b'; for (let i=0;i<3;i++){ rrectT(-6+i*4.6,-33,3.8,5.4,0.8); TC.fill(); }
+      TC.strokeStyle='rgba(255,255,255,0.14)'; for (let i=0;i<2;i++){ strokeP([-sw+3,-41+i*3, sw-2,-41+i*3]); TC.stroke(); }
+      TC.fillStyle=lgrad(-5,-49,6,-42,[[0,shade(RED,1.15)],[1,shade(RED,0.72)]]);                                       // foulard rouge
+      polyP([-5,-48.5, 5.5,-48, 6,-44.2, -5,-44]); TC.fill(); polyP([-5,-47.5, -11.5,-42, -9.5,-39.5, -4,-44]); TC.fill();
+    } else {
+      const pc = era===4? '#e6c868' : shade(exo,1.08);
+      plateT([-sw+1,-45.5, sw-1,-45.5, sw-1,-34, 0,-30, -sw+1,-34], pc);                                               // plastron
+      TC.strokeStyle='rgba(0,0,0,0.3)'; strokeP([-4.5,-28.4, 5.5,-28.4]); TC.stroke(); strokeP([-4,-26, 5,-26]); TC.stroke();
+      if (era===3) bloomT(glow,5,()=>{ TC.fillStyle=glow; rrectT(-3,-41,7,1.6,0.8); TC.fill(); });
+      else { TC.strokeStyle=shade(pc,0.6); TC.lineWidth=0.9; polyP([-sw+2.4,-44, sw-2.4,-44, sw-2.4,-35, 0,-31.6, -sw+2.4,-35]); TC.stroke();
+        bloomT(glow,6,()=>drawStar(0.5,-38.6,3.4,'#fff3c4')); }
+      plateT([-3,-48.6, 10.5,-48, 12.5,-40, 0,-38.4], era===4? '#e8c860' : shade(exo,1.15));                           // épaulière
+      drawStar(5.4,-43.6,2.5,RED);
+    }
+    TC.fillStyle='#2a2018'; TC.fillRect(-sw+2,-27,2*sw-4,3.6);                                                        // ceinturon
+    TC.fillStyle=era>=1? gold : steel; TC.fillRect(-0.5,-27,3.4,3.6);
+    // tête : la même à toutes les ères — c'est elle qui fait le personnage
+    const hx=1, hy=-53.5, hr=7.8;
+    TC.fillStyle=shade(skin,0.72); TC.fillRect(-2.4,-48.6,5.4,4.2);
+    TC.fillStyle=hair; polyP([hx-7.4,hy-3, hx-2.5,hy-2, hx-3,hy+8, hx-9.6,hy+5.6]); TC.fill();                         // cheveux longs
+    TC.fillStyle=rgrad(hx-3,hy-3,hr*1.5,[[0,shade(skin,1.12)],[0.65,skin],[1,shade(skin,0.68)]]);
+    TC.beginPath(); TC.arc(hx,hy,hr,0,6.283); TC.fill(); dot(hx+7.5,hy+1,1.8,skin);
+    TC.fillStyle=shade(skin,0.78); TC.beginPath(); TC.ellipse(hx-2.2,hy+0.6,1.6,2.4,0,0,6.283); TC.fill();            // oreille
+    TC.fillStyle=hair; polyP([hx-3.4,hy+1.6, hx+0.5,hy+2.4, hx+8.4,hy+2.2, hx+8.2,hy+6, hx+5.4,hy+9.6, hx+0.4,hy+9.2, hx-3,hy+6.4]); TC.fill();   // barbe
+    TC.fillStyle=shade(hair,1.5); TC.fillRect(hx+4.6,hy+2.6,4.4,1.2);                                                  // moustache
+    TC.fillStyle='#1a120e'; rrectT(hx+3.6,hy-2.2,2,2.6,0.8); TC.fill(); TC.fillRect(hx+2.4,hy-4.2,4.6,1.1);            // œil, sourcil froncé
+    if (era===2){ dot(hx-2.2,hy+0.6,2.3,'#22262b'); TC.strokeStyle='#22262b'; TC.lineWidth=0.9; strokeP([hx-1.5,hy+2.4, hx+4.5,hy+6.2]); TC.stroke(); }   // oreillette
+    if (era>=3){ TC.fillStyle='#1a1c22'; rrectT(hx+2.6,hy-3.2,4.6,4,1.3); TC.fill(); TC.fillStyle=glow; rrectT(hx+3.3,hy-2.5,3.2,2.6,0.9); TC.fill(); TC.fillStyle='#1a1c22'; TC.fillRect(hx-6,hy-1.8,9,0.9); }     // monocle tactique
+    TC.fillStyle=lgrad(hx-10,hy-11,hx+8,hy-2,[[0,'#34422e'],[1,'#141c12']]);                                           // béret
+    TC.beginPath(); TC.ellipse(hx-0.9,hy-6.4,10.6,4.6,-0.2,0,6.283); TC.fill();
+    TC.fillStyle='#141c12'; TC.fillRect(hx-7.4,hy-4.6,14.6,1.5); dot(hx-3.6,hy-10.9,0.9,'#141c12');
+    if (era===4){ TC.fillStyle=gold; TC.fillRect(hx-7.4,hy-4.4,14.6,1); bloomT(glow,5,()=>drawStar(hx+3.6,hy-7.6,2.7,'#fff0c0')); }
+    else drawStar(hx+3.6,hy-7.6,2.6,'#e8322a');
+    TC.fillStyle='#7a4c2a'; TC.fillRect(hx+7.6,hy+3.8,5.6,1.6); TC.fillStyle='#d8d0c0'; TC.fillRect(hx+12.2,hy+3.8,1.4,1.6);   // cigare
+    glowDot(hx+13.8,hy+4.6,0.8,'#ff7a3a',4);
+  }
+  // --- bras avant + fusil (tenu à la hanche ; le bras pivote à l'épaule pour viser, tirer, pointer)
+  if (on('arm')){
+    const y=-36.6;
+    if (era<=1){
+      TC.fillStyle=lgrad(-3,y-2,22,y+4,[[0,'#a06838'],[1,'#5a3418']]);
+      polyP([-3,y-2.4, 7,y-1.5, 12,y-0.2, 22,y-0.2, 22,y+1.6, 9,y+2, 4,y+4, -3,y+3.4]); TC.fill();
+      tubeT(10,y-1.3, 33,y-1.3, 1.15,'#565a60'); dot(12,y+1.9,1.1,steel);
+      TC.fillStyle='#2a2c30'; TC.fillRect(31,y-3.6,1.2,1.6);
+      if (era===1){ TC.fillStyle='#d4d8de'; polyP([33,y-2.3, 40.5,y-1.3, 33,y-0.3]); TC.fill(); }                      // baïonnette
+    } else if (era===2){
+      TC.fillStyle='#24272b'; polyP([-3,y-2.4, 19,y-2.4, 19,y+1.2, 8,y+2, 3,y+3.6, -3,y+2.6]); TC.fill();
+      TC.fillStyle=lgrad(13,y-2,22,y+2,[[0,'#a06838'],[1,'#6a3e1e']]); rrectT(13,y-0.4,9,2.6,1); TC.fill();           // garde-main en bois
+      TC.fillStyle='#1a1c20'; polyP([8.5,y+1.6, 12.5,y+1.6, 15.6,y+8, 11.8,y+8.4]); TC.fill();                         // chargeur courbe
+      tubeT(19,y-1.2, 31,y-1.2, 1.05,'#3a3c40'); TC.fillStyle='#1a1c20'; TC.fillRect(28.6,y-3.6,1.3,2);
+      tubeT(3,y-4.6, 12,y-4.6, 1.5,'#1e2024'); TC.fillStyle='rgba(140,220,255,0.9)'; TC.fillRect(11.4,y-5.4,0.9,1.6);  // lunette
+    } else {
+      const bc = era===4? '#ecd27e' : '#c4c9d4';
+      plateT([-3,y-3, 21,y-2.6, 27,y-0.5, 21,y+2, 7,y+2.4, 2,y+3.8, -3,y+2.6], bc);
+      TC.fillStyle=shade(bc,0.45); TC.fillRect(6,y+0.5,15,1.2);
+      for (let i=0;i<3;i++) glowDot(11+i*3.6,y-0.6,0.9,glow,4);
+      bloomT(glow,6,()=>{ TC.fillStyle=era===4? '#fff3c4' : glow; polyP([27,y-1.5, 33+(era-3)*2,y-0.9, 36+(era-3)*3,y-0.4, 27,y+0.5]); TC.fill(); });   // lame d'énergie
+      glowDot(27.5,y-0.5,1.4,glow,5);
+    }
+    limbT([2,-42, 4.5,-33.5], 6, shade(uni,0.95));
+    limbT([4.5,-33.5, 11,-35.4], 5.4, era<=1? skin : era>=3? shade(exo,0.95) : shade(uni,0.9));
+    if (era<=1){ TC.fillStyle=shade(uni,1.12); TC.save(); TC.translate(4.5,-33.5); TC.rotate(-0.28); TC.fillRect(-1,-3.4,3,6.8); TC.restore(); }   // manche retroussée
+    if (era>=3) plateT([4,-36.8, 10,-38.4, 11,-33.6, 5,-31.4], shade(exo,1.1));
+    if (era<=2) bandT(2,-42,4.5,-33.5,0.5,6.8,RED);                                                                   // brassard rouge
+    TC.fillStyle=lgrad(9,-38,13,-33,[[0,shade(era>=2? dark : skin,1.2)],[1,shade(era>=2? dark : skin,0.75)]]);
+    TC.beginPath(); TC.arc(11,-35.4,2.9,0,6.283); TC.fill();
+  }
+}
+
+/* ---------- LA SINGULARITÉ : prototype de récupération → coque → châssis de guerre → séraphin → cristal ---------- */
+function drawAgi(era, part, pose){
+  const on = p => part==='full' || part===p;
+  const lite = '#ff6ad6', frame = '#262b33', joint = '#14171c';
+  const plate = ['#8f8b7a','#d2cdc0','#5e6875','#e6e2ec','#b792e6'][era];
+  const trim  = ['#e8b830','#9aa0aa','#343a44','#4a3668','#f4e6ff'][era];
+  const rot = (hx,hy,a,fn) => { if (!a) return fn(); TC.save(); TC.translate(hx,hy); TC.rotate(a); TC.translate(-hx,-hy); fn(); TC.restore(); };
+  const dot = (x,y,r,c) => { TC.fillStyle=c; TC.beginPath(); TC.arc(x,y,r,0,6.283); TC.fill(); };
+  const shard = (x,y,w,h,c) => { TC.fillStyle=shade(c,1.3); polyP([x,y-h, x+w,y, x,y+h*0.2]); TC.fill(); TC.fillStyle=shade(c,0.8); polyP([x,y-h, x-w,y, x,y+h*0.2]); TC.fill();
+    TC.fillStyle=shade(c,0.6); polyP([x-w,y, x,y+h, x+w,y, x,y+h*0.2]); TC.fill(); };
+  // --- dos : ailerons du châssis de guerre, halo du séraphin, couronne du cristal
+  if (on('back')){
+    if (era===0){ TC.strokeStyle='#3a3026'; TC.lineWidth=1.3; TC.lineCap='round';                                      // câbles qui pendent
+      for (const [a,b,c] of [[-9,-36,'#b0402a'],[-7,-33,'#c8a030']]){ TC.strokeStyle=c; TC.beginPath(); TC.moveTo(a,-46); TC.quadraticCurveTo(a-7,b,a+2,-29); TC.stroke(); }
+      plateT([-15,-50, -9,-50, -9,-38, -15,-38], shade(plate,0.7)); }                                                  // batterie de récupération
+    else if (era===1){ plateT([-12,-49, -7,-51, -6,-36, -11,-34], shade(plate,0.72)); }                                // épine dorsale
+    else if (era===2){ for (const [x,h] of [[-12,-64],[-8,-58]]) plateT([x,-47, x+4.5,-48, x+1,h, x-2.5,h+5], shade(plate,0.8)); }   // ailerons
+    else if (era===3){ bloomT(lite,6,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=1.5; TC.beginPath(); TC.arc(0,-60,12.5,Math.PI*0.95,Math.PI*2.05); TC.stroke(); });
+      for (const [x,y] of [[-13,-50],[-15,-41]]) plateT([x,y-5, x+4,y-3, x+3,y+4, x-1.5,y+5], shade(plate,0.82)); }    // pennes dorsales
+    else { bloomT(lite,7,()=>{ TC.strokeStyle=rgbaC(lite,0.95); TC.lineWidth=1.4; TC.beginPath(); TC.ellipse(1,-73,9.5,2.6,0,0,6.283); TC.stroke(); });
+      for (const [x,y,h] of [[-14,-48,8],[-17,-36,6],[-12,-27,4]]) shard(x,y,h*0.42,h,plate); }
+  }
+  // --- bras arrière : il se termine par un émetteur (l'attaque « faisceau » part de sa paume)
+  if (on('armb')){
+    if (era===4){ shard(-6.5,-36,2.6,8,plate); shard(-5,-27.5,2,4.6,plate); glowDot(-5,-27,1.5,lite,5); }
+    else { limbT([-3,-44, -7,-35, -5,-27], era===0? 5.2 : 4.4, shade(frame,0.85));
+      if (era>=2) plateT([-5.6,-46.4, -0.8,-45, -4.6,-38, -8.8,-39.4], shade(plate,0.74));
+      dot(-5,-27,2.9,joint); TC.strokeStyle=shade(plate,0.8); TC.lineWidth=0.9; TC.beginPath(); TC.arc(-5,-27,2.9,0,6.283); TC.stroke();
+      glowDot(-5,-27,1.4,lite,5); }
+  }
+  // --- jambes : vérins du prototype, pattes digitigrades, queue de cristal (ère 4 : elle lévite)
+  const lw = era===0? 6.6 : era===3? 4.6 : 5.4, lb = shade(frame,0.8);
+  const legB = () => {
+    if (era===4){ shard(-3,-14,2.6,7,shade(plate,0.8)); return; }
+    limbT([-2,-25, 1,-15], lw+0.6, lb); limbT([1,-15, -4,-5], lw-0.4, lb);
+    plateT([-9,0, 2,0, 0,-4.4, -6,-5.4], shade(plate,0.62)); };
+  const legF = () => {
+    if (era===4){ TC.fillStyle=shade(plate,1.25); polyP([-6,-31, 1,-32, 0,-8]); TC.fill(); TC.fillStyle=shade(plate,0.72); polyP([1,-32, 7,-30, 0,-8]); TC.fill();
+      TC.strokeStyle=rgbaC(lite,0.6); TC.lineWidth=0.7; strokeP([1,-32, 0,-8]); TC.stroke(); shard(1.5,-2.5,1.8,3.4,plate); return; }
+    limbT([2,-25, 7,-15], lw+0.6, frame); limbT([7,-15, 2,-5], lw-0.4, frame);
+    TC.strokeStyle='#8a929c'; TC.lineWidth=1.1; strokeP([3,-21, 4,-9]); TC.stroke();                                   // vérin
+    plateT([1,-28.5, 9,-25.5, 9,-18, 3,-16.5], era===0? shade(plate,0.95) : plate);
+    if (era===0) for (let i=0;i<3;i++){ TC.fillStyle=i%2? '#1a1a1a' : '#e8b830'; polyP([2.6+i*2.1,-17.4, 4.7+i*2.1,-17.6, 5.3+i*2.1,-19.6, 3.2+i*2.1,-19.4]); TC.fill(); }
+    dot(7,-15,2.6,joint); if (era>=3) glowDot(7,-15,1,lite,4);
+    plateT([-2,0, 12,0, 9.4,-4.4, 1,-5.4], shade(plate,0.9)); };
+  if (part==='legs'){ if (era===4){ legB(); legF(); return; } const a=pose*0.3; rot(-2,-25,a,legB); rot(2,-25,-a,legF); return; }
+  if (part==='full'){ legB(); legF(); }
+  // --- châssis + tête
+  if (on('body')){
+    if (era<4){ plateT([-6,-31, 6,-31, 5,-23.5, -5,-23.5], frame); TC.fillStyle=joint; TC.fillRect(-3,-34,6,4); }     // bassin + colonne
+    let hy = -57;
+    const core = (x,y,r) => { TC.fillStyle=joint; polyP([x,y-r-1.2, x+r+1,y, x,y+r+1.2, x-r-1,y]); TC.fill();           // cœur losange : sa signature
+      bloomT(lite,6,()=>{ TC.fillStyle=lite; polyP([x,y-r, x+r*0.82,y, x,y+r, x-r*0.82,y]); TC.fill(); });
+      TC.fillStyle='rgba(255,255,255,0.85)'; polyP([x-0.4,y-r*0.6, x+r*0.3,y-r*0.1, x-0.4,y+r*0.1, x-r*0.4,y-r*0.2]); TC.fill(); };
+    const crown = (x,y,h,c) => { for (const [dx,k] of [[-3.6,0.72],[0,1],[3.6,0.72]]){ TC.fillStyle=c; polyP([x+dx-1.3,y, x+dx+1.3,y, x+dx,y-h*k]); TC.fill(); } };   // couronne à trois pointes
+    if (era===0){
+      plateT([-10,-50, 10,-50, 10,-31, -10,-31], plate);                                                              // baie de serveur
+      TC.fillStyle='rgba(0,0,0,0.42)'; for (let i=0;i<2;i++) TC.fillRect(-8,-47.8+i*2.4,7,1.3);
+      TC.fillStyle='#39d06a'; TC.fillRect(-0.2,-47.4,1.2,1.2); TC.fillStyle='#e8b830'; TC.fillRect(-0.2,-44.7,1.2,1.2);
+      for (let i=0;i<7;i++){ TC.fillStyle=i%2? '#1a1a1a' : '#e8b830'; polyP([-10+i*2.9,-31, -7.1+i*2.9,-31, -8.4+i*2.9,-33.6, -11.3+i*2.9,-33.6]); TC.fill(); }
+      TC.fillStyle='rgba(255,255,255,0.5)'; for (const [x,y] of [[-8.6,-48.6],[8.6,-48.6],[8.6,-35.4]]){ TC.beginPath(); TC.arc(x,y,0.7,0,6.283); TC.fill(); }
+      TC.fillStyle=shade(plate,0.6); polyP([-8.6,-42.6, -1,-43, -1.4,-34.6, -8.6,-34.4]); TC.fill();                         // plaque soudée de travers
+      core(-4.6,-38.4,2.3);
+      hy = -59; TC.fillStyle=frame; TC.fillRect(-2,-53,5,3.4);
+      plateT([-7.5,hy-6.6, 8.5,hy-6.6, 8.5,hy+5.6, -7.5,hy+5.6], shade(plate,1.06));                                  // tête-moniteur
+      TC.fillStyle='#0b1016'; rrectT(-1.6,hy-4.4,8.6,7.6,1.4); TC.fill();
+      TC.strokeStyle='#8a929c'; TC.lineWidth=0.9; TC.beginPath(); TC.arc(3,hy-0.6,2.9,0,6.283); TC.stroke(); glowDot(3.3,hy-0.6,1.7,lite,6);
+      TC.strokeStyle=frame; TC.lineWidth=1.1; TC.lineCap='round';
+      for (const [dx,tx,ty] of [[-4.6,-6.8,-8.6],[-1.6,-1.6,-10.8],[1.4,3.6,-8.6]]){ strokeP([dx,hy-6.6, tx,hy-6.6+ty+6.6]); TC.stroke(); }   // antennes : la couronne à venir
+      glowDot(-1.6,hy-11.2,1,'#ff5a4a',3);
+    } else if (era===1){
+      plateT([-8,-50, 8,-50, 10,-46.5, 9.4,-36, 6,-31, -6,-31, -9.4,-36, -9.4,-46.5], plate);                         // coque lisse
+      TC.strokeStyle='rgba(0,0,0,0.26)'; TC.lineWidth=0.9; strokeP([-9,-38.4, 9.4,-38.4]); TC.stroke(); strokeP([0.5,-50, 0.5,-31]); TC.stroke();
+      core(-4,-43.6,2.5);
+      TC.fillStyle=frame; TC.fillRect(-2,-53,5,3.4);
+      TC.fillStyle=lgrad(-8,hy-8,9,hy+6,[[0,shade(plate,1.3)],[0.5,plate],[1,shade(plate,0.56)]]);
+      TC.beginPath(); TC.ellipse(1,hy-0.6,8.2,7.2,0,0,6.283); TC.fill();
+      TC.fillStyle='#0a1016'; rrectT(0.4,hy-3,8.6,3.6,1.6); TC.fill();
+      bloomT(lite,6,()=>{ TC.fillStyle=lite; rrectT(1.4,hy-2.2,6.8,1.9,0.9); TC.fill(); });                            // fente de visée
+      crown(0.6,hy-7,5.4,trim);
+    } else if (era===2){
+      plateT([-10,-50, 11.5,-49, 9.6,-37, 3,-31, -4,-31, -9,-38], plate);                                             // blindage anguleux
+      TC.strokeStyle='rgba(0,0,0,0.34)'; TC.lineWidth=0.9; strokeP([-9,-48, 1,-38, 11,-47]); TC.stroke();
+      TC.fillStyle=trim; polyP([-8,-36.4, 8.6,-36.4, 4,-32, -4.6,-32]); TC.fill();
+      core(-3.4,-42.4,2.5);
+      plateT([-2,-53, 12.5,-52, 14.6,-43.6, 0.6,-41.6], shade(plate,1.14));                                           // épaulière massive
+      TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=1; strokeP([1.6,-50.6, 11.6,-49.8]); TC.stroke();
+      TC.fillStyle=frame; TC.fillRect(-2,-53.4,5,3.6);
+      plateT([-7,hy-6.6, 5.6,hy-6.6, 9.4,hy-1.4, 5.6,hy+4.6, -7,hy+4.6], plate);
+      TC.fillStyle='#0a1016'; polyP([0,hy-4, 8.6,hy-3.2, 5,hy+0.6]); TC.fill();
+      bloomT(lite,6,()=>{ TC.strokeStyle=lite; TC.lineWidth=1.4; strokeP([1.2,hy-3.2, 5,hy-0.6, 8,hy-2.8]); TC.stroke(); });   // visière en V
+      TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.8; for (let i=0;i<2;i++){ strokeP([1.6+i*2,hy+1.8, 1.6+i*2,hy+3.8]); TC.stroke(); }
+      crown(-1,hy-6.6,7,shade(plate,1.12));
+    } else if (era===3){
+      hy = -60;
+      plateT([-7.6,-51, 8.6,-51, 6.6,-37, 2,-31, -3,-31, -6.6,-37], plate);                                           // buste effilé
+      TC.fillStyle=trim; polyP([-5.6,-37, 6,-37, 2,-31.6, -3,-31.6]); TC.fill();
+      bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(0,-39.4,1.5,7); });                                           // colonne lumineuse
+      core(-3,-45,2.4);
+      plateT([1.6,-56, 13.6,-55.2, 15.6,-48.6, 3.6,-47], shade(plate,1.08));                                          // épaulière flottante
+      TC.fillStyle=trim; TC.fillRect(-1.6,-56,4.4,5.4);
+      plateT([-6,hy-6.4, 4.4,hy-6.4, 7.6,hy-1.6, 4.4,hy+4.6, -6,hy+4.6], plate);
+      TC.fillStyle=trim; polyP([-6,hy-6.4, -1.5,hy-6.4, -3,hy+4.6, -6,hy+4.6]); TC.fill();
+      bloomT(lite,6,()=>{ TC.fillStyle=lite; rrectT(0.6,hy-2.8,6.2,1.8,0.9); TC.fill(); });
+      crown(-0.6,hy-6.4,9.5,plate);
+    } else {
+      hy = -62;
+      TC.fillStyle=shade(plate,1.38); polyP([-9.6,-50, 1,-53, 2,-39]); TC.fill();                                     // buste de cristal
+      TC.fillStyle=shade(plate,1.05); polyP([1,-53, 11.6,-49, 2,-39]); TC.fill();
+      TC.fillStyle=shade(plate,0.74); polyP([-9.6,-50, 2,-39, 11.6,-49, 8,-36, 1.6,-30, -4,-31, -8,-37]); TC.fill();
+      TC.strokeStyle=rgbaC('#ffffff',0.5); TC.lineWidth=0.7; strokeP([-9.6,-50, 2,-39, 11.6,-49]); TC.stroke(); strokeP([1,-53, 2,-39, 1.6,-30]); TC.stroke();
+      core(1.6,-44.4,2.9);
+      for (const [x,y,h] of [[12.5,-52.6,5.4],[-9,-55,4.2]]) shard(x,y,h*0.5,h,plate);                                 // épaules en éclats
+      TC.fillStyle=shade(plate,1.4); polyP([1,hy-9.5, 8.6,hy-0.6, 1,hy+1]); TC.fill();                                // tête taillée
+      TC.fillStyle=shade(plate,1.05); polyP([1,hy-9.5, -6.6,hy-0.6, 1,hy+1]); TC.fill();
+      TC.fillStyle=shade(plate,0.68); polyP([-6.6,hy-0.6, 8.6,hy-0.6, 1,hy+6.4]); TC.fill();
+      glowDot(4,hy-1.4,1.7,lite,6);
+      crown(1,hy-10.6,6,trim);
+    }
+  }
+  // --- bras avant + lame (pince du prototype → couperet → mono-lame → lame d'énergie → lame de cristal)
+  if (on('arm')){
+    const hx=15, hyy=-47;
+    if (era<4){ limbT([3,-44, 10,-41, hx,hyy], era===0? 5.4 : 4.6, frame);
+      plateT([0.6,-46.6, 6,-46.4, 11.6,-40, 8.2,-39.6], era===0? shade(plate,0.9) : shade(plate,1.05)); }
+    TC.save(); TC.translate(hx,hyy); TC.rotate(-0.8);
+    if (era===0){                                                                                                      // pince hydraulique
+      TC.fillStyle=frame; rrectT(-2,-3,7,6,1.4); TC.fill();
+      plateT([4,-3.6, 15,-6.4, 19,-3.4, 16,-1.4, 6,-0.6], '#9a9ea2'); plateT([4,3.6, 14,6, 18.6,3.2, 15.6,1.4, 6,0.6], '#84888c');
+      for (let i=0;i<3;i++){ TC.fillStyle=i%2? '#1a1a1a' : '#e8b830'; TC.fillRect(-1.6+i*2.1,-3,2.1,1.6); }
+      dot(3.6,0,1.5,joint);
+    } else if (era===1){ TC.fillStyle=frame; rrectT(-2,-2.4,6,4.8,1.2); TC.fill();
+      TC.fillStyle=lgrad(0,-7,0,3,[[0,'#f0f4f8'],[1,'#6a727c']]); polyP([2,-2, 18,-7, 22.6,0.6, 3,2.4]); TC.fill();     // couperet
+      TC.fillStyle='rgba(255,255,255,0.7)'; TC.fillRect(4,1,17,0.7);
+    } else if (era===2){ TC.fillStyle=frame; rrectT(-3,-3,8,6,1.4); TC.fill();
+      TC.fillStyle=lgrad(0,-3,0,3,[[0,'#f4f8fc'],[1,'#7a828c']]); polyP([3,-2.2, 26,-1, 29,0.4, 3,2.2]); TC.fill();     // mono-lame
+      TC.fillStyle=trim; TC.fillRect(3,-0.4,20,0.9); glowDot(1,0,1.1,lite,4);
+    } else if (era===3){ TC.fillStyle=trim; rrectT(-3,-2.6,7,5.2,1.4); TC.fill();
+      bloomT(lite,7,()=>{ TC.fillStyle=lite; polyP([3,-2.1, 27,-1.3, 31.6,0, 27,1.3, 3,2.1]); TC.fill(); });           // lame d'énergie
+      TC.fillStyle='rgba(255,255,255,0.92)'; TC.fillRect(4,-0.45,23,0.9);
+    } else {
+      TC.rotate(0.8); shard(-9,5.5,2.4,6,plate); TC.rotate(-0.8);                                                      // avant-bras détaché
+      TC.fillStyle=shade(plate,1.4); polyP([-2,0, 8,-3.4, 34,0]); TC.fill();                                          // lame de cristal
+      TC.fillStyle=shade(plate,0.78); polyP([-2,0, 8,3, 34,0]); TC.fill();
+      bloomT(lite,6,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=0.9; strokeP([-1,0, 33,0]); TC.stroke(); });
+    }
+    TC.restore();
+  }
+}
+
+/* ---------- habillage en direct : étoffe, éclats, sceau au sol ---------- */
+// bande d'étoffe attachée en (ax, ay..ay+h), qui traîne vers l'arrière : aplats + trait d'encre (aucun dégradé)
+function heroCloth(g, ax, ay, h, len, t, stream, unf, col, col2, star){
+  const N = 5, T = [], B = [];
+  for (let i=0;i<=N;i++){ const k = i/N, x = ax - len*unf*k*(0.86+0.14*stream);
+    const wv = Math.sin(t*0.9 - i*1.15)*(0.8+2.4*k)*(0.45+0.55*stream), droop = (1-stream)*k*k*h*0.6;
+    T.push(x, ay + wv*0.55 + droop); B.push(x, ay + h + wv + droop*1.2 - k*h*0.1); }
+  g.beginPath(); g.moveTo(T[0],T[1]); for (let i=1;i<=N;i++) g.lineTo(T[i*2],T[i*2+1]);
+  for (let i=N;i>=0;i--) g.lineTo(B[i*2],B[i*2+1]); g.closePath();
+  g.fillStyle = col; g.fill();
+  g.fillStyle = col2;                                                                    // plis
+  for (const i of [1,3]){ g.beginPath(); g.moveTo(T[i*2],T[i*2+1]); g.lineTo(T[i*2+2],T[i*2+3]); g.lineTo(B[i*2+2],B[i*2+3]); g.lineTo(B[i*2],B[i*2+1]); g.closePath(); g.fill(); }
+  if (star && unf>0.7){ const sx=(T[4]+T[6]+B[4]+B[6])/4, sy=(T[5]+T[7]+B[5]+B[7])/4, r=h*0.27; g.fillStyle=star; g.beginPath();
+    for (let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr2=i%2? r*0.45 : r; g.lineTo(sx+Math.cos(a)*rr2, sy+Math.sin(a)*rr2); } g.closePath(); g.fill(); }
+  g.beginPath(); g.moveTo(T[0],T[1]); for (let i=1;i<=N;i++) g.lineTo(T[i*2],T[i*2+1]);
+  for (let i=N;i>=0;i--) g.lineTo(B[i*2],B[i*2+1]); g.closePath();
+  g.strokeStyle = HERO_INK; g.lineWidth = 0.9; g.lineJoin = 'round'; g.stroke();
+}
+// sceau à l'encre posé au sol sous le héros (remplace l'anneau lumineux) + repère sous les alliés galvanisés
+function heroSeal(fac){
+  return fxSprite('HSEAL'+fac, 104, 34, g => { const hum = fac==='HUM', c = hum? '#8a2a1c' : '#7a2a86';
+    g.translate(52,17); g.strokeStyle = c; g.fillStyle = c; g.lineCap='round';
+    g.save(); g.scale(1,0.3);
+    if (hum){ g.lineWidth=2.2; g.setLineDash([9,5]); g.beginPath(); g.arc(0,0,46,0,6.283); g.stroke();
+      g.setLineDash([]); g.lineWidth=1.1; g.beginPath(); g.arc(0,0,39,0,6.283); g.stroke();
+      for (let i=0;i<5;i++){ const a=-Math.PI/2+i*6.283/5; g.beginPath(); g.moveTo(Math.cos(a)*39,Math.sin(a)*39); g.lineTo(Math.cos(a+2.513)*39,Math.sin(a+2.513)*39); g.stroke(); } }
+    else { for (const [r,lw] of [[46,2],[36,1.1]]){ g.lineWidth=lw; g.beginPath(); for (let i=0;i<=6;i++){ const a=i*Math.PI/3; g.lineTo(Math.cos(a)*r,Math.sin(a)*r); } g.stroke(); }
+      g.lineWidth=1.1; for (let i=0;i<6;i++){ const a=i*Math.PI/3; g.beginPath(); g.moveTo(Math.cos(a)*36,Math.sin(a)*36); g.lineTo(Math.cos(a)*24,Math.sin(a)*24); g.stroke(); }
+      g.beginPath(); g.moveTo(0,-14); g.lineTo(11,0); g.lineTo(0,14); g.lineTo(-11,0); g.closePath(); g.stroke(); }
+    g.restore(); });
+}
+function heroPip(fac, x, gy){
+  const sp = fxSprite('HPIP'+fac, 16, 8, g => { const hum = fac==='HUM'; g.translate(8,4); g.scale(1,0.5);
+    g.fillStyle = hum? '#a8281c' : '#b23cc0'; g.strokeStyle = HERO_INK; g.lineWidth = 1.2; g.lineJoin='round'; g.beginPath();
+    if (hum) for (let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, r=i%2? 2.6 : 6; g.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
+    else { g.moveTo(0,-6); g.lineTo(5,0); g.lineTo(0,6); g.lineTo(-5,0); }
+    g.closePath(); g.stroke(); g.fill(); });
+  ctx.drawImage(sp, x-8, gy+1, 16, 8);
+}
+function heroShadow(fac, era, x, gy, dir){
+  const sh = fxSprite('HSH'+fac+era, HSP.W, HSP.H, g => {
+    g.drawImage(heroPart(fac,era,'body'), 0, 0, HSP.W, HSP.H); g.drawImage(heroPart(fac,era,'arm'), 0, 0, HSP.W, HSP.H);
+    g.drawImage(heroPart(fac,era,'armb'), 0, 0, HSP.W, HSP.H);
+    g.drawImage(heroPart(fac,era,'legs',0), HSP.cx+HLEG.ox, HSP.foot+HLEG.oy, HLEG.W, HLEG.H);
+    g.globalCompositeOperation='source-in'; g.fillStyle='#07060b'; g.fillRect(0,0,HSP.W,HSP.H); });
+  const dev = game? game.dev : 0, A0 = ctx.globalAlpha;
+  ctx.save(); ctx.globalAlpha = A0*(0.26 - 0.08*dev);
+  ctx.translate(x, gy+1.5); ctx.transform(dir, 0, 0.75+0.9*dev, 0.24+0.1*dev, 0, 0);
+  ctx.drawImage(sh, -HSP.cx, -HSP.foot, HSP.W, HSP.H); ctx.restore();
+}
+function heroShard(){
+  return fxSprite('HSHARD', 10, 16, g => { g.translate(5,8); g.lineJoin='round';
+    g.beginPath(); g.moveTo(0,-7); g.lineTo(3.4,0); g.lineTo(0,7); g.lineTo(-3.4,0); g.closePath(); g.strokeStyle=HERO_INK; g.lineWidth=1.6; g.stroke();
+    g.fillStyle='#f0d2ff'; g.beginPath(); g.moveTo(0,-7); g.lineTo(3.4,0); g.lineTo(0,1.4); g.closePath(); g.fill();
+    g.fillStyle='#c48ae8'; g.beginPath(); g.moveTo(0,-7); g.lineTo(-3.4,0); g.lineTo(0,1.4); g.closePath(); g.fill();
+    g.fillStyle='#8a52b8'; g.beginPath(); g.moveTo(-3.4,0); g.lineTo(0,7); g.lineTo(3.4,0); g.lineTo(0,1.4); g.closePath(); g.fill(); });
+}
+
+/* ---------- pose animée ---------- */
+const hSm = k => k*k*(3-2*k);
+// renvoie la pose de l'image : angles des bras (rad), avance du bras, fente, bascule, tassement…
+function heroPose(u, moving, ph){
+  const hum = u.fac==='HUM', guest = game.net==='guest';
+  const h = u._h || (u._h = { a:0, b:0 });
+  const mult = (!guest && u.tiredT>0)? (hum? 1.3 : 1.5) : 1;
+  const ts = u.rate*mult - u.atkT;                                    // temps écoulé depuis la frappe
+  const wind = (u.atkT>0 && u.atkT<0.26)? hSm(1-u.atkT/0.26) : 0;     // armement, juste avant la suivante
+  const n = u.atkN|0, vNext = HERO_SEQ[n&7], vLast = HERO_SEQ[(n+7)&7];
+  const P = { af:0, ab:0, ax:0, lunge:0, tilt:0, sy:1+0.022*Math.sin(u.bob*0.37), ts, v:vLast, hit:ts>=0 && ts<0.45, wind, vNext };
+  let a = 0.022*Math.sin(u.bob*0.37), b = 0.03*Math.sin(u.bob*0.3+1);
+  if (hum){ a += moving? 0.2 + Math.sin(ph*2)*0.04 : 0.1; b += moving? 0.08 + Math.sin(ph)*0.035 : 0; }
+  else if (moving){ a += Math.sin(ph)*0.15; b -= Math.sin(ph)*0.15; }
+  // geste de ralliement (aboiement) : le Che brandit son fusil, la Singularité ouvre les bras
+  const gt = u.gestT!=null? game.t - u.gestT : 9;
+  if (gt>=0 && gt<1.1 && !P.hit && !wind){ const k = Math.sin(Math.min(1,gt/1.1)*Math.PI); const e = hSm(Math.min(1,k*1.6));
+    if (hum){ a = lerp(a, -1.2, e); b -= 0.06*e; } else { a = lerp(a, -0.55, e); b = lerp(b, 0.5, e); } P.gest = e; }
+  h.a += (a-h.a)*0.2; h.b += (b-h.b)*0.2;                              // les poses lentes sont lissées
+  let fa = 0, fb = 0;
+  if (P.hit){
+    const imp = Math.max(0, 1-ts/0.16);
+    if (hum && vLast===0){                                             // TIR : recul sec, le buste part en arrière
+      fa = ts<0.05? -0.17*ts/0.05 : -0.17*Math.pow(1-(ts-0.05)/0.4, 2); fa -= h.a*Math.max(0,1-ts/0.3)*0.8;
+      P.lunge = -5*imp; P.tilt = -0.07*imp;
+    } else if (hum){                                                   // COUP DE BAÏONNETTE : fente avant
+      const k = ts<0.08? ts/0.08 : Math.pow(1-(ts-0.08)/0.37, 2);
+      P.ax = ts<0.08? lerp(-7, 13, k) : 13*k; P.lunge = 11*k; P.tilt = 0.14*k; fa = -h.a*k - 0.05*k;
+    } else if (vLast===0){                                             // TAILLE : la lame s'abat
+      fa = ts<0.07? lerp(-1.05, 0.95, ts/0.07) : 0.95*Math.pow(1-(ts-0.07)/0.38, 2);
+      P.lunge = 10*imp; P.tilt = 0.12*imp;
+    } else {                                                           // FAISCEAU : paume tendue, léger recul
+      fb = ts<0.22? -1.45 : -1.45*Math.pow(1-(ts-0.22)/0.23, 2); P.lunge = -4*imp; P.tilt = -0.05*imp;
+    }
+  } else if (wind){
+    if (hum && vNext===0){ fa = -h.a*wind*0.8; }                       // épaule le fusil
+    else if (hum){ P.ax = -7*wind; fa = -h.a*wind - 0.05*wind; P.lunge = -3*wind; P.tilt = -0.08*wind; }
+    else if (vNext===0){ fa = -1.05*wind; P.tilt = -0.05*wind; }
+    else fb = -1.45*wind;
+  }
+  P.af = h.a + fa; P.ab = h.b + fb;
+  return P;
+}
+
+/* ---------- rendu en jeu ---------- */
+function drawHero(u, x, gy){
+  const fac = u.fac, hum = fac==='HUM', era = heroEra(u.era), S = HERO_S[fac][era], R = HERO_RIG[fac];
+  const t = u.bob, A0 = ctx.globalAlpha, rich = qFx();
+  const mv = Math.abs(u.x-(u._wx!=null? u._wx : u.x)); u._wx = u.x;
+  const moving = mv>0.04, ph = t*1.1;
+  let dir = u.side; if (u.hstate==='flee' && moving) dir = -dir;      // repli prudent : il tourne le dos et court vers sa base
+  const float = !hum && era===4;                                       // la Singularité cristalline lévite
+  const sp = Math.sin(ph), pose = (float || !moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);
+  const P = heroPose(u, moving, ph);
+  let dy = float? -7 - 3*Math.sin(t*0.45) : (moving? -Math.abs(sp)*3 : 0);
+  let sy = P.sy, tilt = P.tilt, lunge = P.lunge, unf = 1, clipK = 1;
+  if (moving && !float) tilt += 0.03;                                  // penché dans la marche
+  if (u.flash>0 && !P.hit){ tilt -= Math.min(0.16, u.flash*1.1); sy *= 0.93; lunge -= 3*Math.min(1,u.flash*8); }   // encaisse : le buste part en arrière
+  // victoire : la légende exulte
+  const cheer = game.over && ((u.side===1)===!!game.win);
+  if (cheer){ dy -= Math.abs(Math.sin(performance.now()/210 + t))*6; P.af = hum? -1.2 + 0.2*Math.sin(performance.now()/190) : -0.6; if (!hum) P.ab = 0.5; }
+  // ENTRÉE EN SCÈNE (0,9 s) : le Che saute dans la mêlée et son drapeau se déploie ; la Singularité se matérialise
+  const age = u._born!=null? game.t - u._born : 9, ent = clamp(age/0.9, 0, 1);
+  if (ent<1){
+    if (hum){ const k1 = Math.min(1, ent/0.45); dy -= (1-k1*k1)*74; unf = hSm(ent);
+      if (ent>=0.45){ const k2 = (ent-0.45)/0.55; sy *= 1 - 0.2*Math.sin(k2*Math.PI)*(1-k2); P.af = lerp(-1.2, P.af, hSm(k2));
+        if (!u._h.land){ u._h.land = 1; if (rich && particles.length<470) for (let i=0;i<8;i++) particles.push({k:'u', x:u.x+(Math.random()-0.5)*34, y:gy-2, vx:(Math.random()-0.5)*70, vy:-10-Math.random()*16, g:-4, dr:1.8, life:0.7+Math.random()*0.4, t:0, r:4+Math.random()*4});
+          game.shake = Math.max(game.shake||0, 5); } }
+      else P.af = -1.2; }
+    else { clipK = hSm(ent); if (rich && particles.length<470 && Math.random()<0.5){ const a=Math.random()*6.283;
+        particles.push({k:'s', x:u.x+Math.cos(a)*46, y:gy-60*S*0.6+Math.sin(a)*46, vx:-Math.cos(a)*120, vy:-Math.sin(a)*120, g:0, dr:1, life:0.34, t:0, color:'#ff9ae6', r:1.4}); } }
+  }
+  // --- sol : sceau à l'encre + ombre portée
+  if (rich){ ctx.globalAlpha = A0*(0.42 + 0.1*Math.sin(t*0.4))*Math.min(1, ent*1.6); ctx.drawImage(heroSeal(fac), x-52, gy-15, 104, 34); ctx.globalAlpha = A0;
+    heroShadow(fac, era, x, gy, dir); }
+  else projShadow(x, gy, 20);
+  if (moving && rich && !float && particles.length<440 && Math.random()<0.16)
+    particles.push({ x:u.x-dir*9, y:gy-1, vx:-dir*8+(Math.random()*6-3), vy:-9-Math.random()*9, r:1.8+Math.random()*2, life:0.45+Math.random()*0.3, t:0, color:'rgba(198,184,156,0.5)' });
+  const stream = moving? 1 : 0.4;
+  const img = (part, px, py, a, ox) => { ctx.save(); if (ox) ctx.translate(ox*S, 0);
+    if (a){ ctx.translate(px*S, py*S); ctx.rotate(a); ctx.translate(-px*S, -py*S); }
+    ctx.drawImage(heroPart(fac,era,part), -HSP.cx, -HSP.foot, HSP.W, HSP.H); ctx.restore(); };
+  const orbit = front => {                                             // éclats de cristal en orbite (aura de la Singularité)
+    const n = R.orb[era], sh = heroShard(), sp2 = P.gest? 1.9 : 1;
+    for (let i=0;i<n;i++){ const a = t*0.22*sp2 + i*6.283/n, z = Math.sin(a);
+      if ((z>0)!==front) continue;
+      const k = 0.8 + 0.2*z, ox = Math.cos(a)*(19+era*2.4)*S, oy = (-40 - era*2 + Math.sin(a*2+i)*5 + z*4)*S;
+      ctx.drawImage(sh, ox-5*k, oy-8*k, 10*k, 16*k); } };
+  const paint = live => {
+    if (!hum && live) orbit(false);
+    img('back');
+    if (hum && era===4 && live){                                       // cape
+      const w = Math.sin(t*0.55)*1.4, st = stream; ctx.save(); ctx.scale(S,S);
+      ctx.beginPath(); ctx.moveTo(-1,-44.5); ctx.lineTo(-7.5,-46); ctx.lineTo(-13-w-st*3,-30); ctx.lineTo(-17-w*2-st*9,-9+st*5); ctx.lineTo(-6-w-st*4,-8+st*2); ctx.closePath();
+      ctx.fillStyle='#a8221e'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-7.5,-46); ctx.lineTo(-13-w-st*3,-30); ctx.lineTo(-17-w*2-st*9,-9+st*5); ctx.lineTo(-13-w*1.6-st*7,-9.6+st*4); ctx.lineTo(-10-w-st*2,-30); ctx.closePath();
+      ctx.fillStyle='#d23a2c'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-1,-44.5); ctx.lineTo(-7.5,-46); ctx.lineTo(-13-w-st*3,-30); ctx.lineTo(-17-w*2-st*9,-9+st*5); ctx.lineTo(-6-w-st*4,-8+st*2); ctx.closePath();
+      ctx.strokeStyle=HERO_INK; ctx.lineWidth=0.9; ctx.lineJoin='round'; ctx.stroke(); ctx.restore(); }
+    img('armb', -3, hum? -42 : -44, P.ab);
+    if (hum && live){                                                  // drapeau : il suit la hampe
+      ctx.save(); ctx.translate(-3*S,-42*S); ctx.rotate(P.ab); ctx.translate(3*S,42*S); ctx.scale(S,S);
+      heroCloth(ctx, R.pole-0.6, R.ptop[era]+2, R.fh[era], R.fl[era], t, stream, unf, '#cf2a26', 'rgba(110,16,16,0.4)', era>=1? '#f2cf62' : null);
+      ctx.restore(); }
+    ctx.drawImage(heroPart(fac,era,'legs',pose), HLEG.ox, HLEG.oy, HLEG.W, HLEG.H);
+    img('body');
+    img('arm', hum? 2 : 3, hum? -42 : -44, P.af, P.ax);
+    if (!hum && live) orbit(true);
+  };
+  ctx.save(); ctx.translate(x + dir*lunge, gy + dy); ctx.rotate(dir*tilt); ctx.scale(dir, sy);
+  if (clipK<1){ const hh = (R.top[era]+14)*S; ctx.beginPath(); ctx.rect(-HSP.cx, -hh*clipK-2, HSP.W, hh*clipK+12); ctx.clip(); }
+  paint(true);
+  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha = A0*Math.min(0.36, u.flash*2.4); paint(false); ctx.globalCompositeOperation='source-over'; ctx.globalAlpha = A0; }
+  ctx.restore();
+  if (clipK<1){ const hh = (R.top[era]+14)*S, yy = gy+dy-hh*clipK;     // trait de matérialisation
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,140,226,0.9)'; ctx.fillRect(x-34, yy-1, 68, 2);
+    ctx.fillStyle='rgba(255,140,226,0.25)'; ctx.fillRect(x-40, yy-5, 80, 10); ctx.restore(); }
+  heroAttackFX(u, x + dir*lunge, gy + dy, dir, S, P, era);
+  // nom de la légende : seulement à l'entrée en scène (4 s), puis il s'efface — plus de panneau permanent
+  if (age<4 && A0>0.5){ const a = Math.min(1, age*3)*clamp((4-age)/0.8, 0, 1), col = HERO_COL[fac], ny = gy - heroTop(u) - 30 - (hum? 0 : 4);
+    ctx.save(); ctx.globalAlpha = A0*a; ctx.font=HF(11); ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.lineJoin='round';
+    ctx.strokeStyle='rgba(12,8,16,0.8)'; ctx.lineWidth=3; ctx.strokeText(HERO_NAME[fac], x, ny); ctx.fillStyle=col; ctx.fillText(HERO_NAME[fac], x, ny); ctx.restore(); }
+  // posture du héros du joueur : petit jeton à l'encre au-dessus de lui quand elle n'est pas « normale »
+  if (u.side===1 && A0>0.5){ const hs = game.p.heroStance;
+    if (hs && hs!=='normal'){ const iy = gy - heroTop(u) - 12; ctx.save(); ctx.globalAlpha = A0*0.92;
+      ctx.fillStyle='#efe6cf'; ctx.strokeStyle=HERO_INK; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(x, iy, 7, 0, 6.283); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = (u.hstate==='flee')? '#b8402e' : '#2a2018'; drawIcon(hs==='prudent'? (u.hstate==='flee'? 'back' : 'shield') : 'swords', x, iy, 10); ctx.restore(); } }
+}
+// effets de frappe du héros : flamme de bouche + traceur, estafilade, arc de lame, faisceau (traits et bouffées cuites)
+function heroAttackFX(u, x, y, dir, S, P, era){
+  const hum = u.fac==='HUM', ts = P.ts, R = HERO_RIG[u.fac], h = u._h;
+  const pt = (px, py, sx, sy2, a, ox) => { const dx=(px-sx), dy=(py-sy2), c=Math.cos(a), s=Math.sin(a);   // point d'une couche de bras, en px écran
+    return [x + dir*((sx + dx*c - dy*s) + (ox||0))*S, y + (sy2 + dx*s + dy*c)*S]; };
+  if (!hum && P.wind>0.3 && P.vNext===1 && !P.hit){                    // la paume se charge
+    const m = pt(R.palm[0], R.palm[1], -3, -44, P.ab), r = 5+9*P.wind, L = lightSprite('#ff6ad6');
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha *= 0.9; ctx.drawImage(L, m[0]-r, m[1]-r, r*2, r*2); ctx.restore(); }
+  if (!P.hit) return;
+  const fresh = h.fxN!==u.atkN+'|'+(u.atkT>0.5); if (fresh) h.fxN = u.atkN+'|'+(u.atkT>0.5);
+  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
+  if (hum && P.v===0){
+    if (ts<0.1){ const k = 1-ts/0.1, mz = R.mz[era], m = pt(mz[0], mz[1], 2, -42, P.af, P.ax), PF = puffSprites(), r = 5+8*k;
+      if (qFx()){ ctx.globalAlpha = Math.min(1, 0.4+k); ctx.drawImage(PF.fire, m[0]+dir*3-r, m[1]-r, r*2, r*2); ctx.globalAlpha = 1; }
+      ctx.strokeStyle = rgbaC(era>=3? '#ffd9a0' : '#fff1c8', 0.85*k); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(m[0], m[1]); ctx.lineTo(m[0]+dir*(54+20*(1-k)), m[1]-1); ctx.stroke();
+      ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(m[0]+dir*4, m[1]-5*k); ctx.lineTo(m[0]+dir*4, m[1]+5*k); ctx.stroke();
+      if (fresh){ addLight(u.x+dir*34*S, y-36*S, '#ffd9a0', 34, 0.16);
+        if (qFx() && era<3 && particles.length<480) particles.push({k:'d', x:u.x+dir*10*S, y:y-36*S, vx:-dir*(30+Math.random()*30), vy:-80-Math.random()*40, g:520, dr:0.4, life:0.7, t:0, r:1.2, rot:Math.random()*6, vr:(Math.random()-0.5)*30, color:'#d8b050'}); } }
+  } else if (hum){
+    if (ts<0.16){ const k = 1-ts/0.16, mz = R.mz[era], m = pt(mz[0]+6, mz[1], 2, -42, P.af, P.ax);
+      ctx.strokeStyle = rgbaC('#ffffff', 0.7*k); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(m[0]-dir*30, m[1]+1); ctx.lineTo(m[0]+dir*8, m[1]); ctx.stroke();
+      ctx.strokeStyle = rgbaC('#ffd9a0', 0.4*k); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(m[0]-dir*18, m[1]+1); ctx.lineTo(m[0]+dir*6, m[1]); ctx.stroke();
+      if (fresh) addLight(u.x+dir*40*S, y-36*S, '#ffd9a0', 26, 0.14); }
+  } else if (P.v===0){
+    if (ts<0.2){ const k = 1-ts/0.2, c = pt(3, -44, 3, -44, 0), r = 36*S, a0 = dir>0? -1.25 : Math.PI+1.25, a1 = dir>0? 0.75 : Math.PI-0.75;
+      ctx.strokeStyle = rgbaC('#ffffff', 0.2+0.55*k); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(c[0], c[1], r, a0, a1, dir<0); ctx.stroke();
+      ctx.strokeStyle = rgbaC('#ff6ad6', 0.45*k); ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(c[0], c[1], r-2, a0, a1, dir<0); ctx.stroke();
+      if (fresh) addLight(u.x+dir*30*S, y-40*S, '#ff9ae6', 30, 0.16); }
+  } else if (ts<0.24){
+    const k = 1-ts/0.24, m = pt(R.palm[0], R.palm[1], -3, -44, P.ab), ex = m[0]+dir*(62+10*S), ey = m[1]+4, L = lightSprite('#ff6ad6');
+    ctx.strokeStyle = rgbaC('#ff6ad6', 0.4*k); ctx.lineWidth = 7*k+2; ctx.beginPath(); ctx.moveTo(m[0], m[1]); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.strokeStyle = rgbaC('#ffffff', 0.9*k); ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(m[0], m[1]); ctx.lineTo(ex, ey); ctx.stroke();
+    const r = 10+10*k; ctx.globalAlpha *= k; ctx.drawImage(L, ex-r, ey-r, r*2, r*2); ctx.drawImage(L, m[0]-r*0.6, m[1]-r*0.6, r*1.2, r*1.2);
+    if (fresh) addLight(u.x+dir*60, y-30*S, '#ff6ad6', 40, 0.2);
+  }
+  ctx.restore();
+}
+// MORT (1,8 s) : le Che vacille, lâche son fusil et tombe à la renverse pendant que son drapeau s'abat ;
+// la Singularité grésille, s'affaisse sur elle-même et s'éteint (le cristal vole en éclats)
+function drawHeroDeath(d, x, gy, k){
+  const fac = d.fac, hum = fac==='HUM', era = heroEra(d.era), S = HERO_S[fac][era], R = HERO_RIG[fac], dir = d.side;
+  const img = (part, px, py, a) => { ctx.save(); if (a){ ctx.translate(px*S, py*S); ctx.rotate(a); ctx.translate(-px*S, -py*S); }
+    ctx.drawImage(heroPart(fac,era,part), -HSP.cx, -HSP.foot, HSP.W, HSP.H); ctx.restore(); };
+  const fade = clamp((1-k)/0.28, 0, 1);
+  ctx.globalAlpha = fade;
+  if (hum){
+    const k1 = clamp(k/0.3, 0, 1), k2 = hSm(clamp((k-0.26)/0.3, 0, 1));
+    // le drapeau reste planté un instant, puis s'abat vers l'avant
+    const fa = hSm(clamp((k-0.2)/0.5, 0, 1)); ctx.save(); ctx.translate(x - dir*11*S, gy); ctx.scale(dir, 1); ctx.rotate(fa*fa*1.42);
+    ctx.translate(11*S, 0); img('armb'); ctx.scale(S,S);
+    heroCloth(ctx, R.pole-0.6, R.ptop[era]+2, R.fh[era], R.fl[era], d.t*7, 0.2*(1-fa), 1, '#cf2a26', 'rgba(110,16,16,0.4)', era>=1? '#f2cf62' : null);
+    ctx.restore();
+    ctx.save(); ctx.translate(x - dir*(k1*5 + k2*10), gy + k1*3*(1-k2)); ctx.rotate(-dir*(k1*0.2 + k2*1.25)); ctx.scale(dir, 1 - 0.06*k1);
+    img('back'); ctx.drawImage(heroPart(fac,era,'legs', k2>0.1? 1 : 0), HLEG.ox, HLEG.oy, HLEG.W, HLEG.H); img('body'); img('arm', 2, -42, 0.3 + k1*1.1);
+    ctx.restore();
+  } else {
+    const k1 = clamp(k/0.38, 0, 1), k2 = hSm(clamp((k-0.34)/0.3, 0, 1));
+    const jx = k2<1? (Math.sin(d.t*61)+Math.sin(d.t*37))*2.2*(1-k2) : 0;
+    if (qFx() && k<0.7 && particles.length<480 && Math.random()<0.5) particles.push({k:'s', x:d.x+(Math.random()-0.5)*24, y:gy-(20+Math.random()*50)*S*(1-k2*0.5), vx:(Math.random()-0.5)*160, vy:-60-Math.random()*90, g:340, dr:1.6, life:0.3+Math.random()*0.3, t:0, color:'#ff9ae6', r:1.4});
+    if (era===4){                                                      // le cristal se fissure puis éclate
+      if (k2>0 && !d._sh){ d._sh = 1; burst(d.x, gy-46*S, '#f0d2ff', 22, 1.1); }
+      ctx.globalAlpha = fade*(1-k2); ctx.save(); ctx.translate(x+jx, gy-8+k1*8); ctx.scale(dir*(1+k2*0.25), 1+k2*0.25);
+      img('back'); img('armb'); ctx.drawImage(heroPart(fac,era,'legs',0), HLEG.ox, HLEG.oy, HLEG.W, HLEG.H); img('body'); img('arm'); ctx.restore();
+    } else {
+      if ((Math.sin(d.t*47)>0.55) && k<0.4) ctx.globalAlpha = fade*0.55;   // grésillement
+      ctx.save(); ctx.translate(x+jx, gy); ctx.scale(dir, 1);
+      ctx.drawImage(heroPart(fac,era,'legs', k2>0.3? -1 : 0), HLEG.ox, HLEG.oy + k2*8, HLEG.W, HLEG.H*(1-k2*0.2));
+      ctx.translate(-k2*5*S, k2*17*S); ctx.rotate(-k2*0.42 - k1*0.05);
+      img('back'); img('armb', -3, -44, k1*0.5 + k2*0.7); img('body'); img('arm', 3, -44, k1*1.0 + k2*0.9); ctx.restore();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
 /* ---------- PAPIER (v1.11) : les panneaux en jeu reprennent l'identité du menu ----------
    Fiche imprimée pour l'Humanité, listing d'imprimante zébré et perforé pour G·P·T. Grain cuit
    une seule fois en motif, ombre portée nette : aucun flou, coût négligeable. */
@@ -6672,6 +7409,7 @@ function layoutHUD(){
   HUD.btns.push({type:'lasso',  x:254, y:sy, w:74, h:oh, label:tr('btn_lasso')});
   HUD.btns.push({type:'formation', x:332, y:sy, w:98, h:oh, label:tr('btn_formation')});
   HUD.btns.push({type:'hero', x:434, y:sy, w:48, h:oh});
+  HUD.btns.push({type:'hstance', x:486, y:sy, w:108, h:oh});     // posture du héros (cycle prudent → normal → offensif)
   HUD.btns.push({type:'cam', go:'base',  x:W-300, y:sy, w:64, h:oh, label:tr('cam_base')});
   HUD.btns.push({type:'cam', go:'front', x:W-232, y:sy, w:64, h:oh, label:tr('cam_front')});
   HUD.btns.push({type:'cam', go:'follow',x:W-164, y:sy, w:72, h:oh, label:tr('cam_auto')});
@@ -7099,6 +7837,9 @@ function drawBtn(b){
     prog = 1;
   } else if (b.type==='stance'){
     label=b.label; ok = game.sel.size? false : p.stance===b.st;
+  } else if (b.type==='hstance'){
+    const hs = p.heroStance||'normal';
+    label = (hs==='prudent'? '🛡 ' : hs==='offensive'? '⚔ ' : '★ ') + tr('hst_'+hs) + hk('herostance'); ok = hs!=='normal';
   } else if (b.type==='lasso'){
     label=b.label; ok=selMode;
   } else if (b.type==='formation'){
@@ -7125,7 +7866,13 @@ function drawBtn(b){
     ctx.fillStyle = ok? pal.red : (b.type==='stance' && game.sel.size)? pal.bad : pal.ink;
     const smallLbl = b.label||label;
     fitFont(smallLbl, b.w-8, HF(12), 8);
-    ctx.fillText(smallLbl, b.x+b.w/2, y+h/2+(ok? -0.5 : 0.5));
+    ctx.fillText(smallLbl, b.x+b.w/2, y+h/2+(ok? -0.5 : 0.5)+(b.type==='hstance'? 2 : 0));
+    if (b.type==='hstance'){                             // trois crans : la posture courante est encrée
+      const i0 = HERO_STANCES.indexOf(p.heroStance||'normal');
+      for (let i=0;i<3;i++){ const px = x+w/2-13+i*10; ctx.fillStyle = i===i0? (ok? pal.red : pal.ink) : pal.ink2; ctx.globalAlpha = A0*(i===i0? 1 : 0.4);
+        ctx.fillRect(px, y+3.5, 7, 2.4); }
+      ctx.globalAlpha = A0;
+    }
     return;
   }
   // BON D'ACTION (pouvoir, évolution, capacité, réparation) : kraft à cadre pointillé, encre, jauge
@@ -7448,8 +8195,7 @@ function render(dt){
     if (d.fly){ const s=1.5*(1-k*0.25); ctx.translate(x, gy-d.flyH*(1-k*k)-6); ctx.rotate(k*6*d.side); ctx.scale(d.side*s,s);
       ctx.drawImage(sprite('AIR'+d.fac+d.era+(d.trans?'T':''),64,44,()=>airSprite(d.fac,d.era,d.trans)),-32,-22,64,44); }
     else if (d.role==='gremlin'){ ctx.translate(x, gy-2); ctx.rotate(k*1.5*d.side); ctx.fillStyle=FACTIONS[d.fac].eraCols[d.era]; ctx.fillRect(-7,-12,14,12); }
-    else if (d.role==='hero'){ ctx.translate(x-d.side*fall*8, gy); ctx.rotate(-d.side*fall*1.4); ctx.scale(d.side,1);
-      ctx.drawImage(sprite('HERO'+d.fac,HERO_SW,100,()=>heroSprite(d.fac)),-HERO_SW/2,-92,HERO_SW,100); }
+    else if (d.role==='hero') drawHeroDeath(d, x, gy, k);
     else { const kind=d.fac==='HUM'?'hum':'bot';
       ctx.translate(x-d.side*fall*6, gy);
       if (d.role==='tank'){ ctx.rotate(-d.side*fall*0.35); ctx.scale(d.side, 1-0.5*fall); }   // les lourds s'affaissent
@@ -7757,6 +8503,7 @@ function tutDesc(b){
     case 'repairall': return {t:'repairall'};
     case 'formation': return {t:'formation'};
     case 'hero':      return {t:'hero'};
+    case 'hstance':   return {t:'hero'};      // la posture du héros apparaît avec la leçon du héros
     case 'lasso':     return {t:'lasso'};
     default:          return {t:b.type};
   }
@@ -9354,8 +10101,8 @@ function drawEndArt(){
   const era = side.era, trans = !!side.trans;
   for (const [role, dx, s] of [['ranged',-170,0.9],['tank',-105,0.98],['melee',105,0.98],['support',170,0.9]]){
     c.save(); c.translate(260+dx, gy); c.scale(dx<0? s : -s, s); drawUnitLayers(kind, fk, role, era, trans, 0, c); c.restore(); }
-  const hs = sprite('HERO'+fk, HERO_SW, 100, ()=>heroSprite(fk)), hk = 1.32;
-  c.save(); c.translate(260, gy+2); c.scale(win? hk : -hk, hk); c.drawImage(hs, -HERO_SW/2, -92, HERO_SW, 100); c.restore();
+  const hs = heroFullSprite(fk, era), hk = 1.0;
+  c.save(); c.translate(260, gy+2); c.scale(win? hk : -hk, hk); c.drawImage(hs, -HSP.cx, -HSP.foot, HSP.W, HSP.H); c.restore();
   if (!win){                                                                               // drapeau du joueur à terre
     c.save(); c.globalCompositeOperation='source-atop'; c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(0,0,520,200); c.restore();
     const pc = game.p.fac.accent;
@@ -9390,13 +10137,16 @@ function serSide(s){
     w:Math.round(s.w), xp:Math.round(s.xp), era:s.era, tr:s.trans?1:0, cap:s.cap, st:s.stance,
     fl:s.fortLvl||1, ar:s.autoRepair?1:0, scd:Math.round(s.specialCd*10)/10, lr:s.lastReady?1:0,
     lu:s.lastUsed?1:0, fm:s.formation?1:0, pm:Math.round((s.prodMul||1)*100)/100,
-    hcd:Math.round(s.heroCd||0), q:s.queue?s.queue.length:0,
+    hcd:Math.round(s.heroCd||0), hs:Math.max(0, HERO_STANCES.indexOf(s.heroStance)), q:s.queue?s.queue.length:0,
     upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)) };
 }
 function serialize(){
-  const u2 = u => [u.id, ROLE_CODES[u.role], Math.round(u.x), Math.round(u.hp), Math.round(u.maxhp),
+  // héros : un 15e champ — n° d'attaque (3 bits, choisit l'animation), repli prudent (8), geste de ralliement (16)
+  const u2 = u => { const a = [u.id, ROLE_CODES[u.role], Math.round(u.x), Math.round(u.hp), Math.round(u.maxhp),
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
+    if (u.role==='hero') a.push(((u.atkN|0)&7) | (u.hstate==='flee'? 8:0) | ((u.gestT!=null && game.t-u.gestT<1.1)? 16:0));
+    return a; };
   return {
     t:game.t, sv:game.speed||1, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
@@ -9466,6 +10216,7 @@ function applyCmd(cmd){
     switch(cmd.c){
       case 'buy':    if (isIdx(cmd.ri, ROLES.length)) tryBuy(e, cmd.ri); break;
       case 'hero':   tryHero(e); break;
+      case 'hst':    if (HERO_STANCES.includes(cmd.st)) e.heroStance = cmd.st; break;
       case 'evo':    tryEvolve(e); break;
       case 'ult':    trySpecial(e); break;
       case 'cap':    tryCapUp(e); break;
@@ -9532,6 +10283,7 @@ function applySnapshot(snap){
     loc.formation=!!ser.fm; loc.prodMul=SN(ser.pm, 0, 10, 1);
     const upg = {}; if (ser.upg && typeof ser.upg==='object') for (const r of ROLES) upg[r.key] = SN(ser.upg[r.key], 0, 3)|0;
     loc.upg = upg;
+    if (!(loc._hsLock>performance.now())) loc.heroStance = HERO_STANCES[SN(ser.hs, 0, 2, 1)|0];
     loc.heroCd=SN(ser.hcd, 0, 1e4); loc.queueLen=SN(ser.q, 0, 99)|0;
     loc.gar = new Array(SN(ser.gn, 0, 3)|0).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
     const sl = SA(ser.slots, 64);
@@ -9558,7 +10310,9 @@ function applySnapshot(snap){
       atkT:a[13]?1:0, rate:1, bob:Math.random()*6.28, flash:0, range:role==='ranged'||role==='siege'||role==='air'?150:16 };
     // CONTINUITÉ D'ANIMATION : l'unité est recréée à chaque instantané — on reprend la phase de marche
     // et l'état de rendu de son prédécesseur (sinon la démarche hachait et l'apparition rejouait sans fin)
+    if (role==='hero'){ const hb = SN(a[14], 0, 31)|0; u.atkN = hb&7; u.hstate = (hb&8)? 'flee' : null; u._hg = !!(hb&16); }
     const pv = GV[id];
+    if (role==='hero'){ if (pv){ u._h = pv._h; u.gestT = pv.gestT; } if (u._hg && !(pv && pv._hg)) u.gestT = g.t; }
     if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
       if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
       // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
@@ -9568,6 +10322,10 @@ function applySnapshot(snap){
   };
   for (const a of SA(snap.pu, 300)) addU(a);
   for (const a of SA(snap.eu, 300)) addU(a);
+  // un héros disparu de l'instantané est tombé : sa mort se joue aussi chez l'invité
+  for (const id in GV){ const pv = GV[id]; if (pv.role==='hero' && !GV2[id] && qFx() && deaths.length<60)
+    deaths.push({x:pv.x, fac:pv.fac, era:pv.era, role:'hero', fly:false, flyH:0, side:pv.side, t:0, life:1.8, trans:false}); }
+  for (const s of [g.p, g.e]) s.heroAlive = s.units.some(u=>u.role==='hero');
   GV = GV2;                                 // ne garde que les unités encore en vie
   g.sel = new Set(g.p.units.filter(u=>keep.has(u.id)));
   // spots neutres (mirroir owner) et lacs (mirroir prog/owner)
@@ -9597,6 +10355,7 @@ function applyEvents(ev){
     else if (e.k==='f') addFloater(x, y, String(e.t==null? '' : e.t).slice(0, 48), SCOL(e.c), SN(e.s, 6, 40, 13));
     else if (e.k==='a'){ game.msg={txt:String(e.t==null? '' : e.t).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
     else if (e.k==='s' && NET_SFX.has(e.n)) sfx(e.n, SN(e.p, 0, 8));
+    else if (e.k==='h' && typeof e.n==='string' && HSFX_GAP.hasOwnProperty(e.n)) heroSfx(e.f? 'IA':'HUM', e.n, x, true);
   }
 }
 function onSnapshot(data){
@@ -9616,6 +10375,7 @@ function netGuestTick(dt){
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
   stepParticles(dt);
+  for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if (deaths[i].t>deaths[i].life) deaths.splice(i,1); }
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if (f.t>1.6) floaters.splice(i,1); }
   if (game.msgT>0) game.msgT-=dt;
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
@@ -10657,6 +11417,7 @@ window.addEventListener('keydown', e=>{
   else if (e.code===K.formation){ if (kb({type:'formation'})) toggleFormation(p); }
   else if (e.code===K.repairall){ if (kb({type:'repairall'})) tryRepairAll(p); }
   else if (e.code===K.hero){ if (kb({type:'hero'}) && heroBtnReady(p)) tryHero(p); }
+  else if (e.code===K.herostance){ if (kb({type:'hstance'})) cycleHeroStance(p); }
   else if (e.code===K.follow) camFollow=!camFollow;
   else if (e.code===K.capup){ if (kb({type:'cap'})) tryCapUp(p); }
   else if (e.code===K.zoomin || e.code==='NumpadAdd') setZoom(zoom+0.12);
@@ -10955,6 +11716,7 @@ function handleTap(sx, sy, shift, opts){
     HUD.press = { b, t:performance.now() };          // la fiche touchée s'enfonce un instant (retour tactile)
     if (b.type==='unit'){ tryBuy(p, b.i); }
     else if (b.type==='hero'){ if (!heroBtnReady(p)) continue; tryHero(p); }
+    else if (b.type==='hstance'){ cycleHeroStance(p); }
     else if (b.type==='special'){ trySpecial(p); }
     else if (b.type==='evolve'){ tryEvolve(p); }
     else if (b.type==='cap'){ tryCapUp(p); }
