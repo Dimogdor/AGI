@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qFVM9BJhMhZRr/3AumpbAMISKNH2R+b1n+gZ4wAGRYg=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DktI2tGgXbgIdUeU6wRF03dpg91iFivhyNefBGaynr0=' https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://agi-lobbies-default-rtdb.europe-west1.firebasedatabase.app https://turn-proxy.dimdevche.workers.dev https://rtc.live.cloudflare.com https://0.peerjs.com wss://0.peerjs.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10205,9 +10205,9 @@ M2_PLATES.k55hook = m2PagerPlate({fr:"55. SAINTE-AUBE.", en:"55. SAINTE-AUBE."})
 // [instant (s), origine, rôles] — 0 mêlée, 1 tank, 2 tireur, 3 siège, 4 drone, 5 soutien
 const M2_WAVES = [
   [22,'quay',[0,0,0]], [55,'quay',[0,2,0,2]], [90,'term',[1,2,2,0]], [122,'air',[4,4,4]],
-  [180,'quay',[1,0,0,2,2]], [215,'quay',[3,2,2,0,0]], [248,'air',[4,4,4,0,0]], [282,'term',[1,1,0,2,2,3]], [318,'quay',[0,0,0,2,2,4,4]],
+  [180,'quay',[1,0,0,2,2]], [215,'quay',[3,2,2,0,0,2]], [248,'air',[4,4,4,0,0]], [282,'term',[1,0,2,2,0]], [335,'air',[4,4,0,2]],
 ];
-function m2Scale(c, roles){ const n = Math.max(2, Math.round(roles.length*[0.7,1,1.35][c.lvl])); const out = []; for (let i=0;i<n;i++) out.push(roles[i%roles.length]); return out; }
+function m2Scale(c, roles){ const n = Math.max(2, Math.round(roles.length*[0.7,1,1.2][c.lvl])); const out = []; for (let i=0;i<n;i++) out.push(roles[i%roles.length]); return out; }
 function m2Spawn(e, r, x){ if (e.units.length>=60) return; const k = e.units.length; spawnUnit(e, r, false, clamp(x, 60, WORLD-60)); for (let j=k;j<e.units.length;j++) e.units[j].ord = 'charge'; }
 function m2Launch(g, c, src, roles){
   roles = m2Scale(c, roles); const e = g.e;
@@ -10264,7 +10264,7 @@ campExtend(1, {
     c.mx = M2.start; c.max = c.hp = [300,260,220][c.lvl]*10; c.spd = [8,7.5,7][c.lvl]; c.hitT = 9; c.stop = false; c.lost = 0;
     c.bars = []; c.barges = []; c.wi = 0; c.nextW = 0; c.extra = 0; c.kpT = 0;
     BIOMES.port.sky = M2_DAWN.map(a=>a.slice());
-    const hit = d => { c.hp -= d*0.5; c.hitT = 0; c.lost += d*0.05; };
+    const hk = [0.35,0.45,0.5][c.lvl], hit = d => { c.hp -= d*hk; c.hitT = 0; c.lost += d*hk/10; };
     c.targets = (foe, out) => { if (foe!==game.p) return;                     // les machines visent la tête et la queue du cortège, et les barricades
       for (const b of c.bars) out.push({ isB:true, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } });
       out.push({ isB:true, x:c.mx, get hp(){ return c.hp; }, hit }, { isB:true, x:c.mx-M2.span+10, get hp(){ return c.hp; }, hit }); };
@@ -10272,12 +10272,13 @@ campExtend(1, {
   tick(g, c, dt){
     const e = g.e;
     e.hp = e.maxhp; e.f = e.m = e.w = 0; e.xp = 0; e.lastUsed = true;     // pas de base à raser : seules les vagues scriptées comptent
+    g.aiThink = 9; e.formation = false;                                   // pas d'IA générique (sa formation renvoyait les tireurs au terminal)
     g.cataCd = Math.max(g.cataCd, 600); g._bz = true;
     if (g.wClock>=28 && g.wClock<45) g.wClock = 45;                         // la grève est NOTRE arme : jamais de bâillon côté Humanité
     if (g.wClock>=88 && g.wClock<105 && !(c.kpT>0)) g.wClock = 105;        // … et les machines ne se figent que quand 55 le décide
     c.kpT -= dt;
     if (g.p.stance==='hold') g.p.holdX = c.mx + 150;
-    if (c.t >= [200,170,140][c.lvl] && e.era<1){ campEra(e, 1); warmArms(e); }
+    if (c.lvl && c.t >= [0,230,190][c.lvl] && e.era<1){ campEra(e, 1); warmArms(e); }   // Veillée : leurs agents restent de 1re génération
     if ((c.skyT = (c.skyT||0) - dt) <= 0){ c.skyT = 1; const k = clamp(c.t/420, 0, 1);
       BIOMES.port.sky = M2_DAWN.map((a,i)=> a.map((v,j)=> Math.round(v + (M2_MORN[i][j]-v)*k))); }
     // vagues
@@ -10357,7 +10358,7 @@ campExtend(1, {
         who:'mado', txt:{fr:"Les dockers de l'estuaire débrayent ! Ils descendent des grues, commandant : soixante paires de bras de plus, et trois costauds pour votre service d'ordre.", en:"The estuary dockers are walking out! They are climbing down from the cranes, commander: sixty more pairs of hands, and three big lads for your stewards."} },
     ]; }},
     {when:(g,c)=>c.mx >= M2.start + (M2.dest-M2.start)*0.8, who:'sol', cine(g, c){ return [
-      { cam:{x:g.e.x-160, t:1.6}, fx(g, c){ m2Launch(g, c, 'term', [1,0,0,2,2,3]); sfx('spec'); },
+      { cam:{x:g.e.x-160, t:1.6}, fx(g, c){ m2Launch(g, c, 'term', [1,0,2,2]); sfx('spec'); },
         who:'sol', txt:{fr:"Le terminal ouvre ses portes. Tout ce qu'il leur reste sort maintenant. Des barricades, commandant : c'est la dernière ligne droite.", en:"The terminal is opening its gates. Everything they have left is coming out now. Barricades, commander: this is the home stretch."} },
     ]; }},
   ],
