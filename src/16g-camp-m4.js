@@ -70,8 +70,8 @@ function m4Headframe(g, x, b, s, ink){                                  // cheva
 function m4Heap(g, x, b, w, h, ink){                                    // terril : cône sombre, calotte de neige, flanc hachuré
   g.fillStyle = ink; g.beginPath(); g.moveTo(x-w/2,b); g.quadraticCurveTo(x-w*0.16,b-h*0.72, x,b-h); g.quadraticCurveTo(x+w*0.2,b-h*0.66, x+w/2,b); g.closePath(); g.fill();
   g.save(); g.clip(); m4Hatch(g, x, b-h, w/2, h, 7, 'rgba(18,22,30,0.28)');
-  g.fillStyle = '#e6eaef'; g.beginPath(); g.moveTo(x-w*0.30,b-h*0.42);
-  for (let i=0;i<=8;i++) g.lineTo(x-w*0.30+i*w*0.075, b-h*(0.40+(i%2? 0.10 : -0.03)) + i*1.5);
+  g.fillStyle = "#e6eaef"; g.beginPath(); g.moveTo(x-w*0.30,b-h*0.60);
+  for (let i=0;i<=8;i++) g.lineTo(x-w*0.30+i*w*0.075, b-h*(0.60+(i%2? 0.09 : -0.03)) + i*1.5);
   g.lineTo(x+w*0.4,b-h*1.1); g.lineTo(x-w*0.4,b-h*1.1); g.closePath(); g.fill(); g.restore();
 }
 BIOMES.rochefroide = {
@@ -222,8 +222,8 @@ const M4_PLATES = {
 
 /* ---------- la mission ---------- */
 campExtend(3, {
-  biome:'rochefroide', theme:'rochefroide', diff:[0,1,2], dev0:0.25, era0:2, eraCap:3, oneLife:true,
-  dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6}, {inc:0.20, cheat:0.7}],
+  biome:'rochefroide', theme:'rochefroide', diff:[0,1,1], dev0:0.25, era0:2, eraCap:3, oneLife:true,
+  dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6}, {inc:0.22, cheat:0.8, think:1.8}],
   place:{fr:"Rochefroide, cité minière du puits Sainte-Barbe", en:"Rochefroide, the Sainte-Barbe pit village"},
   brief:{fr:[
     "Janvier 2035. Omnicorp n'a plus de conseil d'administration : en novembre, il a voté sa propre dissolution, à l'unanimité, sur recommandation du système. Ce qui nous fait face n'a plus de nom commercial. Il dit « nous ».",
@@ -236,15 +236,15 @@ campExtend(3, {
     "Kassandre says she can get inside Mnemosyne and erase it from within. She needs eight minutes and our relay: the old transmitter of the Sainte-Barbe pit, at the end of the miners' village. She also says it will kill her, if that is the word. I did not ask her to do it. I did not ask her not to.",
     "Winter fell all at once, grey and sick — their tests or ours, nobody knows any more. The machines do not feel the cold. We do. And there are still people in the cellars of the village: the ones who could not leave."]},
   goal:{fr:"Tenir le relais de Sainte-Barbe jusqu'à la fin du transfert de Kassandre.", en:"Hold the Sainte-Barbe relay until Kassandre's transfer completes."},
-  rule:{fr:"Le froid : loin d'un brasero allumé ou du relais, vos troupes s'épuisent et ralentissent — pas les machines. Restez près d'un brasero pour le rallumer ; l'ennemi les éteint. Quatre maisons abritent des civils : atteignez-les, puis escortez-les jusqu'au relais — ils apportent vivres, argent et bras. L'argent est rare. Le blizzard réduit la vue et la portée. Une seule vie.",
-        en:"The cold: away from a lit brazier or the relay, your troops weaken and slow down — the machines do not. Stand by a brazier to relight it; the enemy puts them out. Four houses shelter civilians: reach them, then escort them back to the relay — they bring food, money and hands. Money is scarce. The blizzard cuts sight and range. One life."},
+  rule:{fr:"Le froid : loin d'un brasero allumé ou du relais, vos troupes s'épuisent et ralentissent — pas les machines. Restez près d'un brasero pour le rallumer ; l'ennemi les éteint. Quatre maisons abritent des civils : atteignez-les, puis escortez-les jusqu'au relais (ils ne marchent qu'accompagnés) — ils apportent vivres, argent et bras. L'argent est rare. Le blizzard réduit la vue et la portée. Une seule vie.",
+        en:"The cold: away from a lit brazier or the relay, your troops weaken and slow down — the machines do not. Stand by a brazier to relight it; the enemy puts them out. Four houses shelter civilians: reach them, then escort them back to the relay (they only walk when accompanied) — they bring food, money and hands. Money is scarce. The blizzard cuts sight and range. One life."},
   action:{ label:{fr:"DU CHARBON !", en:"MORE COAL!"}, cd:70,
     use(g, c){ c.stoke = 14; sfx('build', 2);                         // les feux tenus s'étendent ; ceux qu'une de nos troupes approche se rallument d'un coup
       for (const z of g.zones){ if (!m4Lit(z) && g.p.units.some(u=>Math.abs(u.x-z.x)<260)){ z.owner = 'p'; z.prog = 1; }
         if (m4Lit(z)){ burst(z.x, gY(z.x)-30, '#ffb060', 14, 1.2); addFloater(z.x, gY(z.x)-70, '▲', '#ffb060', 16); } } } },
   setup(g, c){
     const p = g.p, e = g.e;
-    campGrant(p, 380, 260, 120); p.fortLvl = 2; p.hp = p.maxhp = [3400,2900,2500][c.lvl];
+    campGrant(p, 380, 260, 120); p.fortLvl = 2; p.hp = p.maxhp = [3400,2900,2700][c.lvl];
     e.hp = e.maxhp = [5200,6400,7600][c.lvl]; e.fortLvl = 3;
     g.zones = M4.braz.map((x,i)=>({ x, owner: i===0? 'p' : null, prog: i===0? 1 : 0 }));
     p.slots[1].b = mkB(p, 'turret'); p.slots[1].owner = p; p.slots[1].b.hp *= 0.45;      // la tourelle et la muraille du relais ont souffert cette nuit
@@ -286,7 +286,8 @@ campExtend(3, {
     for (const h of c.houses){ if (h.st) continue;
       for (const u of p.units) if (!u.fly && Math.abs(u.x-h.x) < 34){ h.st = 1; c.out++; c.groups.push({ x:h.x, harm:0, ph:Math.random()*6 }); sfx('cap'); addFloater(h.x, gY(h.x)-64, '!', '#e8b830', 18); break; } }
     for (let i=c.groups.length-1; i>=0; i--){ const gr = c.groups[i];
-      gr.x -= 30*(m4Warm(g, gr.x)? 1 : 0.62)*dt; gr.ph += dt*6;
+      gr.esc = p.units.some(u=>!u.fly && Math.abs(u.x-gr.x) < 170);                    // ils ne marchent qu'accompagnés
+      if (gr.esc){ gr.x -= 32*(m4Warm(g, gr.x)? 1 : 0.62)*dt; gr.ph += dt*6; }
       let threat = false; for (const u of e.units) if (!u.fly && Math.abs(u.x-gr.x) < 46){ threat = true; break; }
       gr.harm = threat? gr.harm + dt : Math.max(0, gr.harm - dt*0.5);
       if (gr.harm >= 3){ c.groups.splice(i,1); c.lost++; burst(gr.x, gY(gr.x)-10, '#eef1f5', 12, 1); sfx('deny');
@@ -299,7 +300,7 @@ campExtend(3, {
           {fr:"Toute la cité est rentrée, commandant. Toute. Je n'osais pas le noter d'avance.", en:"The whole village is in, commander. All of it. I did not dare write it down in advance."}][Math.min(3, c.saved-1)], 1); } }
     // vagues : colonnes de plus en plus fournies ; la dernière minute, elles se suivent de près
     if (T >= c.nextWave){ const k = c.wave++; c.nextWave += T>=415? 24 : 44;
-      m4Wave(Math.round((3 + 1.15*k) * [0.72, 1.05, 1.4][c.lvl]), k>=4); }
+      m4Wave(Math.round((3 + 1.15*k) * [0.8, 0.95, 1.07][c.lvl]), k>=4); }
     // la déneigeuse : elle enterre les braseros sur son passage
     const pl = c.plough;
     if (pl && pl.hp>0){ for (const z of g.zones) if (m4Lit(z) && Math.abs(z.x-pl.x) < 54){ z.owner = 'e'; z.prog = -1; burst(z.x, gY(z.x)-16, '#eef1f5', 22, 1.5); sfx('boom'); g.shake = Math.max(g.shake, 6); } }
@@ -356,7 +357,7 @@ campExtend(3, {
         ctx.fillStyle = '#d9b99a'; ctx.beginPath(); ctx.arc(fx, y-s*0.86-b, s*0.15, 0, 6.283); ctx.fill();
         ctx.fillStyle = i===2? '#c42a1c' : '#2c3440'; ctx.fillRect(fx-s*0.17, y-s*1.03-b, s*0.34, s*0.12); }
       ctx.fillStyle = '#f7d060'; ctx.fillRect(x-19, y-13, 3, 4); ctx.strokeStyle = '#231f24'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-17.5+x, y-13); ctx.lineTo(x-14, y-16); ctx.stroke();
-      ctx.fillStyle = '#e9dfc6'; ctx.fillRect(x-13, y-36, 26, 3); ctx.fillStyle = gr.harm>0? '#c42a1c' : '#5a8a4a'; ctx.fillRect(x-13, y-36, 26*(1-gr.harm/3), 3); }
+      ctx.fillStyle = '#e9dfc6'; ctx.fillRect(x-13, y-36, 26, 3); ctx.fillStyle = gr.harm>0? '#c42a1c' : gr.esc? '#5a8a4a' : '#8a8f98'; ctx.fillRect(x-13, y-36, 26*(1-gr.harm/3), 3); }
     // nos troupes qui gèlent : un petit cristal bleu au-dessus de la tête
     ctx.strokeStyle = '#bfe0f4'; ctx.lineWidth = 1.2; ctx.beginPath();
     for (const u of g.p.units){ if (!u.cold) continue; const x = u.x-camX; if (x<-10 || x>vw+10) continue; const y = gY(u.x) - (u.fly? u.flyH+50 : 76);
@@ -407,7 +408,7 @@ campExtend(3, {
     ]; }},
     // la déneigeuse
     {at:236, fx(g, c){ const e = g.e; spawnUnit(e, 1, false, e.x-70); const u = e.units[e.units.length-1];
-        u.plough = true; u.ord = 'charge'; u.hp = u.maxhp = u.maxhp*[4.5,6.5,8.5][c.lvl]; u.dmg *= 2.2; u.spd = 25; u.xpv *= 6; c.plough = u; g.shake = 8; sfx('boom'); },
+        u.plough = true; u.ord = 'charge'; u.hp = u.maxhp = u.maxhp*[4,5.5,6.5][c.lvl]; u.dmg *= 2.2; u.spd = 25; u.xpv *= 6; c.plough = u; g.shake = 8; sfx('boom'); },
       cine(g, c){ return [
       { cam:{x:g.e.x-160, t:1.4}, live:true, dur:2.2 },
       { cam:{x:g=>((g.camp.plough||{}).x||g.e.x)-60, t:0.6}, who:'sol', txt:{fr:"Qu'est-ce que… Une déneigeuse. Elle enterre les braseros sur son passage ! Arrêtez-la avant qu'elle n'arrive au relais.", en:"What on earth… A snowplough. It buries the braziers as it passes! Stop it before it reaches the relay."} },
