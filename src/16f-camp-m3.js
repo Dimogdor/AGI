@@ -222,7 +222,7 @@ function m3Flood(g, c, dt){
     f.hit.add(u); u.hp -= u.maxhp*k; u.flash = 0.3; u.tiredT = 3; u.x = Math.min(WORLD-40, u.x + push);
     if (qFx()) burst(u.x, gY(u.x)-12, '#d8eef4', 6, 0.6); }
   for (const n of g.neut) if (n.b && !f.hit.has(n) && n.x <= f.x && m3Low(n.x)){ f.hit.add(n); n.b.hp -= n.b.maxhp*0.3*f.pow; }
-  if (!f.base && f.x >= g.e.x-60){ f.base = true; const dmg = g.e.maxhp*[0.15,0.12,0.1][c.lvl]*f.pow; g.e.hp -= dmg;   // la crue frappe la station de pompage
+  if (!f.base && f.x >= g.e.x-60){ f.base = true; const dmg = g.e.maxhp*[0.2,0.16,0.13][c.lvl]*f.pow; g.e.hp -= dmg;   // la crue frappe la station de pompage
     explode(g.e.x-40, gY(g.e.x)-30, 1.4, '#d8eef4'); g.shake = 10; addFloater(g.e.x-40, gY(g.e.x)-110, '−'+Math.round(dmg), '#2f6f9a', 15); }
   if (f.t > 11) c.flood = null;
 }
@@ -275,7 +275,7 @@ campExtend(2, {
       ], null); } },
   setup(g, c){
     campGrant(g.p, 460, 400, 180); campSquad(g.p, [1,0,2,2,3]);
-    g.e.hp = g.e.maxhp = [1500,1900,2300][c.lvl]; g.zones = [];
+    g.e.hp = g.e.maxhp = [1300,1600,1900][c.lvl]; g.zones = [];
     c.water = 40; c.siren = 0; c.flood = null; c.floods = 0; c.nextW = 55;
     c.lowIv = []; let a = null;                                                             // les lits bas, calculés sur le relief
     for (let x=M3.src; x<=WORLD-40; x+=10){ const lo = m3Low(x); if (lo && a===null) a = x; if (!lo && a!==null){ c.lowIv.push([a, x-10]); a = null; } }
