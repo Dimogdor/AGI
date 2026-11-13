@@ -23,7 +23,7 @@ export async function open(lvl, mis){
     // joue la cinématique en cours plan par plan (rendu compris) ; choix = index du bouton à presser sur un plan « choice »
     window.cineRun = (choice) => { let n = 0, guard = 0; while (CINE.on && guard++ < 80){ const s = CINE.script[CINE.i]; n++;
         CINE.t = 0.3; cineTick(0.05); render(1/60); CINE.t = 1.5; render(1/60);
-        if (s && s.choice){ if (choice==null) return -n; s.choice[choice].pick(game, game.camp); cineNext(); }
+        if (s && s.choice){ if (choice==null) return -n; cineEnd(); if (CINE.script[CINE.i]!==s) return -999; cineInput(-1,-1); cinePick(choice); }
         else { CINE.t = 99; cineTick(0.05); } }
       return n; };
   }, [lvl, mis]);
