@@ -337,6 +337,19 @@ console.log('\nCORRECTIFS D\'AUDIT (v1.11)');
 }
 
 console.log('\nCAMPAGNE (v1.15)');
+{ // chaque texte de campagne {fr, en, …} porte les 9 langues (lecture statique des sources)
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const dir = new URL('../src/', import.meta.url), miss = [];
+  for (const f of readdirSync(dir).filter(f=>/^16[a-h]/.test(f))){
+    const s = readFileSync(new URL(f, dir), 'utf8'), re = /\{\s*fr\s*:/g; let m;
+    while ((m = re.exec(s))){ let i = m.index, d = 0, j = i;
+      for (; j<s.length; j++){ const ch = s[j];
+        if (ch==='{') d++; else if (ch==='}'){ if (--d===0) break; }
+        else if (ch==='"' || ch==="'" || ch==='`'){ const q = ch; for (j++; j<s.length && s[j]!==q; j++) if (s[j]==='\\') j++; } }
+      const o = s.slice(i, j+1), lack = ['es','de','it','pt','ru','zh','ar'].filter(k=>!new RegExp('\\b'+k+'\\s*:').test(o));
+      if (lack.length) miss.push(f+':'+(s.slice(0,i).split('\n').length)+' ('+lack.join(',')+')'); } }
+  check(!miss.length, 'campagne : tous les textes existent dans les 9 langues'+(miss.length? ' — manquent : '+miss.slice(0,4).join(' ; ') : ''));
+}
 { // carnet de missions : verrouillage, dossier, sauvegarde corrompue
   const { page, errs } = await open();
   const r = await page.evaluate(() => {
