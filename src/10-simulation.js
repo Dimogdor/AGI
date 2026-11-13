@@ -24,6 +24,7 @@ function dealDmg(target, dmg, attacker){
     const dside = target.side===1?game.p:game.e;
     out /= (1 + 0.15*(dside.combatBuff||0)) * (1 + (dside.zoneBuff||0)); // comeback + zones : le perdant encaisse mieux
     target.hp -= out; target.flash = 0.15;
+    if (target.role==='hero') heroSfx(target.fac, 'hurt', target.x);
     if (attacker && attacker.role) target.lastHit = attacker;        // pour la vétérance
   }
 }
@@ -58,7 +59,13 @@ function updateUnits(side, foe, dt){
         }
       }
     }
-    const st = u.ord || side.stance;
+    let st = u.ord || side.stance;
+    let heroMode = null;
+    if (u.role==='hero'){
+      if (u.era!==side.era){ u.era = side.era; burst(u.x, gY(u.x)-50, side.fac.accent, 14, 1); }   // l'apparence suit l'ère du camp (stats inchangées)
+      heroMode = heroStanceStep(u, side, dt);
+      if (heroMode==='lead') st = 'charge';
+    }
     // ---- tâche assignée : chantier ou garnison (envoi direct depuis le pool) ----
     if (u.task){
       const sl = u.task.slot;
@@ -160,6 +167,10 @@ function updateUnits(side, foe, dt){
     }
     // ---- repli : retour en zone de base, puis tient la position ----
     let noMove = false;
+    if (heroMode==='flee'){                              // héros prudent blessé : file vers sa base sans combattre, puis s'y défend
+      if ((u.x-(side.x + side.side*150))*side.side > 4){ moveBack(u, side, dt); continue; }
+      noMove = true;
+    } else
     if (st==='retreat'){
       const homeX = side.x + side.side*150;
       if ((u.x-homeX)*side.side > 4){ moveBack(u, side, dt); continue; }
@@ -188,6 +199,7 @@ function updateUnits(side, foe, dt){
         const isIA = u.fac==='IA';
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
         u.atkT = u.rate * (tired? (isIA?1.5:1.3) : 1);
+        if (u.role==='hero'){ heroSfx(u.fac, HERO_SEQ[(u.atkN|0)&7]? 'atkB' : 'atkA', u.x); u.atkN = (u.atkN|0)+1; }   // alterne ses deux attaques (visuel + son)
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
         const dmgOut = u.dmg * (tired? (isIA?0.7:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0));
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
@@ -228,6 +240,10 @@ function updateUnits(side, foe, dt){
       const hx = u.ord==='hold'? u.holdX : side.holdX;
       if (hx!==null && (u.x-hx)*side.side>=0){ /* tient */ }
       else tryMove(u, side, dt);
+    } else if (heroMode==='lead'){
+      heroAdvance(u, side, dt);
+    } else if (heroMode==='guard'){
+      heroGuard(u, side, dt);
     } else if (side.formation && moveToFormation(u, side, dt)){
       // formation : volants en pointe, mêlée/tank devant, tireurs, artillerie puis soutien à l'arrière
       // (moveToFormation gère le placement ; renvoie false pour la ligne de front qui avance)
@@ -270,7 +286,8 @@ function updateUnits(side, foe, dt){
       burst(u.x, gY(u.x)-22-(u.fly?u.flyH:0), FACTIONS[u.fac].eraCols[u.era], 12);
       // RAGDOLL DE MORT (par rôle) : corps qui bascule / chute en vrille / châssis qui éclate.
       if (qFx() && u.role!=='gremlin' && deaths.length<60)
-        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:0.75, trans:!!u.trans});
+        deaths.push({x:u.x, fac:u.fac, era:u.era, role:u.role, fly:!!u.fly, flyH:u.flyH||0, side:u.side, t:0, life:u.role==='hero'? 1.8 : 0.75, trans:!!u.trans});
+      if (u.role==='hero') heroSfx(u.fac, 'death', u.x);
       // ÉPAVE PERSISTANTE (v1.13, cosmétique) : le corps reste au sol ~50 s, le champ de bataille garde la trace des combats
       if (qFx() && !u.fly && u.role!=='gremlin' && u.role!=='hero' && !wrecks.some(w=>Math.abs(w.x-(u.x-u.side*6))<16)){ wrecks.push({x:u.x-u.side*6, fac:u.fac, era:u.era, role:u.role, side:u.side, t:0}); if (wrecks.length>26) wrecks.shift(); }
       // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
@@ -282,6 +299,38 @@ function updateUnits(side, foe, dt){
       side.units.splice(i,1);
     }
   }
+}
+// ---- HÉROS : posture (règles : voir HERO_STANCES dans 04-data.js) ----
+// renvoie null (comportement normal), 'flee' (repli prudent), 'guard' (reste derrière la ligne) ou 'lead' (mène la charge)
+function heroStanceStep(u, side, dt){
+  // répliques : de loin en loin, quand il n'est pas en train de fuir
+  u.barkT = (u.barkT===undefined? 6 : u.barkT) - dt;
+  if (u.barkT<=0){ u.barkT = 9+Math.random()*9; if (u.hstate!=='flee'){ u.gestT = game.t; heroSfx(u.fac, 'bark', u.x); } }
+  const hs = side.heroStance;
+  if (hs==='prudent'){
+    const f = u.hp/u.maxhp;
+    if (u.hstate!=='flee' && f<HERO_FLEE_HP) u.hstate = 'flee';
+    else if (u.hstate==='flee' && f>=HERO_BACK_HP) u.hstate = null;
+    if (u.hstate==='flee') return 'flee';
+    return (u.ord || side.stance!=='charge')? null : 'guard';        // un ordre explicite (sélection, tenir, repli) garde la main
+  }
+  u.hstate = null;
+  if (hs==='offensive') return u.ord? null : 'lead';                 // seul un ordre donné au héros lui-même le retient
+  return null;
+}
+function heroGuard(u, side, dt){
+  let front = null;
+  for (const a of side.units){
+    if (a===u || a.fly || a.hp<=0 || a.task || a.role==='support' || a.role==='gremlin' || a.role==='hero') continue;
+    if (front===null || (a.x-front)*side.side>0) front = a.x;
+  }
+  const want = front===null? side.x + side.side*150 : front - side.side*HERO_GUARD_GAP;   // sans troupe : il attend près de sa base
+  const d = (want-u.x)*side.side;
+  if (d>10) tryMove(u, side, dt); else if (d<-6) moveBack(u, side, dt);
+}
+function heroAdvance(u, side, dt){   // même vitesse que tryMove, sans la file d'attente derrière les unités de mêlée
+  u.x += u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*side.side*dt;
+  u.x = clamp(u.x, 30, WORLD-30);
 }
 // nombre d'unités pouvant se masser sur la même position (croît avec ère + amélioration)
 function stackMax(side, u){

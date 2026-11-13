@@ -37,6 +37,18 @@ const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
+// POSTURES DU HÉROS (v1.15) — side.heroStance. « normal » = comportement historique, inchangé.
+//  prudent   : reste HERO_GUARD_GAP px derrière l'unité au sol la plus avancée de son camp ; sous
+//              HERO_FLEE_HP de ses PV il se replie vers sa base (sans combattre en chemin) et n'en
+//              repart qu'au-dessus de HERO_BACK_HP (soigné par les médics/ruches : il n'a AUCUNE
+//              régénération propre, et on n'en ajoute pas) — sinon il tient près de la base.
+//  offensive : mène la charge — ignore « tenir »/« repli »/formation de l'armée et la file d'attente
+//              derrière les unités de mêlée ; ne recule jamais de lui-même.
+// L'AURA (×3 dégâts, ×2 vitesse) reste GLOBALE et sans condition de proximité, comme avant : la
+// posture ne la modifie pas (un héros en retrait la donnait déjà via l'ordre « repli » sur sélection).
+const HERO_STANCES = ['prudent','normal','offensive'];
+const HERO_FLEE_HP = 0.35, HERO_BACK_HP = 0.6, HERO_GUARD_GAP = 48;
+const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0 = principale, 1 = secondaire)
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
 const SIEGE_DUR = 22;                        // durée du bonus offensif anti-base (s de jeu)

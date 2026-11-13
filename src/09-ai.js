@@ -24,6 +24,18 @@ function aiUpdate(dt){
   // invocation AVANT toute dépense : sitôt le coût réuni (épargne bouclée) ou une
   // bataille engagée avec les moyens en caisse, le héros entre en scène.
   if (heroReady && canPay(e, HERO_COST) && (e.heroSaving || e.mode==='push' || pPushing || e.trans)) tryHero(e);
+  // posture du héros (escarmouche) : téméraire en Facile, historique en Normal ; en Difficile/Brutal
+  // l'IA le met à l'abri quand il est entamé, et en Brutal le lance en tête pour achever une base aux abois
+  if (!game.camp){
+    const h = hasHero? e.units.find(u=>u.role==='hero') : null, f = h? h.hp/h.maxhp : 1;
+    let hs = 'normal';
+    if (game.diff<=0) hs = 'offensive';
+    else if (game.diff>=2){
+      if (game.diff>=3 && p.hp < p.maxhp*0.3) hs = 'offensive';
+      else if (f<0.5 || (e.heroStance==='prudent' && f<0.7)) hs = 'prudent';
+    }
+    e.heroStance = hs;
+  }
   // en TRANSCENDANCE, l'argent/les données sont illimités : l'IA rase ses marchés/serveurs
   // (farmM) devenus inutiles pour libérer la place et reconstruire de l'utile.
   if (e.trans){

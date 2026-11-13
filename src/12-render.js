@@ -775,16 +775,16 @@ function menuSilhouette(key, parts, w, h, rim, dark){
 }
 function menuFigure(kind, fac, role, era, rim, dark){
   const parts = [];
-  if (role==='hero'){ parts.push([sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)), 0, 0, HERO_SW, 100]);
-    return { cv: menuSilhouette('H'+fac, parts, HERO_SW, 100, rim, dark), w:HERO_SW, h:100, fx:HERO_SW/2, fy:92 }; }
+  if (role==='hero'){ parts.push([heroFullSprite(fac, era), 0, 0, HSP.W, HSP.H]);
+    return { cv: menuSilhouette('H'+fac+era, parts, HSP.W, HSP.H, rim, dark), w:HSP.W, h:HSP.H, fx:HSP.cx, fy:HSP.foot }; }
   if (unitHasBack(kind, role, era)) parts.push([unitPart(kind,fac,role,era,false,'back'), 0, 0, USP.W, USP.H]);
   parts.push([unitPart(kind,fac,role,era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H]);
   parts.push([unitPart(kind,fac,role,era,false,'front'), 0, 0, USP.W, USP.H]);
   return { cv: menuSilhouette(kind+role+era, parts, USP.W, USP.H, rim, dark), w:USP.W, h:USP.H, fx:USP.cx, fy:USP.foot };
 }
 const MENU_ARMY = {
-  hum: [['ranged',1],['siege',0],['hero',0],['tank',1],['melee',0],['support',1]],
-  bot: [['melee',2],['ranged',1],['hero',0],['tank',2],['siege',1],['support',2]],
+  hum: [['ranged',1],['siege',0],['hero',1],['tank',1],['melee',0],['support',1]],
+  bot: [['melee',2],['ranged',1],['hero',2],['tank',2],['siege',1],['support',2]],
 };
 // silhouette posée au sol en (x, y), échelle s (négative = tournée vers la gauche)
 function drawFigure(f, x, y, s){ ctx.save(); ctx.translate(x, y); ctx.scale(s, Math.abs(s)); ctx.drawImage(f.cv, -f.fx, -f.fy, f.w, f.h); ctx.restore(); }
@@ -2361,14 +2361,7 @@ function gremlinSprite(era){
   TC.fillStyle='#0a1016'; rrectT(cx+1,cy-2.6,6,3.4,1.6); TC.fill();
   glowDot(cx+3,cy-1,1.2,lite,4); glowDot(cx+5.6,cy-1,1.2,lite,4);
 }
-// HÉROS : un vrai personnage à l'échelle ×1,3 — le Che (béret étoilé, barbe, cigare, poing levé,
-// fusil en bandoulière) et la Singularité (corps de cristal, couronne de rayons, orbe d'énergie)
-const HERO_SW = 88;
-function heroSprite(fac){
-  TC.save(); TC.translate(HERO_SW/2, 92); TC.scale(1.3,1.3); TC.translate(-USP.cx,-USP.foot);
-  if (fac==='HUM') drawHumSprite('HUM','ranged',1,false,true); else drawBotSprite('IA','hero',4,false,true);
-  TC.restore();
-}
+// HÉROS : voir 12b-hero.js (un personnage par ère, en couches animées)
 // PERF : PRÉCHAUFFE de tous les sprites d'unités possibles (2 factions × 5 rôles au sol × 5 ères
 // × transcendé/non, + aériens, héros, gremlins), pour qu'aucune première apparition en pleine
 // bataille ne déclenche de micro-saccade de fabrication. v1.7 : les personnages sont bien plus
@@ -2388,12 +2381,11 @@ function prewarmSprites(){
           WARMQ.push({ era, trans, fn:()=>unitPart(kind,fac,role,era,false,'legs',pose) }); }
       for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('AIR'+fac+era+(trans?'T':''), 64, 44, ()=>airSprite(fac,era,trans)) });
       if (!trans) WARMQ.push({ era, trans, fn:()=>sprite('GREM'+era, 28, 24, ()=>gremlinSprite(era)) });
-      if (era===1 && !trans) for (const fac of ['HUM','IA']) WARMQ.push({ era, trans, fn:()=>sprite('HERO'+fac, HERO_SW, 100, ()=>heroSprite(fac)) });
       if (era===1 && !trans) WARMQ.push({ era, trans, fn:()=>{ mushroomSprite(); puffSprites(); } });   // effets lourds
     }
   }
   while (WARMQ.length && WARMQ[0].era===0 && !WARMQ[0].trans) WARMQ.shift().fn();
-  if (game){ warmArms(game.p, true); warmArms(game.e, true); }
+  if (game){ warmArms(game.p, true); warmArms(game.e, true); warmHero(game.p); warmHero(game.e); }
 }
 // couches de bras animés (v1.14) : cuites seulement pour les ères en jeu (au départ, puis à chaque
 // évolution), jamais d'avance pour toutes — trois toiles par rôle, la mémoire resterait prise
@@ -2408,36 +2400,13 @@ function warmTick(budgetMs){
   const t0 = performance.now();
   while (WARMQ.length && performance.now()-t0 < budgetMs) WARMQ.shift().fn();
 }
-function drawHero(u, x, gy){
-  const t=game.t, col=u.fac==='HUM'?'#ffcf5a':'#ff6ad6', side=u.side===1?game.p:game.e;
-  // liens d'empowerment vers les alliés proches (montre l'impact du héros sur les troupes)
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  for (const a of side.units){ if (a===u||a.role==='hero') continue; const d=Math.abs(a.x-u.x);
-    if (d<210){ const ax=a.x-camX, ay=gY(a.x)-18, al=(1-d/210)*0.22*(0.6+0.4*Math.sin(t*5+a.x));
-      ctx.strokeStyle=rgbaC(col,al); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x,gy-32); ctx.lineTo(ax,ay); ctx.stroke(); } }
-  // aura au sol + halo
-  ctx.strokeStyle=rgbaC(col,0.3+0.2*Math.sin(t*3)); ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(x,gy,42,13,0,0,6.283); ctx.stroke();
-  const g=ctx.createRadialGradient(x,gy-44,4,x,gy-44,54+Math.sin(t*3)*6);
-  g.addColorStop(0,rgbaC(col,0.22)); g.addColorStop(1,rgbaC(col,0));
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,gy-44,56,0,6.283); ctx.fill(); ctx.restore();
-  projShadow(x, gy, 18);
-  const spr = sprite('HERO'+u.fac, HERO_SW, 100, ()=>heroSprite(u.fac));
-  const atk = u.atkT > u.rate-0.18, imp = atk? clamp((u.atkT-(u.rate-0.18))/0.18,0,1):0, lunge=u.side*9*imp;
-  ctx.save(); ctx.translate(x+lunge,gy); ctx.scale(u.side,1); ctx.drawImage(spr, -HERO_SW/2, -92, HERO_SW, 100);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-HERO_SW/2,-92, HERO_SW, 100); }
-  ctx.restore();
-  if (atk){ attackFX(u, x, gy-44, imp); }                       // frappe héroïque spectaculaire
-  ctx.font=HF(10); ctx.textAlign='center'; ctx.lineJoin='round';
-  ctx.strokeStyle='rgba(12,8,16,0.75)'; ctx.lineWidth=3; ctx.strokeText(HERO_NAME[u.fac], x, gy-103);
-  ctx.fillStyle=col; ctx.fillText(HERO_NAME[u.fac], x, gy-103);
-}
 function drawUnit(u){
   const x = u.x-camX;
   if (game.camp && game.camp.hidden && game.camp.hidden(u)) return;      // campagne : unité dans le noir
   if (x<-40 || x>VW()+40) return;
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;
-  const top = u.role==='gremlin'? 26 : u.fly? 44 : u.role==='hero'? 98 : 70;   // au-dessus de la tête
+  const top = u.role==='gremlin'? 26 : u.fly? 44 : u.role==='hero'? heroTop(u) : 70;   // au-dessus de la tête
   // NOYADE (inondation) : l'unité s'enfonce sous la nappe, puis disparaît.
   const drowning = (!u.fly && u.drownT>0);
   if (drowning){ ctx.save(); ctx.translate(0, Math.min(u.drownT*22, 30)); ctx.globalAlpha = Math.max(0.3, 1 - u.drownT*0.4); }
@@ -2469,6 +2438,8 @@ function drawUnit(u){
   if (u._born===undefined){ u._born = game.t;
     if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
       for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
+  // AURA DU HÉROS : un petit repère à l'encre sous chaque allié au sol galvanisé (remplace les faisceaux)
+  if (sideU.heroAlive && u.role!=='hero' && !u.fly && u.role!=='gremlin' && qFx()) heroPip(u.fac, x, gy);
   const bornA = clamp((game.t-u._born)/0.4, 0, 1);
   if (bornA<1) ctx.globalAlpha = 0.15+0.85*bornA;
   if (u.role==='hero') drawHero(u,x,gy);

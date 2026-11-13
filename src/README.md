@@ -34,6 +34,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `10-simulation.js` | simulation : économie, combat, déplacements |
 | `11-cataclysm.js` | cataclysmes naturels |
 | `12-render.js` | rendu : sprites, bases, bâtiments, éclairage |
+| `12b-hero.js` | héros : un personnage par ère en couches animées (le Che, la Singularité), étoffe, mort, effets |
 | `13-hud.js` | HUD (barres, boutons, menus de construction) |
 | `14-loop.js` | boucle de jeu `loop()` + `update`/`render` |
 | `15-tutorial.js` | tutoriel scripté interactif (`TUT_STEPS`, gel doux) |

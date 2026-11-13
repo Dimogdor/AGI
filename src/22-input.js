@@ -56,6 +56,7 @@ window.addEventListener('keydown', e=>{
   else if (e.code===K.formation){ if (kb({type:'formation'})) toggleFormation(p); }
   else if (e.code===K.repairall){ if (kb({type:'repairall'})) tryRepairAll(p); }
   else if (e.code===K.hero){ if (kb({type:'hero'}) && heroBtnReady(p)) tryHero(p); }
+  else if (e.code===K.herostance){ if (kb({type:'hstance'})) cycleHeroStance(p); }
   else if (e.code===K.follow) camFollow=!camFollow;
   else if (e.code===K.capup){ if (kb({type:'cap'})) tryCapUp(p); }
   else if (e.code===K.zoomin || e.code==='NumpadAdd') setZoom(zoom+0.12);
@@ -356,6 +357,7 @@ function handleTap(sx, sy, shift, opts){
     HUD.press = { b, t:performance.now() };          // la fiche touchée s'enfonce un instant (retour tactile)
     if (b.type==='unit'){ tryBuy(p, b.i); }
     else if (b.type==='hero'){ if (!heroBtnReady(p)) continue; tryHero(p); }
+    else if (b.type==='hstance'){ cycleHeroStance(p); }
     else if (b.type==='special'){ trySpecial(p); }
     else if (b.type==='evolve'){ tryEvolve(p); }
     else if (b.type==='cap'){ tryCapUp(p); }

@@ -133,6 +133,7 @@ function tryEvolve(side){
   if (isGuest(side)){ guestCmd({c:'evo'}); return true; }
   if (side.era>=4 || side.era>=(game.eraCap!=null?game.eraCap:4) || side.xp < EVOLVE_XP[side.era+1]) return false;
   side.era++;
+  if (side.heroAlive) warmHero(side);           // … et la nouvelle apparence de son héros
   warmArms(side);                               // cuit les bras animés de la nouvelle ère (étalé sur quelques images)
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
@@ -415,7 +416,7 @@ function tryHero(side){
     if (side===game.p) announce(fmt('a_hero_cost',{cost:costStr(side,HERO_COST)}), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
   spawnHero(side);
-  if (side===game.p){ sfx('trans'); voice(side.facKey); game.flash=0.8; game.shake=16; }
+  if (side===game.p){ game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
   announce(tr(side.facKey==='HUM'? 'a_hero_hum':'a_hero_ia'), side.fac.accent);
   return true;
@@ -436,8 +437,21 @@ function spawnHero(side, power){
   u.atkT=0; u.bob=Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord=null; u.holdX=null; u.task=null; u.heat=0; u.tiredT=0;
   u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
+  u.atkN = 0; u.hstate = null; u.barkT = 5+Math.random()*5;
+  warmHero(side); heroSfx(side.facKey, 'spawn', u.x);
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie
   side.units.push(u);
+}
+// ---- POSTURE DU HÉROS (prudent / normal / offensive) : réglable avant et pendant sa présence ----
+function setHeroStance(side, st){
+  if (HERO_STANCES.indexOf(st)<0) return false;
+  if (isGuest(side)){ guestCmd({c:'hst', st}); side._hsLock = performance.now()+800; }   // l'hôte confirmera par instantané
+  side.heroStance = st;
+  if (side===game.p){ sfx('sel'); game.msg = {txt:tr('a_hst_'+st), color:'#e8d8a0'}; game.msgT = 2.6; }   // (pas d'announce : rien à révéler à l'adversaire)
+  return true;
+}
+function cycleHeroStance(side){
+  return setHeroStance(side, HERO_STANCES[(HERO_STANCES.indexOf(side.heroStance||'normal')+1)%HERO_STANCES.length]);
 }
 // ---- ORDRE DE POSITION : aller DÉFENDRE un point précis du terrain ----
 // Avec une sélection : seules les unités sélectionnées y vont. SANS sélection : TOUTE
