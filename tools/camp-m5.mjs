@@ -7,11 +7,12 @@ const V = process.argv.includes('-v');
 // joueur scripté : économie de base, tourelle, montée en ère, armée mixte, pousse quand il est en
 // nombre ; acte II : va tenir les baies l'une après l'autre ; acte III : recule devant la réécriture
 const play = (bot) => {
-  const g = game, c = g.camp, p = g.p, e = g.e; let steps = 0, think = 0, cines = 0, buyI = 0; const acts = [0,0,0,0];
+  const g = game, c = g.camp, p = g.p, e = g.e; let push = false, steps = 0, think = 0, cines = 0, buyI = 0; const acts = [0,0,0,0], trace = [];
   while (!g.over && steps++ < 26000){
     if (CINE.on){ cines++; let k = 0; while (CINE.on && k++ < 12){ CINE.t = 0.5; render(1/60); CINE.t = 99; cineTick(0.05); } }
     update(0.05); if (steps%40===0) render(1/60);
     acts[c.act] = c.t;
+    if (steps%1200===0) trace.push([Math.round(c.t), c.act, p.units.length, e.units.length, Math.round(e.hp), p.era, e.era, Math.round(p.f), Math.round(p.m), g.zones.map(z=>(z.owner||'-')+Math.round(z.prog*9)).join(''), push, Math.round(Math.max(0,...p.units.map(u=>u.x))), Math.round(Math.min(9999,...e.units.map(u=>u.x))), g.neut.map(n=>n.b? n.b.type[0]+Math.round(n.b.hp)+(n.owner===p?'P':'E') : '-').join('/'), p.stance].join(','));
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;
     game.sel.clear();
     ['farmM','turret','farmF'].forEach((ty,i)=>{ if (!p.slots[i].b) tryBuild(p, p.slots[i], ty); });
@@ -21,17 +22,21 @@ const play = (bot) => {
     if (!p.capUp && unitTotal(p) >= 24) tryCapUp(p);
     if (p.heroCd<=0 && !p.units.some(u=>u.role==='hero') && c.act===3) tryHero(p);
     if (p.specialCd<=0 && e.units.some(u=>Math.abs(u.x-p.x)<900)) trySpecial(p);
-    const pat = [1,2,0,2,3,0,2,1,4,5]; if (tryBuy(p, pat[buyI%pat.length])) buyI++;
+    const pat = [1,2,0,2,3,0,2,1,4,5]; tryBuy(p, pat[buyI++%pat.length]);
     if (!(c.actCd > 0)) campAct();
+    if (p.m > 320){ let bi = 0; for (let i=1;i<5;i++) if ((p.upg[ROLES[i].key]||0) < (p.upg[ROLES[bi].key]||0)) bi = i; tryUpgRole(p, bi); }
     const n = p.units.length; let tx = null;
     if (c.act===2){ const z = g.zones.find(z=>z.owner!=='p'); if (z && n>=8) tx = z.x+20; }
     if (c.rw && !c.rw.done) tx = c.rw.x - 60;
-    if (tx!=null) orderPoint(p, tx); else { for (const u of p.units) u.ord = null; setStance(p, n>=10 || e.units.some(u=>u.x<1100)? 'charge' : 'hold'); }
+    if (push && n<=6) push = false; else if (!push && n>=18) push = true;            // on se regroupe, puis on pousse en masse
+    if (tx==null && !push) tx = e.units.some(u=>u.x<p.x+700)? p.x+260 : p.x+520;
+    if (tx!=null) orderPoint(p, tx); else { for (const u of p.units) u.ord = null; setStance(p, 'charge'); }
   }
-  return { over:g.over, win:g.win, act:c.act, t:Math.round(c.t), acts:acts.slice(1).map(Math.round), hp:Math.round(100*p.hp/p.maxhp), phase:p.phase, era:p.era, cines, units:p.units.length };
+  return { trace:trace.join(' | '), ehp:Math.round(e.hp), emax:e.maxhp, eu:e.units.length, over:g.over, win:g.win, act:c.act, t:Math.round(c.t), acts:acts.slice(1).map(Math.round), hp:Math.round(100*p.hp/p.maxhp), phase:p.phase, era:p.era, cines, units:p.units.length };
 };
 console.log('\nCAMPAGNE · MISSION V — LA DERNIÈRE BATAILLE');
-for (const lvl of [0,1,2]){
+const ONLY = process.argv.find(a=>/^lvl=/.test(a)), LVLS = ONLY? [+ONLY.slice(4)] : [0,1,2];
+for (const lvl of LVLS){
   for (const bot of [true, false]){
     const { page, errs } = await open(lvl, 4);
     const intro = await page.evaluate(() => { const n = CINE.on? CINE.script.length : 0; const played = cineRun(); return { n, played, on:CINE.on }; });
