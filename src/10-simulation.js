@@ -5,6 +5,7 @@ function foeTargets(foe){
     if (s.b) out.push({isB:true, slot:s, x:s.x, get hp(){return s.b?s.b.hp:0},
       hit(d){ if(s.b){ s.b.hp -= d*(s.b.gar&&s.b.gar.length? 0.75:1); } } });
   }
+  if (game.camp && game.camp.targets) game.camp.targets(foe, out);   // campagne : cibles propres à la mission (cortège, barricades…)
   out.push({isBase:true, x:foe.x, hit(d){foe.hp-=d;}});
   return out;
 }
