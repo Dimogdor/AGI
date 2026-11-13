@@ -5,7 +5,7 @@
    Les machines ne viennent pas d'une base : elles débarquent (barges le long du quai, terminal
    automatisé au bout, drones). En « Tenir », les troupes du joueur marchent en tête du cortège ;
    le bouton de mission dresse une barricade devant lui. Premier contact de Kassandre (« 55 »).  */
-const M2 = { start:430, dest:2930, span:132 };
+const M2 = { start:430, dest:2930, span:170 };
 DECOR_THEMES.port = ['bollard','bollard','crate','pallet','tire','bollard','crate','tire','pallet'];
 DECOR_EXTRA.bollard = (d, s) => {                                     // bitte d'amarrage
   dShadow(7*s); ctx.fillStyle = '#2c2f36'; ctx.fillRect(-4*s,-10*s,8*s,10*s);
@@ -288,19 +288,19 @@ function m2Launch(g, c, src, roles){
 
 /* ---------- le cortège à l'écran ---------- */
 function m2DrawMarch(c, t, vw){
-  const NS = 46, n = Math.max(6, Math.round(NS*clamp(c.hp/c.max, 0, 1.4))), moving = !c.stop && c.t>6;
+  const NS = 40, n = Math.max(6, Math.round(NS*clamp(c.hp/c.max, 0, 1.4))), moving = !c.stop && c.t>6;
   for (let row=0; row<3; row++) for (let i=NS-1;i>=0;i--){
     if (i%3!==row || (i*29)%NS >= n) continue;
     const wx = c.mx - 4 - (i/NS)*M2.span - ((i*0.618)%1)*6, x = wx-camX; if (x<-20 || x>vw+20) continue;
-    const sc = row===0? 0.88 : row===1? 0.96 : 1, y = gY(wx) - 3 + row*2.6, bob = moving? Math.abs(Math.sin(t*6.5+i*1.7))*1.6 : (c.hitT<1? Math.sin(t*20+i)*0.8 : 0);
+    const sc = (row===0? 0.88 : row===1? 0.96 : 1)*1.45, y = gY(wx) - 3 + row*2.6, bob = moving? Math.abs(Math.sin(t*6.5+i*1.7))*1.6 : (c.hitT<1? Math.sin(t*20+i)*0.8 : 0);
     ctx.drawImage(m2Folk(i), x-8*sc, y-34*sc-bob, 16*sc, 34*sc);
-    if (row===1 && (i===4 || i===22 || i===40) && (i*29)%NS < n+8){ const b = i===4? 0 : i===22? 1 : 2;   // banderoles portées au-dessus des têtes
-      ctx.drawImage(m2Banner(b), x-37, y-58-bob*0.5, 74, 46); } }
+    if (row===1 && (i===7 || i===31) && (i*29)%NS < n+8)                               // banderoles portées au-dessus des têtes
+      ctx.drawImage(m2Banner(i===7? 0 : 2), x-37, y-84-bob*0.5, 74, 46); }
   const hx = c.mx-camX, hy = gY(c.mx);
   if (hx>-60 && hx<vw+60){                                                              // jauge du cortège + « HALTE »
-    const k = clamp(c.hp/c.max, 0, 1); ctx.fillStyle = 'rgba(20,16,12,0.55)'; ctx.fillRect(hx-M2.span+10, hy-70, M2.span-14, 4);
-    ctx.fillStyle = c.hitT<0.6? '#ffd8a0' : '#c42a1c'; ctx.fillRect(hx-M2.span+10, hy-70, (M2.span-14)*k, 4);
-    if (c.stop && c.t>6){ ctx.font = '700 10px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = '#c42a1c'; ctx.fillText(cT({fr:'HALTE', en:'HALT'}), hx+6, hy-76); } }
+    const k = clamp(c.hp/c.max, 0, 1); ctx.fillStyle = 'rgba(20,16,12,0.55)'; ctx.fillRect(hx-M2.span+10, hy-92, M2.span-14, 4);
+    ctx.fillStyle = c.hitT<0.6? '#ffd8a0' : '#c42a1c'; ctx.fillRect(hx-M2.span+10, hy-92, (M2.span-14)*k, 4);
+    if (c.stop && c.t>6){ ctx.font = '700 10px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = '#c42a1c'; ctx.fillText(cT({fr:'HALTE', en:'HALT'}), hx+6, hy-98); } }
 }
 
 campExtend(1, {
@@ -329,7 +329,7 @@ campExtend(1, {
     campGrant(g.p, 320, 280, 110); campSquad(g.p, [1,0,2,2]);
     g.e.hp = g.e.maxhp = 3000; g.nodes = []; g.zones = []; g._bz = true;
     g.p.stance = 'hold';                                                  // « Tenir » = marcher en tête du cortège
-    c.mx = M2.start; c.max = c.hp = [300,260,220][c.lvl]*10; c.spd = [12,11,10][c.lvl]; c.hitT = 9; c.stop = false; c.lost = 0;
+    c.mx = M2.start; c.max = c.hp = [300,260,220][c.lvl]*10; c.spd = [8,7.5,7][c.lvl]; c.hitT = 9; c.stop = false; c.lost = 0;
     c.bars = []; c.barges = []; c.wi = 0; c.nextW = 0; c.extra = 0; c.kpT = 0;
     BIOMES.port.sky = M2_DAWN.map(a=>a.slice());
     const hit = d => { c.hp -= d*0.5; c.hitT = 0; c.lost += d*0.05; };
@@ -425,7 +425,7 @@ campExtend(1, {
         who:'mado', txt:{fr:"Les dockers de l'estuaire débrayent ! Ils descendent des grues, commandant : soixante paires de bras de plus, et trois costauds pour votre service d'ordre.", en:"The estuary dockers are walking out! They are climbing down from the cranes, commander: sixty more pairs of hands, and three big lads for your stewards."} },
     ]; }},
     {when:(g,c)=>c.mx >= M2.start + (M2.dest-M2.start)*0.8, who:'sol', cine(g, c){ return [
-      { cam:{x:g.e.x-160, t:1.6}, fx(g, c){ m2Launch(g, c, 'term', [1,1,0,0,2,2,3]); sfx('spec'); },
+      { cam:{x:g.e.x-160, t:1.6}, fx(g, c){ m2Launch(g, c, 'term', [1,0,0,2,2,3]); sfx('spec'); },
         who:'sol', txt:{fr:"Le terminal ouvre ses portes. Tout ce qu'il leur reste sort maintenant. Des barricades, commandant : c'est la dernière ligne droite.", en:"The terminal is opening its gates. Everything they have left is coming out now. Barricades, commander: this is the home stretch."} },
     ]; }},
   ],
