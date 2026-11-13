@@ -39,7 +39,10 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `14-loop.js` | boucle de jeu `loop()` + `update`/`render` |
 | `15-tutorial.js` | tutoriel scripté interactif (`TUT_STEPS`, gel doux) |
 | `16-news.js` | fil d'actualités du monde |
+| `16a-biomes.js` | lieux de campagne : ciel, fonds cuits en parallaxe, sol, nuit éclairée, météo |
 | `16b-campaign.js` | campagne « Les carnets de Germinal » (5 missions, radio, objectifs, progression) |
+| `16c-cine.js` | cinématiques : planches à l'encre, plans sur le terrain, portraits, choix |
+| `16d…16h-camp-m1…m5.js` | une mission de campagne par fichier : lieu, musique, règle, cinématiques |
 | `17-endgame.js` | fin de partie |
 | `18-net-core.js` | multijoueur : hôte autoritaire / invité miroir |
 | `19-net-speed.js` | vitesse de jeu (vote en ligne) |
