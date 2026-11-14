@@ -8,6 +8,7 @@
     "dev": "node build.mjs dev",
     "test": "node tools/regression.mjs",
     "test:camp": "for f in tools/camp-m*.mjs; do node \"$f\" || exit 1; done",
+    "test:extra": "for f in tools/test-*.mjs; do [ -e \"$f\" ] || continue; node \"$f\" || exit 1; done",
     "build": "node build.mjs",
     "serve": "node build.mjs && npx --yes serve www",
     "sync": "node build.mjs && cap sync",
