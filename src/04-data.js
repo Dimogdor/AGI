@@ -49,7 +49,7 @@ const HERO_CD = 600;
 //              priorité), ignore « tenir »/« repli » de l'armée, pousse vers la base ennemie, ne recule jamais.
 // L'AURA (×3 dégâts, ×2 vitesse) reste GLOBALE et sans condition de proximité : la posture ne la modifie pas.
 const HERO_STANCES = ['prudent','normal','offensive'];
-const HERO_FLEE_HP = 0.35, HERO_BACK_HP = 0.6, HERO_GUARD_GAP = 40, HERO_REST_REGEN = 0.01;
+const HERO_FLEE_HP = 0.35, HERO_BACK_HP = 0.6, HERO_GUARD_GAP = 40, HERO_REST_REGEN = 0;
 const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0 = principale, 1 = secondaire)
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)

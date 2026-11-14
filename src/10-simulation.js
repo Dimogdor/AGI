@@ -199,7 +199,8 @@ function updateUnits(side, foe, dt){
     // point EN ARRIÈRE : l'unité décroche sans s'arrêter pour combattre (sinon les poursuivants la
     // clouaient sur place et elle n'atteignait jamais le point de repli — mesuré : tireurs et
     // artillerie restaient au contact jusqu'à la mort)
-    if (pt==='back'){ pointStep(u, side, dt, 1.2); continue; }
+    // (un simple pas en arrière, ≤ 60 px — réajustement, recul devant un danger — se fait en combattant)
+    if (pt==='back' && Math.abs(u.px-u.x) > 60){ pointStep(u, side, dt, 1.2); continue; }
     // ---- ciblage (mêlée au sol ≠ volants ; tempête de sable : visée longue brouillée) ----
     // BONUS DE RELIEF : tenir une hauteur (bosse de terrain) accroît légèrement portée et
     // dégâts — récompense le contrôle des collines. elev : 0 en plaine → 1 au sommet.
@@ -273,9 +274,9 @@ function updateUnits(side, foe, dt){
       // ORDRE DE POSITION : rejoint SA place exacte dans le bloc (⚑), à l'allure de l'armée (aura du
       // héros comprise — avant, l'ordre avançait deux fois moins vite qu'une charge et s'arrêtait
       // 8 à 10 px avant la cible), puis DÉFEND sur place : le ciblage ci-dessus reste actif.
-      if (pt==='go') pointStep(u, side, dt, 1);
+      if (pt==='go' || pt==='back') pointStep(u, side, dt, 1);
     } else if (heroMode==='escort' || heroMode==='guard'){
-      heroFollow(u, side, dt, heroMode==='guard'? HERO_GUARD_GAP : 0);   // au front de la troupe / en retrait derrière elle
+      heroFollow(u, side, dt, heroMode==='guard'? HERO_GUARD_GAP : 0, targets);   // au front de la troupe / en retrait derrière elle
     } else if (heroMode==='hunt'){
       heroAdvance(u, side, dt);                                          // offensif : fonce devant, jusqu'au contact
     } else if (st==='hold'){
@@ -386,9 +387,18 @@ function armyFront(side, except){
 }
 // « avec la troupe » (gap 0) / « prudent » (gap HERO_GUARD_GAP) : se cale sur le front, jamais devant ;
 // sans troupe, il attend près de sa base au lieu de partir seul
-function heroFollow(u, side, dt, gap){
+function heroFollow(u, side, dt, gap, targets){
   const front = armyFront(side, u);
-  const want = front===null? side.x + side.side*150 : front - side.side*gap;
+  let want = front===null? side.x + side.side*150 : front - side.side*gap;
+  // « avec la troupe », armée en charge : quand la troupe est AU CONTACT (ennemi, bâtiment ou base à moins de 220 px de
+  // son front), il va frapper à ses côtés, à mi-portée de cet ennemi — sinon, derrière une ligne de
+  // tireurs postés à 155 px, il restait hors de portée et ne combattait plus (mesuré : parties
+  // bloquées). Il ne part jamais seul en avant : c'est la différence avec l'offensif.
+  if (gap===0 && front!==null && targets && side.stance==='charge'){   // armée en « tenir » : il reste sur la ligne
+    let near = null, nd = 220;
+    for (const f of targets){ if (f.hp<=0 && !f.isBase) continue; const dx = (f.x-front)*side.side; if (dx>-12 && dx<nd){ nd = dx; near = f; } }
+    if (near){ const w2 = near.x - side.side*u.range*0.5; if ((w2-want)*side.side>0) want = w2; }
+  }
   const d = (want-u.x)*side.side;
   const sp = u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*dt;
   if (d>1) u.x += side.side*Math.min(d, sp);

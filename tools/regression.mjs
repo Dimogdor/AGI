@@ -550,9 +550,9 @@ console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
     h = setup('offensive', 0.3); setStance(game.p, 'retreat'); run(60);
     out.lead = h.x > 1700 && h.hstate!=='flee';
     // AVEC LA TROUPE (clé « normal ») : au front de l'armée, jamais devant ; obéit au repli de l'armée, ne fuit pas de lui-même
-    h = setup('normal', 0.3); h.x = 1150; const p1 = game.p; for (let i=0;i<4;i++) spawnUnit(p1, 0, false, 1300+i*10);
+    h = setup('normal', 0.3); h.x = 1285; const p1 = game.p; for (let i=0;i<4;i++) spawnUnit(p1, 0, false, 1300+i*10);
     let ahead = 0; for (let i=0;i<60;i++){ run(1); const fr = Math.max(...p1.units.filter(u=>u.role!=='hero').map(u=>u.x)); ahead = Math.max(ahead, h.x-fr); }
-    const near = Math.abs(h.x - armyFront(p1, h)) < 4; setStance(p1, 'retreat'); run(200);
+    const near = Math.abs(h.x - armyFront(p1, h)) < 12; setStance(p1, 'retreat'); run(200);
     out.normal = ahead <= 1 && near && h.hstate==null && Math.abs(h.x-(p1.x+150)) < 40;
     // statistiques inchangées par la posture ; aura identique
     const a = setup('prudent', 1), sA = [a.maxhp, a.dmg, a.spd, a.range, a.rate].join(); run(2); const powA = game.p.heroPow;

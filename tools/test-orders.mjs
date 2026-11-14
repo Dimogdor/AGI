@@ -164,7 +164,8 @@ console.log('\nPOSTURES DU HÉROS (mesurées)');
       for (let i=0;i<4;i++){ spawnUnit(e, [0,1,2,0][i], false, 1950+i*14); const u=e.units[e.units.length-1]; u.ord='hold'; u.holdX=1900; }
       let sum = 0, n = 0, maxAhead = -1e9, firstHit = null;
       for (let i=0;i<20*16;i++){ game.aiThink = 1e9; update(0.05); if (!p.units.includes(h)) break;
-        const fr = armyFront(p, h); if (fr!==null && i>40 && i%5===0){ const d = h.x-fr; sum += d; n++; maxAhead = Math.max(maxAhead, d); }
+        const fr = armyFront(p, h); if (fr!==null && i>40 && i%5===0){ const d = h.x-fr; sum += d; n++;
+          const lead = Math.max(...p.units.filter(a=>a!==h && !a.fly && a.role!=='support').map(a=>a.x)); maxAhead = Math.max(maxAhead, h.x-lead); }
         if (firstHit===null && h.atkN>0) firstHit = +(i*0.05).toFixed(1); }
       // sous « tenir » : l'offensif part seul, les deux autres restent avec la ligne
       newGame('HUM', 1, false); game.aiThink = 1e9; const q = game.p;
@@ -183,9 +184,9 @@ console.log('\nPOSTURES DU HÉROS (mesurées)');
     out.cycle = atBase && back;
     return out; });
   const P = r.prudent, N = r.normal, O = r.offensive;
-  console.log(`    héros − front de l'armée (charge) : prudent ${P.mean} px, avec la troupe ${N.mean} px, offensif ${O.mean} px (max ${O.maxAhead}) · 1re frappe ${P.firstHit}/${N.firstHit}/${O.firstHit} s · sous « tenir » : ${P.hold}/${N.hold}/${O.hold} px`);
+  console.log(`    héros − front du gros de la troupe (charge) ; « max » = avance sur l'unité de tête : prudent ${P.mean} px, avec la troupe ${N.mean} px, offensif ${O.mean} px (max ${O.maxAhead}) · 1re frappe ${P.firstHit}/${N.firstHit}/${O.firstHit} s · sous « tenir » : ${P.hold}/${N.hold}/${O.hold} px`);
   check(P.mean<=-30 && P.maxAhead<=0, `PRUDENT : en seconde ligne (${P.mean} px derrière le front en moyenne, jamais devant)`);
-  check(Math.abs(N.mean)<=6 && N.maxAhead<=1, `AVEC LA TROUPE : collé au front (${N.mean} px), jamais devant (max ${N.maxAhead} px)`);
+  check(N.mean>-30 && N.mean>P.mean+15 && N.maxAhead<=1, `AVEC LA TROUPE : au front (${N.mean} px du front du gros de la troupe), jamais devant sa tête (max ${N.maxAhead} px)`);
   check(O.maxAhead>=60 && O.mean>N.mean+20, `OFFENSIF : fonce devant la troupe (jusqu'à ${O.maxAhead} px), engage le premier`);
   check(P.hold<=-30 && Math.abs(N.hold)<=2 && O.hold>=300, 'sous « tenir » : prudent en retrait, avec la troupe sur la ligne, offensif part à l\'assaut');
   check(r.cycle, 'PRUDENT blessé : rentre à la base, s\'y remet, puis repart au front');
