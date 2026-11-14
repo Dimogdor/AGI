@@ -61,7 +61,7 @@ if (L0){
   // l'empreinte calculée par le jeu = celle de l'extracteur, pour toutes les répliques
   const bad = await page.evaluate(lines => lines.filter(l => voiceKey(l.lang, l.who, l.text)!==l.hash).length, man.lines);
   check(bad===0, `empreinte du jeu (voiceKey) = empreinte de l'extracteur (${man.lines.length} répliques)`);
-  await page.waitForFunction(() => voiceIndex()!==undefined, null, { timeout:5000 }).catch(()=>{});
+  await page.waitForFunction(() => voiceIndex()!==undefined, null, { timeout:5000, polling:100 }).catch(()=>{});
   // mission I, ouverture : on s'arrête sur la plus courte réplique dite
   const r = await page.evaluate(() => { CAMP_SAVE.done = 5; campLaunch(0);
     const sc = CINE.script; let best = -1, bd = 1e9;
@@ -70,7 +70,7 @@ if (L0){
     CINE.i = best-1; cineNext(); return { best, vd:CINE.vd, i:CINE.i }; });
   check(r.best>=0 && r.vd>0, `plan dit trouvé (durée de voix ${r.vd||0} s)`);
   if (r.best>=0){
-    await page.waitForFunction(() => VOICE.cur && VOICE.cur.state==='play', null, { timeout:6000 }).catch(()=>{});
+    await page.waitForFunction(() => VOICE.cur && VOICE.cur.state==='play', null, { timeout:6000, polling:100 }).catch(()=>{});
     const mid = await page.evaluate(() => { const i = CINE.i; CINE.t = 99; cineTick(0.05); return { held: CINE.i===i, state: VOICE.cur && VOICE.cur.state, plays: VOICE.plays }; });
     check(mid.state==='play' && mid.plays>=1, 'la voix est décodée et jouée (WebAudio)');
     check(mid.held, 'le plan ATTEND la fin de la voix même quand son temps de lecture est écoulé');
@@ -79,7 +79,7 @@ if (L0){
     check(end.moved, 'puis passe au plan suivant une fois la voix finie (+ marge)');
     // passer coupe la voix
     const sk = await page.evaluate(() => { const i = CINE.script.findIndex((s,j)=> j>CINE.i && s.txt && voiceDur(s.who||'nar', s.txt)>0); if (i<0) return null; CINE.i = i-1; cineNext(); return 1; });
-    if (sk){ await page.waitForFunction(() => VOICE.cur && VOICE.cur.state==='play', null, { timeout:6000 }).catch(()=>{});
+    if (sk){ await page.waitForFunction(() => VOICE.cur && VOICE.cur.state==='play', null, { timeout:6000, polling:100 }).catch(()=>{});
       const s2 = await page.evaluate(() => { cineEnd(); return !VOICE.cur && !CINE.on; }); check(s2, '« passer la cinématique » coupe la voix'); }
     // réglage coupé : aucune lecture
     const off = await page.evaluate(() => { voiceToggle(false); const p0 = VOICE.plays; campLaunch(0);
