@@ -5,7 +5,7 @@ Branche de travail : `claude/age-of-war-online-balance-xn6ump` · PR #56 (brouil
 | Chantier | Agent | Branche wip | État | Prochaine étape |
 |---|---|---|---|---|
 | Bases par époque | bases | — | **intégré** (66b032b), tests verts | — |
-| Gameplay (grève, ordres, postures, guide) | gameplay (opus, reprise) | claude/wip-gameplay | en cours, attendait les tests | finir → intégrer |
+| Gameplay (grève, ordres, postures, guide) | gameplay | — | **intégré** (7fa6c4f) | surveiller l'équilibre en difficulté 2 (parties longues) |
 | Voix off + lisibilité | voix | — | **intégré** (FR généré, 125 répliques, 3,4 Mo) | régénérer après la bible, autres langues au lot 4 |
 | Audio (sons libres, musiques) | audio | claude/wip-audio | tri des enregistrements de pluie | lot 2 |
 | Moteur de campagne | campagne-socle (opus, reprise) | claude/wip-campagne-socle | en cours | intégrer |
