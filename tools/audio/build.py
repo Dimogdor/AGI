@@ -188,13 +188,13 @@ def build_entry(E):
             x = alib.fade(x[: B + int(0.2 * SR)], SR, 0, 0.2)
             meta['sus'] = [round(a, 4), round(b, 4)]
         g = E.get('target', -16) - alib.momentary(x, SR).max()
-        x = limiter(x * 10 ** (g / 20), SR, -1)
+        x = limiter(x * 10 ** (g / 20), SR, -1.5)
         meta['root'] = E['root']
     else:  # sfx
         if not E.get('notrim'): x = trim(x, SR, E.get('trel', -50), 0.003, E.get('post', -58), E.get('fout', 0.04), E.get('maxdur'))
         if E.get('fin'): x = alib.fade(x, SR, E['fin'], 0)
         g = E.get('target', -14) - alib.momentary(x, SR).max()
-        x = limiter(x * 10 ** (g / 20), SR, -1)
+        x = limiter(x * 10 ** (g / 20), SR, -2.5)
     # repère de calage : début du fichier = attaque (le lecteur mesure le retard du décodeur MP3)
     e, n = env_db(x, SR); th = e.max() - 40
     meta['on'] = round(int(np.argmax(e > th)) * n / SR, 4)

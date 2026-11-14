@@ -86,13 +86,13 @@ function sampSfx(kind, p, pan){
   if (!SND.man) return false;
   const P = { pan: pan || 0 };
   switch (kind){
-    case 'buy':   return !!sampPlay('ui_buy', {vol:0.42, rate:1+0.03*(p|0), vary:0.3});
-    case 'sel':   return !!sampPlay('ui_click', {vol:0.45, vary:0.4});
-    case 'cap':   return !!sampPlay('ui_ok', {vol:0.42, vary:0.2});
-    case 'deny':  return !!sampPlay('ui_deny', {vol:0.45, vary:0});
+    case 'buy':   return !!sampPlay('ui_buy', {vol:0.6, rate:1+0.03*(p|0), vary:0.3});
+    case 'sel':   return !!sampPlay('ui_click', {vol:0.7, vary:0.4});
+    case 'cap':   return !!sampPlay('ui_ok', {vol:0.55, vary:0.2});
+    case 'deny':  return !!sampPlay('ui_deny', {vol:0.6, vary:0});
     case 'shoot': { const fk = (game && game.p && game.p.facKey) || 'HUM', era = clamp(p|0, 0, 4);
       const key = SAMP_SHOT[fk==='IA'? 'IA':'HUM'][era];
-      return !!sampPlay(key, {vol: fk==='IA'? 0.26 : 0.3, pan: pan || (Math.random()-0.5)*0.5, rate: era===4? 1.12 : 1, vary:0.8}); }
+      return !!sampPlay(key, {vol: fk==='IA'? 0.45 : 0.5, pan: pan || (Math.random()-0.5)*0.5, rate: era===4? 1.12 : 1, vary:0.8}); }
     case 'boom':  { const r = sampPlay('boom', {vol:0.62, pan:P.pan, vary:1.2}); if (r) musicDip(3, 0.6); return !!r; }
     case 'die':   return !!sampPlay('die', {vol:0.3, pan:(Math.random()-0.5)*0.6, vary:1.5});
     case 'build': return !!sampPlay('build', {vol:0.42, pan:P.pan, vary:1});
@@ -109,7 +109,7 @@ function sampSfx(kind, p, pan){
 /* ---------- héros : le Che (voix humaines, cuivres, caisse claire), la Singularité (machines) ---------- */
 function sampHero(fac, kind, n, V, pan){
   if (!SND.man || !sampReady(fac==='HUM'? 'che_cry' : 'ia_glitch')) return false;
-  const o = (key, vol, x) => sampPlay(key, Object.assign({vol: vol*V, pan, bus:BUS.sfx}, x||{}));
+  const o = (key, vol, x) => sampPlay(key, Object.assign({vol: 0.65*vol*V, pan, bus:BUS.sfx}, x||{}));
   const t = AC.currentTime;
   if (fac==='HUM'){
     if (kind==='spawn'){ o('che_cry', 0.85, {vary:0.2}); musStinger('bugle', t+0.5, V, pan); musicDip(4, 1.6); }

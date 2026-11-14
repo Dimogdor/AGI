@@ -51,7 +51,7 @@ function instSynth(key, m, t, dur, vel, bus){
     else if (g==='str' && key!=='pizz' || key==='org' || key==='hrn'){ tone(f, t, dur+0.4, 'sawtooth', .014*vel, 0, Math.min(0.5, dur*0.4), key==='vln'? 1600 : 900);
       tone(f*1.004, t, dur+0.4, 'triangle', .012*vel, 0, Math.min(0.6, dur*0.5)); }
     else if (key==='tpt' || key==='tba'){ tone(f, t, Math.max(0.15, dur), 'sawtooth', .022*vel, 0, 0.02, key==='tba'? 600 : 1800); }
-    else { tone(f, t, Math.min(3, dur+1.2), 'triangle', .04*vel, 0, 0.004, 2600); if (key==='gtr' || key==='pizz') tone(f*2, t, 0.25, 'sine', .01*vel); }
+    else { tone(f, t, Math.min(3, dur+1.2), 'triangle', .075*vel, 0, 0.004, 2600); if (key==='gtr' || key==='pizz') tone(f*2, t, 0.25, 'sine', .01*vel); }
   } finally { sfxBus = keep; }
 }
 const instReady = list => !!SND.man && list.every(g => sampGrpReady('mus_'+g));
@@ -130,7 +130,7 @@ T.m_strike = { bpm:bpmEff(104), verb:0.2, inst:['brass','drums'], step(st, t, d,
 
 // m_dam — chaleur immobile au barrage : bourdon de violoncelles (mi, si), cordes aiguës tenues qui
 // montent lentement, timbale lointaine quand la bataille gronde ; tout s'ouvre quand la vanne cède.
-T.m_dam = { bpm:bpmEff(50), verb:0.42, inst:['str','drums'], step(st, t, d, s){
+T.m_dam = { bpm:bpmEff(50), verb:0.42, lvl:1.3, inst:['str','drums'], step(st, t, d, s){
   const bar = st>>3, s8 = st&7, c = game && game.camp, open = !!(c && (c.siren>0 || (c.flood && c.flood.t<6)));
   if (st%16===0){ inst('vc', 40, t, d*17, 0.55, {att:1.5, rel:2}); inst('vc', 47, t, d*17, 0.4, {att:2, rel:2}); }
   const RISE = [71,72,74,76,78,79,81,83];
@@ -156,7 +156,7 @@ T.m_cold = { bpm:bpmEff(60), verb:0.5, inst:['gtr','org','bell'], step(st, t, d,
 
 // m_citadel — la citadelle d'Omnicorp : l'hymne de Germinal ralenti de moitié, cors graves sur un pouls de
 // machine ; à l'acte II une ombre un demi-ton au-dessus, la timbale et le tuba.
-T.m_citadel = { bpm:bpmEff(66), verb:0.35, inst:['brass','drums','str','bell'], step(st, t, d, s){
+T.m_citadel = { bpm:bpmEff(66), verb:0.35, lvl:1.4, inst:['brass','drums','str','bell'], step(st, t, d, s){
   let a = 1; try { if (typeof m5Act==='function') a = m5Act() || 1; } catch(e){}
   const s8 = st&7, ch = CH_RED[(st>>4)%8], mn = st%2? 0 : MEL_RED[(st>>1) % MEL_RED.length];
   tone(m2f(ch[0]-24), t, d*0.45, 'sine', .05 + .03*s, 0, 0.01);                 // le pouls de la machine
@@ -171,7 +171,7 @@ T.m_citadel = { bpm:bpmEff(66), verb:0.35, inst:['brass','drums','str','bell'], 
 
 // m_finale — acte III : l'hymne complet, tout le monde ensemble ; trompettes et cors, cordes, tambours,
 // cymbales ; le tempo monte avec la tension.
-T.m_finale = { get bpm(){ return bpmEff(104 + 18*stress()); }, verb:0.28, inst:['brass','drums','str'], step(st, t, d, s){
+T.m_finale = { get bpm(){ return bpmEff(104 + 18*stress()); }, verb:0.28, lvl:0.8, inst:['brass','drums','str'], step(st, t, d, s){
   const bar = (st>>3)%8, s8 = st&7, ch = CH_RED[bar], mn = MEL_RED[st % MEL_RED.length];
   if (mn){ let L = 1; while (L<4 && !MEL_RED[(st+L) % MEL_RED.length]) L++;
     inst('tpt', mn, t, d*L*0.9, 0.7); inst('hrn', mn-12, t, d*L*0.9, 0.6); }
@@ -184,7 +184,7 @@ T.m_finale = { get bpm(){ return bpmEff(104 + 18*stress()); }, verb:0.28, inst:[
 } };
 
 // c_dread — menace : nappe grave, pouls lent, une note qui ne se résout pas
-T.c_dread = { bpm:bpmEff(60), verb:0.45, inst:['str','drums','bell'], step(st, t, d, s){
+T.c_dread = { bpm:bpmEff(60), verb:0.45, lvl:1.3, inst:['str','drums','bell'], step(st, t, d, s){
   const s8 = st&7, bar = st>>3;
   if (st%16===0) inst('vc', 38, t, d*17, 0.6, {att:2, rel:2});
   if (s8===0 || s8===1) inst('bd', 0, t, d, s8? 0.3 : 0.45);
@@ -192,7 +192,7 @@ T.c_dread = { bpm:bpmEff(60), verb:0.45, inst:['str','drums','bell'], step(st, t
   if (st%64===0) inst('gong', 0, t, 6, 0.35);
 } };
 // c_hope — solidarité, retournement : cordes en majeur qui montent lentement, cor, piano
-T.c_hope = { bpm:bpmEff(72), verb:0.4, inst:['str','brass','pno'], step(st, t, d, s){
+T.c_hope = { bpm:bpmEff(72), verb:0.4, lvl:1.4, inst:['str','brass','pno'], step(st, t, d, s){
   const bar = st>>3, s8 = st&7, ch = nn([[62,66,69],[59,62,66],[55,59,62],[57,61,64]], bar), lift = 12*((bar>>2)%2);
   if (s8===0){ for (const n of ch) inst('vln', n+lift, t, d*8.5, 0.4, {att:0.8}); inst('vc', ch[0]-12, t, d*8.5, 0.5, {att:0.6}); }
   const m = nn([66,0,0,0,69,0,0,0, 71,0,69,0,66,0,0,0, 64,0,66,0,69,0,0,0, 71,0,0,0,73,0,0,0], st);
@@ -202,7 +202,7 @@ T.c_hope = { bpm:bpmEff(72), verb:0.4, inst:['str','brass','pno'], step(st, t, d
 // c_sorrow — deuil : violoncelle seul, mineur, lent, sur un harmonium à peine audible
 const SORROW = [62,0,0,0,0,0,60,0, 58,0,0,0,57,0,0,0, 55,0,0,0,57,0,58,0, 57,0,0,0,0,0,0,0,
                 62,0,0,0,65,0,64,0, 62,0,0,0,61,0,0,0, 62,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0];
-T.c_sorrow = { bpm:bpmEff(56), verb:0.5, inst:['str','org'], step(st, t, d, s){
+T.c_sorrow = { bpm:bpmEff(56), verb:0.5, lvl:1.7, inst:['str','org'], step(st, t, d, s){
   const bar = st>>3, ch = nn([[50,53,57],[43,46,50],[46,50,53],[45,49,52]], bar>>1), m = nn(SORROW, st);
   if (m){ let L = 1; while (L<8 && !nn(SORROW, st+L)) L++; inst('vc', m, t, d*L*0.98, 0.7, {att:0.25, rel:1}); }
   if (st%16===0) for (const n of ch) inst('org', n, t, d*16.5, 0.22, {att:2, rel:2});
@@ -217,14 +217,14 @@ T.c_map = { bpm:bpmEff(76), verb:0.38, inst:['pno'], step(st, t, d, s){
   if ((bar>>3)%2 && s8===6 && mHash(st, 5) < 0.5) inst('pno', ch[2]+12, t, d*4, 0.25);
 } };
 // e_dawn — fin « veiller » : l'aube, piano et cordes, majeur suspendu, carillon
-T.e_dawn = { bpm:bpmEff(66), verb:0.45, inst:['pno','str','bell'], step(st, t, d, s){
+T.e_dawn = { bpm:bpmEff(66), verb:0.45, lvl:1.5, inst:['pno','str','bell'], step(st, t, d, s){
   const bar = st>>3, s8 = st&7, ch = nn([[55,57,62],[48,55,64],[52,55,62],[50,55,57]], bar>>1);
   if (st%16===0){ for (const n of ch) inst('vln', n+12, t, d*16.5, 0.35, {att:2}); inst('vc', ch[0]-12, t, d*16.5, 0.4, {att:1.5}); }
   if (s8%2===0) inst('pno', ch[(st>>1)%3] + 12 + 12*((st>>3)&1), t, d*4, 0.3);
   if (st%32===12) inst('chime', 81, t, 3, 0.3, {pan:0.4});
 } };
 // e_ash — fin « abattre » : cuivres en sourdine, l'hymne lent jusqu'au bout
-T.e_ash = { bpm:bpmEff(58), verb:0.45, inst:['brass','str','drums'], step(st, t, d, s){
+T.e_ash = { bpm:bpmEff(58), verb:0.45, lvl:1.8, inst:['brass','str','drums'], step(st, t, d, s){
   const mn = st%2? 0 : MEL_RED[(st>>1) % MEL_RED.length], ch = CH_RED[(st>>4)%8];
   if (mn){ let L = 2; while (L<8 && !MEL_RED[((st>>1)+L/2) % MEL_RED.length]) L += 2; inst('hrn', mn-12, t, d*L*0.95, 0.35, {att:0.2}); }
   if (st%16===0){ inst('vc', ch[0]-12, t, d*16.5, 0.4, {att:2}); inst('vc', ch[2]-12, t, d*16.5, 0.25, {att:2.5}); }

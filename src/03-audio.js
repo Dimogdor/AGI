@@ -53,7 +53,7 @@ function audioBuses(ctx){
   musicBus = ctx.createGain(); musicBus.gain.value = 1; musicBus.connect(master);
   BUS.mduck = ctx.createGain(); BUS.mduck.gain.value = 1; BUS.mduck.connect(musicBus);
   BUS.sfx = ctx.createGain(); BUS.sfx.gain.value = 1; BUS.sfx.connect(master);
-  BUS.amb = ctx.createGain(); BUS.amb.gain.value = 1; BUS.amb.connect(master);
+  BUS.amb = ctx.createGain(); BUS.amb.gain.value = 0.42; BUS.amb.connect(master);   // boucles à −26 LUFS : placées sous les effets
   BUS.verb = null;
   if (SETTINGS.quality!=='low' && ctx.createConvolver) try {     // réverbération de la musique (réponse synthétique, 2,4 s)
     const cv = ctx.createConvolver(), n = Math.round(ctx.sampleRate*2.4), ir = ctx.createBuffer(2, n, ctx.sampleRate);
@@ -263,7 +263,8 @@ function musicSwitch(mode){
   if (old){ old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t); old.gain.setTargetAtTime(0, t, 0.6);
     const srcs = old._srcs; setTimeout(()=>{ try { for (const x of srcs) try { x.stop(); } catch(e){} old.disconnect(); } catch(e){} }, 4500); }
   const th = MUSIC_THEMES[mode], b = AC.createGain();
-  b.gain.setValueAtTime(0.0001, t); b.gain.setTargetAtTime(1, t, old? 0.5 : 0.05); b._srcs = new Set();
+  const lv = (th && th.inst? 0.6 : 1) * ((th && th.lvl) || 1);            // thèmes échantillonnés : niveau calé au banc d'essai
+  b.gain.setValueAtTime(0.0001, t); b.gain.setTargetAtTime(lv, t, old? 0.5 : 0.05); b._srcs = new Set(); b._lv = lv;
   b.connect(BUS.mduck || master);
   if (th && th.verb && BUS.verb){ const sd = AC.createGain(); sd.gain.value = th.verb; b.connect(sd); sd.connect(BUS.verb); }
   MUSIC.bus = b; MUSIC.cur = mode; MUSIC.st0 = MUSIC.step;
@@ -272,7 +273,7 @@ function musicSched(){
   if (!AC) return;
   const off = !SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime;
   if (MUSIC.bus && MUSIC.off!==off){ const g = MUSIC.bus.gain, t = AC.currentTime;   // pause, musique coupée, silence dramatique : on éteint vraiment
-    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.setTargetAtTime(off? 0 : 1, t, off? 0.15 : 0.4); }
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.setTargetAtTime(off? 0 : (MUSIC.bus._lv||1), t, off? 0.15 : 0.4); }
   MUSIC.off = off;
   if (off) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
   while (MUSIC.nextT < AC.currentTime + 0.35) {
@@ -419,7 +420,7 @@ function ambLoop(hp, bp){
   const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
   const f = AC.createBiquadFilter(); f.type = bp? 'bandpass' : 'highpass'; f.frequency.value = bp? 420 : 1600; if (bp) f.Q.value = 0.7;
   const g = AC.createGain(); g.gain.value = 0;
-  src.connect(f); f.connect(g); g.connect(BUS.amb||master); src.start();
+  src.connect(f); f.connect(g); g.connect(master); src.start();
   return { g, f };
 }
 function ambStart(){

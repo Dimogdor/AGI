@@ -88,7 +88,7 @@ sfx('dog1', FS(573146), 'dog', grp='amb_night', ev=3, lp=2500, target=-30)
 sfx('dog2', FS(573146), 'dog', grp='amb_night', ev=5, lp=2500, target=-30)
 # II · le port à l'aube, la grève
 loop('harbour', FS(450529), 'amb_port', len=18)                         # rue du port à 6 h, mouettes
-loop('lap', FS(637945), 'amb_port', len=14)                             # clapotis contre les coques
+loop('lap', FS(637945), 'amb_port', len=14, start=62.0)                           # clapotis contre les coques
 loop('dawn', FS(518670), 'amb_port', len=18)                            # chœur de l'aube, océan au loin
 loop('crowd', FS(580301), 'amb_port', len=14, lp=3200)                  # la foule (rumeur, sans paroles)
 loop('chant', FS(485621), 'amb_port', len=16, lp=1400, hp=120)          # cortège qui scande, au loin (paroles inintelligibles)
