@@ -79,15 +79,12 @@ function garrisonByIds(side, slot, ids){
   for (const u of elig){ slot.b.gar.push(u); side.units.splice(side.units.indexOf(u),1); }
 }
 // ordre de position de l'invité (coordonnée déjà convertie côté invité en repère hôte)
-// ids vide = TOUTE l'armée (aucune sélection côté invité)
+// ids vide = TOUTE l'armée (aucune sélection côté invité) — même bloc compact qu'en solo (assignPoint)
 function applyPointIds(side, x, ids){
   const set = new Set(ids||[]);
   const sel = (ids && ids.length)? side.units.filter(u=>set.has(u.id))
                                  : side.units.filter(u=>u.role!=='gremlin');
-  sel.forEach((u,i)=>{
-    u.ord='point'; u.task=null;
-    u.px = clamp(x + (i-(sel.length-1)/2)*16, 40, WORLD-40);
-  });
+  if (sel.length) assignPoint(side, sel, x);
 }
 function applyCmd(cmd){
   const e = game.e;
@@ -242,6 +239,7 @@ function onSnapshot(data){
   if (!game || game.net!=='guest' || !data || typeof data!=='object') return;
   applySnapshot(data.s);
   applyEvents(data.ev);
+  evWatch();            // 1re grève / mise à jour / pluie / cataclysme : l'explication, dans la langue de l'invité
 }
 // l'invité fait juste avancer l'affichage (interpolation, animations, effets locaux)
 function netGuestTick(dt){
@@ -260,6 +258,7 @@ function netGuestTick(dt){
   if (game.msgT>0) game.msgT-=dt;
   if (game.shake>0) game.shake=Math.max(0,game.shake-dt*30);
   if (game.flash>0) game.flash-=dt;
+  tickPointFlags(dt);   // fanions ⚑ de l'invité : suivis par identifiant d'unité
   if (camFollow && !dragging){
     let front = game.p.units.length? Math.max(...game.p.units.map(u=>u.x)) : game.p.x+200;
     camX = lerp(camX, clamp(front - VW()*0.45, 0, WORLD-VW()), Math.min(1,dt*2.2));

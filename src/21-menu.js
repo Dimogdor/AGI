@@ -15,6 +15,7 @@ document.querySelectorAll('.tab').forEach(tb=>{
     tb.classList.add('on');
     $('page-'+tb.dataset.page).classList.add('on');
     if (tb.dataset.page==='tuto') refreshTutoPage();
+    if (tb.dataset.page==='guide') refreshGuidePage();
     if (tb.dataset.page==='camp') campRenderMenu();
   });
 });

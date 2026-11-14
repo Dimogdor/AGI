@@ -24,8 +24,9 @@ function aiUpdate(dt){
   // invocation AVANT toute dépense : sitôt le coût réuni (épargne bouclée) ou une
   // bataille engagée avec les moyens en caisse, le héros entre en scène.
   if (heroReady && canPay(e, HERO_COST) && (e.heroSaving || e.mode==='push' || pPushing || e.trans)) tryHero(e);
-  // posture du héros (escarmouche) : téméraire en Facile, historique en Normal ; en Difficile/Brutal
-  // l'IA le met à l'abri quand il est entamé, et en Brutal le lance en tête pour achever une base aux abois
+  // posture du héros (escarmouche) : « offensif » (téméraire) en Facile, « avec la troupe » en Normal ;
+  // en Difficile/Brutal l'IA le passe « prudent » quand il est entamé (il rentre se soigner et revient),
+  // et en Brutal le lance « offensif » pour achever une base aux abois
   if (!game.camp){
     const h = hasHero? e.units.find(u=>u.role==='hero') : null, f = h? h.hp/h.maxhp : 1;
     let hs = 'normal';
