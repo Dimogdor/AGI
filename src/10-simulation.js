@@ -29,6 +29,12 @@ function dealDmg(target, dmg, attacker){
     if (attacker && attacker.role) target.lastHit = attacker;        // pour la vétérance
   }
 }
+// ---- GRÈVE GÉNÉRALE (humains) / MISE À JOUR FORCÉE (machines) : la faction touchée est FIGÉE 15 s ----
+// Elle ne bouge plus du tout (ni avance, ni repli, ni chantier), ne s'en prend plus aux bâtiments ni
+// aux bases et ne peut rien capturer — mais elle SE DÉFEND : chaque unité riposte à toute unité ennemie
+// à sa portée (héros compris, devant comme derrière), médics et ruches soignent, garnisons et tourelles
+// tirent. (Avant : la faction figée ne ciblait plus RIEN et se laissait massacrer sans réagir.)
+function facFrozen(fac){ return !!game && ((fac==='HUM' && game.weather==='strike') || (fac==='IA' && game.weather==='patch')); }
 function updateUnits(side, foe, dt){
   const targets = foeTargets(foe);
   const m = statMul(side.era);
@@ -37,6 +43,7 @@ function updateUnits(side, foe, dt){
   // unité héroïque vivante : ×3 dégâts et ×2 vitesse pour TOUT le camp (réduit si la légende est affaiblie)
   side.heroAlive = side.units.some(u=>u.role==='hero');
   side.heroPow = side.heroAlive ? (side.units.find(u=>u.role==='hero').heroPow||1) : 0;
+  const frozen = facFrozen(side.facKey);
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
     if (u.tiredT>0) u.tiredT -= dt;                       // fatigue / surchauffe
@@ -65,7 +72,7 @@ function updateUnits(side, foe, dt){
     if (u.role==='hero'){
       if (u.era!==side.era){ u.era = side.era; burst(u.x, gY(u.x)-50, side.fac.accent, 14, 1); }   // l'apparence suit l'ère du camp (stats inchangées)
       heroMode = heroStanceStep(u, side, dt);
-      if (heroMode==='lead') st = 'charge';
+      if (heroMode==='hunt') st = 'charge';     // offensif : ignore « tenir » / « repli » de l'armée
     }
     // ---- tâche assignée : chantier ou garnison (envoi direct depuis le pool) ----
     if (u.task){
@@ -74,6 +81,7 @@ function updateUnits(side, foe, dt){
       const okG = sl && canGar(sl.b) && u.task.kind==='garrison' && sl.owner===side && sl.b.gar.length<GAR_MAX;
       const okC = u.task.kind==='gbase' && side.gar.length<3;   // garde du château
       if (!okB && !okG && !okC){ u.task = null; }
+      else if (frozen){ /* grève / mise à jour : le chantier attend la reprise */ }
       else if (moveToward(u, okC? side.x : sl.x, dt, 1.15)){
         if (okB){
           sl.b = mkB(side, sl.b.buildType);
@@ -140,7 +148,9 @@ function updateUnits(side, foe, dt){
       }
       // DÉPLACEMENT — correctif v1.5 : un ORDRE EXPLICITE du joueur prime sur la poursuite
       // automatique des blessés. Le médic redevient ainsi pilotable (sélection + ⚔/✋/↩).
-      if (u.ord==='hold'){
+      if (frozen){
+        // figé (grève / mise à jour forcée) : soigne sur place, ne bouge plus
+      } else if (u.ord==='hold'){
         const hx = (u.holdX!=null)? u.holdX : u.x;     // tient la position ordonnée, soigne ce qui passe à portée
         if (Math.abs(u.x-hx)>4) moveToward(u, hx, dt, 1.0);
       } else if (u.ord==='charge'){
@@ -149,8 +159,8 @@ function updateUnits(side, foe, dt){
         const homeX = side.x + side.side*150;
         if ((u.x-homeX)*side.side>4) moveBack(u, side, dt);
       } else if (u.ord==='point'){
-        // ordre de position explicite : le soutien s'y poste (et soigne ce qui passe à portée)
-        if (u.px!=null && Math.abs(u.x-u.px)>10) moveToward(u, u.px, dt, 1.05);
+        // ordre de position explicite : le soutien rejoint SA place dans le bloc (et soigne ce qui passe à portée)
+        if (u.px!=null) pointStep(u, side, dt, (u.px-u.x)*side.side<0? 1.2 : 1);
       } else if (best){
         // pas d'ordre explicite : comportement autonome — rejoint le blessé prioritaire
         if (Math.abs(best.x-u.x) > hr*0.7) moveToward(u, best.x - side.side*14, dt, 1.1);
@@ -167,20 +177,29 @@ function updateUnits(side, foe, dt){
       continue;
     }
     // ---- repli : retour en zone de base, puis tient la position ----
-    let noMove = false;
+    // (figé par une grève / mise à jour forcée : plus aucun déplacement, mais il se défend sur place)
+    let noMove = frozen;
     if (heroMode==='flee'){                              // héros prudent blessé : file vers sa base sans combattre, puis s'y défend
-      if ((u.x-(side.x + side.side*150))*side.side > 4){ moveBack(u, side, dt); continue; }
+      if (!frozen && (u.x-(side.x + side.side*150))*side.side > 4){ moveBack(u, side, dt); continue; }
       noMove = true;
     } else
     if (st==='retreat'){
       const homeX = side.x + side.side*150;
-      if ((u.x-homeX)*side.side > 4){ moveBack(u, side, dt); continue; }
-      if (u.ord==='retreat'){ u.ord='hold'; u.holdX = u.x; }
+      if ((u.x-homeX)*side.side > 4){ if (!frozen){ moveBack(u, side, dt); continue; } }
+      else if (u.ord==='retreat'){ u.ord='hold'; u.holdX = u.x; }
       noMove = true;
     }
-    // ---- malus social/système : la faction « figée » refuse d'attaquer et se contente de tenir ----
-    const muzzled = (u.fac==='HUM' && game.weather==='strike') || (u.fac==='IA' && game.weather==='patch');
-    if (muzzled) noMove = true;
+    // ---- ORDRE DE POSITION (⚑) : 'go' = en route vers l'avant, 'back' = décroche vers l'arrière,
+    // 'at' = posté sur sa place. Il tient ensuite la position jusqu'au prochain ordre.
+    let pt = null;
+    if (st==='point' && u.px!=null && !noMove){
+      const d = (u.px-u.x)*side.side;
+      pt = Math.abs(u.px-u.x)<=1.5? 'at' : d>0? 'go' : 'back';
+    }
+    // point EN ARRIÈRE : l'unité décroche sans s'arrêter pour combattre (sinon les poursuivants la
+    // clouaient sur place et elle n'atteignait jamais le point de repli — mesuré : tireurs et
+    // artillerie restaient au contact jusqu'à la mort)
+    if (pt==='back'){ pointStep(u, side, dt, 1.2); continue; }
     // ---- ciblage (mêlée au sol ≠ volants ; tempête de sable : visée longue brouillée) ----
     // BONUS DE RELIEF : tenir une hauteur (bosse de terrain) accroît légèrement portée et
     // dégâts — récompense le contrôle des collines. elev : 0 en plaine → 1 au sommet.
@@ -188,11 +207,28 @@ function updateUnits(side, foe, dt){
     const meleeGround = u.range<=24 && !u.fly;
     const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev) * (game.camp && game.camp.rangeMul? game.camp.rangeMul(u) : 1);
     let target=null, best=1e9;
-    if (!muzzled) for (const f of targets){
+    for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
       if (f.fly && meleeGround) continue;
+      if (frozen && !f.role) continue;          // figés : légitime défense — jamais les bâtiments ni la base
       const dx = (f.x-u.x)*u.side;
       if (dx>-12 && dx<best){ best=dx; target=f; }
+    }
+    // en route vers son point, une unité ne s'arrête que pour ce qui lui BARRE le chemin : un ennemi
+    // au-delà du point sera combattu depuis le point (plus près). Elle va donc bien jusqu'au ⚑.
+    if (pt==='go' && target && best<=eRange && (target.x-u.px)*side.side > 0){ target = null; best = 1e9; }
+    // DÉFENSE TOUS AZIMUTS : une unité postée sur son point, figée, ou le héros offensif en chasse
+    // riposte aussi à une unité ennemie qui la contourne (volants passés au-dessus, infiltrés…) ;
+    // le héros offensif s'en prend en priorité au HÉROS ennemi à sa portée.
+    if ((pt==='at' || frozen || heroMode==='hunt') && (!target || best>eRange || !target.role || heroMode==='hunt')){
+      let alt=null, ad=1e9;
+      for (const f of targets){
+        if (!f.role || f.hp<=0 || (f.fly && meleeGround)) continue;
+        const d = Math.abs(f.x-u.x); if (d>eRange) continue;
+        const sc = d - ((heroMode==='hunt' && f.role==='hero')? 1e4 : 0);
+        if (sc<ad){ ad=sc; alt=f; }
+      }
+      if (alt){ target = alt; best = Math.abs(alt.x-u.x); }
     }
     if (target && best<=eRange){
       if (u.atkT<=0){
@@ -232,19 +268,20 @@ function updateUnits(side, foe, dt){
         if (target.isBase) game.shake = Math.max(game.shake,2);
       }
     } else if (noMove){
-      // tient sa position de repli
+      // tient sa position de repli (ou figé : grève / mise à jour forcée)
     } else if (st==='point'){
-      // ORDRE DE POSITION : rejoint le point assigné (⚑) puis DÉFEND sur place —
-      // le ciblage ci-dessus reste actif, l'unité combat tout ce qui entre à portée.
-      if (u.px!=null && Math.abs(u.x-u.px)>10) moveToward(u, u.px, dt, 1.05);
+      // ORDRE DE POSITION : rejoint SA place exacte dans le bloc (⚑), à l'allure de l'armée (aura du
+      // héros comprise — avant, l'ordre avançait deux fois moins vite qu'une charge et s'arrêtait
+      // 8 à 10 px avant la cible), puis DÉFEND sur place : le ciblage ci-dessus reste actif.
+      if (pt==='go') pointStep(u, side, dt, 1);
+    } else if (heroMode==='escort' || heroMode==='guard'){
+      heroFollow(u, side, dt, heroMode==='guard'? HERO_GUARD_GAP : 0);   // au front de la troupe / en retrait derrière elle
+    } else if (heroMode==='hunt'){
+      heroAdvance(u, side, dt);                                          // offensif : fonce devant, jusqu'au contact
     } else if (st==='hold'){
       const hx = u.ord==='hold'? u.holdX : side.holdX;
       if (hx!==null && (u.x-hx)*side.side>=0){ /* tient */ }
       else tryMove(u, side, dt);
-    } else if (heroMode==='lead'){
-      heroAdvance(u, side, dt);
-    } else if (heroMode==='guard'){
-      heroGuard(u, side, dt);
     } else if (side.formation && moveToFormation(u, side, dt)){
       // formation : volants en pointe, mêlée/tank devant, tireurs, artillerie puis soutien à l'arrière
       // (moveToFormation gère le placement ; renvoie false pour la ligne de front qui avance)
@@ -301,8 +338,18 @@ function updateUnits(side, foe, dt){
     }
   }
 }
-// ---- HÉROS : posture (règles : voir HERO_STANCES dans 04-data.js) ----
-// renvoie null (comportement normal), 'flee' (repli prudent), 'guard' (reste derrière la ligne) ou 'lead' (mène la charge)
+// ---- HÉROS : posture (règles détaillées : HERO_STANCES dans 04-data.js) ----
+// Trois rôles nettement distincts (v1.15 : « normal » et « offensif » se confondaient en charge —
+// mesuré : héros 13 px derrière le front contre 36 px devant, 1re frappe à 9,2 s contre 9,1 s — et
+// « prudent » = « normal » dès que l'armée tenait) :
+//   prudent   → 'guard' : seconde ligne, HERO_GUARD_GAP px derrière le front ; 'flee' sous 35 % de PV
+//               (rentre à la base sans combattre, s'y soigne lentement, repart à 60 %)
+//   normal    → 'escort' : « avec la troupe » — exactement au front du gros de l'armée, JAMAIS devant,
+//               et suit ses ordres (charger / tenir / replier / ⚑)
+//   offensive → 'hunt' : fonce devant les troupes, traque les unités ennemies (leur héros d'abord),
+//               pousse vers la base adverse, ne recule jamais
+// Un ordre donné au héros LUI-MÊME (sélection + ⚔/✋/↩/⚑) passe toujours avant (renvoie null), sauf le
+// repli du prudent blessé. Le repli d'ARMÉE (↩) est suivi en « prudent » et « avec la troupe ».
 function heroStanceStep(u, side, dt){
   // répliques : de loin en loin, quand il n'est pas en train de fuir
   u.barkT = (u.barkT===undefined? 6 : u.barkT) - dt;
@@ -312,26 +359,54 @@ function heroStanceStep(u, side, dt){
     const f = u.hp/u.maxhp;
     if (u.hstate!=='flee' && f<HERO_FLEE_HP) u.hstate = 'flee';
     else if (u.hstate==='flee' && f>=HERO_BACK_HP) u.hstate = null;
-    if (u.hstate==='flee') return 'flee';
-    return (u.ord || side.stance!=='charge')? null : 'guard';        // un ordre explicite (sélection, tenir, repli) garde la main
+    if (u.hstate==='flee'){
+      // CONVALESCENCE : à l'abri de sa base, il se remet lentement — sans médic, il repartait jamais
+      if (Math.abs(u.x-(side.x + side.side*150)) < 60) u.hp = Math.min(u.maxhp, u.hp + u.maxhp*HERO_REST_REGEN*dt);
+      return 'flee';
+    }
+    if (u.ord) return null;
+    return side.stance==='retreat'? null : 'guard';
   }
   u.hstate = null;
-  if (hs==='offensive') return u.ord? null : 'lead';                 // seul un ordre donné au héros lui-même le retient
-  return null;
+  if (u.ord) return null;                                            // ordre donné au héros lui-même
+  if (hs==='offensive') return 'hunt';
+  return side.stance==='retreat'? null : 'escort';
 }
-function heroGuard(u, side, dt){
-  let front = null;
+// position de référence de la troupe : le front du GROS de l'armée au sol (un ou deux éclaireurs
+// isolés devant ne comptent pas) ; null s'il n'y a aucune troupe au sol
+function armyFront(side, except){
+  const xs = [];
   for (const a of side.units){
-    if (a===u || a.fly || a.hp<=0 || a.task || a.role==='support' || a.role==='gremlin' || a.role==='hero') continue;
-    if (front===null || (a.x-front)*side.side>0) front = a.x;
+    if (a===except || a.fly || a.hp<=0 || a.task || a.role==='support' || a.role==='gremlin' || a.role==='hero') continue;
+    xs.push(a.x);
   }
-  const want = front===null? side.x + side.side*150 : front - side.side*HERO_GUARD_GAP;   // sans troupe : il attend près de sa base
+  if (!xs.length) return null;
+  xs.sort((a,b)=>(b-a)*side.side);                                   // du plus avancé au moins avancé
+  return xs[xs.length>=8? 2 : xs.length>=4? 1 : 0];
+}
+// « avec la troupe » (gap 0) / « prudent » (gap HERO_GUARD_GAP) : se cale sur le front, jamais devant ;
+// sans troupe, il attend près de sa base au lieu de partir seul
+function heroFollow(u, side, dt, gap){
+  const front = armyFront(side, u);
+  const want = front===null? side.x + side.side*150 : front - side.side*gap;
   const d = (want-u.x)*side.side;
-  if (d>10) tryMove(u, side, dt); else if (d<-6) moveBack(u, side, dt);
+  const sp = u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*dt;
+  if (d>1) u.x += side.side*Math.min(d, sp);
+  else if (d<-1) u.x -= side.side*Math.min(-d, sp*1.2);
+  u.x = clamp(u.x, 30, WORLD-30);
 }
 function heroAdvance(u, side, dt){   // même vitesse que tryMove, sans la file d'attente derrière les unités de mêlée
   u.x += u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*side.side*dt;
   u.x = clamp(u.x, 30, WORLD-30);
+}
+// ordre de position : avance vers u.px à l'allure de l'armée (aura du héros, neige) et s'y POSE
+// exactement (sans le seuil de 8 px de moveToward) ; renvoie true une fois arrivée
+function pointStep(u, side, dt, k){
+  const d = u.px - u.x;
+  const step = u.spd*(k||1)*(side.heroAlive? (1+(side.heroPow||1)) : 1)*(game.winter?0.82:1)*dt;
+  if (Math.abs(d) <= step){ u.x = u.px; return true; }
+  u.x = clamp(u.x + Math.sign(d)*step, 30, WORLD-30);
+  return false;
 }
 // nombre d'unités pouvant se masser sur la même position (croît avec ère + amélioration)
 function stackMax(side, u){
@@ -481,17 +556,25 @@ function updateBaseGarrison(side, foe, dt){
     }
   }
 }
+// poussée de capture d'un lac / d'une zone : un camp FIGÉ (grève, mise à jour forcée) ne capture
+// rien — sa présence freine encore la capture adverse, mais ne fait jamais progresser la sienne
+function capPush(np, ne, k){
+  let push = clamp(np-ne, -3, 3)*k;
+  if (push>0 && facFrozen(game.p.facKey)) push = 0;
+  if (push<0 && facFrozen(game.e.facKey)) push = 0;
+  return push;
+}
 function updateNodes(dt){
   const dwindle = 1 - 0.65*game.dev;
   for (const n of game.nodes){
     let np=0, ne=0;
     for (const u of game.p.units) if (Math.abs(u.x-n.x)<70) np++;
     for (const u of game.e.units) if (Math.abs(u.x-n.x)<70) ne++;
-    const push = clamp(np-ne, -3, 3)*0.12*dt;
+    const push = capPush(np, ne, 0.12*dt);
     if (push!==0){
       n.prog = clamp(n.prog + push, -1, 1);
       if (n.prog>=1 && n.owner!=='p'){ n.owner='p'; game.p.xp += 40;
-        announce(tr('ev_lake'), "#5ad0ff"); sfx('node'); }
+        announce(tr('ev_lake'), "#5ad0ff"); evExplain('lake'); sfx('node'); }
       if (n.prog<=-1 && n.owner!=='e'){ n.owner='e'; game.e.xp += 40;
         announce(tr('ev_lake_lost'), "#d88"); }
     }
@@ -508,10 +591,10 @@ function updateZones(dt){
     let np=0, ne=0;
     for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
     for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
-    const push = clamp(np-ne, -3, 3)*0.10*dt;
+    const push = capPush(np, ne, 0.10*dt);
     if (push!==0){
       z.prog = clamp(z.prog+push, -1, 1);
-      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; announce(tr('ev_zone'), '#9dd88a'); }
+      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; announce(tr('ev_zone'), '#9dd88a'); evExplain('zone'); }
       if (z.prog<=-1 && z.owner!=='e'){ z.owner='e'; }
     }
     if (z.owner==='p') p.xp += 0.5*dt; else if (z.owner==='e') e.xp += 0.5*dt;
@@ -584,6 +667,7 @@ function update(dt){
       else if (newW==='patch') announce(tr('ev_patch'), '#5ad0ff');
     }
   }
+  evWatch();                                   // 1re occurrence d'un événement : une ligne d'explication sous l'annonce
   // ---- événements POSITIFS (équitables : profitent aux DEUX camps) ----
   // Pluie fertile (+30 % nourriture) puis Signal renforcé (ultime plus rapide).
   if (!game.tut && game.t>90){
@@ -601,14 +685,14 @@ function update(dt){
   if (!game.bonusZone && !game._bz && game.bonusClock>180){
     game._bz = true;
     game.bonusZone = {x:WORLD*(0.42+Math.random()*0.16), owner:null, prog:0, t:0};
-    announce(tr('ev_bonuszone'), '#ffd34a'); sfx('node');
+    announce(tr('ev_bonuszone'), '#ffd34a'); evExplain('bonuszone'); sfx('node');
   }
   if (game.bonusZone){
     const z=game.bonusZone; z.t+=dt;
     let np=0,ne=0;
     for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
     for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
-    z.prog = clamp(z.prog + clamp(np-ne,-3,3)*0.12*dt, -1, 1);
+    z.prog = clamp(z.prog + capPush(np, ne, 0.12*dt), -1, 1);
     z.owner = z.prog>=0.6?'p': z.prog<=-0.6?'e':null;
     z.contested = (np>0 && ne>0);                         // grésille/oscille à l'écran
     if (z.owner==='p') p.xp += 1.4*dt; else if (z.owner==='e') e.xp += 1.4*dt;
@@ -632,7 +716,7 @@ function update(dt){
   // santé du monde : dégradation ralentie — saturation visée vers la 16e min (~960 s)
   // pour des parties d'environ 20 min ; les pertes/pouvoirs n'accélèrent plus que marginalement.
   game.dev = game.tut? 0 : clamp((game.devBase||0) + game.t/960 + (game.kills+game.eKills)/600 + game.specialsUsed*0.02, 0, 1);   // devBase : état du monde au début d'une mission de campagne
-  if (!game.tut) updateCata(dt);
+  if (!game.tut){ updateCata(dt); evWatch(); }
   // EFFONDREMENT (v1.14) : passé 26 min, le monde ne tient plus debout — les DEUX bases se délabrent,
   // de plus en plus vite. Sans cela, une fois la santé du monde à zéro, les cataclysmes fauchaient
   // les vagues avant qu'elles n'arrivent et la partie pouvait ne jamais finir (15 à 55 % des parties
@@ -651,8 +735,10 @@ function update(dt){
       sfxAt('boom', pr.tx);
       if (Math.random()<0.45) addCrater(pr.tx, Math.max(20, pr.aoe*0.8));
       let hitAny=false;
+      const spare = facFrozen(pr.fac);   // camp figé (grève / mise à jour) : ses obus épargnent bâtiments et base
       for (const t of foeTargets(foe)){
         if (t.fly) continue; // les obus en cloche n'atteignent pas les volants
+        if (spare && (t.isBase || t.isB)) continue;
         if (Math.abs(t.x-pr.tx) < pr.aoe){
           hitAny=true;
           if (t.isBase||t.isB){ const own = pr.side===1? game.p : game.e;      // v1.13 : le MODE SIÈGE et l'XP de base valent aussi pour les obus
@@ -684,7 +770,7 @@ function update(dt){
   if (game.shake>0) game.shake=Math.max(0,game.shake-uiDt*30);
   if (game.flash>0) game.flash-=uiDt;
   if (game.msgT>0) game.msgT-=uiDt;
-  if (game.rally){ game.rally.t+=uiDt; if (game.rally.t>3) game.rally=null; }   // marqueur ⚑ éphémère
+  tickPointFlags(uiDt);                       // fanions ⚑ : visibles tant que les unités ne sont pas arrivées
 
   if (camFollow && !dragging){
     let front = p.units.length? Math.max(...p.units.map(u=>u.x)) : p.x+200;
@@ -725,6 +811,33 @@ function update(dt){
       setTimeout(game.camp? campEndCine : showEnd, 1100);
     }
   }
+}
+// EXPLICATIONS CONTEXTUELLES (v1.15) : la 1re fois qu'un événement survient dans une partie, une ligne
+// sous son annonce dit exactement ce qu'il fait (clés evx_*). Détection par CHANGEMENT D'ÉTAT plutôt
+// qu'au moment de l'annonce : marche aussi chez l'invité en ligne (état reçu de l'hôte, ligne affichée
+// dans SA langue) et en campagne, où la mise à jour forcée est déclenchée sans annonce.
+const EV_TITLE = { strike:['ev_strike','#ff9d45'], patch:['ev_patch','#5ad0ff'], rain:['ev_rain','#7fd0ff'], signal:['ev_signal','#b9ff9d'] };
+function evWatch(){
+  const g = game; if (!g || g.tut) return;
+  const w = g._evW || (g._evW = {we:null, bo:null, ca:null});
+  if (g.weather!==w.we){ w.we = g.weather; if (g.weather) evExplain(g.weather); }
+  if (g.boon!==w.bo){ w.bo = g.boon; if (g.boon) evExplain(g.boon); }
+  if (g.cata!==w.ca){ w.ca = g.cata; if (g.cata) evExplain(g.cata); }
+}
+function evExplain(key){
+  const g = game; if (!g) return;
+  const seen = g.evSeen || (g.evSeen = {});
+  if (seen[key]) return;
+  const sub = tr('evx_'+key); if (!sub || sub==='evx_'+key) return;
+  seen[key] = 1;
+  // l'annonce vient d'être faite (même pas de simulation) : on la complète ; sinon on la fait ici
+  if (!g.msg || !(g.msgT > 2.3)){
+    const tt = EV_TITLE[key], c = CATAS[key];
+    if (tt) g.msg = { txt:tr(tt[0]), color:tt[1] };
+    else if (c) g.msg = { txt:c.icon+'  '+cataName(key)+'  '+c.icon, color:c.col };
+    else return;
+  }
+  g.msg.sub = sub; g.msgT = Math.max(g.msgT||0, 5.5);   // le temps de lire les deux lignes
 }
 // Bombe H : rase tout (sauf bases), bascule en Hiver nucléaire (production réduite, neige)
 const COLLAPSE_T = 1560;  // début de l'effondrement du monde (26 min de jeu)

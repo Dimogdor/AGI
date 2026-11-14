@@ -37,17 +37,19 @@ const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
-// POSTURES DU HÉROS (v1.15) — side.heroStance. « normal » = comportement historique, inchangé.
-//  prudent   : reste HERO_GUARD_GAP px derrière l'unité au sol la plus avancée de son camp ; sous
-//              HERO_FLEE_HP de ses PV il se replie vers sa base (sans combattre en chemin) et n'en
-//              repart qu'au-dessus de HERO_BACK_HP (soigné par les médics/ruches : il n'a AUCUNE
-//              régénération propre, et on n'en ajoute pas) — sinon il tient près de la base.
-//  offensive : mène la charge — ignore « tenir »/« repli »/formation de l'armée et la file d'attente
-//              derrière les unités de mêlée ; ne recule jamais de lui-même.
-// L'AURA (×3 dégâts, ×2 vitesse) reste GLOBALE et sans condition de proximité, comme avant : la
-// posture ne la modifie pas (un héros en retrait la donnait déjà via l'ordre « repli » sur sélection).
+// POSTURES DU HÉROS (refonte v1.15) — side.heroStance ; logique : heroStanceStep (10-simulation.js).
+//  prudent   : « En retrait » — seconde ligne, HERO_GUARD_GAP px derrière le front de sa troupe (il frappe
+//              encore par-dessus l'épaule de la première ligne) ; sous HERO_FLEE_HP de ses PV il rentre à
+//              sa base sans combattre, s'y remet lentement (HERO_REST_REGEN de ses PV par seconde, médics
+//              et ruches en plus) et repart au-dessus de HERO_BACK_HP.
+//  normal    : « Avec la troupe » (clé interne inchangée pour l'en-ligne) — exactement au front du gros
+//              de l'armée, jamais devant ; suit les ordres d'armée (charger, tenir, replier, ⚑) ; sans
+//              troupe, il attend à la base. Ne se replie jamais de lui-même.
+//  offensive : « Offensif » — fonce devant les troupes, traque les unités ennemies (le héros adverse en
+//              priorité), ignore « tenir »/« repli » de l'armée, pousse vers la base ennemie, ne recule jamais.
+// L'AURA (×3 dégâts, ×2 vitesse) reste GLOBALE et sans condition de proximité : la posture ne la modifie pas.
 const HERO_STANCES = ['prudent','normal','offensive'];
-const HERO_FLEE_HP = 0.35, HERO_BACK_HP = 0.6, HERO_GUARD_GAP = 48;
+const HERO_FLEE_HP = 0.35, HERO_BACK_HP = 0.6, HERO_GUARD_GAP = 40, HERO_REST_REGEN = 0.01;
 const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0 = principale, 1 = secondaire)
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
