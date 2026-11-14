@@ -24,7 +24,9 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `00-core.js` | canvas, `resize`, conversions écran↔monde, relief |
 | `01-settings.js` | réglages + touches reconfigurables |
 | `02-i18n.js` | tables de traduction (fr/en/es/de/it/pt/ru/zh/ar) |
-| `03-audio.js` | moteur audio (musique procédurale + SFX) |
+| `03-audio.js` | moteur audio : bus (musique / effets / ambiances, limiteur, réverbération), synthèse de repli, musique d'escarmouche, ambiance |
+| `03b-samples.js` | sons enregistrés CC0 (`assets/audio/`, manifeste) : chargement par lots, effets, héros, boucles d'ambiance par lieu — repli synthèse hors ligne |
+| `03c-music.js` | thèmes de campagne joués aux instruments échantillonnés (`m_night`… `e_ash`), ritournelles ; refaire les sons : `tools/audio/build.py`, banc : `tools/test-audio.mjs` |
 | `04-data.js` | données : `ROLES`, `BUILDS`, `FACTIONS`, ères |
 | `05-state.js` | variables d'état globales |
 | `06-cheat.js` | mode triche (dev — à retirer avant release) |
@@ -59,7 +61,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `16b-campaign.js` | Cœur : textes des 5 missions (9 langues), cycle de vie (`startMission`, `campTick`, `campEndCine`), sauvegarde, HUD (objectif, radio, bouton d'action), menu. |
 | `16c-cine.js` | CINÉMATIQUES : `cinePlay(script, done)` ; plans sur le terrain (caméra, bandes noires) ou PLANCHES plein écran à l'encre (`plateBase`, `inkLine`, `inkWash`, `inkHatch`, `inkFolk`) ; portraits `CINE_PORTRAITS`, voix `CINE_WHO`. |
 | `16d-camp-m1.js` … | Une mission par fichier : `campExtend(i, {...})` ajoute lieu, mécanique et cinématiques à `CAMPAIGN[i]`. **Modèle à suivre : `16d-camp-m1.js`.** |
-| `03-audio.js` | `MUSIC_THEMES[id] = {bpm, step(st,t,stepDur,tension)}` : un thème par lieu ; `biome.amb = {rain, wind, birds, tick(t,dt)}`. |
+| `03-audio.js` · `03c-music.js` | `MUSIC_THEMES[id] = {bpm, step(st,t,stepDur,tension)}` ; thèmes du contrat : `m_night m_strike m_dam m_cold m_citadel m_finale c_dread c_hope c_sorrow c_map e_dawn e_ash` (les anciens ids `night carnet strike dam rochefroide citadel` y sont redirigés quand les instruments sont chargés). `biome.amb = {rain, wind, birds, tick(t,dt)}` sert de repli ; les boucles enregistrées par lieu sont dans `AMB_PROFILES` (03b). |
 
 Champs d'une mission (en plus des textes) : `biome`, `theme` (pool `DECOR_THEMES`, objets `DECOR_EXTRA[kind]`),
 `setup(g,c)`, `tick(g,c,dt)` (renvoie `'win'`/`'lose'` pour finir), `hud(g,c)` → `{prog,label,clock,warn}`,
