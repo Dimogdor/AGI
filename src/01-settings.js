@@ -44,14 +44,15 @@ function readSavedSettings(){
   try { const v = JSON.parse(localStorage.getItem('agi_settings')||'{}'); return (v && typeof v==='object' && !Array.isArray(v))? v : {}; }
   catch(e){ return {}; }
 }
-const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, shake:true, lang:'fr', speed:1, quality:_autoQ||'ultra', keys:Object.assign({},DEFKEYS)},
+const SETTINGS = Object.assign({music:true, sfx:true, vol:0.8, voice:true, voiceVol:1, shake:true, lang:'fr', speed:1, quality:_autoQ||'ultra', keys:Object.assign({},DEFKEYS)},
   readSavedSettings());
 // VALIDATION des réglages relus : un stockage modifié à la main (ou par une ancienne version)
 // pouvait contenir un volume non numérique (gain NaN → audio muet), une langue inconnue
 // (SETTINGS.lang.toUpperCase() plantait le menu ⚙ si ce n'était pas une chaîne) ou des touches
 // non textuelles. Chaque champ invalide retombe sur sa valeur par défaut.
-for (const k of ['music','sfx','shake']) SETTINGS[k] = SETTINGS[k]!==false;
+for (const k of ['music','sfx','shake','voice']) SETTINGS[k] = SETTINGS[k]!==false;   // voice : voix off des cinématiques et de la radio (16c0-voice.js)
 SETTINGS.vol = Number.isFinite(+SETTINGS.vol) ? Math.min(1, Math.max(0, +SETTINGS.vol)) : 0.8;
+SETTINGS.voiceVol = Number.isFinite(+SETTINGS.voiceVol) ? Math.min(1, Math.max(0, +SETTINGS.voiceVol)) : 1;
 if (LANG_CODES.indexOf(SETTINGS.lang)<0) SETTINGS.lang = 'fr';
 { const kk = (SETTINGS.keys && typeof SETTINGS.keys==='object')? SETTINGS.keys : {};
   SETTINGS.keys = Object.assign({}, DEFKEYS);

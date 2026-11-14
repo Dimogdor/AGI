@@ -123,7 +123,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
-  if (game.biome) biomeFront(dt);                 // lieu de campagne : nuit éclairée, pluie, neige
+  if (game.biome){ biomeFront(dt); drawBaseGlow(); }   // lieu de campagne : nuit éclairée, pluie, neige ; fenêtres des bases
   drawWinter();
   drawCata();
   if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit

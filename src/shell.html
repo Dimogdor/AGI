@@ -240,6 +240,7 @@
     padding:2px 4px; cursor:pointer; }
   #menu .volBtns { display:flex; gap:8px; align-items:center; }
   #menu #oVol { width:140px; accent-color:var(--red); cursor:pointer; }
+  #menu #oVoiceVol { width:96px; accent-color:var(--red); cursor:pointer; }
   #menu #oVolV { min-width:42px; text-align:end; }
   #menu .keyBtn { cursor:pointer; font-family:inherit; font-size:.92em; color:var(--ink); background:none; border:0; border-bottom:1.5px solid var(--ink);
     padding:1px 8px; min-width:80px; }
@@ -556,6 +557,7 @@
               <span id="oVolV">80%</span>
             </div>
           </div>
+          <div class="setRow"><span data-i18n="set_voice">Voix off</span><div class="volBtns"><input type="range" id="oVoiceVol" min="0" max="100" step="5" value="100"><button class="tog on" id="oVoice">ACTIVE</button></div></div>
           <div class="setH" data-i18n="opts_h_controls">COMMANDES</div>
           <div id="keysTitle" class="fNote" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
           <div id="keysBox"></div>

@@ -428,8 +428,8 @@ function campTick(dt){
   if (c.cur){ c.cur.t += rdt; if (c.cur.t>=c.cur.dur) c.cur = null; }
   if (!c.cur && c.q.length){ const r = c.cur = c.q.shift(); sfx('cap');
     c.log.push({ who:r.who, txt:r.txt, t:c.t }); if (c.log.length>40) c.log.shift();
-    // VOIX : point d'appel UNIQUE de la voix off des transmissions (fournie par 16c-cine.js quand elle existe)
-    if (typeof voiceSay==='function'){ try { voiceSay(r.who, r.obj || r.txt, { radio:true, vars:r.vars }); } catch(e){} } }
+    // VOIX : point d'appel UNIQUE de la voix off des transmissions (16c0-voice.js) ; le message reste affiché le temps de la voix
+    if (typeof voiceSay==='function'){ try { r.dur = Math.max(r.dur, (+voiceSay(r.who, r.txt, { radio:true })||0) + 1.2); } catch(e){} } }
   if (c.goalFlash>0) c.goalFlash -= dt;
   const r = m.tick? m.tick(g, c, dt) : null;
   if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(campEndCine, 1100); return true; }
