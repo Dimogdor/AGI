@@ -2585,14 +2585,15 @@ function drawRainBoon(t){
 // v1.7 : avant, des blocs arrondis gris-violet cernés de néon, identiques d'une ère à l'autre.
 // Désormais chaque bâtiment a sa forme (palissade, tour de guet, champ, étal, puits ; panneaux
 // solaires, baie de calcul, condenseur côté GPT) et ses MATÉRIAUX suivent l'ère du camp :
-// planches et briques → pierre → béton → blindage → marbre et or. Cuits une fois, puis blittés
+// planches et palettes → brique et tôle industrielles → béton → blindage → bois, verre et jardins
+// (v1.16 : plus de pierre crénelée en 2028 ni de marbre doré au Paradis). Cuits une fois, puis blittés
 // (miroir selon le camp) : moins d'opérations canvas par frame qu'avant malgré le détail.
 const HMAT = [
-  { wall:'#8a5a40', roof:'#6e6a66', trim:'#4a3428', lite:'#ffcf78' },   // ère 0 : briques, planches, tôle
-  { wall:'#8e877a', roof:'#5e584e', trim:'#4e4840', lite:'#ffcf78' },   // ère 1 : pierre
+  { wall:'#8a6444', roof:'#6e6a66', trim:'#4a3428', lite:'#ffcf78' },   // ère 0 : planches, palettes, tôle
+  { wall:'#8e4a34', roof:'#6e6a66', trim:'#4e4840', lite:'#ffcf78' },   // ère 1 : brique et tôle d'usine
   { wall:'#7c8084', roof:'#4e5256', trim:'#3a3e42', lite:'#fff0c0' },   // ère 2 : béton
   { wall:'#4a4560', roof:'#2e2a3c', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
-  { wall:'#e6dfcc', roof:'#c8a040', trim:'#d8b048', lite:'#fff0c0' },   // ère 4 : marbre et or
+  { wall:'#e8dcc4', roof:'#5a9a3a', trim:'#9a6434', lite:'#ffe2a8' },   // ère 4 : bois clair, verre, toits végétaux
 ];
 const iaPlate = era => mix(FACTIONS.IA.eraCols[era],'#4a5260',0.55);
 // appareil de briques / pierres : joints horizontaux + joints verticaux décalés
@@ -2637,11 +2638,11 @@ function humBld(type, lvl, era, h, cx, G){
       TC.fillStyle='#8a8e92'; TC.fillRect(x0+9,y0+16,11,9); TC.fillStyle='#c8ccd0';
       for (const [a,b] of [[x0+10,y0+17],[x0+18.6,y0+17],[x0+10,y0+23.6],[x0+18.6,y0+23.6]]) TC.fillRect(a,b,0.9,0.9);
       sandbagsT(x0-2,x0+w+2,G,2);
-    } else if (era===1){                                                                      // rempart de pierre crénelé
-      plateT([x0,y0+6, x0+w,y0+6, x0+w,G, x0,G], M.wall); masonT(x0,y0+6,w,h-6,6,9,0.22);
-      for (let c=0;c<3;c++) plateT([x0+c*10.5,y0, x0+c*10.5+7,y0, x0+c*10.5+7,y0+7, x0+c*10.5,y0+7], shade(M.wall,1.08));
-      TC.fillStyle='#1c1814'; TC.fillRect(cx-1,y0+16,2,9);                                         // meurtrière
-      TC.fillStyle=acc; polyP([x0+3,y0+12, x0+9,y0+12, x0+9,y0+26, x0+6,y0+23, x0+3,y0+26]); TC.fill();  // bannière
+    } else if (era===1){                                                                      // conteneur de bout + tôles + palette (grève)
+      const cy = G-h*0.5; bCtnEnd(x0,cy,x0+w,G,'#3a6a8a');
+      bCorr([x0+1,y0+3, x0+w-1,y0, x0+w-1,cy, x0+1,cy], '#8a8e92', 3, 5);
+      plateT([x0+3,y0+10, x0+w-3,y0+9, x0+w-4,y0+17, x0+3,y0+18], '#c8302a', false);                   // banderole
+      bPallet(x0-2,G-8,x0+12,G,'#c8a46e');
     } else if (era===2){                                                                      // mur en T de béton + barbelés
       plateT([x0+2,y0+5, x0+w-2,y0+5, x0+w,G-8, x0+w+2,G, x0-2,G, x0,G-8], M.wall);
       TC.fillStyle='rgba(0,0,0,0.22)'; TC.fillRect(x0+2,y0+h*0.45,w-4,0.9); TC.fillRect(cx,y0+6,0.9,h-14);
@@ -2651,12 +2652,14 @@ function humBld(type, lvl, era, h, cx, G){
       plateT([x0,y0+3, cx,y0, x0+w,y0+3, x0+w,G, x0,G], M.wall);
       TC.fillStyle='rgba(0,0,0,0.3)'; for (let i=1;i<4;i++) TC.fillRect(x0+1,y0+i*h/4,w-2,0.9);
       bloomT(M.lite,6,()=>{ TC.fillStyle=M.lite; TC.fillRect(x0+3,y0+10,w-6,1.8); });
-    } else {                                                                                  // marbre et or
-      plateT([x0,y0+5, x0+w,y0+5, x0+w,G, x0,G], M.wall); masonT(x0,y0+5,w,h-5,9,14,0.08);
-      TC.fillStyle=M.trim; TC.fillRect(x0-1,y0+2,w+2,4); TC.fillRect(x0-1,G-4,w+2,4);
-      bloomT('#fff0c0',6,()=>drawStar(cx,y0+18,4,'#fff3c4'));
+    } else {                                                                                  // gabions plantés, lisse de bois, haie fleurie
+      for (let yy=G; yy>y0+6; yy-=10){ const hh=Math.min(10,yy-y0-6); bBox(x0,yy-hh,x0+w,yy,'#a8a090');
+        TC.fillStyle='rgba(60,56,50,0.45)'; for (let k=0;k<8;k++){ TC.beginPath(); TC.arc(x0+3+(k%4)*7,yy-hh+2.6+Math.floor(k/4)*4.6,1.6,0,6.283); TC.fill(); } }
+      bFill(x0-1,y0+4,x0+w+1,y0+7,M.trim);
+      for (let k=0;k<8;k++) bDisc(x0+1.5+k*3.6,y0+3-lhash(k,4)*2,2.6,['#4a8a3a','#6aaa4a','#3a7a3a'][k%3]);
+      for (let k=0;k<4;k++) bDisc(x0+4+k*7,y0+1.6,0.9,['#ff7aa8','#ffd34a'][k%2]);
     }
-    if (lvl>=3 && era!==1){ TC.fillStyle=shade(era===0?'#6a4a2c':M.wall,0.9); for (let c=0;c<3;c++) TC.fillRect(x0+c*10.5,y0-5,7,5); }
+    if (lvl>=3 && era!==1 && era!==4){ TC.fillStyle=shade(era===0?'#6a4a2c':M.wall,0.9); for (let c=0;c<3;c++) TC.fillRect(x0+c*10.5,y0-5,7,5); }
   } else if (type==='turret'){
     const top=y0;                                                                             // la tête dépasse au-dessus
     if (era===0){                                                                             // tour de guet en bois
@@ -2666,10 +2669,13 @@ function humBld(type, lvl, era, h, cx, G){
       strokeP([cx-7.4,top+28, cx+7.4,top+28]); TC.stroke();
       TC.fillStyle=lgrad(0,top,0,top+10,[[0,'#a88058'],[1,'#6a4a2c']]); TC.fillRect(cx-11,top+1,22,8);
       sandbagsT(cx-12,cx+12,top+9,1);
-    } else if (era===1){                                                                      // tour de pierre
-      plateT([cx-9,top+4, cx+9,top+4, cx+11,G, cx-11,G], M.wall); masonT(cx-11,top+4,22,h-4,6,8,0.22);
-      TC.fillStyle='#1c1814'; TC.fillRect(cx-1,top+16,2,7);
-      for (let c=0;c<3;c++) plateT([cx-11+c*8,top-4, cx-6+c*8,top-4, cx-6+c*8,top+4, cx-11+c*8,top+4], shade(M.wall,1.1));
+    } else if (era===1){                                                                      // tour d'échafaudage + guérite en tôle
+      TC.strokeStyle='#5a5e64'; TC.lineWidth=2.2; TC.lineCap='butt';
+      strokeP([cx-9,G, cx-7,top+8]); TC.stroke(); strokeP([cx+9,G, cx+7,top+8]); TC.stroke();
+      TC.lineWidth=1.1; for (let yy=G-4; yy>top+12; yy-=12){ strokeP([cx-8.6,yy, cx+7.6,yy-11]); TC.stroke(); strokeP([cx-8.6,yy, cx+8.6,yy]); TC.stroke(); }
+      bCorr([cx-11,top-2, cx+11,top-2, cx+11,top+9, cx-11,top+9], '#8a8e92', 2.6, 3);
+      bFill(cx-12,top-4,cx+12,top-1.6,'#5a5e64');
+      plateT([cx-11,top+9, cx+11,top+9, cx+10,top+13, cx-10,top+13], '#c8302a', false);
     } else if (era===2){                                                                      // fût de béton + dôme d'acier
       plateT([cx-9,top+2, cx+9,top+2, cx+10,G, cx-10,G], M.wall);
       TC.fillStyle='rgba(0,0,0,0.25)'; for (let i=1;i<4;i++) TC.fillRect(cx-9,top+2+i*(h-2)/4,18,0.9);
@@ -2678,13 +2684,15 @@ function humBld(type, lvl, era, h, cx, G){
     } else {                                                                                  // pylône high-tech / d'or
       plateT([cx-7,top+4, cx+7,top+4, cx+9,G, cx-9,G], M.wall);
       if (era===3){ bloomT(M.lite,5,()=>{ TC.fillStyle=M.lite; TC.fillRect(cx-0.8,top+10,1.6,h-16); }); }
-      else { TC.fillStyle=M.trim; for (let i=0;i<3;i++) TC.fillRect(cx-8,top+10+i*(h-14)/3,16,2.4); }
-      plateT([cx-11,top+4, cx-6,top-6, cx+7,top-6, cx+11,top+4], era===4? M.trim : shade(M.wall,1.2));
+      else { TC.fillStyle=M.trim; for (let i=0;i<3;i++) TC.fillRect(cx-8,top+10+i*(h-14)/3,16,2.4);           // fût de bois, baies vitrées
+        bloomT(M.lite,3,()=>{ TC.fillStyle='rgba(255,226,168,0.75)'; TC.fillRect(cx-4,top+14,8,h*0.22); });
+        for (let k=0;k<4;k++) bDisc(cx-6+k*4,top+8+(k%2),1.8,['#4a8a3a','#6aaa4a'][k%2]); }
+      plateT([cx-11,top+4, cx-6,top-6, cx+7,top-6, cx+11,top+4], era===4? '#2a4a7a' : shade(M.wall,1.2));
     }
     // canons (un par niveau) pointés vers l'ennemi
     const hy = top-3;
     for (let c=0;c<lvl;c++){ const by = hy + (c-(lvl-1)/2)*3.6;
-      tubeT(cx+2, by, cx+16+lvl*2, by-0.6, era>=3?1.8:1.5, era===4? '#c8a040' : '#26282e');
+      tubeT(cx+2, by, cx+16+lvl*2, by-0.6, era>=3?1.8:1.5, era===4? '#e8e0cc' : '#26282e');
       if (era===3) glowDot(cx+16+lvl*2, by-0.6, 1, M.lite, 4); }
     TC.fillStyle=era===4? M.trim : era>=3? shade(M.wall,1.3) : '#3a3e44';
     rrectT(cx-6,hy-4.6,12,9.2,3); TC.fill();
@@ -2913,7 +2921,8 @@ const HUM_BASE = [
     // éolienne bricolée : mât en échafaudage haubané (rotor en direct)
     bLn([-70,-96, -100,0], 0.6, 'rgba(46,40,38,0.75)'); bLn([-70,-96, -42,0], 0.6, 'rgba(46,40,38,0.75)');
     bLattice(-70, 0, -100, 7, 3, '#76767c', 1.1);
-    bBox(-78,-108,-63,-100,'#d8d0c0'); polyP([-78,-106, -87,-111, -87,-99, -78,-102]); TC.fillStyle='#d84a2a'; TC.fill();
+    bLn([-70,-104, -88,-105], 1.4, '#5a5a60'); plateT([-96,-113, -86,-111, -86,-99, -96,-101], '#e8b830'); bTxt('☀', -91, -106, 6, '#c8302a', null, 0, '400');
+    bBox(-72,-107,-62,-101,'#5a5a60');
     // arrière fortifié : pneus et palettes
     if (f>=2){ bPallet(-104,-26,-90,0,'#b8945e'); bTires(-94,0,3,13); if (f>=3){ bTires(-101,0,5,12); bWire(-104,-86,-30,2.4); } }
     // yourte : treillis de bois, feutre, bâche bleue nouée, tuyau de poêle (fumée en direct)
@@ -3052,18 +3061,23 @@ const HUM_BASE = [
     bBags(-16,16,-92,1,'#c8b488');
     if (dmg>=1){ bSoot(-40,-56,12); bCrack(-60,-16,34,3); }
     if (dmg>=2){ bHole(-30,-82,7,5); bHole(-50,-42,6,11); bSoot(-20,-30,12); bRubble(-66,10,9,'#a8957a'); }
-    // bus renversé sur le flanc (on voit le dessous : essieux, roues, réservoir)
-    plateT([10,-25, 62,-25, 64,-22, 64,0, 10,0, 8,-3], '#d8d2c4');
-    bFill(10,-25,62,-21.6,'#2a8a8a'); for (let x=12;x<60;x+=7) bFill(x,-24.4,x+5,-22.2,'#1a2228');
-    bFill(10,-18,64,-15,'#5a5a5e'); bFill(28,-14,42,-6,'#4a4a50');
-    for (const wx of [20,52]){ bTire(wx,-9,6.4); bFill(wx-1,-16,wx+1,-9,'#3a3a40'); }
-    bTxt('BUS 68', 36, -3.4, 4.6, 'rgba(40,40,44,0.75)', B_TERM, 0, '400');
-    if (dmg>=1) bSoot(36,-12,12);
-    if (dmg>=2) bHole(46,-18,5,15);
+    // bus couché en travers de la rue, basculé sur des gravats : vitres brisées, carrosserie roussie
+    bRubble(8,30,61,'#9a8a74');
+    TC.save(); TC.translate(12,-2); TC.rotate(-0.13);
+    plateT([0,-24, 50,-24, 54,-20, 54,0, 0,0, -2,-4, -2,-21], '#d8d2c4');
+    bFill(-2,-8,54,-5,'#2a8a8a');
+    for (let x=2;x<46;x+=8.2) bWin(x,-21,6.4,9,'#ffcf78','#2a2a2e',0,true);
+    bWin(47,-21,5.5,12,'#ffcf78','#2a2a2e',0,true);
+    for (const wx of [10,42]){ bDisc(wx,0,6.4,'#2a2a2e'); bTire(wx,0.4,5.6); }
+    bTxt('68', 26, -2.6, 4.6, 'rgba(40,40,44,0.75)', B_TERM, 0, '400');
+    bSoot(22,-14,9);
+    if (dmg>=1) bSoot(40,-12,10);
+    if (dmg>=2) bHole(30,-12,5,15);
+    TC.restore();
     // avant : sacs de sable + barbelés ; glissières de béton (fort 2) ; hérissons tchèques (fort 3)
     bBags(64,80,0,3,'#c8b488');
     if (f>=2){ plateT([66,-4, 68,-20, 74,-20, 76,-4, 78,-4, 78,0, 64,0, 64,-4], '#a8a49a'); bTxt('A', 71, -12, 6, '#2a2a2a', null, 0, '400'); bBags(62,80,-4,1,'#b8a47a'); }
-    if (f>=3){ for (const hx of [44,-80+0]){ if (hx<0) continue; bLn([hx-6,0, hx+5,-13], 2.2, '#4a4a50'); bLn([hx+6,0, hx-5,-13], 2.2, '#3a3a40'); bLn([hx,0, hx,-14], 2.2, '#56565c'); } bWire(62,80,-24,2.4); }
+    if (f>=3){ for (const hx of [44]){ bLn([hx-6,0, hx+5,-13], 2.2, '#4a4a50'); bLn([hx+6,0, hx-5,-13], 2.2, '#3a3a40'); bLn([hx,0, hx,-14], 2.2, '#56565c'); } bWire(62,80,-24,2.4); }
   },
   // ── 2038 · RÉVOLUTION PERMANENTE : base militaire révolutionnaire — bunker de béton coffré,
   //    mirador à sacs de sable, filet de camouflage, antennes, radar, panneaux solaires, hesco ──
@@ -3104,7 +3118,6 @@ const HUM_BASE = [
     bBox(-18,-89,18,-85,'#5a5e5a'); bBags(-18,19,-87,1,'#a89870');
     for (const lx of [-17,16]) bLn([lx,-89, lx,-108], 1.4, '#4a4e4a');
     plateT([-22,-108, 20,-112, 22,-108, -20,-104], '#6a6e62');
-    bDisc(14,-99,0.01,'#000');
     if (dmg>=1){ bSoot(-40,-30,11); bCrack(-12,-2,30,9); bHole(30,-30,4,17); }
     if (dmg>=2){ bHole(-20,-40,7,19); bSoot(0,-46,14); bRubble(-70,40,29,'#7a786e'); }
     // avant : hesco, dents de dragon (fort 2), tourelle bitube sur le bunker (fort 3)
@@ -3116,7 +3129,7 @@ const HUM_BASE = [
   // ── PARADIS SOCIALISTE : commune solarpunk — tour de terrasses en bois et verre, jardins
   //    suspendus, éolienne hélicoïdale, serre géodésique, maison commune à toit végétal ──
   (f, dmg, trans) => {
-    const WOOD = '#c08a50', GLASS = '#cfe8e4', LITE = '#ffe2a8', LEAF = ['#4a8a3a','#6aaa4a','#3a7a3a','#8ac25a'];
+    const WOOD = '#9a6434', GLASS = '#5e9aa4', LITE = '#ffe2a8', LEAF = ['#4a8a3a','#6aaa4a','#3a7a3a','#8ac25a'];
     const FLW = ['#ff7aa8','#ffd34a','#ffffff','#ff9a5a'], banner = trans? '#d8282a' : '#ff9d45';
     const vines = (x0,x1,y,len,seed) => { for (let x=x0; x<x1; x+=2.6){ const l = len*(0.4+lhash(x,seed)*0.8);
         bLn([x,y, x+Math.sin(x)*1.2,y+l], 1.4, LEAF[Math.floor(lhash(x,seed+1)*4)]);
@@ -3138,12 +3151,12 @@ const HUM_BASE = [
     TC.restore(); if (dmg>=1) bHole(-70,-12,4,3);
     // tour des terrasses : ossature bois, baies vitrées, toitures solaires, jardins suspendus
     const floor = (x0,x1,y0,y1,seed) => { bBox(x0,y0,x1,y1,GLASS);
-      bloomT(LITE,3,()=>{ TC.fillStyle='rgba(255,226,168,0.55)'; TC.fillRect(x0+1,y0+(y1-y0)*0.35,x1-x0-2,(y1-y0)*0.65-1); });
+      bloomT(LITE,3,()=>{ TC.fillStyle='rgba(255,214,140,0.5)'; TC.fillRect(x0+1,y0+(y1-y0)*0.5,x1-x0-2,(y1-y0)*0.5-1); });
       for (let x=x0; x<=x1; x+=(x1-x0)/Math.round((x1-x0)/9)) bFill(x-0.9,y0,x+0.9,y1,WOOD);
       bFill(x0-2,y1-2,x1+2,y1,shade(WOOD,0.85)); bFill(x0-3,y0-2.4,x1+3,y0,shade(WOOD,0.7)); };
     floor(-42,26,-30,0,1); floor(-36,20,-58,-30,2); floor(-28,12,-84,-58,3);
-    for (const [x0,x1,y] of [[-36,20,-60.4],[-28,12,-86.4]]){ bFill(x0,y-1.6,x1,y,'#2a4a7a'); }
-    vines(-44,-37,-30,9,1); vines(21,28,-30,10,2); vines(-38,-29,-58,10,3); vines(13,22,-58,9,4);
+    for (const [x0,x1,y] of [[-42,-36,-30],[20,26,-30],[-36,-28,-58],[12,20,-58]]){ plateT([x0,y-0.6, x1,y-3.6, x1,y-1.6, x0,y+0.6], '#2a4a7a', false); }
+    vines(-44,-34,-30,12,1); vines(18,28,-30,13,2); vines(-38,-26,-58,13,3); vines(10,22,-58,12,4); vines(-30,-20,-84,10,5); vines(4,14,-84,9,6);
     bBox(-12,-24,6,0,shade(WOOD,0.8)); TC.fillStyle='#7a4a24'; TC.beginPath(); TC.moveTo(-10,0); TC.lineTo(-10,-18); TC.arc(-3,-18,7,Math.PI,0); TC.lineTo(4,0); TC.fill();
     // terrasse du sommet (poste de guet) : bacs plantés et garde-corps de bois
     bFill(-30,-88,14,-85,shade(WOOD,0.7)); bFill(-30,-94,14,-92.6,WOOD); for (let x=-30;x<=14;x+=5.5) bFill(x,-94,x+1,-88,WOOD);
@@ -3374,9 +3387,10 @@ function bSteam(c, x, y, t, n, sz, rise, a, seed){
 const HUM_LIVE = [
   (c, t, s, dmg) => {                                               // ZAD
     // rotor de l'éolienne (pales en tube PVC) — cassé et immobile sous 33 %
-    const a = dmg>=2? 0.4 : t*2.6; c.strokeStyle='#ece6d8'; c.lineWidth=2.2; c.lineCap='round'; c.beginPath();
-    for (let i=0;i<(dmg>=2?1:3);i++){ const b=a+i*2.094; c.moveTo(-63,-104); c.lineTo(-63+Math.cos(b)*17, -104+Math.sin(b)*17); } c.stroke();
-    c.fillStyle='#3a3a40'; c.beginPath(); c.arc(-63,-104,2,0,6.283); c.fill();
+    const a = dmg>=2? 0.4 : t*2.6; c.lineCap='round'; c.beginPath();
+    for (let i=0;i<(dmg>=2?1:3);i++){ const b=a+i*2.094; c.moveTo(-67,-104); c.lineTo(-67+Math.cos(b)*17, -104+Math.sin(b)*17); }
+    c.strokeStyle='rgba(26,18,16,0.7)'; c.lineWidth=3.4; c.stroke(); c.strokeStyle='#ece6d8'; c.lineWidth=2; c.stroke();
+    c.fillStyle='#3a3a40'; c.beginPath(); c.arc(-67,-104,2.2,0,6.283); c.fill();
     bPuffs(c, -64, -45, t, 3, 4, 26, 0.5, 1);                       // poêle de la yourte
     bFire(c, 25.5, -3, 6, t, 0);                                    // feu de camp
     bFlag(c, -2, -129, 17, 10, s.trans? '#e84a3a' : s.fac.accent, t, s.trans, -108);
@@ -3471,6 +3485,8 @@ const IA_LIVE = [
 ];
 // caméra / œil scrutateur : position (repère base) par ère, suit le front
 const IA_EYE = [[20,-100,'cam'],[0,-110,'eye'],[6,-112,'eye'],[-4,-112,'eye'],[0,-86,'eye']];
+const eyeGlow = col => fxSprite('EYEG'+col, 24, 24, g => { const r=g.createRadialGradient(12,12,1,12,12,12);
+  r.addColorStop(0,rgbaC(col,0.9)); r.addColorStop(0.4,rgbaC(col,0.45)); r.addColorStop(1,rgbaC(col,0)); g.fillStyle=r; g.fillRect(0,0,24,24); });
 function drawIAEye(c, s, t, d, ex, ey, kind){
   let frontX = s.x - d*200;
   for (const u of game.p.units) if (Math.abs(u.x-s.x)<500) frontX=u.x;
@@ -3485,8 +3501,8 @@ function drawIAEye(c, s, t, d, ex, ey, kind){
   }
   const lx = look*4;
   c.fillStyle='#cfe0ee'; rr(ex-12, ey-7, 24, 14, 6); c.fill();
-  c.save(); if (qFx()){ c.globalCompositeOperation='lighter'; c.shadowColor=col; c.shadowBlur=8; }
-  c.fillStyle=col; c.beginPath(); c.arc(ex+lx,ey,4.6,0,6.283); c.fill(); c.restore();
+  if (qFx()){ c.save(); c.globalCompositeOperation='lighter'; c.drawImage(eyeGlow(col), ex+lx-12, ey-12, 24, 24); c.restore(); }   // halo cuit (pas de shadowBlur par image)
+  c.fillStyle=col; c.beginPath(); c.arc(ex+lx,ey,4.6,0,6.283); c.fill();
   c.fillStyle='#0a1018'; c.beginPath(); c.arc(ex+lx,ey,2,0,6.283); c.fill();
 }
 
@@ -3515,6 +3531,13 @@ function drawBaseGarrison(s, x, gy, d, deck){
   }
 }
 
+// MÉMOIRE : les variantes de dégâts de l'état courant restent cuites (les PV oscillent autour d'un
+// seuil pendant les réparations) ; une ère ou une fortification dépassée est oubliée, dégâts compris.
+function basePurge(old, cur){
+  if (cur && old.era===cur.era && old.trans===cur.trans && old.fort===cur.fort) return;
+  const pre = 'BASE'+old.fk+old.era+(old.trans?'T':'')+old.fort+'d';
+  for (const k of [...SPR.keys()]) if (k.startsWith(pre) && k.indexOf(old.mir? 'M@' : 'd'+k[pre.length]+'@')>=0) SPR.delete(k);
+}
 function drawBase(side){
   const x = side.x-camX; if (x<-170||x>VW()+170) return;
   const t = game.t, era = clamp(side.era||0,0,4), hum = side.facKey==='HUM', d = side.side, fk = side.facKey;
@@ -3525,7 +3548,7 @@ function drawBase(side){
   // CHANGEMENT D'ÉTAT : l'ancienne base s'efface pendant que la nouvelle se bâtit (ère) ou se fond (fort/dégâts)
   const prev = side._bs;
   if (!prev || prev.key!==key){
-    if (prev){ if (side._btr) SPR.delete(side._btr.key+'@'+spriteSS());
+    if (prev){ if (side._btr) basePurge(side._btr, side._bs);
       side._btr = { key:prev.key, fk:prev.fk, era:prev.era, trans:prev.trans, fort:prev.fort, dmg:prev.dmg, mir:prev.mir, t0:t,
         dur: (prev.era!==era || prev.trans!==trans)? 1.5 : 0.45, build: prev.era!==era || prev.trans!==trans };
       if (dmg>prev.dmg && qFx() && particles.length<440) for (let i=0;i<8;i++)
@@ -3535,7 +3558,7 @@ function drawBase(side){
   const spr = sprite(key, BASP.W, BASP.H, ()=>baseSprite(fk, era, trans, fort, dmg, mir));
   projShadow(x, gy, 58);
   const trn = side._btr; let k = 1;
-  if (trn){ k = (t-trn.t0)/trn.dur; if (!(k>=0 && k<1)){ SPR.delete(trn.key+'@'+spriteSS()); side._btr = null; k = 1; } }
+  if (trn){ k = (t-trn.t0)/trn.dur; if (!(k>=0 && k<1)){ basePurge(trn, side._bs); side._btr = null; k = 1; } }
   const X0 = x-BASP.cx, Y0 = gy-BASP.G;
   if (trn && k<1){
     const old = sprite(trn.key, BASP.W, BASP.H, ()=>baseSprite(trn.fk, trn.era, trn.trans, trn.fort, trn.dmg, trn.mir));
