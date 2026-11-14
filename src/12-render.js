@@ -3551,8 +3551,10 @@ function drawBase(side){
     if (prev){ if (side._btr) basePurge(side._btr, side._bs);
       side._btr = { key:prev.key, fk:prev.fk, era:prev.era, trans:prev.trans, fort:prev.fort, dmg:prev.dmg, mir:prev.mir, t0:t,
         dur: (prev.era!==era || prev.trans!==trans)? 1.5 : 0.45, build: prev.era!==era || prev.trans!==trans };
-      if (dmg>prev.dmg && qFx() && particles.length<440) for (let i=0;i<8;i++)
-        particles.push({k:'u', x:side.x+(Math.random()-0.5)*90, y:gy-4, vx:(Math.random()-0.5)*50, vy:-10-Math.random()*20, g:-4, dr:1.4, life:0.8+Math.random()*0.4, t:0, r:5+Math.random()*4}); }
+      // nuage de gravats au changement d'état — hachage déterministe : le rendu ne consomme JAMAIS
+      // Math.random (les tests et la simulation rejouent une suite aléatoire graine fixe)
+      if (dmg>prev.dmg && qFx() && particles.length<440) for (let i=0;i<8;i++){ const h = k2 => lhash(i*5+k2, t);
+        particles.push({k:'u', x:side.x+(h(0)-0.5)*90, y:gy-4, vx:(h(1)-0.5)*50, vy:-10-h(2)*20, g:-4, dr:1.4, life:0.8+h(3)*0.4, t:0, r:5+h(4)*4}); } }
     side._bs = { key, fk, era, trans, fort, dmg, mir };
   }
   const spr = sprite(key, BASP.W, BASP.H, ()=>baseSprite(fk, era, trans, fort, dmg, mir));
