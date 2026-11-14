@@ -280,6 +280,7 @@ function refreshOpts(){
   $('oVol').value = Math.round(SETTINGS.vol*100);
   $('oVolV').textContent = Math.round(SETTINGS.vol*100)+'%';
   const oq=$('oQuality'); if (oq){ oq.classList.add('on'); oq.textContent = qualityName().toUpperCase(); }
+  if (typeof voiceRefreshOpts==='function') voiceRefreshOpts();   // voix off (16c0-voice.js)
 }
 $('oMusic').addEventListener('click', ()=>{ SETTINGS.music=!SETTINGS.music; saveSettings(); refreshOpts(); });
 $('oSfx').addEventListener('click', ()=>{ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); });

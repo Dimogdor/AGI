@@ -24,3 +24,4 @@ android-signing/
 keystore.properties
 KEYSTORE-SECRETS.txt
 .claude/worktrees/
+tools/voice/.cache/
