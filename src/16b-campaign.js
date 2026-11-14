@@ -332,7 +332,7 @@ function campApplyAct(g, c, spec){
   p.units.length = 0; p.gar.length = 0; p.queue.length = 0;
   kept.forEach((u,i)=>{ u.x = p.x + p.side*(70 + (i%10)*18 + ((i/10)|0)*6); u.ord = null; u.px = null; u.task = null; u.tx = null;
     if (spec.heal) u.hp = Math.min(u.maxhp, u.hp + u.maxhp*spec.heal); p.units.push(u); });
-  p.adv = p.x; p.stance = 'charge'; p.holdX = null;
+  p.adv = p.x; p.holdX = null;
   if (spec.era){ if (spec.era.p!=null) campEra(p, spec.era.p); if (spec.era.e!=null) campEra(e, spec.era.e); }
   if (spec.eraCap!=null) g.eraCap = spec.eraCap;
   if (spec.res) campGrant(p, spec.res.f|0, spec.res.m|0, spec.res.w|0);
