@@ -40,7 +40,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `15-tutorial.js` | tutoriel scripté interactif (`TUT_STEPS`, gel doux) |
 | `16-news.js` | fil d'actualités du monde |
 | `16a-biomes.js` | lieux de campagne : ciel, fonds cuits en parallaxe, sol, nuit éclairée, météo |
-| `16b-campaign.js` | campagne « Les carnets de Germinal » (5 missions, radio, objectifs, progression) |
+| `16b-campaign.js` | moteur de campagne « Les carnets de Germinal » (briefing, difficulté, doctrines, cartes, actes, radio) |
 | `16c-cine.js` | cinématiques : planches à l'encre, plans sur le terrain, portraits, choix |
 | `16d…16h-camp-m1…m5.js` | une mission de campagne par fichier : lieu, musique, règle, cinématiques |
 | `17-endgame.js` | fin de partie |
@@ -50,18 +50,55 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `21-menu.js` | menu (DOM), plein écran, navigation en ligne |
 | `22-input.js` | clavier, souris/tactile, amorçage du tutoriel |
 
-## Campagne (v1.15) — comment est faite une mission
+## Campagne (v1.16) — moteur, schéma de mission, flux
 
 | Fichier | Rôle |
 |---|---|
-| `16a-biomes.js` | LIEUX : `BIOMES[id]` (ciel, calques de fond cuits, sol, relief, nuit éclairée, météo `fxRain`/`fxSnow`, `music`, `amb`). `game.biome` remplace tout le décor d'escarmouche. |
-| `16b-campaign.js` | Cœur : textes des 5 missions (9 langues), cycle de vie (`startMission`, `campTick`, `campEndCine`), sauvegarde, HUD (objectif, radio, bouton d'action), menu. |
-| `16c-cine.js` | CINÉMATIQUES : `cinePlay(script, done)` ; plans sur le terrain (caméra, bandes noires) ou PLANCHES plein écran à l'encre (`plateBase`, `inkLine`, `inkWash`, `inkHatch`, `inkFolk`) ; portraits `CINE_PORTRAITS`, voix `CINE_WHO`. |
-| `16d-camp-m1.js` … | Une mission par fichier : `campExtend(i, {...})` ajoute lieu, mécanique et cinématiques à `CAMPAIGN[i]`. **Modèle à suivre : `16d-camp-m1.js`.** |
-| `03-audio.js` | `MUSIC_THEMES[id] = {bpm, step(st,t,stepDur,tension)}` : un thème par lieu ; `biome.amb = {rain, wind, birds, tick(t,dt)}`. |
+| `16a-biomes.js` | LIEUX : `BIOMES[id]` (ciel, calques cuits, sol, relief, nuit éclairée, météo, `music`, `amb`). |
+| `16b-campaign.js` | MOTEUR seul (aucun texte de mission) : sauvegarde `agi_camp` v2, difficulté, doctrines, cartes, actes, cycle de vie, HUD (objectif, « ? », radio, bandeau), briefing plein écran, carnet du menu. |
+| `16c-cine.js` / `16c0-voice.js` | Cinématiques (`cinePlay`) et voix off (`voiceSay`, appelée par la radio). |
+| `16d…16h-camp-m1…m5.js` | Une mission = un fichier : `campMission(i, def)` (puis `campExtend` si besoin). **Rien d'une mission ailleurs.** |
 
-Champs d'une mission (en plus des textes) : `biome`, `theme` (pool `DECOR_THEMES`, objets `DECOR_EXTRA[kind]`),
-`setup(g,c)`, `tick(g,c,dt)` (renvoie `'win'`/`'lose'` pour finir), `hud(g,c)` → `{prog,label,clock,warn}`,
-`action {label,cd,can,use}` (bouton sous l'objectif), `draw(g,c,vw)` (objets de mission, repère monde−`camX`),
-`drawZone(z,t,vw)`, `intro(g,c)` / `outro(g,c,win)` → scripts de cinématique, `radio[]` (entrées `{at|when, who, txt, fx, cine}`).
-État de mission dans `game.camp` (`c`) : `c.lights` (sources de lumière), `c.litK`, `c.hidden(u)`, `c.rangeMul(u)`, `c.t`.
+### Flux
+Carnet (menu) → `campLaunch(i)` = **briefing** (`#campBrief`) → « Lancer » → `campStart(i)` → cinématique d'ouverture →
+mission → clôture (`outro`) → écran de fin → « Mission suivante » / « Réessayer » → `campLaunch(i')` = briefing (on ne
+saute jamais la doctrine ni l'ouverture). Musique du briefing : thème `c_map` s'il existe, sinon `carnet`.
+
+### Schéma d'une mission (`campMission(i, def)`)
+- **Identité** : `num` ('I'…), `year`, `title`, `place` (objets 9 langues).
+- **Briefing** : `recap` / `where` (paragraphes ; à défaut `brief[0]` / `brief[1…]`), `goal`, `goal2` (facultatif,
+  suivi par `hud().goal2 = {done, label}` ou `c.goal2Done = true`), `rule`, `tips:[…]`, `doctrines:[idA, idB]`,
+  `docWhy:{id: texte}` (« utile ici parce que… »), `debrief`, `fail`. Le debrief de la mission précédente est repris
+  dans « Ce qui s'est passé ».
+- **Règles** : `biome`, `theme`, `map` (ci-dessous), `eraCap`, `era0`, `oneLife`, `dev0`, `ai:[Récit, Lutte, Dernier carré]`
+  (index `DIFFS`), `dm:[…]` (réglages fins d'IA par niveau), `dAdj:[…]` (tempère un multiplicateur commun, à justifier).
+- **Crochets** : `setup(g,c)`, `tick(g,c,dt)` → `'win'`/`'lose'`, `hud(g,c)` → `{prog,label,clock,warn,goal2}`,
+  `action {label,cd,can,use}`, `draw(g,c,vw)`, `drawZone(z,t,vw)`, `drawNode(n,t,vw)`, `drawObj(o,t,vw)`,
+  `onCapture(g,c,o,qui)`, `light(g,c)`, `intro(g,c)`, `outro(g,c,win)`, `radio:[{at|when, who, txt, fx, cine}]`.
+- **État** `game.camp` (`c`) : `c.D` (difficulté), `c.act`, `c.t`, `c.log` (journal radio), `c.leash` (+ `c.leashLabel`),
+  `c.shield = {label, x?}` (objectif invulnérable TOUJOURS signalé), `c.warnLead` (doctrine Radio libre), `c.objs`.
+- **Aides** : `campGrant` (ressources × difficulté), `campHp(n,'p'|'e')`, `campN(n)` (vagues), `campGap(s)`,
+  `campWave(n)`, `campSquad`, `campEra`, `campSpawnX(x)` (jamais derrière notre front), `campRadio(who, txt9, {vars})`,
+  `campGoal(txt9)` (nouvel objectif annoncé), `campNextAct(spec)`.
+
+### Difficulté (`CAMP_DIFFS`, `campDiff()`)
+Récit / Lutte / Dernier carré (sauvegarde v1 « lvl » migrée sur le même index). Multiplicateurs appliqués par le
+moteur : `eHp`/`eDmg` (chaque machine ennemie à son apparition), `res` (nos ressources), `wave`, `gap`, `base`, `eBase`,
+plus le niveau d'IA de la mission. Le briefing affiche ces chiffres (`campDiffLines`).
+
+### Doctrines (`DOCTRINES`)
+`{name, short, long, minus, fx:{res, eco, baseHp, squad, vet, cap, actCd, warn}, apply?}` : les lignes chiffrées du
+briefing sont générées depuis `fx`. Appliquées au début de la mission et de chaque acte.
+
+### Carte (`map`, aussi par acte)
+`terrain`, `p:{x, slots}`, `e:{x, slots}`, `neut:[x]`, `nodes:[{x, center, look}]` (défaut : **aucun lac**),
+`zones:[x]`, `objects:[{id, x, r, rate}]` (capturés par le moteur), `bonusZone` (défaut : non).
+
+### Actes (`campNextAct(spec)`)
+`act, title, sub, card:{plate}, before(g,c), after(g,c), biome, theme, map, army:'none'|'hero'|'all'|{keep, hero},
+heal, squad, res, xp, buildings:'clear'|'keep', base:{x,hp,fort,look}, ebase:{…}, era:{p,e}, eraCap, ai:{diff,dm,cap},
+enemy:'clear'|'keep', goal, rule, tips, setup(g,c), doctrine:false`. Exemple : `16h-camp-m5.js` (`M5_ACTS`).
+
+### Tests
+`npm run test:camp` (DOC=1 : seconde doctrine) et `tools/test-campaign-flow.mjs` (parcours complet, difficulté,
+cartes, actes, escorte, aide, sauvegarde).
