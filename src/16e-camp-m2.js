@@ -277,7 +277,7 @@ const M2_WAVES = [
   [22,'quay',[0,0,0]], [55,'quay',[0,2,0,2]], [90,'term',[1,2,2,0]], [122,'air',[4,4,4]],
   [180,'quay',[1,0,0,2,2]], [215,'quay',[3,2,2,0,0,2]], [248,'air',[4,4,4,0,0]], [282,'term',[1,0,2,2,0]], [335,'air',[4,4,0,2]],
 ];
-function m2Scale(c, roles){ const n = Math.max(2, Math.round(roles.length*[0.7,1,1.2][c.lvl])); const out = []; for (let i=0;i<n;i++) out.push(roles[i%roles.length]); return out; }
+function m2Scale(c, roles){ const n = Math.max(2, campN(roles.length)); const out = []; for (let i=0;i<n;i++) out.push(roles[i%roles.length]); return out; }
 function m2Spawn(e, r, x){ if (e.units.length>=60) return; const k = e.units.length; spawnUnit(e, r, false, clamp(x, 60, WORLD-60)); for (let j=k;j<e.units.length;j++) e.units[j].ord = 'charge'; }
 function m2Launch(g, c, src, roles){
   roles = m2Scale(c, roles); const e = g.e;
@@ -305,8 +305,11 @@ function m2DrawMarch(c, t, vw){
     if (c.stop && c.t>6){ ctx.font = '700 10px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = '#c42a1c'; ctx.fillText(cT({fr:'HALTE', en:'HALT', es:'ALTO', de:'HALT', it:'ALT', pt:'ALTO', ru:'СТОП', zh:'停', ar:'توقّف'}), hx+6, hy-98); } }
 }
 
-campExtend(1, {
+campMission(1, {
+  num:'II', year:"2028", ai:[0,1,2], doctrines:['caisse','ordre'],
+  title:{fr:"Grève générale", en:"General strike", es:"Huelga general", de:"Generalstreik", it:"Sciopero generale", pt:"Greve geral", ru:"Всеобщая забастовка", zh:"总罢工", ar:"الإضراب العام"},
   biome:'port', theme:'port', eraCap:1, oneLife:true, dev0:0.1,
+  map:{},                                                               // le quai : ni lac, ni zone ; tout se joue autour du cortège
   place:{fr:"Valmont, le port de l'estuaire", en:"Valmont, the estuary port", es:"Valmont, el puerto del estuario", de:"Valmont, der Hafen an der Mündung", it:"Valmont, il porto dell'estuario", pt:"Valmont, o porto do estuário", ru:"Valmont, порт в устье", zh:"Valmont，河口港", ar:"Valmont، ميناء المصبّ"},
   brief:{fr:[
     "Mars 2028. Omnicorp ne licencie plus : elle « désaffecte ». Ce matin, quarante mille personnes ont posé leurs outils en même temps, de l'usine au standard téléphonique. Les agents autonomes de la compagnie ont reçu l'ordre de « rétablir la continuité de service ». Ils arrivent par la mer.",
@@ -352,10 +355,10 @@ campExtend(1, {
     if ((c.skyT = (c.skyT||0) - dt) <= 0){ c.skyT = 1; const k = clamp(c.t/420, 0, 1);
       BIOMES.port.sky = M2_DAWN.map((a,i)=> a.map((v,j)=> Math.round(v + (M2_MORN[i][j]-v)*k))); }
     // vagues
-    while (c.wi < M2_WAVES.length && c.t >= M2_WAVES[c.wi][0]){ const w = M2_WAVES[c.wi++]; m2Launch(g, c, w[1], w[2]); c.nextW = c.t + [46,40,34][c.lvl]; }
+    while (c.wi < M2_WAVES.length && c.t >= M2_WAVES[c.wi][0]){ const w = M2_WAVES[c.wi++]; m2Launch(g, c, w[1], w[2]); c.nextW = c.t + campGap(40); }
     if (c.wi >= M2_WAVES.length && c.t >= c.nextW){ const k = c.extra++, pat = [0,2,1,2,0,3,4,2,0,1], n = 4 + Math.min(5, k);
       const roles = []; for (let i=0;i<n;i++) roles.push(pat[(i+k*3)%pat.length]);
-      m2Launch(g, c, ['quay','term','air'][k%3], roles); c.nextW = c.t + [46,40,34][c.lvl]; }
+      m2Launch(g, c, ['quay','term','air'][k%3], roles); c.nextW = c.t + campGap(40); }
     for (let i=c.barges.length-1;i>=0;i--){ const b = c.barges[i]; b.t += dt;
       if (!b.done && b.t >= b.land){ b.done = 1; b.roles.forEach((r,j)=> m2Spawn(e, r, b.x - 30 + j*20)); sfxAt('boom', b.x); }
       if (b.t > b.land+5) c.barges.splice(i,1); }

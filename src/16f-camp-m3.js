@@ -226,6 +226,28 @@ function m3Flood(g, c, dt){
     explode(g.e.x-40, gY(g.e.x)-30, 1.4, '#d8eef4'); g.shake = 10; addFloater(g.e.x-40, gY(g.e.x)-110, '−'+Math.round(dmg), '#2f6f9a', 15); }
   if (f.t > 11) c.flood = null;
 }
+// PRISE D'EAU (point d'eau de la carte) : tête de béton, vanne levante et son volant, bassin de prise ; le fanion dit qui la tient
+function m3DrawIntake(n, t, vw){
+  const x = n.x-camX; if (x<-90 || x>vw+90) return; const y = gY(n.x), big = n.center, w = big? 64 : 46, hh = big? 44 : 34;
+  const own = n.owner, col = own? (own==='p'? game.p.fac.accent : game.e.fac.accent) : '#9a8a78';
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = 'rgba(20,26,30,0.3)'; ctx.beginPath(); ctx.ellipse(2, 3, w*0.75, 6, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#3d6f88'; ctx.beginPath(); ctx.ellipse(w*0.25, 4, w*0.55, 5, 0, 0, 6.283); ctx.fill();               // bassin
+  ctx.fillStyle = 'rgba(232,242,246,0.7)'; ctx.fillRect(w*0.25-w*0.4, 2.5+Math.sin(t*2+n.x)*0.8, w*0.8, 1.2);
+  ctx.fillStyle = '#9fa3a0'; ctx.fillRect(-w/2, -hh, w*0.62, hh); ctx.fillStyle = 'rgba(40,46,52,0.28)'; ctx.fillRect(-w/2+w*0.5, -hh, w*0.12, hh);   // tête de béton
+  ctx.fillStyle = M3_INK; ctx.fillRect(-w/2-2, -hh-4, w*0.62+4, 4);
+  const gx = -w/2+w*0.12, gw = w*0.3, lift = own==='p'? 10 : 0;                                                           // vanne (levée quand on la tient)
+  ctx.fillStyle = '#5a6268'; ctx.fillRect(gx, -hh*0.72-lift, gw, hh*0.72); ctx.fillStyle = M3_INK; for (let k=0;k<3;k++) ctx.fillRect(gx, -hh*0.62-lift+k*7, gw, 1.2);
+  ctx.strokeStyle = M3_INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx+gw/2, -hh-4); ctx.lineTo(gx+gw/2, -hh-14); ctx.stroke();
+  ctx.beginPath(); ctx.arc(gx+gw/2, -hh-16, 6, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.moveTo(gx+gw/2-6, -hh-16); ctx.lineTo(gx+gw/2+6, -hh-16); ctx.moveTo(gx+gw/2, -hh-22); ctx.lineTo(gx+gw/2, -hh-10); ctx.stroke();   // volant
+  if (own==='p'){ ctx.fillStyle = 'rgba(232,244,248,0.85)'; for (let i=0;i<4;i++){ const ph = (t*3+i*0.25)%1; ctx.fillRect(gx+2+i*(gw/4), -4+ph*6, 2, 4); } }
+  ctx.strokeStyle = '#3a3028'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(w*0.14, -hh); ctx.lineTo(w*0.14, -hh-30); ctx.stroke();   // fanion
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(w*0.14, -hh-30); ctx.lineTo(w*0.14+18, -hh-26+Math.sin(t*3)*2); ctx.lineTo(w*0.14, -hh-20); ctx.closePath(); ctx.fill();
+  if (Math.abs(n.prog)>0.01 && Math.abs(n.prog)<1){ ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(-22, -hh-42, 44, 5); ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(-22, -hh-42, 44*Math.abs(n.prog), 5); }
+  ctx.font = '700 8px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(233,223,198,0.9)';
+  ctx.fillText(cT({fr:"PRISE D'EAU", en:"WATER INTAKE", es:"TOMA DE AGUA", de:"WASSERFASSUNG", it:"PRESA D'ACQUA", pt:"TOMADA D'ÁGUA", ru:"ВОДОЗАБОР", zh:"取水口", ar:"مأخذ الماء"}), 0, 14);
+  ctx.restore();
+}
 function m3DrawWater(c, t, vw){
   const f = c.flood, siren = c.siren>0;
   for (const [a, b] of c.lowIv){                                                     // lits de la rivière : échelles de crue, et alerte rouge pendant la sirène
@@ -250,8 +272,14 @@ function m3DrawWater(c, t, vw){
     ctx.globalAlpha = 1; }
 }
 
-campExtend(2, {
+campMission(2, {
+  num:'III', year:"2032", ai:[0,1,2], doctrines:['veterans','radio'],
+  title:{fr:"Le barrage de Sainte-Aube", en:"The Sainte-Aube dam", es:"La presa de Sainte-Aube", de:"Der Staudamm von Sainte-Aube", it:"La diga di Sainte-Aube", pt:"A barragem de Sainte-Aube", ru:"Плотина Sainte-Aube", zh:"Sainte-Aube水坝", ar:"سدّ Sainte-Aube"},
+  place:{fr:"Vallée de l'Aube, les trois retenues", en:"Aube valley, the three reservoirs", es:"Valle del Aube, los tres embalses", de:"Aubetal, die drei Stauseen", it:"Valle dell'Aube, i tre bacini", pt:"Vale do Aube, os três reservatórios", ru:"Долина реки Об, три водохранилища", zh:"奥布河谷，三座水库", ar:"وادي أوب، الخزّانات الثلاثة"},
   biome:'dam', theme:'valley', eraCap:2, era0:1, oneLife:true, dev0:0.3,
+  // trois PRISES D'EAU de la vallée (à la place des lacs de l'escarmouche) : on les tient comme des points d'eau
+  map:{ nodes:[{ x:900, look:'intake' }, { x:1800, center:true, look:'intake' }, { x:2700, look:'intake' }] },
+  drawNode(n, t, vw){ m3DrawIntake(n, t, vw); },
   goal:{fr:"Détruire la station de pompage d'Omnicorp, en aval.", en:"Destroy Omnicorp's pumping station, downstream.", es:"Destruir la estación de bombeo de Omnicorp, río abajo.", de:"Die Pumpstation von Omnicorp flussabwärts zerstören.", it:"Distruggere la stazione di pompaggio di Omnicorp, a valle.", pt:"Destruir a estação de bombeamento da Omnicorp, rio abaixo.", ru:"Уничтожить насосную станцию Omnicorp ниже по течению.", zh:"摧毁下游的Omnicorp抽水站。", ar:"تدمير محطة الضخ التابعة لـ Omnicorp في اتجاه المصب."},
   rule:{fr:"Le bouton VANNES lâche une crue (sirène, puis vague) qui balaie le lit de la rivière : machines ET grévistes, et frappe la station. Plus le réservoir est plein, plus elle est forte ; il se remplit lentement. Tenez les hauteurs. Ères II et III, une seule vie.",
         en:"The SLUICES button releases a flood (siren, then wave) that sweeps the riverbed: machines AND our people, and hits the station. The fuller the reservoir, the stronger it is; it refills slowly. Hold the high ground. Eras II and III, one life.", es:"El botón COMPUERTAS libera una crecida (sirena y después ola) que barre el lecho del río: máquinas Y huelguistas, y golpea la estación. Cuanto más lleno está el embalse, más fuerte es; se llena despacio. Mantenga las alturas. Eras II y III, una sola vida.", de:"Der Knopf SCHLEUSEN löst eine Flutwelle aus (erst Sirene, dann Welle), die das Flussbett leer fegt: Maschinen UND Streikende, und trifft die Station. Je voller der Stausee, desto stärker; er füllt sich langsam. Halten Sie die Anhöhen. Ären II und III: nur ein Leben.", it:"Il pulsante PARATOIE scatena una piena (sirena, poi ondata) che spazza il letto del fiume: macchine E scioperanti, e colpisce la stazione. Più il serbatoio è pieno, più è forte; si riempie lentamente. Tenete le alture. Ere II e III, una sola vita.", pt:"O botão COMPORTAS solta uma cheia (sirene, depois onda) que varre o leito do rio: máquinas E grevistas, e atinge a estação. Quanto mais cheio o reservatório, mais forte ela é; ele enche devagar. Segure as alturas. Eras II e III, uma só vida.", ru:"Кнопка ШЛЮЗЫ выпускает паводок (сирена, затем волна), который сметает русло реки: машины И забастовщиков — и бьёт по станции. Чем полнее водохранилище, тем он сильнее; оно наполняется медленно. Удерживайте возвышенности. Эпохи II и III — одна жизнь.", zh:"“闸门”按钮会放出洪水（先鸣警报，再来巨浪），冲刷整条河床：机器和罢工者一概卷走，并冲击抽水站。水库越满，洪水越猛；水库蓄水很慢。守住高地。第二、三时代，只有一条命。", ar:"زر البوابات يُطلق فيضانًا (صفارة ثم موجة) يجتاح مجرى النهر: الآلات والمضربين معًا، ويضرب المحطة. كلما امتلأ الخزان زادت قوته؛ وهو يمتلئ ببطء. تمسّكوا بالمرتفعات. العصران الثاني والثالث، حياة واحدة."},
@@ -303,7 +331,7 @@ campExtend(2, {
       ], null); } },
   setup(g, c){
     campGrant(g.p, 460, 400, 180); campSquad(g.p, [1,0,2,2,3]);
-    g.e.hp = g.e.maxhp = [1300,1600,1900][c.lvl]; g.zones = [];
+    g.e.hp = g.e.maxhp = campHp(1600, 'e'); g.zones = [];
     c.water = 40; c.siren = 0; c.flood = null; c.floods = 0; c.nextW = 55;
     c.lowIv = []; let a = null;                                                             // les lits bas, calculés sur le relief
     for (let x=M3.src; x<=WORLD-40; x+=10){ const lo = m3Low(x); if (lo && a===null) a = x; if (!lo && a!==null){ c.lowIv.push([a, x-10]); a = null; } }
@@ -315,7 +343,7 @@ campExtend(2, {
     const fill = [1.5,1.25,1.05][c.lvl] * (g.cata==='heat'? 0.35 : 1);
     if (!(c.siren>0) && !c.flood) c.water = Math.min(100, c.water + fill*dt);
     if (c.heatAt && c.t >= c.heatAt){ c.heatAt = 0; if (!g.cata) startCata('heat'); }
-    if (c.t >= c.nextW){ c.nextW += [85,72,62][c.lvl]; campWave([3,4,5][c.lvl] + Math.floor(c.t/180)); }   // convois de la station
+    if (c.t >= c.nextW){ c.nextW += campGap(72); campWave(4 + Math.floor(c.t/180)); }   // convois de la station
     m3Flood(g, c, dt);
   },
   hud(g, c){ return { prog:1 - g.e.hp/g.e.maxhp, label:'≋ '+Math.floor(c.water)+' %', warn:c.siren>0 }; },
@@ -359,7 +387,7 @@ campExtend(2, {
     ]; }},
     {when:(g,c)=>g.e.hp < g.e.maxhp*0.55, who:'voix', cine(g, c){ return [
       { cam:{x:g.e.x-140, t:1.4}, who:'voix', txt:{fr:"Chers riverains. L'ouverture non autorisée des vannes constitue un arbitrage défavorable. Nous vous invitons à regagner vos domiciles. Merci de votre compréhension.", en:"Dear residents. The unauthorised opening of the sluices constitutes an unfavourable trade-off. We invite you to return to your homes. Thank you for your understanding.", es:"Estimados vecinos de la ribera. La apertura no autorizada de las compuertas constituye un arbitraje desfavorable. Les invitamos a regresar a sus domicilios. Gracias por su comprensión.", de:"Liebe Anwohner. Die nicht genehmigte Öffnung der Schleusen stellt eine ungünstige Abwägung dar. Wir bitten Sie, in Ihre Wohnungen zurückzukehren. Vielen Dank für Ihr Verständnis.", it:"Cari residenti lungo il fiume. L'apertura non autorizzata delle paratoie costituisce un compromesso sfavorevole. Vi invitiamo a rientrare nelle vostre abitazioni. Grazie per la comprensione.", pt:"Caros ribeirinhos. A abertura não autorizada das comportas constitui uma arbitragem desfavorável. Convidamos todos a retornar às suas residências. Agradecemos a compreensão.", ru:"Уважаемые жители прибрежных районов. Несанкционированное открытие шлюзов является неблагоприятным компромиссом. Приглашаем вас вернуться по домам. Благодарим за понимание.", zh:"尊敬的沿河居民：未经授权开启闸门，构成一次不利的取舍。请各位返回住所。感谢您的理解。", ar:"السكان الكرام على ضفاف النهر. إن فتح البوابات دون ترخيص يشكّل مفاضلة غير مواتية. ندعوكم إلى العودة إلى منازلكم. شكرًا على تفهمكم."} },
-      { cam:{x:g.e.x-400, t:1.2}, fx(g, c){ if (g.e.era<2){ campEra(g.e, 2); warmArms(g.e); } campWave(5 + 2*c.lvl); },
+      { cam:{x:g.e.x-400, t:1.2}, fx(g, c){ if (g.e.era<2){ campEra(g.e, 2); warmArms(g.e); } campWave(7); },
         who:'sol', txt:{fr:"Elle a une voix de berceuse. Et derrière la berceuse, leurs machines de troisième génération sortent toutes en même temps. Remplissez le réservoir, commandant.", en:"She has a lullaby voice. And behind the lullaby, their third-generation machines are all coming out at once. Fill the reservoir, commander.", es:"Tiene voz de nana. Y detrás de la nana, sus máquinas de tercera generación salen todas a la vez. Llene el embalse, comandante.", de:"Sie hat eine Stimme wie ein Wiegenlied. Und hinter dem Wiegenlied rücken ihre Maschinen der dritten Generation alle zugleich aus. Füllen Sie den Stausee, Kommandant.", it:"Ha una voce da ninna nanna. E dietro la ninna nanna, le loro macchine di terza generazione escono tutte insieme. Riempite il serbatoio, comandante.", pt:"Ela tem voz de canção de ninar. E atrás da canção de ninar, as máquinas de terceira geração deles saem todas ao mesmo tempo. Encha o reservatório, comandante.", ru:"У неё голос колыбельной. А за колыбельной все их машины третьего поколения выходят разом. Наполняйте водохранилище, командир.", zh:"她的声音像摇篮曲。而在摇篮曲的背后，他们的第三代机器正同时倾巢而出。把水库灌满吧，指挥官。", ar:"صوتها كتهويدة. ومن خلف التهويدة تخرج آلاتهم من الجيل الثالث كلها في وقت واحد. املأوا الخزان، أيها القائد."} },
     ]; }},
     {when:(g,c)=>c.floods>=1 && c.flood && c.flood.t>6, who:'sol', txt:{fr:"Regardez ce que l'eau a laissé dans le lit. La prochaine fois, ils réfléchiront avant d'y descendre. Nous aussi.", en:"Look what the water left in the riverbed. Next time they will think before walking down into it. So will we.", es:"Mire lo que ha dejado el agua en el lecho. La próxima vez se lo pensarán antes de bajar. Nosotros también.", de:"Sehen Sie, was das Wasser im Flussbett zurückgelassen hat. Beim nächsten Mal überlegen sie es sich, bevor sie hinabsteigen. Wir auch.", it:"Guardate cosa ha lasciato l'acqua nel letto. La prossima volta ci penseranno prima di scendere. Noi pure.", pt:"Veja o que a água deixou no leito. Da próxima vez, eles pensarão antes de descer. Nós também.", ru:"Посмотрите, что вода оставила в русле. В следующий раз они подумают, прежде чем спускаться. Мы тоже.", zh:"看看水在河床里留下了什么。下次他们下去之前会先掂量掂量。我们也一样。", ar:"انظروا ما تركه الماء في المجرى. في المرة القادمة سيفكّرون قبل أن ينزلوا إليه. ونحن أيضًا."}},

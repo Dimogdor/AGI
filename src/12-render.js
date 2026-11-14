@@ -1515,6 +1515,7 @@ function treeAlt(kind, x, y, s, sway, dev, bark, tr){
   }
 }
 function drawNode(n){
+  if (game.camp && game.camp.m.drawNode){ game.camp.m.drawNode(n, game.t, VW()); return; }   // campagne : le point d'eau a le visage du lieu (prise d'eau…)
   const x=n.x-camX; if (x<-110||x>VW()+110) return;
   const dev=game.dev, t=game.t, y=gY(n.x), rw=(n.center?54:40)*(1-0.5*dev), rh=rw*0.34;
   const R0=(n.center?54:40);

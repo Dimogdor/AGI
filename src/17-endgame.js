@@ -23,8 +23,9 @@ function showEnd(){
   const no = document.getElementById('endNo'); if (no) no.textContent = '#'+String(73 + (Math.floor(gt)%900)).padStart(4,'0');
   s.innerHTML = cells.map(([l,v])=>'<div class="esLine"><span>'+escH(l)+'</span><i></i><b>'+escH(v)+'</b></div>').join('')+
     '<div class="esWorld"><span>'+escH(t('end_world'))+'</span><div class="esBar"><i style="width:'+wh+'%"></i></div><b>'+wh+'%</b></div>'+
-    '<i class="esJournal">'+escH(camp? campResult() : warJournal())+'</i>';
-  // campagne : mission suivante / réessayer, et retour au carnet
+    '<i class="esJournal">'+escH(camp? campResult() : warJournal()).replace(/\n/g, '<br>')+'</i>';
+  // campagne : mission suivante / réessayer → BRIEFING de la mission (21-menu appelle campLaunch, qui ouvre le dossier :
+  // difficulté, doctrine, puis cinématique d'ouverture — on ne saute jamais rien) ; et retour au carnet
   const nb = document.getElementById('campNextBtn'), rb = document.getElementById('replayBtn');
   if (camp){ const nxt = game.win && camp.i+1 < CAMPAIGN.length;
     nb.style.display = ''; nb.dataset.i = nxt? camp.i+1 : camp.i;
