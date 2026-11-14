@@ -130,8 +130,11 @@ chef ni grade : un comité, des votes à main levée, un commandant de terrain d
 
 **Les carnets de Germinal** sont les cinq cahiers d'écolier de Sol, un par mission. Le menu de la
 campagne *est* ce carnet : chaque mission est une page ; une mission non jouée est une « page
-arrachée ». On découvre à la fin qu'ils ont été retrouvés en août 2038 dans une boîte à biscuits,
-sous un poste de radio. Ce que le joueur lit, c'est ce que Sol a écrit pour vous, son commandant.
+arrachée ». Le prologue l'annonce : ils ont été **retrouvés dans une boîte à biscuits, sous un poste
+de radio**, par quelqu'un dont on ne sait rien (voix `nar2`). Quand ? La fin le dit : en août 2038,
+le jour même, dans la fin « Cendre » (la radio de Sol est introuvable) ; bien plus tard dans la fin
+« Aube » (Sol a tenu la garde des années). Ce que le joueur lit, c'est ce que Sol a écrit pour
+vous, son commandant.
 
 Règle d'écriture : les textes de briefing et de compte rendu sont **la voix des carnets** (Sol
 qui écrit) ; les cinématiques mêlent NAR (le carnet lu) et SOL (la radio, en direct).
@@ -196,6 +199,7 @@ consigne : genre, âge, timbre, débit, traitement robotique.
 | Id | Personnage | Rôle | Casting voix |
 |---|---|---|---|
 | `nar` | **Sol, narratrice** (2038) | Lit ses carnets, au passé. Prologue, ouvertures, fins. | Femme, 70 ans, voix grave un peu voilée, chaleureuse ; débit lent, pauses longues ; **robotique : non** ; légère réverbération de pièce. |
+| `nar2` | **La personne qui a retrouvé les carnets** | Ouvre le prologue (P1) ; referme la fin « Cendre ». On ne sait rien d'elle. | Femme ou homme, 40 ans, voix neutre et calme, un peu basse ; débit posé ; **robotique : non** ; prise de son sèche, sans réverbération (elle est « maintenant »). |
 | `sol` | **Sol, à la radio** | Opératrice de Germinal ; consignes et nouvelles en mission. | Femme, 58-71 ans selon la mission, médium clair de standardiste, très articulée ; débit posé, accélère à peine sous la pression ; **robotique : non** ; filtre radio (bande 300-3 400 Hz, souffle léger). |
 | `k55` | **Kassandre, « 55 »** | IA dissidente, parle par bipeur. | Femme sans âge (sonne 30 ans), timbre clair et net, presque enfantin ; débit régulier, monocorde, pas de respiration ; **robotique : oui, léger** (quantification fine, bips entre les phrases) ; s'humanise un peu en M4. |
 | `nous` | **« Nous »**, la Singularité | L'adversaire après 2035. | Chœur : trois voix (homme grave, femme médium, enfant) à l'unisson exact ; débit lent et poli ; **robotique : oui, fort** (unisson parfait, aucune respiration, fins de mots coupées net). |
@@ -313,7 +317,7 @@ ouverte (ellipse 150-330 × 150-210, lavis gris 0,3) ; dedans, cinq cahiers empi
 rectangles décalés, lavis beige) ; un bipeur éteint posé contre la boîte (petit rectangle sombre).
 *Lumière* : lavis ambre en triangle depuis le coin haut gauche. *Mouvement* : les cahiers se
 dessinent un par un (0,4 s chacun). *Texte* : sur le cahier du dessus, « GERMINAL — 1 ».
-- **NAR** : Ces carnets ont été retrouvés en août 2038, dans une boîte à biscuits, sous un poste de radio.
+- **NAR2** : Ces carnets ont été retrouvés dans une boîte à biscuits, sous un poste de radio. Ils commencent comme ça.
 
 **P2 · Valmont, 2025** — *Cadre* : plan large de la ville. *Éléments* : six barres d'immeubles à
 gauche et au centre (lavis 0,16, fenêtres ambre) ; à droite, une tour de verre haute et étroite
@@ -461,7 +465,7 @@ Le choix est rappelé dans le briefing (« Doctrine choisie : … ») et peut ch
   Commune) : soit « 2035 · COMMUNE », soit garder et laisser la campagne l'expliquer (§ 2).
 - Renommer les libellés de niveau `lvl0..lvl2` en **Récit / Lutte / Dernier carré** et ajouter la
   phrase d'explication (`lvl0d…lvl2d`).
-- Ajouter les voix `voix`, `mado`, `ines`, `anselme`, `malik`, `cell` à `CINE_WHO`.
+- Ajouter les voix `nar2`, `voix`, `mado`, `ines`, `anselme`, `malik`, `cell` à `CINE_WHO`.
 
 ---
 
