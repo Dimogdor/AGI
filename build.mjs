@@ -246,4 +246,12 @@ if (privacyMd) {
   console.log('  privacy.html : généré depuis PRIVACY.md');
 }
 
+// --- ressources audio enregistrées (bruitages libres, musique, voix off) : assets/ → www/assets/
+//     Chargées à la demande par le jeu (puis mises en cache par le service worker) ; le fichier
+//     unique la-derniere-bataille.html ouvert en file:// retombe sur l'audio procédural. ---
+if (await exists(new URL('./assets/', ROOT))){
+  await cp(new URL('./assets/', ROOT), new URL('./assets/', OUT), { recursive: true });
+  console.log('  assets/ : copiées dans www/assets/');
+}
+
 console.log('✔ www/ prêt');

@@ -55,6 +55,8 @@ jobs:
       - run: npm test
       # bancs d'essai de la campagne : chaque mission gagnée par un joueur scripté et perdue par un joueur passif, à chaque niveau
       - run: npm run test:camp
+      # tests ciblés (ordres de déplacement, événements, audio, voix off, campagne…) : tools/test-*.mjs
+      - run: npm run test:extra
 
   deploy:
     needs: [build, test]
