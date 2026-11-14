@@ -356,8 +356,10 @@ Pour qui découvre le jeu ou veut l'histoire avant le défi. L'adversaire joue c
 d'escarmouche (`DIFFS[0]`) dans toutes les missions. Les comptes à rebours sont plus longs, les
 règles spéciales plus clémentes (chiffres dans chaque mission), et les alertes arrivent plus tôt.
 Sol donne des **conseils en plus** (répliques marquées *[Récit]* dans les scripts). En cas
-d'échec, on **reprend au dernier point d'étape** (début de l'acte ou du tronçon) avec ce qu'on
-avait à ce moment-là. Les objectifs facultatifs restent possibles.
+d'échec, on **reprend au dernier point d'étape** : début de l'acte (V) ou du tronçon (II), ou une
+**reprise allégée** décrite dans chaque mission (I, III, IV : la mission recommence avec un
+avantage acquis, par exemple un transformateur déjà repris). Les objectifs facultatifs restent
+possibles.
 
 ### Lutte — « Le défi prévu. »
 Le niveau pour lequel les missions sont réglées. L'adversaire joue comme l'IA **Normale**
