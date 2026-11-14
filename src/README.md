@@ -48,6 +48,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `19-net-speed.js` | vitesse de jeu (vote en ligne) |
 | `20-net-online.js` | pause négociée, transport PeerJS, salons publics |
 | `21-menu.js` | menu (DOM), plein écran, navigation en ligne |
+| `21b-guide.js` | onglet GUIDE du menu : rubriques dépliables (9 langues), raccourcis générés depuis les touches réelles |
 | `22-input.js` | clavier, souris/tactile, amorçage du tutoriel |
 
 ## Campagne (v1.16) — moteur, schéma de mission, flux

@@ -550,9 +550,11 @@ console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
     // OFFENSIF : mêmes PV, armée en repli → il avance quand même, jamais de fuite
     h = setup('offensive', 0.3); setStance(game.p, 'retreat'); run(60);
     out.lead = h.x > 1700 && h.hstate!=='flee';
-    // NORMAL : comportement historique (obéit au repli de l'armée, ne fuit pas de lui-même)
-    h = setup('normal', 0.3); run(40); const adv = h.x > 1500; setStance(game.p, 'retreat'); run(200);
-    out.normal = adv && h.hstate==null && Math.abs(h.x-(game.p.x+150)) < 40;
+    // AVEC LA TROUPE (clé « normal ») : au front de l'armée, jamais devant ; obéit au repli de l'armée, ne fuit pas de lui-même
+    h = setup('normal', 0.3); h.x = 1285; const p1 = game.p; for (let i=0;i<4;i++) spawnUnit(p1, 0, false, 1300+i*10);
+    let ahead = 0; for (let i=0;i<60;i++){ run(1); const fr = Math.max(...p1.units.filter(u=>u.role!=='hero').map(u=>u.x)); ahead = Math.max(ahead, h.x-fr); }
+    const near = Math.abs(h.x - armyFront(p1, h)) < 12; setStance(p1, 'retreat'); run(200);
+    out.normal = ahead <= 1 && near && h.hstate==null && Math.abs(h.x-(p1.x+150)) < 40;
     // statistiques inchangées par la posture ; aura identique
     const a = setup('prudent', 1), sA = [a.maxhp, a.dmg, a.spd, a.range, a.rate].join(); run(2); const powA = game.p.heroPow;
     const b = setup('normal', 1), sB = [b.maxhp, b.dmg, b.spd, b.range, b.rate].join(); run(2);
@@ -579,7 +581,7 @@ console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
     return out; });
   check(r.flee && r.stay && r.back && r.behind, 'posture PRUDENT : repli vers la base sous 35 % de PV, retour une fois soigné (≥ 60 %), reste derrière la ligne');
   check(r.lead, 'posture OFFENSIF : avance malgré 30 % de PV et une armée en repli, ne fuit jamais');
-  check(r.normal && r.stats, 'posture NORMAL : comportement historique ; statistiques et aura identiques quelle que soit la posture');
+  check(r.normal && r.stats, 'posture AVEC LA TROUPE : au front de l\'armée, jamais devant, suit son repli ; statistiques et aura identiques quelle que soit la posture');
   check(r.ui && r.cmd, 'posture : bouton du HUD, touche J, commande réseau validée (valeur inconnue ignorée)');
   check(r.draw===true && r.era, 'héros : 2 camps × 5 ères rendus (repos, deux attaques, blessure, mort), l\'apparence suit l\'ère du camp'+(r.draw!==true? ' — '+r.draw : ''));
   check(r.snap, 'instantané : posture, n° d\'attaque et repli du héros reçus par l\'invité');

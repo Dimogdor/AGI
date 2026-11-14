@@ -20,7 +20,7 @@ function render(dt){
   if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
-  if (game.rally) drawRally(game.rally);                     // fanion ⚑ d'ordre de position
+  drawPointFlags();                                          // fanions ⚑ des ordres de position (13-hud.js)
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   if (shots.length){ ctx.lineCap='round';
     if (qFx()){ ctx.save(); ctx.globalCompositeOperation='lighter';   // halo additif (sans shadowBlur — coûteux)

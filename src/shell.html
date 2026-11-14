@@ -104,6 +104,25 @@
     box-shadow:inset 0 -6px 8px -6px rgba(0,0,0,.35); transform-origin:bottom; transition:transform .12s, color .12s; }
   #menu .tab:nth-child(2) { background:var(--grain), var(--tab2); } #menu .tab:nth-child(3) { background:var(--grain), var(--tab3); }
   #menu .tab:nth-child(4) { background:var(--grain), var(--tab4); } #menu .tab:nth-child(5) { background:var(--grain), var(--tab2); }
+  #menu .tab:nth-child(6) { background:var(--grain), var(--tab3); }
+  /* six intercalaires (v1.15, onglet GUIDE) : un peu moins d'air pour que les langues longues tiennent */
+  #menu .tab { padding-left:10px; padding-right:10px; letter-spacing:.02em; }
+  /* ---- GUIDE : rubriques dépliables tapées à la machine (lisibles au téléphone en paysage) ---- */
+  #menu .guide { display:flex; flex-direction:column; gap:2px; font-size:clamp(12px,2vh,14.5px); line-height:1.5; color:var(--ink); }
+  #menu .gHead { font-family:var(--f-sten); font-weight:800; font-size:clamp(17px,3.2vh,26px); letter-spacing:.03em; line-height:1.05; border-bottom:3px double var(--ink); padding-bottom:4px; }
+  #menu .gSec { border-bottom:1px dashed var(--line); }
+  #menu .gSec summary { cursor:pointer; list-style:none; padding:clamp(5px,1.1vh,8px) 2px; font-family:'AGI Cond','Arial Narrow',sans-serif; font-weight:600;
+    font-size:clamp(14.5px,2.6vh,19px); letter-spacing:.02em; color:var(--ink); }
+  #menu .gSec summary::-webkit-details-marker { display:none; }
+  #menu .gSec summary::after { content:' +'; color:var(--red); font-weight:800; }
+  #menu .gSec[open] summary::after { content:' −'; }
+  #menu .gSec summary:hover, #menu .gSec[open] summary { color:var(--red); }
+  #menu .gBody { padding:0 2px 8px; user-select:text; -webkit-user-select:text; }
+  #menu .gBody p { margin:0 0 .45em; } #menu .gBody ul { margin:0 0 .45em; padding-inline-start:1.2em; } #menu .gBody li { margin:.12em 0; }
+  #menu .gBody b { color:var(--ink); }
+  #menu .gKeys { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1px 14px; margin-bottom:6px; }
+  #menu .gKeys span { border-bottom:1px dotted var(--line); } #menu .gKeys b { border-bottom:1px dotted var(--line); color:var(--red); text-align:end; white-space:nowrap; }
+  #menu.fac-ia .gHead { font-family:var(--f-term); font-weight:400; }
   #menu .tabs { flex-wrap:nowrap; } #menu .tab { white-space:nowrap; flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   @media (max-width:760px), (max-height:420px){ #menu .tab { padding-left:8px; padding-right:8px; letter-spacing:0; } }
   /* ---- CAMPAGNE : carnet de missions ---- */
@@ -430,6 +449,7 @@
         <button class="tab on" data-page="play" data-i18n="tab_play">JOUER</button>
         <button class="tab" data-page="camp">CAMPAGNE</button>
         <button class="tab" data-page="tuto" data-i18n="tab_tuto">TUTORIEL</button>
+        <button class="tab" data-page="guide" data-i18n="tab_guide">GUIDE</button>
         <button class="tab" data-page="opts" data-i18n="tab_opts">PARAMÈTRES</button>
         <button class="tab" data-page="about" data-i18n="tab_about">À PROPOS</button>
       </div>
@@ -532,6 +552,7 @@
           </div>
           <button class="pick link" id="storyBtn" data-i18n="intro_watch">REVOIR L'HISTOIRE</button>
         </div>
+        <div class="page" id="page-guide"><div class="guide" id="guideBox"></div></div>
         <div class="page" id="page-opts">
           <div class="setH" data-i18n="opts_h_display">AFFICHAGE</div>
           <div class="setRow"><span data-i18n="set_lang">Langue</span>
