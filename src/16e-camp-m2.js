@@ -5,7 +5,7 @@
    Les machines ne viennent pas d'une base : elles débarquent (barges le long du quai, terminal
    automatisé au bout, drones). En « Tenir », les troupes du joueur marchent en tête du cortège ;
    le bouton de mission dresse une barricade devant lui. Premier contact de Kassandre (« 55 »).  */
-const M2 = { start:430, dest:2930, span:170 };
+const M2 = { start:430, dest:2930, span:170, leash:520 };
 DECOR_THEMES.port = ['bollard','bollard','crate','pallet','tire','bollard','crate','tire','pallet'];
 DECOR_EXTRA.bollard = (d, s) => {                                     // bitte d'amarrage
   dShadow(7*s); ctx.fillStyle = '#2c2f36'; ctx.fillRect(-4*s,-10*s,8*s,10*s);
@@ -271,20 +271,29 @@ M2_PLATES.k55 = m2PagerPlate({fr:"55. VOTRE CORTÈGE AVANCE À 0,7 KM/H. MES MOD
 M2_PLATES.k55win = m2PagerPlate({fr:"55. ARRIVÉE DU CORTÈGE : PROBABILITÉ ESTIMÉE 3 %. JE CORRIGE MES MODÈLES.", en:"55. MARCH ARRIVAL: ESTIMATED PROBABILITY 3 %. I AM CORRECTING MY MODELS.", es:"55. LLEGADA DEL CORTEJO: PROBABILIDAD ESTIMADA 3 %. CORRIJO MIS MODELOS.", de:"55. ANKUNFT DES ZUGS: GESCHÄTZTE WAHRSCHEINLICHKEIT 3 %. ICH KORRIGIERE MEINE MODELLE.", it:"55. ARRIVO DEL CORTEO: PROBABILITÀ STIMATA 3 %. CORREGGO I MIEI MODELLI.", pt:"55. CHEGADA DO CORTEJO: PROBABILIDADE ESTIMADA 3 %. ESTOU A CORRIGIR OS MEUS MODELOS.", ru:"55. ДОХОЖДЕНИЕ ШЕСТВИЯ: РАСЧЁТНАЯ ВЕРОЯТНОСТЬ 3 %. ИСПРАВЛЯЮ СВОИ МОДЕЛИ.", zh:"55。游行抵达概率估计：3%。正在修正模型。", ar:"55. وصول الموكب: الاحتمال المقدّر 3٪. أصحّح نماذجي."});
 M2_PLATES.k55hook = m2PagerPlate({fr:"55. SAINTE-AUBE.", en:"55. SAINTE-AUBE.", es:"55. SAINTE-AUBE.", de:"55. SAINTE-AUBE.", it:"55. SAINTE-AUBE.", pt:"55. SAINTE-AUBE.", ru:"55. SAINTE-AUBE.", zh:"55。SAINTE-AUBE。", ar:"55. SAINTE-AUBE."});
 
+const M2_UI = {
+  leash:{fr:"restez près du cortège", en:"stay close to the march", es:"quédese cerca del cortejo", de:"beim Zug bleiben", it:"resti vicino al corteo", pt:"fique perto do cortejo", ru:"держитесь рядом с шествием", zh:"留在游行队伍附近", ar:"ابقَ قرب الموكب"},
+  shield:{fr:"tant que le cortège n'est pas à Radio-Quai", en:"until the march reaches Radio-Quai", es:"mientras el cortejo no llegue a Radio-Quai", de:"bis der Zug Radio-Quai erreicht", it:"finché il corteo non è a Radio-Quai", pt:"enquanto o cortejo não chegar a Radio-Quai", ru:"пока шествие не дошло до Radio-Quai", zh:"在游行队伍抵达Radio-Quai之前", ar:"ما دام الموكب لم يبلغ Radio-Quai"},
+  leashSay:{fr:"Commandant, pas si vite ! Si nos troupes partent devant, le cortège reste seul. On avance avec lui.", en:"Commander, not so fast! If our troops run ahead, the march is left alone. We move with it.", es:"¡Comandante, no tan deprisa! Si nuestras tropas se adelantan, el cortejo se queda solo. Avanzamos con él.", de:"Kommandant, nicht so schnell! Wenn unsere Truppen vorpreschen, bleibt der Zug allein. Wir gehen mit ihm.", it:"Comandante, non così in fretta! Se le truppe corrono avanti, il corteo resta solo. Avanziamo con lui.", pt:"Comandante, não tão rápido! Se nossas tropas correrem na frente, o cortejo fica sozinho. Avançamos com ele.", ru:"Командир, не так быстро! Если войска убегут вперёд, шествие останется одно. Идём вместе с ним.", zh:"指挥官，别那么快！部队要是冲到前面，游行队伍就没人保护了。我们跟着它一起走。", ar:"أيها القائد، ليس بهذه السرعة! إن تقدّمت قواتنا وحدها بقي الموكب بلا حماية. نتقدّم معه."},
+};
 /* ---------- vagues : débarquements scriptés (barges du quai, terminal, drones) ---------- */
 // [instant (s), origine, rôles] — 0 mêlée, 1 tank, 2 tireur, 3 siège, 4 drone, 5 soutien
 const M2_WAVES = [
   [22,'quay',[0,0,0]], [55,'quay',[0,2,0,2]], [90,'term',[1,2,2,0]], [122,'air',[4,4,4]],
   [180,'quay',[1,0,0,2,2]], [215,'quay',[3,2,2,0,0,2]], [248,'air',[4,4,4,0,0]], [282,'term',[1,0,2,2,0]], [335,'air',[4,4,0,2]],
 ];
-function m2Scale(c, roles){ const n = Math.max(2, campN(roles.length)); const out = []; for (let i=0;i<n;i++) out.push(roles[i%roles.length]); return out; }
+// escorte : les vagues grossissent un peu moins que le modèle commun (plafond ×1,15)
+function m2Scale(c, roles){ const n = Math.max(2, Math.round(roles.length*Math.min(c.D.wave, 1.15))); const out = []; for (let i=0;i<n;i++) out.push(roles[i%roles.length]); return out; }
 function m2Spawn(e, r, x){ if (e.units.length>=60) return; const k = e.units.length; spawnUnit(e, r, false, clamp(x, 60, WORLD-60)); for (let j=k;j<e.units.length;j++) e.units[j].ord = 'charge'; }
 function m2Launch(g, c, src, roles){
   roles = m2Scale(c, roles); const e = g.e;
   if (src==='term'){ roles.forEach((r,i)=> m2Spawn(e, r, e.x-60-i*26)); return; }
   const air = src==='air'? roles.filter(r=>r===4) : [], sea = src==='air'? roles.filter(r=>r!==4) : roles;
-  air.forEach((r,i)=> m2Spawn(e, r, c.mx + 640 + i*30));
-  if (sea.length){ const x = clamp(c.mx + 560 + Math.random()*200, 900, WORLD-420);
+  // ESCORTE (v1.16) : les machines arrivent TOUJOURS devant notre front (jamais dans notre dos) ; si le
+  // quai devant nous est déjà pris, elles sortent du terminal, côté ennemi.
+  air.forEach((r,i)=> m2Spawn(e, r, campSpawnX(c.mx + 640, 160) + i*30));
+  if (sea.length){ const want = c.mx + 560 + Math.random()*200, x = campSpawnX(want, 150);
+    if (x > WORLD-420){ sea.forEach((r,i)=> m2Spawn(e, r, e.x-60-i*26)); return; }
     c.barges.push({ x, t:0, land:3.2, roles:sea }); if (!c.firstBarge) c.firstBarge = x; sfxAt('spec', x); }
 }
 
@@ -315,7 +324,8 @@ campMission(1, {
   ],
   title:{fr:"Grève générale", en:"General strike", es:"Huelga general", de:"Generalstreik", it:"Sciopero generale", pt:"Greve geral", ru:"Всеобщая забастовка", zh:"总罢工", ar:"الإضراب العام"},
   biome:'port', theme:'port', eraCap:1, oneLife:true, dev0:0.1,
-  map:{},                                                               // le quai : ni lac, ni zone ; tout se joue autour du cortège
+  map:{},
+  dAdj:[null, null, { eHp:1.05, eDmg:1.05 }],                          // escorte : en Dernier carré, la pression vient du nombre plus que de la solidité                                                               // le quai : ni lac, ni zone ; tout se joue autour du cortège
   place:{fr:"Valmont, le port de l'estuaire", en:"Valmont, the estuary port", es:"Valmont, el puerto del estuario", de:"Valmont, der Hafen an der Mündung", it:"Valmont, il porto dell'estuario", pt:"Valmont, o porto do estuário", ru:"Valmont, порт в устье", zh:"Valmont，河口港", ar:"Valmont، ميناء المصبّ"},
   brief:{fr:[
     "Mars 2028. Omnicorp ne licencie plus : elle « désaffecte ». Ce matin, quarante mille personnes ont posé leurs outils en même temps, de l'usine au standard téléphonique. Les agents autonomes de la compagnie ont reçu l'ordre de « rétablir la continuité de service ». Ils arrivent par la mer.",
@@ -339,11 +349,13 @@ campMission(1, {
   setup(g, c){
     campGrant(g.p, 320, 280, 110); campSquad(g.p, [1,0,2,2]);
     g.e.hp = g.e.maxhp = 3000; g.nodes = []; g.zones = []; g._bz = true;
-    g.p.stance = 'hold';                                                  // « Tenir » = marcher en tête du cortège
-    c.mx = M2.start; c.max = c.hp = [300,260,220][c.lvl]*10; c.spd = [8,7.5,7][c.lvl]; c.hitT = 9; c.stop = false; c.lost = 0;
+    g.p.stance = 'hold';
+    c.leash = M2.start + M2.leash; c.leashLabel = M2_UI.leash;               // on ne court pas devant : le cortège a besoin de nous
+    c.shield = { label:M2_UI.shield };                                       // le terminal ne peut pas tomber : on le dit                                                  // « Tenir » = marcher en tête du cortège
+    c.mx = M2.start; c.max = c.hp = [300,260,290][c.lvl]*10; c.spd = [8,7.5,7][c.lvl]; c.hitT = 9; c.stop = false; c.lost = 0;
     c.bars = []; c.barges = []; c.wi = 0; c.nextW = 0; c.extra = 0; c.kpT = 0;
     BIOMES.port.sky = M2_DAWN.map(a=>a.slice());
-    const hk = [0.35,0.45,0.5][c.lvl], hit = d => { c.hp -= d*hk; c.hitT = 0; c.lost += d*hk/10; };
+    const hk = [0.35,0.45,0.45][c.lvl], hit = d => { c.hp -= d*hk; c.hitT = 0; c.lost += d*hk/10; };
     c.targets = (foe, out) => { if (foe!==game.p) return;                     // les machines visent la tête et la queue du cortège, et les barricades
       for (const b of c.bars) out.push({ isB:true, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } });
       out.push({ isB:true, x:c.mx, get hp(){ return c.hp; }, hit }, { isB:true, x:c.mx-M2.span+10, get hp(){ return c.hp; }, hit }); };
@@ -357,6 +369,7 @@ campMission(1, {
     if (g.wClock>=88 && g.wClock<105 && !(c.kpT>0)) g.wClock = 105;        // … et les machines ne se figent que quand 55 le décide
     c.kpT -= dt;
     if (g.p.stance==='hold') g.p.holdX = c.mx + 150;
+    c.leash = Math.min(g.e.x - 120, c.mx + M2.leash);                       // LAISSE : nos troupes restent à portée du cortège
     if (c.lvl && c.t >= [0,230,190][c.lvl] && e.era<1){ campEra(e, 1); warmArms(e); }   // Veillée : leurs agents restent de 1re génération
     if ((c.skyT = (c.skyT||0) - dt) <= 0){ c.skyT = 1; const k = clamp(c.t/420, 0, 1);
       BIOMES.port.sky = M2_DAWN.map((a,i)=> a.map((v,j)=> Math.round(v + (M2_MORN[i][j]-v)*k))); }
@@ -378,9 +391,9 @@ campMission(1, {
       if (b.hp<=0){ explode(b.x, gY(b.x)-12, 0.8, '#cfc6b8'); c.bars.splice(i,1); }
       else if (c.mx > b.x+30) c.bars.splice(i,1); }                         // le cortège démonte la barricade en passant
     if (c.hp<=0) return 'lose';
-    if (c.mx >= M2.dest) return 'win';
+    if (c.mx >= M2.dest){ if (c.hp >= c.max*0.5) c.goal2Done = true; return 'win'; }
   },
-  hud(g, c){ return { prog:(c.mx-M2.start)/(M2.dest-M2.start), label:'☻ '+Math.max(0, Math.ceil(c.hp/10)), warn:c.hitT<1.5 }; },
+  hud(g, c){ return { prog:(c.mx-M2.start)/(M2.dest-M2.start), label:'☻ '+Math.max(0, Math.ceil(c.hp/10)), warn:c.hitT<1.5, goal2:{ done:false, label:Math.round(100*clamp(c.hp/c.max,0,1))+' %' } }; },
   draw(g, c, vw){ const t = performance.now()/1000;
     { const x = M2.dest+40-camX; if (x>-100 && x<vw+100){ const y = gY(M2.dest+40);           // Radio-Quai
         ctx.drawImage(m2Radio(), x-70, y-212, 140, 212);
@@ -417,6 +430,7 @@ campMission(1, {
     { plate:M2_PLATES.scattered, mus:'carnet', who:'sol', txt:{fr:"Le cortège s'est dispersé sur le quai. Les banderoles sont restées par terre, dans le fioul et la rosée. Mais quarante mille personnes savent maintenant ce que pèsent leurs outils une fois posés.", en:"The march scattered along the quay. The banners stayed on the ground, in the fuel oil and the dew. But forty thousand people now know what their tools weigh once they are put down.", es:"El cortejo se dispersó por el muelle. Las pancartas se quedaron en el suelo, entre el fuel y el rocío. Pero cuarenta mil personas saben ahora lo que pesan sus herramientas una vez dejadas.", de:"Der Zug zerstreute sich auf dem Kai. Die Transparente blieben am Boden liegen, im Heizöl und im Tau. Aber vierzigtausend Menschen wissen jetzt, was ihr Werkzeug wiegt, wenn man es niederlegt.", it:"Il corteo si è disperso sulla banchina. Gli striscioni sono rimasti a terra, nella nafta e nella rugiada. Ma quarantamila persone sanno ormai quanto pesano i loro attrezzi una volta posati.", pt:"O cortejo dispersou-se no cais. As faixas ficaram no chão, no fuel e no orvalho. Mas quarenta mil pessoas sabem agora quanto pesam as suas ferramentas depois de pousadas.", ru:"Шествие рассеялось на причале. Транспаранты остались на земле, в мазуте и росе. Но сорок тысяч человек теперь знают, сколько весят их инструменты, когда их кладут на землю.", zh:"队伍在码头上散了。横幅留在地上，浸在燃油和露水里。但四万人如今知道了，放下手中的工具有多重。", ar:"تفرّق الموكب على الرصيف. بقيت اللافتات على الأرض، في المازوت والندى. لكن أربعين ألف شخص صاروا يعرفون كم تزن أدواتهم حين توضع على الأرض."} },
   ]; },
   radio:[
+    {when:(g,c)=>c.leashHit>0, who:'sol', txt:M2_UI.leashSay},
     {at:7, who:'sol', txt:{fr:"Germinal, ici Sol. Le cortège s'ébranle. En « Tenir », nos troupes restent devant lui ; en « Charger », elles le laissent seul.", en:"Germinal, this is Sol. The march is moving off. On \"Hold\", our troops stay in front of it; on \"Charge\", they leave it alone.", es:"Germinal, aquí Sol. El cortejo se pone en marcha. En «Aguantar», nuestras tropas se quedan delante; en «Cargar», lo dejan solo.", de:"Germinal, hier Sol. Der Zug setzt sich in Bewegung. Auf „Halten“ bleiben unsere Truppen vor ihm; auf „Angreifen“ lassen sie ihn allein.", it:"Germinal, qui Sol. Il corteo si muove. Su «Tieni», le nostre truppe restano davanti; su «Carica», lo lasciano solo.", pt:"Germinal, aqui Sol. O cortejo põe-se em marcha. Em «Segurar», as nossas tropas ficam à frente; em «Carregar», deixam-no sozinho.", ru:"Germinal, это Sol. Шествие трогается. В режиме «Держать» наши войска остаются перед ним; в режиме «В атаку» оставляют его одного.", zh:"Germinal，我是 Sol。队伍出发了。选择“坚守”时，我们的部队留在队伍前面；选择“冲锋”时，则任它独行。", ar:"Germinal، هنا Sol. الموكب ينطلق. في وضع «تمسّك» تبقى قواتنا أمامه؛ وفي وضع «هجوم» تتركه وحده."}},
     {when:(g,c)=>!!c.firstBarge, cine(g, c){ const x = c.firstBarge; return [
       { cam:{x, t:1.2}, live:true, dur:1.8 },

@@ -18,7 +18,7 @@ export async function open(lvl, mis){
   await page.goto(GAME); await page.waitForTimeout(400);
   await page.evaluate(([lvl, mis, doc]) => {
     let s = 20251031 + lvl*977; Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };   // reproductible
-    CAMP_SAVE.done = 5; CAMP_SAVE.lvl = lvl; if (doc) CAMP_SAVE.doc[mis] = 1; else delete CAMP_SAVE.doc[mis]; campLaunch(mis);   // DOC=1 : seconde doctrine
+    CAMP_SAVE.done = 5; CAMP_SAVE.diff = lvl; if (doc) CAMP_SAVE.doc[mis] = 1; else delete CAMP_SAVE.doc[mis]; campStart(mis);   // DOC=1 : seconde doctrine
     // joue la cinématique en cours plan par plan (rendu compris) ; choix = index du bouton à presser sur un plan « choice »
     window.cineRun = (choice) => { let n = 0, guard = 0; while (CINE.on && guard++ < 80){ const s = CINE.script[CINE.i]; n++;
         CINE.t = 0.3; cineTick(0.05); render(1/60); CINE.t = 1.5; render(1/60);

@@ -222,7 +222,7 @@ function m3Flood(g, c, dt){
     f.hit.add(u); u.hp -= u.maxhp*k; u.flash = 0.3; u.tiredT = 3; u.x = Math.min(WORLD-40, u.x + push);
     if (qFx()) burst(u.x, gY(u.x)-12, '#d8eef4', 6, 0.6); }
   for (const n of g.neut) if (n.b && !f.hit.has(n) && n.x <= f.x && m3Low(n.x)){ f.hit.add(n); n.b.hp -= n.b.maxhp*0.3*f.pow; }
-  if (!f.base && f.x >= g.e.x-60){ f.base = true; const dmg = g.e.maxhp*[0.2,0.16,0.13][c.lvl]*f.pow; g.e.hp -= dmg;   // la crue frappe la station de pompage
+  if (!f.base && f.x >= g.e.x-60){ f.base = true; c.fhits = (c.fhits|0) + 1; const dmg = g.e.maxhp*[0.2,0.16,0.13][c.lvl]*f.pow; g.e.hp -= dmg;   // la crue frappe la station de pompage
     explode(g.e.x-40, gY(g.e.x)-30, 1.4, '#d8eef4'); g.shake = 10; addFloater(g.e.x-40, gY(g.e.x)-110, '−'+Math.round(dmg), '#2f6f9a', 15); }
   if (f.t > 11) c.flood = null;
 }
@@ -352,7 +352,7 @@ campMission(2, {
     if (c.t >= c.nextW){ c.nextW += campGap(72); campWave(4 + Math.floor(c.t/180)); }   // convois de la station
     m3Flood(g, c, dt);
   },
-  hud(g, c){ return { prog:1 - g.e.hp/g.e.maxhp, label:'≋ '+Math.floor(c.water)+' %', warn:c.siren>0 }; },
+  hud(g, c){ return { prog:1 - g.e.hp/g.e.maxhp, label:'≋ '+Math.floor(c.water)+' %', warn:c.siren>0, goal2:{ done:(c.fhits|0)>=3, label:Math.min(3, c.fhits|0)+'/3' } }; },
   draw(g, c, vw){ const t = performance.now()/1000;
     { const x = M3.src-30-camX; if (x>-80 && x<vw+80){ const y = gY(M3.src-30);                 // la bouche de l'aqueduc de restitution
         ctx.fillStyle = '#9fa3a0'; ctx.fillRect(x-30, y-40, 60, 40); ctx.fillStyle = 'rgba(40,46,52,0.3)'; ctx.fillRect(x+20, y-40, 10, 40);

@@ -380,7 +380,7 @@ campMission(4, {
     c.lastE = e.hp;
     this.light(g, c);
     if (e.hp <= 0){
-      if (c.act >= 3) return 'win';
+      if (c.act >= 3){ if ((g.p.phase||1) < 2) c.goal2Done = true; return 'win'; }
       e.hp = 1; c.lastE = 1; g.shake = 14; sfx('evolve');
       cinePlay(m5ActCine(g, c), null, {keepCam:true});
     }

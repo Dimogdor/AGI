@@ -185,7 +185,7 @@ campMission(0, {
     c.owned = own; c.litK += (own/3 - c.litK) * Math.min(1, dt*0.8);
     this.light(g, c);
   },
-  hud(g, c){ return { prog: 1 - g.e.hp/g.e.maxhp, label: c.owned+'/3 ⚡' }; },
+  hud(g, c){ return { prog: 1 - g.e.hp/g.e.maxhp, label: c.owned+'/3 ⚡', goal2:{ done:c.owned>=3, label:c.owned+'/3' } }; },
   // un transformateur de quartier à la place du drapeau de zone
   drawZone(z, t, vw){
     const x = z.x-camX; if (x<-80 || x>vw+80) return; const y = gY(z.x), mine = z.owner==='p', foe = z.owner==='e';

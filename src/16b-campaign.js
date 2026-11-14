@@ -121,7 +121,7 @@ const CAMP_CELLS = ["Fructidor","Les Canuts","Brumaire","Sainte-Aube","Les Tanne
 const CAMP_DIFFS = [
   { key:'easy',   ai:-1, eHp:0.8,  eDmg:0.8,  wave:0.75, gap:1.15, res:1.35, base:1.25, eBase:0.8 },
   { key:'normal', ai:0,  eHp:1,    eDmg:1,    wave:1,    gap:1,    res:1,    base:1,    eBase:1 },
-  { key:'hard',   ai:1,  eHp:1.15, eDmg:1.15, wave:1.25, gap:0.88, res:0.85, base:0.85, eBase:1.2 },
+  { key:'hard',   ai:1,  eHp:1.12, eDmg:1.12, wave:1.25, gap:0.88, res:0.9,  base:0.85, eBase:1.2 },
 ];
 function campDiff(i){ if (i==null) i = (typeof game!=='undefined' && game && game.camp)? game.camp.D.i : CAMP_SAVE.diff;
   const k = clamp(i|0, 0, 2); return Object.assign({ i:k }, CAMP_DIFFS[k]); }
@@ -373,6 +373,7 @@ function campNextAct(spec){
 function startMission(i){
   const m = CAMPAIGN[i]; if (!m) return;
   const D = campDiff(CAMP_SAVE.diff);
+  if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);                // une mission peut tempérer un multiplicateur (documenté dans son fichier)
   newGame('HUM', campAiLevel(m, D), false);
   const g = game, c = g.camp = { i, m, D, lvl:D.i, t:0, fired:[], q:[], cur:null, log:[], objs:[], act:1, t0:0 };
   if (m.dm && m.dm[D.i]) g.d = Object.assign({}, g.d, m.dm[D.i]);          // réglage fin de l'adversaire pour cette mission

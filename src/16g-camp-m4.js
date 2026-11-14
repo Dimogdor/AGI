@@ -357,7 +357,7 @@ campMission(3, {
     if (T >= c.total) return 'win';
   },
   hud(g, c){ const left = Math.max(0, c.total-c.t);
-    return { clock:left, prog:c.t/c.total, warn:left<60, label: cT({fr:'feux ', en:'fires ', es:'fuegos ', de:'Feuer ', it:'fuochi ', pt:'fogos ', ru:'костры ', zh:'火堆 ', ar:'نيران '})+c.lit+'/5 · '+cT({fr:'civils ', en:'civilians ', es:'civiles ', de:'Zivilisten ', it:'civili ', pt:'civis ', ru:'мирные ', zh:'平民 ', ar:'مدنيون '})+c.saved+'/4' }; },
+    return { clock:left, prog:c.t/c.total, warn:left<60, label: cT({fr:'feux ', en:'fires ', es:'fuegos ', de:'Feuer ', it:'fuochi ', pt:'fogos ', ru:'костры ', zh:'火堆 ', ar:'نيران '})+c.lit+'/5 · '+cT({fr:'civils ', en:'civilians ', es:'civiles ', de:'Zivilisten ', it:'civili ', pt:'civis ', ru:'мирные ', zh:'平民 ', ar:'مدنيون '})+c.saved+'/4', goal2:{ done:c.saved>=4, label:c.saved+'/4' } }; },
   // un brasero à la place du drapeau de zone : fût percé, flammes, cercle de chaleur au sol
   drawZone(z, t, vw){
     const x = z.x-camX, c = game.camp, R = M4.warmR*(c.stoke>0? 1.4 : 1); if (x<-R-20 || x>vw+R+20) return;
