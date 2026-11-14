@@ -145,8 +145,6 @@ await rm(OUT, { recursive: true, force: true });
 await mkdir(new URL('./icons/', OUT), { recursive: true });
 await writeFile(new URL('./index.html', OUT), await addCSP(outHtml));
 
-// --- ressources servies à côté du jeu (voix off : assets/voice/<langue>/…) ---
-if (await exists(new URL('./assets/', ROOT))){ await cp(new URL('./assets/', ROOT), new URL('./assets/', OUT), { recursive:true }); console.log('  assets/ : copié (voix off…)'); }
 
 // --- manifest PWA ---
 const manifest = {
