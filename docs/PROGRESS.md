@@ -6,9 +6,9 @@ Branche de travail : `claude/age-of-war-online-balance-xn6ump` · PR #56 (brouil
 |---|---|---|---|---|
 | Bases par époque | bases | — | **intégré** (66b032b), tests verts | — |
 | Gameplay (grève, ordres, postures, guide) | gameplay (opus, reprise) | claude/wip-gameplay | en cours, attendait les tests | finir → intégrer |
-| Voix off + lisibilité | voix (opus, reprise) | claude/wip-voix | lisibilité + lecteur commités | génération des voix |
+| Voix off + lisibilité | voix | — | **intégré** (FR généré, 125 répliques, 3,4 Mo) | régénérer après la bible, autres langues au lot 4 |
 | Audio (sons libres, musiques) | audio | claude/wip-audio | tri des enregistrements de pluie | lot 2 |
-| Moteur de campagne | campagne-socle | claude/wip-campagne-socle | ~800 lignes en cours | lot 2 |
+| Moteur de campagne | campagne-socle (opus, reprise) | claude/wip-campagne-socle | en cours | intégrer |
 | Bible (scénario) | writer (opus, consigne reformulée) | worktree | en cours | relire → lot 3 |
 | Missions I–V | dev (sonnet) | — | attend bible + socle | lot 3 |
 | Traductions, voix, QA, livraison | sonnet / qa / reviewer | — | — | lot 4 |
