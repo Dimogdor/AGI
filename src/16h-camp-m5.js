@@ -9,7 +9,8 @@
    Les cellules alliées arrivent en renfort (et sur appel). Tout l'arsenal de l'escarmouche est
    ouvert (ères III à V, héros, transcendance). À la fin, « nous » renouvelle son offre : le
    joueur CHOISIT (abattre la tour / la couper du monde et veiller) — deux épilogues.            */
-const M5 = { need:[4,5,4], cells:[4,9,10], wMul:[0.85,0.85,0.88], wave:[80,68,62], guard:[4,4,4], spCd:[110,85,75], eMul:[0.4,0.5,0.56], cap:[8,10,11], reinf:[58,55,52], gate:[[1800,1800,1900],[3600,3200,2400],[4000,3600,2800]], hero:[0.2,0.3,0.34], rw:[46,40,37] };
+// eMul : solidité des machines de la citadelle, AVANT le multiplicateur commun de difficulté (×0,8 / ×1 / ×1,12)
+const M5 = { need:[4,5,4], cells:[4,9,10], wMul:[0.85,0.85,0.88], wave:[80,68,62], guard:[4,4,4], spCd:[110,85,75], eMul:[0.5,0.5,0.5], cap:[8,10,11], reinf:[58,55,52], gate:[[1800,1800,1900],[3600,3200,2400],[4000,3600,2800]], hero:[0.2,0.3,0.34], rw:[46,40,37] };
 const m5Act = () => (game && game.camp && game.camp.act) || 1;
 const m5Owned = g => g.zones.reduce((n,z)=> n+(z.owner==='p'? 1 : 0), 0);
 
