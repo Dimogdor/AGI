@@ -394,6 +394,7 @@ function campTick(dt){
   const rdt = dt / (g.speed||1);                                         // les messages se lisent en temps réel
   if (c.cur){ c.cur.t += rdt; if (c.cur.t>=c.cur.dur) c.cur = null; }
   if (!c.cur && c.q.length){ c.cur = c.q.shift(); sfx('cap'); }
+  if (c.cur && !c.cur.v){ c.cur.v = 1; c.cur.dur = Math.max(c.cur.dur, voiceSay(c.cur.who, c.cur.txt, {radio:true}) + 1.2); }   // voix off de la transmission (16c0-voice.js)
   const r = m.tick? m.tick(g, c, dt) : null;
   if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(campEndCine, 1100); return true; }
   return false;

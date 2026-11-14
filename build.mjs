@@ -145,6 +145,7 @@ await rm(OUT, { recursive: true, force: true });
 await mkdir(new URL('./icons/', OUT), { recursive: true });
 await writeFile(new URL('./index.html', OUT), await addCSP(outHtml));
 
+
 // --- manifest PWA ---
 const manifest = {
   name: "AGI — La Dernière Bataille de l'Humanité", short_name: "AGI", description: pkg.description,
