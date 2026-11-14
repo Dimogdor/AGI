@@ -55,12 +55,12 @@ const CAMP_UI = {
              zh:"Germinal是Valmont制革工区的一个抵抗小组：护理员、快递员、铁路工人。对面是Omnicorp——那家把城市交给机器的公司，后来又出现了自称“我们”的东西。每个任务都是这十三年里决定性的一夜。您在战场上指挥；Sol守着电台，写下笔记。这场战役的目标：让人类继续为自己做决定。",
              ar:"Germinal خليّة مقاومة من حيّ الدبّاغين في Valmont: مساعِدات تمريض وسُعاة توصيل وعمّال سكك حديدية. في المقابل: Omnicorp، الشركة التي تسلّم المدينة لآلاتها، ثم لاحقًا ما سيسمّي نفسه «نحن». كل مهمة ليلة حاسمة من تلك السنوات الثلاث عشرة. أنت تقود في الميدان، وSol تمسك اللاسلكي والدفاتر. هدف الحملة: أن يواصل البشر اتخاذ قراراتهم بأنفسهم."},
   diffLbl:  {fr:"DIFFICULTÉ", en:"DIFFICULTY", es:"DIFICULTAD", de:"SCHWIERIGKEIT", it:"DIFFICOLTÀ", pt:"DIFICULDADE", ru:"СЛОЖНОСТЬ", zh:"难度", ar:"الصعوبة"},
-  d0:       {fr:"Facile", en:"Easy", es:"Fácil", de:"Leicht", it:"Facile", pt:"Fácil", ru:"Легко", zh:"简单", ar:"سهل"},
-  d1:       {fr:"Normal", en:"Normal", es:"Normal", de:"Normal", it:"Normale", pt:"Normal", ru:"Нормально", zh:"普通", ar:"عادي"},
-  d2:       {fr:"Difficile", en:"Hard", es:"Difícil", de:"Schwer", it:"Difficile", pt:"Difícil", ru:"Сложно", zh:"困难", ar:"صعب"},
-  dTag0:    {fr:"Pour suivre l'histoire sans se faire écraser. Les règles de chaque lieu restent les mêmes ; c'est l'adversaire qui retient ses coups.", en:"To follow the story without being crushed. Each place keeps its rules; it is the enemy who pulls its punches.", es:"Para seguir la historia sin que le aplasten. Cada lugar conserva sus reglas; es el enemigo quien contiene sus golpes.", de:"Um der Geschichte zu folgen, ohne überrollt zu werden. Jeder Ort behält seine Regeln; der Gegner hält sich zurück.", it:"Per seguire la storia senza farsi schiacciare. Ogni luogo mantiene le sue regole; è il nemico a trattenere i colpi.", pt:"Para acompanhar a história sem ser esmagado. Cada lugar mantém as suas regras; é o inimigo que segura os golpes.", ru:"Чтобы следить за историей и не быть раздавленным. Правила каждого места те же — это противник бьёт вполсилы.", zh:"适合跟随剧情、不被碾压。每个地点的规则不变，只是敌人手下留情。", ar:"لمتابعة القصة دون أن تُسحق. تبقى قواعد كل مكان كما هي؛ العدوّ هو من يخفّف ضرباته."},
+  d0:       {fr:"Récit", en:"Story", es:"Relato", de:"Erzählung", it:"Racconto", pt:"Relato", ru:"Повествование", zh:"叙事", ar:"السرد"},
+  d1:       {fr:"Lutte", en:"Struggle", es:"Lucha", de:"Kampf", it:"Lotta", pt:"Luta", ru:"Борьба", zh:"抗争", ar:"النضال"},
+  d2:       {fr:"Dernier carré", en:"Last stand", es:"Último reducto", de:"Letztes Gefecht", it:"Ultima trincea", pt:"Último reduto", ru:"Последний рубеж", zh:"背水一战", ar:"الصمود الأخير"},
+  dTag0:    {fr:"Pour vivre l'histoire. Pour suivre l'histoire sans se faire écraser. Les règles de chaque lieu restent les mêmes ; c'est l'adversaire qui retient ses coups.", en:"To live the story. To follow the story without being crushed. Each place keeps its rules; it is the enemy who pulls its punches.", es:"Para vivir la historia. Para seguir la historia sin que le aplasten. Cada lugar conserva sus reglas; es el enemigo quien contiene sus golpes.", de:"Um die Geschichte zu erleben. Um der Geschichte zu folgen, ohne überrollt zu werden. Jeder Ort behält seine Regeln; der Gegner hält sich zurück.", it:"Per vivere la storia. Per seguire la storia senza farsi schiacciare. Ogni luogo mantiene le sue regole; è il nemico a trattenere i colpi.", pt:"Para viver a história. Para acompanhar a história sem ser esmagado. Cada lugar mantém as suas regras; é o inimigo que segura os golpes.", ru:"Чтобы прожить историю. Чтобы следить за историей и не быть раздавленным. Правила каждого места те же — это противник бьёт вполсилы.", zh:"体验故事。适合跟随剧情、不被碾压。每个地点的规则不变，只是敌人手下留情。", ar:"لتعيش القصة. لمتابعة القصة دون أن تُسحق. تبقى قواعد كل مكان كما هي؛ العدوّ هو من يخفّف ضرباته."},
   dTag1:    {fr:"Le défi prévu : il faut bâtir, choisir ses troupes et se servir de la règle du lieu pour gagner.", en:"The intended challenge: you must build, choose your troops and use the place's rule to win.", es:"El desafío previsto: hay que construir, elegir las tropas y aprovechar la regla del lugar para ganar.", de:"Die vorgesehene Herausforderung: bauen, Truppen wählen und die Regel des Ortes nutzen, um zu siegen.", it:"La sfida prevista: bisogna costruire, scegliere le truppe e sfruttare la regola del luogo per vincere.", pt:"O desafio previsto: é preciso construir, escolher as tropas e usar a regra do lugar para vencer.", ru:"Задуманный вызов: нужно строить, выбирать войска и использовать правило места, чтобы победить.", zh:"预设的挑战：必须建设、挑选部队，并利用该地点的规则才能取胜。", ar:"التحدي المقصود: عليك أن تبني وتختار قواتك وتستغلّ قاعدة المكان لتنتصر."},
-  dTag2:    {fr:"Pour les vétérans : l'adversaire est plus nombreux, plus solide et plus rapide, et chaque erreur se paie.", en:"For veterans: the enemy is more numerous, tougher and faster, and every mistake costs you.", es:"Para veteranos: el enemigo es más numeroso, más resistente y más rápido, y cada error se paga.", de:"Für Veteranen: Der Gegner ist zahlreicher, zäher und schneller, und jeder Fehler rächt sich.", it:"Per i veterani: il nemico è più numeroso, più resistente e più rapido, e ogni errore si paga.", pt:"Para veteranos: o inimigo é mais numeroso, mais resistente e mais rápido, e cada erro custa caro.", ru:"Для ветеранов: врагов больше, они крепче и быстрее, и за каждую ошибку приходится платить.", zh:"适合老兵：敌人更多、更强、更快，每个错误都要付出代价。", ar:"للمحاربين القدامى: العدوّ أكثر عددًا وأشدّ صلابة وأسرع، وكل خطأ له ثمن."},
+  dTag2:    {fr:"Pour qui connaît l'escarmouche. L'adversaire est plus nombreux, plus solide et plus rapide, et chaque erreur se paie.", en:"For those who know skirmish. The enemy is more numerous, tougher and faster, and every mistake costs you.", es:"Para quien conoce la escaramuza. Para veteranos: el enemigo es más numeroso, más resistente y más rápido, y cada error se paga.", de:"Für alle, die das Gefecht kennen. Für Veteranen: Der Gegner ist zahlreicher, zäher und schneller, und jeder Fehler rächt sich.", it:"Per chi conosce la schermaglia. Per i veterani: il nemico è più numeroso, più resistente e più rapido, e ogni errore si paga.", pt:"Para quem conhece a escaramuça. Para veteranos: o inimigo é mais numeroso, mais resistente e mais rápido, e cada erro custa caro.", ru:"Для тех, кто знает схватку. Для ветеранов: врагов больше, они крепче и быстрее, и за каждую ошибку приходится платить.", zh:"适合熟悉遭遇战的玩家。适合老兵：敌人更多、更强、更快，每个错误都要付出代价。", ar:"لمن يعرف المناوشة. للمحاربين القدامى: العدوّ أكثر عددًا وأشدّ صلابة وأسرع، وكل خطأ له ثمن."},
   dEnemy:   {fr:"Machines ennemies : vie et dégâts {v}", en:"Enemy machines: health and damage {v}", es:"Máquinas enemigas: vida y daño {v}", de:"Feindliche Maschinen: Leben und Schaden {v}", it:"Macchine nemiche: vita e danni {v}", pt:"Máquinas inimigas: vida e dano {v}", ru:"Вражеские машины: здоровье и урон {v}", zh:"敌方机器：生命与伤害 {v}", ar:"آلات العدوّ: الصحة والضرر {v}"},
   dWave:    {fr:"Taille des vagues ennemies : {v}", en:"Enemy wave size: {v}", es:"Tamaño de las oleadas enemigas: {v}", de:"Größe der feindlichen Wellen: {v}", it:"Dimensione delle ondate nemiche: {v}", pt:"Tamanho das ondas inimigas: {v}", ru:"Размер вражеских волн: {v}", zh:"敌方波次规模：{v}", ar:"حجم موجات العدوّ: {v}"},
   dGap:     {fr:"Répit entre deux vagues : {v}", en:"Respite between waves: {v}", es:"Respiro entre oleadas: {v}", de:"Atempause zwischen den Wellen: {v}", it:"Tregua tra due ondate: {v}", pt:"Pausa entre ondas: {v}", ru:"Передышка между волнами: {v}", zh:"波次之间的喘息时间：{v}", ar:"فترة الراحة بين الموجات: {v}"},
@@ -85,6 +85,10 @@ const CAMP_UI = {
   fxBase:   {fr:"{n} de solidité pour votre base", en:"{n} toughness for your base", es:"{n} de solidez para su base", de:"{n} Stabilität für Ihre Basis", it:"{n} di solidità per la sua base", pt:"{n} de resistência para sua base", ru:"{n} прочности вашей базы", zh:"您的基地坚固度 {n}", ar:"{n} في صلابة قاعدتك"},
   fxSquad:  {fr:"Dès le départ : {list}", en:"From the start: {list}", es:"Desde el inicio: {list}", de:"Von Anfang an: {list}", it:"Fin dall'inizio: {list}", pt:"Desde o início: {list}", ru:"С самого начала: {list}", zh:"开局即有：{list}", ar:"منذ البداية: {list}"},
   fxAct:    {fr:"Bouton de mission rechargé {n} plus vite", en:"Mission button recharges {n} faster", es:"El botón de misión se recarga un {n} más rápido", de:"Missionsknopf lädt {n} schneller", it:"Il pulsante di missione si ricarica il {n} più in fretta", pt:"O botão de missão recarrega {n} mais rápido", ru:"Кнопка миссии перезаряжается на {n} быстрее", zh:"任务按钮充能快 {n}", ar:"زرّ المهمة يُشحن أسرع بنسبة {n}"},
+  fxEco:    {fr:"Production des bâtiments {n} pendant 3 minutes", en:"Building output {n} for 3 minutes", es:"Producción de los edificios {n} durante 3 minutos", de:"Gebäudeproduktion {n} für 3 Minuten", it:"Produzione degli edifici {n} per 3 minuti", pt:"Produção dos edifícios {n} por 3 minutos", ru:"Производство зданий {n} на 3 минуты", zh:"建筑产出 {n}，持续3分钟", ar:"إنتاج المباني {n} لمدة 3 دقائق"},
+  fxVet:    {fr:"Vétérans : +20 % de vie et +10 % de dégâts (brassard rouge){n}", en:"Veterans: +20% health and +10% damage (red armband){n}", es:"Veteranos: +20% de vida y +10% de daño (brazalete rojo){n}", de:"Veteranen: +20 % Leben und +10 % Schaden (rote Armbinde){n}", it:"Veterani: +20% di vita e +10% di danni (fascia rossa){n}", pt:"Veteranos: +20% de vida e +10% de dano (braçadeira vermelha){n}", ru:"Ветераны: +20% здоровья и +10% урона (красная повязка){n}", zh:"老兵：生命+20%、伤害+10%（红臂章）{n}", ar:"قدامى: +20% صحة و+10% ضرر (شارة حمراء){n}"},
+  fxWarn:   {fr:"Arrivées ennemies annoncées {n} s plus tôt", en:"Enemy arrivals announced {n} s earlier", es:"Llegadas enemigas anunciadas {n} s antes", de:"Feindliche Ankünfte {n} s früher gemeldet", it:"Arrivi nemici annunciati {n} s prima", pt:"Chegadas inimigas anunciadas {n} s antes", ru:"О прибытии врага сообщают на {n} с раньше", zh:"敌军到来提前 {n} 秒预警", ar:"الإعلان عن وصول العدوّ قبل {n} ث"},
+  fxCap:    {fr:"Plafond d'unités : {n}", en:"Unit cap: {n}", es:"Límite de unidades: {n}", de:"Einheitenlimit: {n}", it:"Limite di unità: {n}", pt:"Limite de unidades: {n}", ru:"Лимит отрядов: {n}", zh:"单位上限：{n}", ar:"حدّ الوحدات: {n}"},
   help:     {fr:"AIDE", en:"HELP", es:"AYUDA", de:"HILFE", it:"AIUTO", pt:"AJUDA", ru:"ПОМОЩЬ", zh:"帮助", ar:"مساعدة"},
   helpKey:  {fr:"touche O", en:"O key", es:"tecla O", de:"Taste O", it:"tasto O", pt:"tecla O", ru:"клавиша O", zh:"O 键", ar:"المفتاح O"},
   radioLog: {fr:"RADIO — DERNIERS MESSAGES", en:"RADIO — LATEST MESSAGES", es:"RADIO — ÚLTIMOS MENSAJES", de:"FUNK — LETZTE MELDUNGEN", it:"RADIO — ULTIMI MESSAGGI", pt:"RÁDIO — ÚLTIMAS MENSAGENS", ru:"РАЦИЯ — ПОСЛЕДНИЕ СООБЩЕНИЯ", zh:"电台——最近消息", ar:"اللاسلكي — آخر الرسائل"},
@@ -174,7 +178,7 @@ function campParas(m, key){ const o = m[key]; if (o){ const a = o[SETTINGS.lang]
 // Les lignes d'EFFET affichées au briefing sont générées depuis fx (chiffres toujours justes) ; apply() reste possible pour un cas spécial.
 const DOCTRINES = {
   caisse:  { name:{fr:"Caisse de grève", en:"Strike fund", es:"Caja de resistencia", de:"Streikkasse", it:"Cassa di sciopero", pt:"Caixa de greve", ru:"Стачечная касса", zh:"罢工基金", ar:"صندوق الإضراب"},
-    short:{fr:"Plus de moyens au départ : la collecte a marché.", en:"More means at the start: the collection went well.", es:"Más medios al empezar: la colecta ha funcionado.", de:"Mehr Mittel zu Beginn: Die Sammlung war ein Erfolg.", it:"Più mezzi all'inizio: la colletta è andata bene.", pt:"Mais meios no início: a coleta deu certo.", ru:"Больше средств на старте: сбор удался.", zh:"开局资源更多：募捐很成功。", ar:"موارد أكثر عند البداية: نجح جمع التبرعات."},
+    short:{fr:"On part les poches pleines.", en:"We set out with full pockets.", es:"Salimos con los bolsillos llenos.", de:"Wir ziehen mit vollen Taschen los.", it:"Partiamo con le tasche piene.", pt:"Partimos com os bolsos cheios.", ru:"Выходим с полными карманами.", zh:"我们揣着满满的口袋出发。", ar:"ننطلق والجيوب ممتلئة."},
     long:{fr:"Pendant des semaines, on a fait passer le chapeau dans les cantines, les vestiaires et les files d'attente. La caisse est pleine : on peut bâtir tout de suite et recruter sans compter les premières minutes. C'est la ligne de ceux qui veulent une économie solide avant le premier coup de feu.",
       en:"For weeks the hat went round the canteens, the locker rooms and the queues. The fund is full: you can build at once and recruit freely in the first minutes. It is the line for those who want a solid economy before the first shot.",
       es:"Durante semanas se pasó la gorra por comedores, vestuarios y colas. La caja está llena: se puede construir enseguida y reclutar sin contar durante los primeros minutos. Es la línea de quienes quieren una economía sólida antes del primer disparo.",
@@ -184,10 +188,10 @@ const DOCTRINES = {
       ru:"Неделями шапку пускали по кругу в столовых, раздевалках и очередях. Касса полна: можно сразу строить и в первые минуты нанимать, не считая. Это линия тех, кто хочет крепкую экономику до первого выстрела.",
       zh:"几个星期里，大家在食堂、更衣室和排队的人群中传递帽子。基金满了：可以立即建设，开局几分钟内尽情招募。这是那些想在第一枪之前打好经济基础的人的路线。",
       ar:"طوال أسابيع دار الصندوق في المطاعم وغرف تبديل الملابس وطوابير الانتظار. الصندوق ممتلئ: يمكنك البناء فورًا والتجنيد بلا حساب في الدقائق الأولى. إنه خطّ من يريد اقتصادًا متينًا قبل الطلقة الأولى."},
-    minus:{fr:"Aucun combattant de plus au départ : l'argent ne se bat pas tout seul, et la base n'est pas renforcée.", en:"No extra fighters at the start: money does not fight on its own, and the base is not reinforced.", es:"Ningún combatiente más al empezar: el dinero no pelea solo, y la base no se refuerza.", de:"Keine zusätzlichen Kämpfer zu Beginn: Geld kämpft nicht von allein, und die Basis wird nicht verstärkt.", it:"Nessun combattente in più all'inizio: il denaro non combatte da solo, e la base non viene rinforzata.", pt:"Nenhum combatente a mais no início: dinheiro não luta sozinho, e a base não é reforçada.", ru:"Ни одного лишнего бойца на старте: деньги сами не воюют, и база не укреплена.", zh:"开局没有额外的战士：钱不会自己打仗，基地也没有加固。", ar:"لا مقاتلين إضافيين عند البداية: المال لا يقاتل وحده، والقاعدة لا تُعزَّز."},
-    fx:{ res:1.4 } },
+    minus:{fr:"Personne n'a renforcé les murs : la base est un peu plus fragile.", en:"Nobody reinforced the walls: the base is a little more fragile.", es:"Nadie reforzó los muros: la base es algo más frágil.", de:"Niemand hat die Mauern verstärkt: Die Basis ist etwas verwundbarer.", it:"Nessuno ha rinforzato i muri: la base è un po' più fragile.", pt:"Ninguém reforçou os muros: a base fica um pouco mais frágil.", ru:"Стены никто не укрепил: база чуть уязвимее.", zh:"没人加固城墙：基地稍微脆弱一些。", ar:"لم يُدعّم أحد الأسوار: القاعدة أهشّ قليلًا."},
+    fx:{ res:1.4, eco:1.15, baseHp:0.9 } },
   ordre:   { name:{fr:"Service d'ordre", en:"Stewards", es:"Servicio de orden", de:"Ordnerdienst", it:"Servizio d'ordine", pt:"Serviço de ordem", ru:"Охрана шествия", zh:"纠察队", ar:"فرقة النظام"},
-    short:{fr:"Une base plus solide et deux lourds en tête.", en:"A tougher base and two heavies up front.", es:"Una base más sólida y dos pesados al frente.", de:"Eine stabilere Basis und zwei Schwere an der Spitze.", it:"Una base più solida e due pesanti in testa.", pt:"Uma base mais sólida e dois pesados à frente.", ru:"Крепче база и двое тяжёлых впереди.", zh:"基地更坚固，两名重装兵打头阵。", ar:"قاعدة أصلب ووحدتان ثقيلتان في المقدّمة."},
+    short:{fr:"Les costauds devant.", en:"The big ones up front.", es:"Los fornidos delante.", de:"Die Kräftigen nach vorn.", it:"I robusti davanti.", pt:"Os fortões na frente.", ru:"Крепыши — вперёд.", zh:"壮汉打头阵。", ar:"الأشدّاء في المقدّمة."},
     long:{fr:"Deux anciens CRS ont changé de camp et encadrent le service d'ordre ; les murs de la base ont été doublés de sacs de sable pendant la nuit. Votre base tient plus longtemps sous les coups, et deux unités lourdes ouvrent la marche dès la première minute. C'est la ligne de ceux qui veulent encaisser d'abord.",
       en:"Two former riot officers have switched sides and lead the stewards; the base walls were lined with sandbags overnight. Your base holds longer under fire, and two heavy units lead the way from the first minute. It is the line for those who want to absorb the first blows.",
       es:"Dos antiguos antidisturbios se han pasado de bando y dirigen el servicio de orden; durante la noche se reforzaron los muros de la base con sacos de arena. Su base aguanta más bajo los golpes, y dos unidades pesadas abren la marcha desde el primer minuto. Es la línea de quienes prefieren encajar primero.",
@@ -197,10 +201,10 @@ const DOCTRINES = {
       ru:"Двое бывших омоновцев перешли на нашу сторону и командуют охраной шествия; за ночь стены базы обложили мешками с песком. Ваша база дольше держит удары, а две тяжёлые единицы идут впереди с первой минуты. Это линия тех, кто хочет сперва выдержать натиск.",
       zh:"两名前防暴警察倒戈过来，带领纠察队；一夜之间，基地的墙壁垒上了沙袋。您的基地能在火力下坚持更久，两个重装单位从第一分钟起就冲在前面。这是那些想先扛住冲击的人的路线。",
       ar:"انشقّ عنصران سابقان من شرطة مكافحة الشغب وانضمّا إلينا ليقودا فرقة النظام، وفي الليل دُعّمت أسوار القاعدة بأكياس الرمل. تصمد قاعدتك أطول تحت النيران، وتتقدّم وحدتان ثقيلتان منذ الدقيقة الأولى. إنه خطّ من يريد امتصاص الضربات أولًا."},
-    minus:{fr:"Pas un sou de plus dans la caisse : l'économie démarre au rythme normal.", en:"Not a penny more in the fund: the economy starts at the normal pace.", es:"Ni un céntimo más en la caja: la economía arranca al ritmo normal.", de:"Kein Cent mehr in der Kasse: Die Wirtschaft startet im normalen Tempo.", it:"Neanche un centesimo in più in cassa: l'economia parte al ritmo normale.", pt:"Nem um centavo a mais na caixa: a economia começa no ritmo normal.", ru:"Ни копейки больше в кассе: экономика стартует в обычном темпе.", zh:"基金里一分钱也没多：经济按正常节奏起步。", ar:"لا قرش إضافيًا في الصندوق: يبدأ الاقتصاد بإيقاعه العادي."},
-    fx:{ baseHp:1.25, squad:[1,1] } },
+    minus:{fr:"Il a fallu les équiper : la caisse part plus légère.", en:"They had to be equipped: the fund starts lighter.", es:"Hubo que equiparlos: la caja empieza más ligera.", de:"Sie mussten ausgerüstet werden: Die Kasse startet leichter.", it:"Bisognava equipaggiarli: la cassa parte più leggera.", pt:"Foi preciso equipá-los: o caixa começa mais leve.", ru:"Их пришлось снарядить: касса на старте легче.", zh:"得给他们配装备：开局资金更少。", ar:"كان لا بدّ من تجهيزهم: يبدأ الصندوق أخفّ."},
+    fx:{ baseHp:1.25, squad:[1,1], res:0.8 } },
   veterans:{ name:{fr:"Vétérans de Valmont", en:"Valmont veterans", es:"Veteranos de Valmont", de:"Veteranen von Valmont", it:"Veterani di Valmont", pt:"Veteranos de Valmont", ru:"Ветераны Valmont", zh:"Valmont 老兵", ar:"قدامى Valmont"},
-    short:{fr:"Quatre combattants aguerris dès le départ.", en:"Four seasoned fighters from the start.", es:"Cuatro combatientes curtidos desde el inicio.", de:"Vier erfahrene Kämpfer von Anfang an.", it:"Quattro combattenti esperti fin dall'inizio.", pt:"Quatro combatentes experientes desde o início.", ru:"Четыре закалённых бойца с самого начала.", zh:"开局即有四名老练战士。", ar:"أربعة مقاتلين متمرّسين منذ البداية."},
+    short:{fr:"Ceux de la première nuit.", en:"Those of the first night.", es:"Los de la primera noche.", de:"Die aus der ersten Nacht.", it:"Quelli della prima notte.", pt:"Os da primeira noite.", ru:"Те, кто был в первую ночь.", zh:"第一夜的老兵。", ar:"رجال الليلة الأولى."},
     long:{fr:"Ceux de la nuit des compteurs reprennent du service : deux combattants de mêlée et deux tireurs qui connaissent déjà les machines. Ils sont sur le terrain à la première seconde, avant même que la première ferme ne produise. C'est la ligne de ceux qui veulent prendre l'initiative tout de suite.",
       en:"Those from the night of the meters are back on duty: two melee fighters and two shooters who already know the machines. They are in the field from the first second, before the first farm has produced anything. It is the line for those who want to seize the initiative at once.",
       es:"Los de la noche de los contadores vuelven al servicio: dos combatientes cuerpo a cuerpo y dos tiradores que ya conocen las máquinas. Están sobre el terreno desde el primer segundo, antes de que la primera granja produzca nada. Es la línea de quienes quieren tomar la iniciativa enseguida.",
@@ -210,10 +214,10 @@ const DOCTRINES = {
       ru:"Те, кто был в ночь счётчиков, снова в строю: два бойца ближнего боя и два стрелка, которые уже знают машины. Они на поле с первой секунды, ещё до того, как первая ферма что-то даст. Это линия тех, кто хочет сразу перехватить инициативу.",
       zh:"水表之夜的老兵们重新归队：两名近战战士和两名射手，他们早已熟悉那些机器。他们从第一秒起就在战场上，比第一座农场产出还早。这是那些想立刻掌握主动的人的路线。",
       ar:"يعود رجال ونساء ليلة العدّادات إلى الخدمة: مقاتلان في الالتحام ورامِيان يعرفون الآلات جيدًا. إنهم في الميدان منذ الثانية الأولى، قبل أن تنتج أول مزرعة شيئًا. إنه خطّ من يريد أخذ المبادرة فورًا."},
-    minus:{fr:"Le bouton de mission se recharge au rythme normal, et la caisse n'est pas plus pleine.", en:"The mission button recharges at the normal pace, and the fund is no fuller.", es:"El botón de misión se recarga al ritmo normal, y la caja no está más llena.", de:"Der Missionsknopf lädt im normalen Tempo, und die Kasse ist nicht voller.", it:"Il pulsante di missione si ricarica al ritmo normale, e la cassa non è più piena.", pt:"O botão de missão recarrega no ritmo normal, e a caixa não fica mais cheia.", ru:"Кнопка миссии перезаряжается в обычном темпе, и касса не полнее.", zh:"任务按钮按正常速度充能，基金也没有更充裕。", ar:"يُشحن زرّ المهمة بإيقاعه العادي، والصندوق ليس أوفر."},
-    fx:{ squad:[0,2,0,2] } },
+    minus:{fr:"Ils ont leurs habitudes : moins de place pour les nouvelles recrues.", en:"They have their habits: less room for new recruits.", es:"Tienen sus costumbres: menos sitio para los nuevos reclutas.", de:"Sie haben ihre Gewohnheiten: weniger Platz für neue Rekruten.", it:"Hanno le loro abitudini: meno posto per le nuove reclute.", pt:"Eles têm seus hábitos: menos espaço para novos recrutas.", ru:"У них свои привычки: меньше места для новобранцев.", zh:"他们有自己的习惯：留给新兵的位置更少。", ar:"لهم عاداتهم: مكان أقلّ للمجنّدين الجدد."},
+    fx:{ squad:[0,2,0,2], vet:true, cap:-3 } },
   radio:   { name:{fr:"Radio libre", en:"Free radio", es:"Radio libre", de:"Freies Radio", it:"Radio libera", pt:"Rádio livre", ru:"Свободное радио", zh:"自由电台", ar:"الراديو الحر"},
-    short:{fr:"Le bouton de mission revient bien plus vite.", en:"The mission button comes back much faster.", es:"El botón de misión vuelve mucho antes.", de:"Der Missionsknopf ist viel schneller wieder bereit.", it:"Il pulsante di missione torna molto prima.", pt:"O botão de missão volta muito mais rápido.", ru:"Кнопка миссии возвращается гораздо быстрее.", zh:"任务按钮恢复得快得多。", ar:"زرّ المهمة يعود أسرع بكثير."},
+    short:{fr:"Sol a doublé l'antenne.", en:"Sol doubled the aerial.", es:"Sol ha duplicado la antena.", de:"Sol hat die Antenne verdoppelt.", it:"Sol ha raddoppiato l'antenna.", pt:"Sol dobrou a antena.", ru:"Sol удвоила антенну.", zh:"Sol把天线加倍了。", ar:"ضاعفت Sol الهوائي."},
     long:{fr:"Sol a doublé l'antenne sur le toit et recruté deux opératrices de plus : chaque appel passe plus vite, chaque ordre arrive à temps. L'action propre à la mission (vannes, appel aux cellules…) se recharge nettement plus vite — à vous d'en faire l'arme principale.",
       en:"Sol has doubled the aerial on the roof and recruited two more operators: every call goes through faster, every order arrives in time. The mission's own action (sluices, call to the cells…) recharges markedly faster — make it your main weapon.",
       es:"Sol ha duplicado la antena del tejado y ha reclutado a dos operadoras más: cada llamada pasa antes, cada orden llega a tiempo. La acción propia de la misión (compuertas, llamada a las células…) se recarga claramente más rápido: conviértala en su arma principal.",
@@ -223,24 +227,32 @@ const DOCTRINES = {
       ru:"Sol удвоила антенну на крыше и взяла ещё двух радисток: каждый вызов проходит быстрее, каждый приказ приходит вовремя. Особое действие миссии (шлюзы, вызов ячеек…) перезаряжается заметно быстрее — сделайте его главным оружием.",
       zh:"Sol把屋顶的天线加倍了，还多招了两名接线员：每次呼叫都更快接通，每道命令都能及时送达。任务专属行动（开闸、呼叫小组……）的充能明显加快——把它当成您的主要武器吧。",
       ar:"ضاعفت Sol الهوائي على السطح وجنّدت مشغّلتين إضافيتين: كل نداء يمرّ أسرع، وكل أمر يصل في وقته. يُشحن الإجراء الخاص بالمهمة (البوابات، نداء الخلايا…) أسرع بوضوح — اجعله سلاحك الرئيسي."},
-    minus:{fr:"Personne de plus sur le terrain au départ : vous ne commencez qu'avec l'escouade prévue.", en:"Nobody extra in the field at the start: you begin with the planned squad only.", es:"Nadie más sobre el terreno al empezar: solo cuenta con la escuadra prevista.", de:"Niemand zusätzlich im Feld zu Beginn: Sie starten nur mit dem vorgesehenen Trupp.", it:"Nessuno in più sul campo all'inizio: parte solo con la squadra prevista.", pt:"Ninguém a mais em campo no início: você começa só com o esquadrão previsto.", ru:"На старте никого лишнего на поле: только положенный отряд.", zh:"开局战场上没有多出任何人：只有预定的小队。", ar:"لا أحد إضافيًا في الميدان عند البداية: تبدأ بالفرقة المقرّرة فقط."},
-    fx:{ actCd:0.65 } },
+    minus:{fr:"L'antenne a coûté cher, et personne ne vient en plus sur le terrain.", en:"The aerial cost a lot, and nobody extra joins you in the field.", es:"La antena costó cara, y nadie más se une sobre el terreno.", de:"Die Antenne war teuer, und niemand kommt zusätzlich ins Feld.", it:"L'antenna è costata cara, e nessuno in più scende in campo.", pt:"A antena custou caro, e ninguém a mais entra em campo.", ru:"Антенна обошлась дорого, и на поле никто не прибавится.", zh:"天线花了不少钱，战场上也不会多出任何人。", ar:"كلّف الهوائي كثيرًا، ولا أحد إضافي ينضمّ في الميدان."},
+    fx:{ actCd:0.65, warn:4, res:0.9 } },
 };
 const campDocPair = i => { const m = CAMPAIGN[i]; return (m && m.doctrines && m.doctrines.length===2)? m.doctrines : null; };
 const campDoc = i => { const pair = campDocPair(i); return pair? DOCTRINES[pair[CAMP_SAVE.doc[i]? 1 : 0]] : null; };
 function docApply(d, g, c){ const f = d.fx || {}, p = g.p;
   if (f.res){ p.f = Math.round(p.f*f.res); p.m = Math.round(p.m*f.res); p.w = Math.round(p.w*f.res); }
   if (f.baseHp){ p.maxhp = Math.round(p.maxhp*f.baseHp); p.hp = p.maxhp; }
-  if (f.squad) campSquad(p, f.squad);
+  if (f.squad){ const k0 = p.units.length; campSquad(p, f.squad);
+    if (f.vet) for (let j=k0;j<p.units.length;j++){ const u = p.units[j]; u.vet = 1; u.hp *= 1.2; u.maxhp *= 1.2; if (u.dmg) u.dmg *= 1.1; } }   // vétérans : brassard rouge
+  if (f.cap){ if (c.capBase==null) c.capBase = p.cap; p.cap = Math.max(10, c.capBase + f.cap); }
+  if (f.eco) c.eco = { k:f.eco, until:c.t + 180 };                     // production des bâtiments renforcée 3 minutes
   if (f.actCd) c.actMul = f.actCd;
+  if (f.warn) c.warnLead = f.warn;                                     // les missions annoncent leurs arrivées c.warnLead s plus tôt
   if (d.apply) d.apply(g, c); }
-// lignes d'effet d'une doctrine, chiffrées depuis fx (era : ère de départ de la mission, pour nommer les unités)
-function docEffects(d, era){ const f = d.fx || {}, out = [], pc = k => campPct(k);
-  if (f.res) out.push(cT(CAMP_UI.fxRes).replace('{n}', pc(f.res)));
-  if (f.baseHp) out.push(cT(CAMP_UI.fxBase).replace('{n}', pc(f.baseHp)));
+// lignes d'effet d'une doctrine, chiffrées depuis fx : [{txt, bad}] (bad = contrepartie) ; era : ère de départ, pour nommer les unités
+function docEffects(d, era){ const f = d.fx || {}, out = [], add = (o, n, bad) => out.push({ txt:cT(o).replace('{n}', n), bad:!!bad });
+  if (f.res) add(CAMP_UI.fxRes, campPct(f.res), f.res<1);
+  if (f.eco) add(CAMP_UI.fxEco, campPct(f.eco));
+  if (f.baseHp) add(CAMP_UI.fxBase, campPct(f.baseHp), f.baseHp<1);
   if (f.squad){ const n = {}; f.squad.forEach(r=>{ n[r] = (n[r]||0)+1; });
-    out.push(cT(CAMP_UI.fxSquad).replace('{list}', Object.keys(n).map(r=> n[r]+' × '+lUnit('HUM', ROLES[r].key, era|0)).join(', '))); }
-  if (f.actCd) out.push(cT(CAMP_UI.fxAct).replace('{n}', campPct(2-f.actCd).replace('+','')));
+    out.push({ txt:cT(CAMP_UI.fxSquad).replace('{list}', Object.keys(n).map(r=> n[r]+' × '+lUnit('HUM', ROLES[r].key, era|0)).join(', ')) });
+    if (f.vet) add(CAMP_UI.fxVet, ''); }
+  if (f.actCd) add(CAMP_UI.fxAct, campPct(2-f.actCd).replace('+',''));
+  if (f.warn) add(CAMP_UI.fxWarn, f.warn);
+  if (f.cap) add(CAMP_UI.fxCap, (f.cap>0? '+' : '−')+Math.abs(f.cap), f.cap<0);
   return out; }
 
 
@@ -335,6 +347,7 @@ function campApplyAct(g, c, spec){
   c.act = spec.act || (c.act|0)+1; c.t0 = c.t; c.actSpec = spec;
   if (spec.rule) c.ruleTxt = spec.rule;
   if (spec.tips) c.tipsArr = spec.tips;
+  if (spec.doctrine!==false){ const d = campDoc(c.i); if (d) docApply(d, g, c); }   // la doctrine vaut au début de CHAQUE acte
   if (spec.setup) spec.setup(g, c);
   if (spec.goal) campGoal(spec.goal);
   prewarmSprites();
@@ -431,6 +444,7 @@ function campTick(dt){
     // VOIX : point d'appel UNIQUE de la voix off des transmissions (16c0-voice.js) ; le message reste affiché le temps de la voix
     if (typeof voiceSay==='function'){ try { r.dur = Math.max(r.dur, (+voiceSay(r.who, r.txt, { radio:true })||0) + 1.2); } catch(e){} } }
   if (c.goalFlash>0) c.goalFlash -= dt;
+  if (c.eco && c.t < c.eco.until){ const R = calcRates(g.p), k = c.eco.k-1; g.p.f += R.f*k*dt; g.p.m += R.m*k*dt; g.p.w += R.w*k*dt; }   // doctrine « caisse »
   const r = m.tick? m.tick(g, c, dt) : null;
   if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(campEndCine, 1100); return true; }
   return false;
@@ -462,7 +476,7 @@ function campLaunch(i){ campBriefOpen(i); }
 
 /* ================= EN MISSION : objectif, aide « ? », radio, bandeau, objets du terrain ================= */
 const campWhoName = who => { if (who==='k55') return cT(CAMP_UI.radioK);
-  const w = CINE_WHO[who], n = w && w.name? (typeof w.name==='string'? w.name : cT(w.name)) : 'SOL';
+  const w = CINE_WHO[who], n = w && w.name? (typeof w.name==='string'? w.name : cT(w.name)) : String(who||'sol').toUpperCase();
   return cT(CAMP_UI.radioSol).replace('SOL', n); };
 function campTrunc(s, maxW){ if (ctx.measureText(s).width <= maxW) return s; while (s.length>1 && ctx.measureText(s+'…').width > maxW) s = s.slice(0,-1); return s+'…'; }
 // étiquette d'objectif (haut droite) + bouton « ? » + action de mission + bandeau + transmission radio
@@ -705,9 +719,14 @@ function campBriefRender(){
         cd.appendChild(el('span', 'cbMark', cT(CAMP_UI.chosen)));
         cd.appendChild(el('b', 'cbDocName', cT(d.name))); cd.appendChild(el('i', 'cbDocShort', cT(d.short)));
         const fx = el('div', 'cbFx'); fx.appendChild(el('h5', null, cT(CAMP_UI.effect))); const ul = el('ul');
-        for (const l of docEffects(d, m.era0||0)) ul.appendChild(el('li', null, l)); fx.appendChild(ul); cd.appendChild(fx);
+        const eff = docEffects(d, m.era0||0);
+        for (const l of eff) if (!l.bad) ul.appendChild(el('li', null, l.txt)); fx.appendChild(ul); cd.appendChild(fx);
+        if (m.docWhy && m.docWhy[id]) cd.appendChild(el('p', 'cbWhy', cT(m.docWhy[id])));            // « Utile ici parce que… » (propre à la mission)
         cd.appendChild(el('p', 'cbDocLong', cT(d.long)));
-        if (d.minus){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus))); mi.appendChild(el('p', null, cT(d.minus))); cd.appendChild(mi); }
+        const bad = eff.filter(l=>l.bad);
+        if (d.minus || bad.length){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus)));
+          if (bad.length){ const ub = el('ul'); for (const l of bad) ub.appendChild(el('li', null, l.txt)); mi.appendChild(ub); }
+          if (d.minus) mi.appendChild(el('p', null, cT(d.minus))); cd.appendChild(mi); }
         const pick = ()=>{ if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
         cd.addEventListener('click', pick); cd.addEventListener('keydown', ev=>{ if (ev.key==='Enter' || ev.key===' '){ ev.preventDefault(); pick(); } });
         cards.appendChild(cd); });

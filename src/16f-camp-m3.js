@@ -273,7 +273,7 @@ function m3DrawWater(c, t, vw){
 }
 
 campMission(2, {
-  num:'III', year:"2032", ai:[0,1,2], doctrines:['veterans','radio'],
+  num:'III', year:"2032", ai:[0,1,2], doctrines:['radio','veterans'],
   goal2:{fr:"Frapper la station avec trois crues.", en:"Hit the station with three floods.", es:"Golpear la estación con tres crecidas.", de:"Die Station mit drei Flutwellen treffen.", it:"Colpire la stazione con tre piene.", pt:"Atingir a estação com três cheias.", ru:"Ударить по станции тремя паводками.", zh:"用三次洪水冲击泵站。", ar:"ضرب المحطة بثلاثة فيضانات."},
   tips:[
     {fr:"Tenez la crête du milieu et laissez les machines descendre dans le lit avant d'ouvrir.", en:"Hold the middle ridge and let the machines go down into the riverbed before you open.", es:"Mantenga la cresta central y deje que las máquinas bajen al cauce antes de abrir.", de:"Halten Sie den mittleren Kamm und lassen Sie die Maschinen ins Flussbett hinab, bevor Sie öffnen.", it:"Tenga la cresta centrale e lasci scendere le macchine nel letto prima di aprire.", pt:"Segure a crista do meio e deixe as máquinas descerem ao leito antes de abrir.", ru:"Удерживайте средний гребень и дайте машинам спуститься в русло, прежде чем открывать.", zh:"守住中间的山脊，等机器下到河床再开闸。", ar:"اثبت على التلّ الأوسط ودع الآلات تنزل إلى المجرى قبل أن تفتح."},

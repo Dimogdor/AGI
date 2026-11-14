@@ -306,7 +306,7 @@ function m2DrawMarch(c, t, vw){
 }
 
 campMission(1, {
-  num:'II', year:"2028", ai:[0,1,2], doctrines:['caisse','ordre'],
+  num:'II', year:"2028", ai:[0,1,2], doctrines:['ordre','caisse'],
   goal2:{fr:"Arriver à Radio-Quai avec au moins la moitié du cortège.", en:"Reach Radio-Quai with at least half of the march.", es:"Llegar a Radio-Quai con al menos la mitad del cortejo.", de:"Radio-Quai mit mindestens der Hälfte des Zuges erreichen.", it:"Arrivare a Radio-Quai con almeno metà del corteo.", pt:"Chegar a Radio-Quai com pelo menos metade do cortejo.", ru:"Дойти до Radio-Quai, сохранив хотя бы половину шествия.", zh:"带着至少一半的游行队伍抵达Radio-Quai。", ar:"الوصول إلى Radio-Quai بنصف الموكب على الأقل."},
   tips:[
     {fr:"Laissez vos troupes en « Tenir » : elles marchent devant le cortège au lieu de foncer seules.", en:"Keep your troops on \"Hold\": they march ahead of the march instead of rushing off alone.", es:"Deje sus tropas en «Mantener»: marchan delante del cortejo en vez de lanzarse solas.", de:"Lassen Sie Ihre Truppen auf „Halten“: Sie marschieren vor dem Zug, statt allein loszustürmen.", it:"Lasci le truppe su «Tenere»: marciano davanti al corteo invece di lanciarsi da sole.", pt:"Deixe suas tropas em «Segurar»: elas marcham à frente do cortejo em vez de avançar sozinhas.", ru:"Держите войска в режиме «Держать»: они идут перед шествием, а не рвутся вперёд в одиночку.", zh:"让部队保持“坚守”：他们会走在游行队伍前面，而不是独自冲锋。", ar:"أبقِ قواتك على «الثبات»: تسير أمام الموكب بدل أن تندفع وحدها."},
