@@ -40,8 +40,10 @@ node tools/test-voice.mjs
 `gen.py` sans `--langs` traite toutes les langues dont `cast.json → engines` a un moteur.
 `--dry` : compte ce qui serait synthétisé ; `--force` : tout refaire ; `--limit N` : essai.
 
-Temps mesurés (4 cœurs CPU, sans GPU) : français ≈ 125 répliques, 16 min d'audio → voir le
-rapport de génération ci-dessous. Une réécriture partielle ne refait que les répliques changées.
+Temps mesurés (4 cœurs CPU, sans GPU) : **français, 125 répliques, 14 min d'audio, 3,4 Mo : 12 min**
+(≈ 6 s par réplique, chargement du modèle compris) ; relance sans changement : 0 s. Une réécriture
+partielle ne refait que les répliques changées. Seul le français est généré pour l'instant (les textes
+vont être réécrits) : `--langs en,es,it,pt,zh` (Kokoro) puis `--langs de,ru` (Piper) le moment venu.
 
 ## Moteurs et licences (audio généré redistribuable, usage commercial)
 
