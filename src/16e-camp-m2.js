@@ -884,6 +884,8 @@ const M2_R = {
 /* ================= LA MISSION ================= */
 const m2Obj = (c) => ({ a:c.hp >= c.max0*0.75, b:m2Tm() <= 600, c:!!c.term.dead });
 campMission(1, {
+  resume(){ const ck = M2_CK, i = CAMP_SAVE.diff; return (ck && ck.fail && ck.d===i && i<2 && ck.doc===(CAMP_SAVE.doc[1]? 1 : 0))? { key:'resumeG', n:Math.max(1, ck.seg) } : null; },
+  resumeClear(){ M2_CK = null; },
   num:'II', year:"2028", ai:[0,1,2], doctrines:['ordre','caisse'], eraCap:1, oneLife:true, dev0:0.1,
   title:M2_X.title, place:M2_X.place, recap:M2_X.recap, where:M2_X.where, goal:M2_X.goal, goal2:M2_X.goal2, rule:M2_X.rule, tips:M2_X.tips,
   docWhy:{ ordre:M2_X.docOrdre, caisse:M2_X.docCaisse }, debrief:M2_X.debrief, fail:M2_X.fail,

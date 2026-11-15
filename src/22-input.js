@@ -114,6 +114,8 @@ function overHud(sx, sy){
   for (const r of HUD.upgRects) if (inRect(sx,sy,r)) return true;
   if (HUD.selRect && inRect(sx,sy,HUD.selRect)) return true;
   if (typeof NEWSF!=='undefined' && NEWSF.rect && inRect(sx,sy,NEWSF.rect)) return true;
+  const cc = game && game.camp;                                         // campagne : étiquette d'objectif, bouton « ? » et action de mission
+  if (cc) for (const r of [cc.objRect, cc.helpRect, cc.actRect]) if (r && inRect(sx,sy,r)) return true;
   return false;
 }
 // APPUI LONG (tactile) = ordre de position : il part DÈS que le délai est écoulé, doigt encore posé
