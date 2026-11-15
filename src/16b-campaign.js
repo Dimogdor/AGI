@@ -237,7 +237,7 @@ function docApply(d, g, c){ const f = d.fx || {}, p = g.p;
   if (f.baseHp){ p.maxhp = Math.round(p.maxhp*f.baseHp); p.hp = p.maxhp; }
   if (f.squad){ const k0 = p.units.length; campSquad(p, f.squad);
     if (f.vet) for (let j=k0;j<p.units.length;j++){ const u = p.units[j]; u.vet = 1; u.hp *= 1.2; u.maxhp *= 1.2; if (u.dmg) u.dmg *= 1.1; } }   // vétérans : brassard rouge
-  if (f.cap){ if (c.capBase==null) c.capBase = p.cap; p.cap = Math.max(10, c.capBase + f.cap); }
+  if (f.cap){ if (c.capBase==null) c.capBase = p.cap; p.cap = Math.max(10, (p.capUp? 40 : c.capBase) + f.cap); }
   if (f.eco) c.eco = { k:f.eco, until:c.t + 180 };                     // production des bâtiments renforcée 3 minutes
   if (f.actCd) c.actMul = f.actCd;
   if (f.warn) c.warnLead = f.warn;                                     // les missions annoncent leurs arrivées c.warnLead s plus tôt
@@ -453,7 +453,7 @@ function campTick(dt){
 // fin de mission : enregistre la progression (une seule fois) et renvoie le texte du compte rendu
 function campResult(){
   const c = game.camp, m = c.m;
-  if (game.win && !c.saved){ c.saved = true;
+  if (game.win && !c._recorded){ c._recorded = true;
     CAMP_SAVE.done = Math.max(CAMP_SAVE.done, c.i+1);
     if (!(CAMP_SAVE.best[c.i] > 0) || game.t < CAMP_SAVE.best[c.i]) CAMP_SAVE.best[c.i] = Math.round(game.t);
     if (c.goal2Done) CAMP_SAVE.bonus[c.i] = 1;

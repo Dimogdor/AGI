@@ -685,7 +685,7 @@ campMission(3, {
     sl[1].b = mkB(p, 'turret'); sl[1].owner = p; if (!retry) sl[1].b.hp *= 0.45;                          // la tourelle et la muraille ont souffert cette nuit
     sl[2].b = mkB(p, 'wall'); sl[2].owner = p; sl[2].b.hp *= 0.5;
     campSquad(p, [1,0,2,2]);
-    c.total = M4.total[D]; c.gust = 0; c.bliz = false; c.stoke = 0; c.saved = 0; c.lost = 0; c.out = 0; c.lit = g.zones.filter(m4Lit).length;
+    c.total = M4.total[D]; c.gust = 0; c.bliz = false; c.stoke = 0; c.civSaved = 0; c.lost = 0; c.out = 0; c.lit = g.zones.filter(m4Lit).length;
     c.wave = 0; c.nextWave = 34; c.houses = M4.houses.map(x=>({ x, st:0 })); c.groups = []; c.say = {}; c.bandT = 0; c.debt = 0; c.beepT = 4;
     c.pls = []; c.plN = 0; c.pEx = 0; c.pDead = 0; c.plTimes = [M4.plT[D]].concat(D===2? [c.total - M4.plT2] : []); c.plI = 0;
     c.g1 = c.g2 = c.g3 = false; c.cineSeen = 0;
@@ -713,7 +713,7 @@ campMission(3, {
     // L'ARGENT EST RARE : les marchés ne rendent que 30 % (Dernier carré : plus aucun revenu passif de métal) ; les civils sauvés rapportent +1 métal/s chacun
     { const R = calcRates(p), base = 2.5*(p.prodMul||1)*winterMul();
       c.debt += (M4.mk > 0? (1-M4.mk)*Math.max(0, R.m-base) : 0)*dt + (D===2? base*dt : 0);
-      const pay = Math.min(c.debt, p.m); p.m -= pay; c.debt -= pay; p.m += c.saved*dt; }
+      const pay = Math.min(c.debt, p.m); p.m -= pay; c.debt -= pay; p.m += c.civSaved*dt; }
     // la neige fondue : chaque brasero allumé donne +0,5 💧/s
     let lit = 0; for (const z of g.zones) if (m4Lit(z)) lit++;
     p.w += 0.5*lit*dt;
@@ -735,9 +735,9 @@ campMission(3, {
       let threat = false; for (const u of e.units) if (!u.fly && Math.abs(u.x-gr.x) < 46){ threat = true; break; }   // une machine au sol à moins de 46 px
       gr.harm = threat? gr.harm + dt : Math.max(0, gr.harm - dt*0.5);
       if (gr.harm >= 3){ c.groups.splice(i,1); c.lost++; burst(gr.x, gY(gr.x)-10, '#eef1f5', 12, 1); sfx('deny'); m4Say(c, 'lost', M4_TX.rI, 40); continue; }
-      if (gr.x <= p.x+70){ c.groups.splice(i,1); c.saved++; p.f += 150; p.m += 220; p.w += 50; if (unitTotal(p) < p.cap) spawnUnit(p, 1, false);   // du pain, l'argent de la mine, de l'eau, un costaud de plus
+      if (gr.x <= p.x+70){ c.groups.splice(i,1); c.civSaved++; p.f += 150; p.m += 220; p.w += 50; if (unitTotal(p) < p.cap) spawnUnit(p, 1, false);   // du pain, l'argent de la mine, de l'eau, un costaud de plus
         sfx('evolve'); m4Sound('bell'); addFloater(p.x+60, gY(p.x)-90, '+220', '#e8d8a0', 15); m4Say(c, 'saved', M4_TX.rH, 20);
-        if (c.saved >= 4 && !c.g1){ c.g1 = true; m4Bonus(c, 0); } } }
+        if (c.civSaved >= 4 && !c.g1){ c.g1 = true; m4Bonus(c, 0); } } }
     // colonnes adverses : de plus en plus fournies ; la dernière minute, elles se suivent de près
     if (T >= c.nextWave){ const k = c.wave++; c.nextWave += T >= c.total-60? 40 : 44;
       m4Wave(Math.round((3 + 1.0*k) * 0.92 * c.D.wave), k>=4); }
@@ -760,7 +760,7 @@ campMission(3, {
     if (p.hp <= 0){ if (D===0) M4_RETRY = true; return 'lose'; }
   },
   hud(g, c){ const left = Math.max(0, c.total-c.t);
-    return { clock:left, prog:c.t/c.total, warn:left<60, label:cT(M4_TX.hFires)+c.lit+'/5 · '+cT(M4_TX.hCiv)+c.saved+'/4', goal2:{ done:false, label:m4G2(c)+'/3' } }; },
+    return { clock:left, prog:c.t/c.total, warn:left<60, label:cT(M4_TX.hFires)+c.lit+'/5 · '+cT(M4_TX.hCiv)+c.civSaved+'/4', goal2:{ done:false, label:m4G2(c)+'/3' } }; },
   drawZone(z, t, vw){ m4DrawZone(z, t, vw); },
   draw(g, c, vw){ const t = g.t;
     m4DrawProps(c, t, vw);

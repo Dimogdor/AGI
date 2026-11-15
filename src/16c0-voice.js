@@ -83,7 +83,7 @@ function voiceDuck(on){
   if (!AC) return; const t = AC.currentTime, bus = voiceMusicBus();
   try {
     if (on && !VOICE.duck){ const node = bus || master; if (!node) return;
-      VOICE.duck = { node, base: bus? node.gain.value : SETTINGS.vol };
+      VOICE.duck = { node, base: bus? 1 : SETTINGS.vol };
       node.gain.cancelScheduledValues(t); node.gain.setValueAtTime(node.gain.value, t); node.gain.setTargetAtTime(VOICE.duck.base*(bus? 0.32 : 0.5), t, 0.08); }
     else if (!on && VOICE.duck){ const d = VOICE.duck; VOICE.duck = null;
       const base = d.node===master? SETTINGS.vol : d.base;
@@ -91,8 +91,8 @@ function voiceDuck(on){
   } catch(e){}
 }
 function voiceOut(){
-  if (!VOICE.out || VOICE.out.context!==AC){ VOICE.out = AC.createGain(); VOICE.out.connect(AC.destination); }
-  VOICE.out.gain.value = SETTINGS.vol * (Number.isFinite(+SETTINGS.voiceVol)? +SETTINGS.voiceVol : 1);
+  if (!VOICE.out || VOICE.out.context!==AC || VOICE.out._m!==master){ VOICE.out = AC.createGain(); VOICE.out.connect(master || AC.destination); VOICE.out._m = master; }   // via le bus principal : volume général + limiteur
+  VOICE.out.gain.value = Number.isFinite(+SETTINGS.voiceVol)? +SETTINGS.voiceVol : 1;
   return VOICE.out;
 }
 // chaîne d'effets à la lecture : 'radio' = transmission (passe-bande + saturation), 'near' = radio légère
@@ -179,5 +179,5 @@ function voiceRefreshOpts(){
 function voiceToggle(on){ SETTINGS.voice = on==null? !SETTINGS.voice : !!on; saveSettings(); if (!SETTINGS.voice) voiceStop(); voiceRefreshOpts(); }
 { const b = document.getElementById('oVoice'), v = document.getElementById('oVoiceVol');
   if (b) b.addEventListener('click', () => voiceToggle());
-  if (v) v.addEventListener('input', () => { SETTINGS.voiceVol = clamp(v.value/100, 0, 1); saveSettings(); if (VOICE.out && AC) VOICE.out.gain.value = SETTINGS.vol*SETTINGS.voiceVol; voiceRefreshOpts(); }); }
+  if (v) v.addEventListener('input', () => { SETTINGS.voiceVol = clamp(v.value/100, 0, 1); saveSettings(); if (VOICE.out && AC) VOICE.out.gain.value = SETTINGS.voiceVol; voiceRefreshOpts(); }); }
 voiceIndex();                                        // la table de la langue courante se charge dès le démarrage (quelques Ko)

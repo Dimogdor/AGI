@@ -27,7 +27,7 @@ const play = (bot) => {
     orderPoint(p, tx);
     if (!(c.actCd > 0) && g.zones.some(z=>z.owner!=='p' && p.units.some(u=>Math.abs(u.x-z.x)<260))) campAct();
   }
-  return { over:g.over, win:g.win, t:Math.round(c.t), saved:c.saved, lost:c.lost, lit:c.lit, hp:Math.round(100*p.hp/p.maxhp), ehp:Math.round(100*e.hp/e.maxhp), cines, units:p.units.length, ploughs, pEx:c.pEx };
+  return { over:g.over, win:g.win, t:Math.round(c.t), saved:c.civSaved, lost:c.lost, lit:c.lit, hp:Math.round(100*p.hp/p.maxhp), ehp:Math.round(100*e.hp/e.maxhp), cines, units:p.units.length, ploughs, pEx:c.pEx };
 };
 console.log('\nCAMPAGNE · MISSION IV — ROCHEFROIDE');
 const TOTAL = [420, 480, 540], WORD = ['sept', 'huit', 'neuf'];
