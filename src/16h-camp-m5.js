@@ -24,11 +24,11 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.2], aura:[0.6,0.7,0.8], avK:3, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,1.2], aura:[0.6,0.7,0.8], avK:6, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
-  hp:{ base:2200, gate:[2600,7000,14000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.5,1.0,1.2],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  hp:{ base:2200, gate:[2600,7000,24000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
+  eMul:[0.5,1.0,1.2], eMulII:[1,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -460,7 +460,7 @@ function m5Cell(g, c){
 function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [3,6,10][a-1] + Math.floor(at/200);
   if (c.dry!=null) n += Math.min(8, Math.floor((c.t - c.dry)/60)*2);                                                  // cellules épuisées : +2 machines par minute
   return Math.min(n, 14); }
-function m5Scale(g, c){ const k = M5.eMul[c.act-1];                                                      // des machines montées à la hâte, sans rodage
+function m5Scale(g, c){ const k = M5.eMul[c.act-1]*(c.act===2? M5.eMulII[c.D.i] : 1);                                                      // des machines montées à la hâte, sans rodage
   for (const u of g.e.units) if (!u.m5 && u.role!=='hero'){ u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
 function m5Sortie(g, c){
   if (g.e.units.length >= 44) return;
@@ -549,6 +549,10 @@ function m5Light(g, c){
 }
 function m5Halls(g, c, dt){
   const D = c.D.i, e = g.e;
+  if (!c.zProg) c.zProg = g.zones.map(z=>z.prog);
+  g.zones.forEach((z,i)=>{ const pr = c.zProg[i];                                                           // Dernier carré : une baie se prend plus lentement (l'acte tenait ≈ 1 min)
+    if (M5.capK[D]<1 && z.prog>pr && z.prog<1) z.prog = pr + (z.prog-pr)*M5.capK[D];
+    c.zProg[i] = z.prog; });
   g.zones.forEach((z,i)=>{ const was = c.zo[i];
     if (z.owner!==was){
       if (z.owner==='p'){ c.offN++; sfx('node'); g.shake = Math.max(g.shake, 5); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOff), '#9fd6ea', 14); }       // son coupé net
@@ -1268,7 +1272,7 @@ campMission(4, {
     // les sorties de la base adverse (à l'acte III : tant que l'avatar marche)
     const sortieOn = a<3 || m5AvAlive(g, c);
     if (sortieOn && c.warnLead && !c.sortieWarned && T >= c.sortieT - c.warnLead){ c.sortieWarned = true; c.warnMark = { x:e.x-60, t1:g.t + c.warnLead + 1.2 }; sfx('deny'); }
-    if (T >= c.sortieT){ c.sortieT = T + M5.sortie[D]; c.sortieWarned = false; if (sortieOn) m5Sortie(g, c); }
+    if (T >= c.sortieT){ c.sortieT = T + M5.sortie[D]*(a===1 && c.gateOpen? 1.6 : 1) /* porte éventrée : renforts plus rares */; c.sortieWarned = false; if (sortieOn) m5Sortie(g, c); }
     // une vie de moins : le camp est relevé
     if (p.phase>=2 && !c.lifeSaid){ c.lifeSaid = true; c.lifeLost = true; campRadio('sol', M5_L.life); }
     // règles de l'acte
@@ -1288,6 +1292,7 @@ campMission(4, {
     // la porte (ou le noyau) : invulnérable tant que la règle de l'acte n'est pas remplie ; la tour se répare tant que l'avatar marche
     const k = (a===1 && !c.gateOpen) || (a===2 && c.owned<3)? 0 : M5.armor[a-1];       // la porte du noyau et la tour encaissent mal les coups : blindage de fond
     if (k<1 && e.hp < c.lastE) e.hp = c.lastE - (c.lastE - e.hp)*k;
+    if (a===1 && c.gateOpen && c.lastE>0 && e.hp>0) c.lastE = e.hp = Math.max(1, e.hp - e.maxhp*M5.breach*dt);   // la brèche s'effondre d'elle-même : les derniers points de la porte ne sont jamais un mur
     if (a===3 && m5AvAlive(g, c)) e.hp = Math.min(e.maxhp, e.hp + e.maxhp*0.01*dt);
     else if (e.hp > c.lastE) e.hp = c.lastE;
     c.lastE = e.hp;
