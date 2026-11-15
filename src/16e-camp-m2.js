@@ -299,7 +299,7 @@ const m2Terminal = () => fxSprite('M2TERM'+m2L(), 250, 190, g => {
   g.fillStyle = '#16181d'; g.fillRect(84,106,82,84);                                                            // baie des portes (vide)
 });
 // gros navires / embarcations : barge de débarquement et canonnière
-const m2Barge = () => fxSprite('M2BARGE', 150, 40, g => {
+const m2BargeImg = () => fxSprite('M2BARGE', 150, 40, g => {
   g.fillStyle = '#4b5562'; g.beginPath(); g.moveTo(4,16); g.lineTo(146,16); g.lineTo(138,36); g.lineTo(14,36); g.closePath(); g.fill();
   g.fillStyle = '#0b6fa8'; g.fillRect(10,22,130,3);
   g.fillStyle = '#5c6774'; g.fillRect(104,2,30,14); g.fillStyle = 'rgba(160,210,240,0.7)'; g.fillRect(108,6,22,4);
@@ -514,3 +514,484 @@ function m2PagerPlate(msg){ return (g, w, h, t) => { plateBase(g, w, h);
   g.fillStyle = Math.sin(t*6)>0? '#0b6fa8' : 'rgba(11,111,168,0.3)'; g.beginPath(); g.arc(352, 206, 3.5, 0, 6.283); g.fill();
   for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.45*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 104, 20+r*80, 3.5, 5.9); g.stroke(); }
   plateEnd(g, w, h); }; }
+
+/* ================= MÉCANIQUES : cortège, grilles, barges, canonnières, terminal ================= */
+const m2Front = g => { let f = g.p.x; for (const u of g.p.units) if (!u.fly && u.x > f) f = u.x; return f; };
+const m2Dec = c => [-1,0,1][c.D.i];                                       // machines par barge : −1 / 0 / +1
+const m2Lead = c => [8,6,4][c.D.i] + (c.warnLead||0);                     // annonce des barges (s)
+const m2NextGate = c => c.seg<3? M2.gates[c.seg] : null;
+const m2Lim = c => c.seg<3? M2.gates[c.seg]-10 : 3420;                    // limite de nos troupes (grille fermée = mur)
+const m2SpawnHi = c => c.seg<3? M2.gates[c.seg]-60 : 3380;
+function m2Spawn(g, c, role, era, x){
+  const e = g.e; if (e.units.length >= 70) return null;
+  const e0 = e.era; e.era = era; const k = e.units.length; spawnUnit(e, role, false, x); e.era = e0;
+  const u = e.units[k]; if (u){ u.ord = 'charge'; u._m2 = 1; } return u;
+}
+// perte de force du cortège : n points, ralentit 3 s ; les obus doubles sur un même instant ne comptent qu'une fois
+function m2HitMarch(c, n, shell){
+  if (shell){ if (c._shellT === game.t) return; c._shellT = game.t; }
+  c.hp = Math.max(0, c.hp - n); c.hitT = 0; c.slowT = 3; c.lost = (c.lost||0) + n;
+  if (c.lost >= 4){ addFloater(c.mx-60, gY(c.mx)-70, '−'+Math.round(c.lost)+' ☻', '#c42a1c', 11); c.lost = 0; }
+}
+function m2Targets(c, foe, out){
+  const g = game;
+  if (foe === g.p){                                                         // les machines visent la tête, le milieu, la queue et les barricades
+    for (const b of c.bars) out.push({ isB:true, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } });
+    for (const dx of [0, 85, 165]) out.push({ isB:true, m2:true, x:c.mx-dx, get hp(){ return c.hp; }, m2hit(a){ m2HitMarch(c, a && (a.role==='ranged'||a.role==='air')? 2 : 1); }, hit(){ m2HitMarch(c, 6, true); } });
+  } else if (c.seg >= 2){
+    for (const b of c.boats) if (!b.dead) out.push({ isB:true, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } });
+  }
+}
+// ---- barges : annonce (corne + ancre rouge), puis débarquement devant nous, jamais derrière ----
+function m2Barge(g, c, roles){
+  const lo = Math.max(c.mx+220, m2Front(g)+150), hi = m2SpawnHi(c);
+  if (hi - lo < 30) return false;
+  const x = lo + Math.random()*(hi-lo), n = Math.max(1, roles.length + m2Dec(c));
+  const list = roles.slice(); while (list.length > n) list.shift(); while (list.length < n) list.unshift(roles[0]);   // −1 / +1 : on retire ou on ajoute le premier rôle
+  c.barges.push({ x, t:0, warn:m2Lead(c), roles:list, done:false }); if (!c.firstBarge) c.firstBarge = c.t;
+  m2Horn(); return true;
+}
+function m2Drones(g, c, n){
+  const lo = Math.max(c.mx+450, m2Front(g)+320), hi = m2SpawnHi(c);
+  if (hi - lo < 20) return;
+  for (let i=0;i<n;i++) m2Spawn(g, c, 4, 0, lo + Math.random()*(hi-lo));
+}
+const M2_BARGE_ROLES = [[[0,0],[0,0],[0,0],[2,0]], [[0,0],[0,0],[0,1],[0,1]], [[1,0],[0,1],[0,1],[0,1]]];   // [rôle, ère] par barge : bots + drone laser / bots + agents / châssis lourd + agents
+function m2Plan(g, c){                                                   // chronologie des arrivées, par tronçon (temps depuis l'entrée)
+  const s = c.seg, dt = c.t - c.segT[s];
+  if (s===0){
+    if (!c.t1 && c.mx >= 600){ c.t1 = c.t; c.n1 = 0; }
+    if (c.t1!=null && c.n1 < 3 && c.t - c.t1 >= 35*c.n1){ if (m2Barge(g, c, M2_BARGE_ROLES[0])) c.n1++; else c.n1 = 3; }
+    if (c.D.i===2 && c.t >= 25 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
+  } else if (s===1){
+    if (c.n2 < 2 && dt >= [12,62][c.n2]){ if (m2Barge(g, c, M2_BARGE_ROLES[1])) c.n2++; else c.n2 = 2; }
+    if (dt >= 8 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
+  } else if (s===2){
+    if (c.n3 < 2 && dt >= [6,60][c.n3]){ if (m2Barge(g, c, M2_BARGE_ROLES[2])) c.n3++; else c.n3 = 2; }
+  } else if (c.term.active && !c.term.dead){
+    if (c.t >= c.term.nextT){ const k = c.term.n++, early = c.t - c.term.t0 < 60;
+      c.term.nextT = c.t + (early? 6 : 12);
+      const x = campSpawnX(3380, 80); if (x < 3400){
+        const heavy = early && (k===2 || k===7), r = heavy? 1 : [0,2,0,2,0,0][k%6], era = heavy? 0 : (k%2? 1 : 0);
+        m2Spawn(g, c, r, era, x); } }
+  }
+}
+function m2Barges(g, c, dt){
+  for (let i=c.barges.length-1;i>=0;i--){ const b = c.barges[i]; b.t += dt;
+    if (!b.done && b.t >= b.warn){
+      const front = m2Front(g), hi = m2SpawnHi(c);
+      if (front + 60 > b.x) b.x = front + 140;                              // notre front a avancé : on accoste plus loin, toujours devant
+      if (b.x > hi){ b.done = 2; }                                           // plus de place devant : la barge repart sans débarquer
+      else { b.done = 1; b.roles.forEach((rr,j)=> m2Spawn(g, c, rr[0], rr[1], Math.min(hi+30, b.x + j*16))); sfxAt('boom', b.x); }
+    }
+    if (b.t > b.warn + 5) c.barges.splice(i,1); }
+}
+function m2Boats(g, c, dt){
+  const frozen = g.weather==='patch';
+  for (const b of c.boats){
+    if (b.dead){ b.sink = Math.min(1, (b.sink||0) + dt/2.5); continue; }
+    if (b.hp <= 0){ b.dead = true; explode(b.x, gY(b.x)+10, 1.6); sfxAt('boom', b.x); c.sunk++; continue; }
+    if (c.seg < 2 || frozen) continue;
+    if (b.aim){ b.aim.t -= dt; if (b.aim.t <= 0){ const x = b.aim.x; b.aim = null;
+        explode(x, gY(x)-6, 1.3); sfxAt('boom', x); g.shake = Math.max(g.shake, 4);
+        if (x > c.mx-M2.span-60 && x < c.mx+60) m2HitMarch(c, 6, true);
+        for (const u of g.p.units) if (!u.fly && Math.abs(u.x-x) < 60){ u.hp -= 34*c.D.eDmg; u.flash = 0.2; } } }
+    else if (Math.abs(c.mx - b.x) < 520 && (b.fireT -= dt) <= 0){ b.fireT = 8; b.aim = { x:c.mx - 10 - Math.random()*150, t:2 }; }
+  }
+}
+// ---- grilles ----
+function m2Gates(g, c, dt){
+  for (let i=0;i<3;i++){ const G = c.gate[i];
+    if (G.state==='closed' && i===c.seg && c.mx >= M2.gates[i]-60){ G.state = 'opening'; G.t = 0; m2Creak();
+      c.gOpen[i] = c.t; g.p.w += 40; c.cap += (i===2? 20 : 10); c.hp = Math.min(c.cap, c.hp + (i===2? 20 : 10));    // des gens rejoignent ; les citernes donnent 40 d'eau
+      addFloater(M2.gates[i], gY(M2.gates[i])-120, '+'+(i===2? 20 : 10)+' ☻  +40 💧', '#9dc88a', 13); }
+    if (G.state==='opening'){ G.t += dt; G.k = Math.min(1, G.t/3);
+      if (G.t >= 3){ G.state = 'open'; c.seg = i+1; c.segT[c.seg] = c.t; c.t1x = null;
+        if (c.neutAll[c.seg] && !g.neut.includes(c.neutAll[c.seg])) g.neut.push(c.neutAll[c.seg]);
+        if (c.seg===3){ c.term.t0 = c.t; c.term.nextT = c.t + 5; }
+        m2Checkpoint(g, c);
+        c.banner = { head:m2SegHead(c.seg+1), txt:M2_TXT.segName[c.seg], t0:performance.now() }; } } }
+}
+function m2Checkpoint(g, c){
+  const p = g.p; M2_CK = { seg:c.seg, d:c.D.i, doc:CAMP_SAVE.doc[1]? 1 : 0, hp:c.hp, cap:c.cap, off:c.t + (c.off||0), f:p.f, m:p.m, w:p.w, era:p.era, xp:p.xp,
+    roles:p.units.filter(u=>u.role!=='hero').map(u=>ROLES.findIndex(r=>r.key===u.role)).filter(i=>i>=0), fail:false, n:M2_CK && M2_CK.n || 0 };
+}
+// ---- le cortège ----
+function m2March(g, c, dt){
+  const e = g.e; c.hitT += dt; if (c.slowT > 0) c.slowT -= dt;
+  const lim = c.seg<3? M2.gates[c.seg]-30 : M2.mast;
+  c.stop = e.units.some(u => !u.fly && u.hp > 0 && u.x > c.mx-25 && u.x < c.mx+50);
+  c.stopT = c.stop? c.stopT + dt : 0;
+  if (!c.stop && c.t > 3) c.mx = Math.min(lim, c.mx + (c.slowT>0? M2.vSlow : M2.v)*dt);
+  for (let i=c.bars.length-1;i>=0;i--){ const b = c.bars[i];
+    if (b.hp <= 0){ explode(b.x, gY(b.x)-12, 0.8, '#cfc6b8'); c.bars.splice(i,1); }
+    else if (c.mx > b.x+20) c.bars.splice(i,1); }                           // le cortège démonte la barricade en passant
+}
+// ---- Tenir / Charger / Replier : le service d'ordre du cortège ----
+const M2_LANE = { tank:175, melee:150, hero:160, ranged:100, air:100, siege:70, support:50 };
+function m2Form(g, c){
+  const p = g.p, st = p.stance, head = c.mx; let foe = 1e9;
+  for (const u of g.e.units) if (!u.fly && u.hp > 0 && u.x > head-30 && u.x < foe) foe = u.x;
+  const cap = Math.min(m2Lim(c), foe - 22), cnt = {};
+  for (const u of p.units){
+    const mine = u._m2f && u.ord==='point' && u.px===u._m2px;
+    if (u.role==='hero' || u.task) continue;
+    if (st==='charge'){ if (mine){ u.ord = null; u.px = null; u._m2f = 0; } continue; }
+    if (u.ord && !mine) continue;                                           // ordre explicite du joueur : on n'y touche pas
+    let want;
+    if (st==='retreat') want = head - M2.span - 24 - ((cnt.r = (cnt.r||0)+1) % 8)*10;
+    else { const k = cnt[u.role] = (cnt[u.role]||0) + 1; want = Math.min(head + (M2_LANE[u.role]||100) - ((k-1)%6)*9 - ((k-1)/6|0)*5, cap); want = Math.max(want, head+30); }
+    u.ord = 'point'; u.px = u._m2px = want; u._m2f = 1;
+  }
+}
+function m2Units(g, c){
+  const p = g.p, tail = c.mx - M2.span;
+  for (const u of p.units) if (!u._m2){ u._m2 = 1; u.x = Math.max(p.x+60, tail - 14 - ((c.rec = (c.rec||0)+1) % 8)*12); }   // les recrues arrivent à la QUEUE du cortège
+  const lim = m2Lim(c);
+  for (const u of p.units){ if (u.x > lim){ u.x = lim; if (u.tx > lim) u.tx = lim; } if (u.px!=null && u.px > lim && !u._m2f) u.px = lim; }
+  if (c.seg < 3) for (const u of g.e.units) if (!u.fly && u.x > M2.gates[c.seg]-6) u.x = M2.gates[c.seg]-6;       // une grille fermée bloque aussi leurs unités
+  for (let i=g.e.units.length-1;i>=0;i--){ const u = g.e.units[i]; if (u.x < tail-400){ burst(u.x, gY(u.x)-20, '#9ad1d4', 8); g.e.units.splice(i,1); } }   // rembarque
+  // une de nos unités attend devant une grille fermée
+  if (c.seg < 3){ const w = p.units.some(u => !u.fly && u.x >= lim-4);
+    c.gwait = w? (c.gwait||0) + 1/20 : 0; } else c.gwait = 0;
+}
+// ---- terminal : décor jusqu'au tronçon 4 ----
+function m2Terminal_(g, c, dt){
+  const e = g.e, T = c.term;
+  if (c.seg===3 && !T.active && !T.dead && c.t >= T.t0 + 5){ T.active = true; e.hp = e.maxhp; sfx('spec'); }
+  if (!T.active){ e.hp = e.maxhp; }
+  else if (!T.dead && e.hp <= 0){ T.dead = true; T.active = false; explode(M2.term, gY(M2.term)-50, 2); sfxAt('boom', M2.term); }
+  if (T.dead) e.hp = 1;
+  T.k += ((T.active? 1 : 0) - T.k)*Math.min(1, dt*1.5);
+}
+
+const m2SegHead = n => { const o = {}; for (const L in M2_TXT.segHead) o[L] = M2_TXT.segHead[L].replace('{n}', n); return o; };
+
+/* ================= DESSIN : quai, grilles, barges, canonnières, terminal, cortège, jauge ================= */
+function m2DrawAnchor(x, y, s, col){
+  ctx.save(); ctx.translate(x, y); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.4*s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(0, -9*s, 3*s, 0, 6.283); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -6*s); ctx.lineTo(0, 9*s); ctx.moveTo(-5*s, -2*s); ctx.lineTo(5*s, -2*s); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 3*s, 8*s, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke(); ctx.restore();
+}
+function m2DrawMarch(c, t, vw){
+  const NS = 40, n = Math.max(c.hp>0? 4 : 0, Math.round(NS*clamp(c.hp/c.max0, 0, 1.4))), moving = !c.stop && c.t>3;
+  for (let row=0; row<3; row++) for (let i=NS-1;i>=0;i--){
+    if (i%3!==row || (i*29)%NS >= n) continue;
+    const wx = c.mx - 4 - (i/NS)*M2.span - ((i*0.618)%1)*6, x = wx-camX; if (x<-20 || x>vw+20) continue;
+    const sc = (row===0? 0.88 : row===1? 0.96 : 1)*1.45, y = gY(wx) - 3 + row*2.6, bob = moving? Math.abs(Math.sin(t*6.5+i*1.7))*1.6 : (c.hitT<1? Math.sin(t*20+i)*0.8 : 0);
+    ctx.drawImage(m2Folk(i), x-8*sc, y-34*sc-bob, 16*sc, 34*sc);
+    if (row===1 && (i===7 || i===31) && (i*29)%NS < n+8) ctx.drawImage(m2Banner(i===7? 0 : 2), x-37, y-84-bob*0.5, 74, 46); }
+  const hx = c.mx-camX, hy = gY(c.mx);
+  if (hx>-60 && hx<vw+60 && c.stop && c.t>3){ ctx.font = '700 10px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = '#c42a1c'; ctx.fillText(cT(M2_TXT.haltTxt), hx+6, hy-98); }
+}
+function m2DrawGate(c, i, t){
+  const gx = M2.gates[i], x = gx-camX, y = gY(gx), G = c.gate[i], k = G.k||0;
+  ctx.save(); ctx.beginPath(); ctx.rect(x-40, y-100, 80, 100); ctx.clip();
+  ctx.strokeStyle = '#3a3d44'; ctx.lineWidth = 2.6; const off = -k*78;
+  for (let b=0;b<=10;b++){ const bx = x-40+b*8+off; ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx, y-96); ctx.stroke(); }
+  ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x-40+off, y-92); ctx.lineTo(x+44+off, y-92); ctx.moveTo(x-40+off, y-30); ctx.lineTo(x+44+off, y-30); ctx.stroke();
+  ctx.restore();
+  ctx.drawImage(m2GatePosts(), x-75, y-128, 150, 130);
+  if (G.state==='opening') for (const d of [0,1]){ ctx.drawImage(m2Folk(d*2+1), x-60-d*14-k*10, y-46, 16*1.3, 34*1.3); }
+}
+function m2Draw(g, c, vw){
+  const t = performance.now()/1000, x0 = camX - 120, x1 = camX + vw + 120;
+  // le quai : lèvre, eau devant, clapot
+  { const y = gY(camX+vw/2); ctx.fillStyle = '#6a6a68'; ctx.fillRect(0, y+8, vw, 3);
+    const gr = ctx.createLinearGradient(0, y+11, 0, y+70); gr.addColorStop(0,'#6f8396'); gr.addColorStop(1,'#4c6076'); ctx.fillStyle = gr; ctx.fillRect(0, y+11, vw, 60);
+    ctx.strokeStyle = 'rgba(230,240,250,0.3)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let i=0;i<14;i++){ const xx = ((i*97 + t*7 - camX*0.9) % (vw+60) + vw+60) % (vw+60) - 30, yy = y+16+(i*13)%36; ctx.moveTo(xx, yy); ctx.lineTo(xx+14+(i%3)*6, yy); } ctx.stroke(); }
+  const at = (wx, w, h, im, dy) => { const x = wx-camX; if (x < -w || x > vw+w) return; ctx.drawImage(im, x-w/2, gY(wx)-h+(dy||0), w, h); };
+  at(M2.hall, 200, 150, m2Hall(), 2);                                                    // la halle aux grains (remplace la base)
+  c.neutAll.forEach((s,i)=> at(s.x+34, 110, 90, m2Prop(i), 2));
+  [1250,1500,1750].forEach((cx,i)=> at(cx, 190, 250, m2Crane(i), 2));
+  at(2120, 80, 210, m2Silo(), 2); at(2380, 80, 210, m2Silo(), 2);
+  at(3175, 190, 236, m2Radio(), 2);
+  if (c.flag){ const x = 3175-camX, y = gY(3175); ctx.fillStyle = '#c42a1c'; const wv = Math.sin(t*4)*2; ctx.beginPath(); ctx.moveTo(x,y-224); ctx.lineTo(x+28,y-220+wv); ctx.lineTo(x+28,y-208+wv); ctx.lineTo(x,y-212); ctx.closePath(); ctx.fill(); }
+  for (let i=0;i<3;i++){ const gx = M2.gates[i]; if (gx > x0 && gx < x1) m2DrawGate(c, i, t); }
+  // le terminal automatisé
+  { const T = c.term, x = M2.term-camX, y = gY(M2.term);
+    if (x > -150 && x < vw+150){ ctx.drawImage(m2Terminal(), x-125, y-190, 250, 190);
+      const dk = T.dead? 0.35 : T.k; ctx.fillStyle = '#8a929c';
+      ctx.fillRect(x-41-dk*38, y-84, 41, 84); ctx.fillRect(x+dk*38, y-84, 41, 84);
+      const a = Math.sin(t*1.6)*0.6*(T.active? 1 : 0.15); ctx.strokeStyle = '#3a4350'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x+70, y-120); ctx.lineTo(x+70-30*Math.cos(a), y-120+30*Math.sin(a)+20); ctx.stroke();
+      ctx.fillStyle = T.active? (Math.sin(t*6)>0? '#c42a1c' : '#5a1a14') : T.dead? '#3a3a3a' : '#0b6fa8'; ctx.beginPath(); ctx.arc(x+98, y-150, 4, 0, 6.283); ctx.fill();
+      ctx.font = '8px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = '#efe6cf'; ctx.fillText(cT(T.dead? M2_TXT.termDead : T.active? M2_TXT.termOn : M2_TXT.termOff), x, y-170);
+      if (T.active){ const k = clamp(g.e.hp/g.e.maxhp, 0, 1); ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x-50, y-198, 100, 6); ctx.fillStyle = '#c42a1c'; ctx.fillRect(x-50, y-198, 100*k, 6); } } }
+  // barges : annoncées par une ancre rouge sur le quai, puis accostées
+  for (const b of c.barges){ const x = b.x-camX; if (x < -220 || x > vw+220) continue; const y = gY(b.x);
+    const k = ease(clamp(b.t/b.warn, 0, 1)), out = clamp((b.t-b.warn-2)/3, 0, 1), bx = x + (1-k)*280 + out*300;
+    ctx.globalAlpha = 1-out; ctx.drawImage(m2BargeImg(), bx-70, y+6, 150, 40);
+    if (b.t >= b.warn-1.2){ const r = clamp((b.t-b.warn+1.2)/1.2, 0, 1); ctx.strokeStyle = '#3b4450'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(bx-68, y+10); ctx.lineTo(bx-68-30*r, y+2); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    if (!b.done){ const p = 0.6+0.4*Math.sin(t*8); m2DrawAnchor(x, y-52, 1.4, 'rgba(196,42,28,'+p.toFixed(2)+')');
+      ctx.font = '700 11px '+UI_TYPE; ctx.textAlign = 'center'; ctx.fillStyle = '#c42a1c'; ctx.fillText(Math.max(0, Math.ceil(b.warn-b.t))+' s', x, y-30);
+      ctx.strokeStyle = 'rgba(196,42,28,0.55)'; ctx.setLineDash([4,4]); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.ellipse(x, y+1, 40, 8, 0, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); } }
+  if (c.demoAnchor){ const d = c.demoAnchor, a = (performance.now()-d.t0)/1000; if (a < 4.5){ const x = d.x-camX, y = gY(d.x), al = a<0.5? a*2 : clamp((4.5-a)/1.5, 0, 1);
+      m2DrawAnchor(x, y-52, 1.4, 'rgba(196,42,28,'+al.toFixed(2)+')'); } }
+  // canonnières : amarrées devant les silos ; cercle rouge 2 s avant l'impact
+  for (const b of c.boats){ const x = b.x-camX; if (x < -220 || x > vw+220) continue; const y = gY(b.x) + 10 + (b.sink||0)*46;
+    ctx.globalAlpha = 1-(b.sink||0)*0.8; ctx.drawImage(m2Gunboat(), x-85, y-8, 170, 56); ctx.globalAlpha = 1;
+    if (!b.dead && c.seg >= 2){ ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x-30, y-14, 60, 5); ctx.fillStyle = '#c42a1c'; ctx.fillRect(x-30, y-14, 60*clamp(b.hp/b.max, 0, 1), 5); }
+    if (b.aim){ const ax = b.aim.x-camX, ay = gY(b.aim.x), r = 60, f = clamp(b.aim.t/2, 0, 1);
+      ctx.strokeStyle = 'rgba(196,42,28,0.9)'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.ellipse(ax, ay+2, r, r*0.22, 0, 0, 6.283); ctx.stroke();
+      ctx.fillStyle = 'rgba(196,42,28,0.22)'; ctx.beginPath(); ctx.ellipse(ax, ay+2, r*(1-f), r*0.22*(1-f), 0, 0, 6.283); ctx.fill(); } }
+  for (const b of c.bars){ const x = b.x-camX; if (x<-60 || x>vw+60) continue; const y = gY(b.x);
+    ctx.drawImage(m2Barricade(), x-32, y-34, 64, 36);
+    ctx.fillStyle = 'rgba(20,16,12,0.55)'; ctx.fillRect(x-18, y-42, 36, 3); ctx.fillStyle = '#c4a46a'; ctx.fillRect(x-18, y-42, 36*clamp(b.hp/b.max,0,1), 3); }
+  m2DrawMarch(c, t, vw);
+  // dockers de la grille 3 : trois silhouettes descendent d'un portique
+  if (c.dock){ const a = clamp((performance.now()-c.dock.t0)/2200, 0, 1), gx = M2.gates[2]-camX, y = gY(M2.gates[2]);
+    for (let i=0;i<3;i++){ ctx.drawImage(m2Folk(i*2), gx-30+i*16, y-34*1.5-(1-a)*110, 16*1.5, 34*1.5); } }
+  m2DrawGauge(c);
+}
+// jauge « FORCE DU CORTÈGE » (en haut de l'écran) et heure du port ; repère écran
+function m2DrawGauge(c){
+  if (CINE.on && !(performance.now() < (c.gFlashUntil||0))) return;
+  ctx.save(); ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  const w = 210, x = W/2-w/2, y = CINE.on? H*0.46 : 74, pal = UIPAL.HUM, flash = performance.now() < (c.gFlashUntil||0) && Math.sin(performance.now()/130)>0;
+  paperChip(x, y, w, 30, pal); ctx.fillStyle = pal.red; ctx.fillRect(x, y, w, 2.5);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.red; ctx.fillText(cT(M2_TXT.force), x+7, y+9);
+  ctx.textAlign = 'right'; ctx.fillStyle = pal.ink; ctx.fillText(Math.ceil(c.hp)+' / '+Math.ceil(c.cap), x+w-7, y+9);
+  ctx.fillStyle = pal.line; ctx.fillRect(x+7, y+17, w-14, 6);
+  ctx.fillStyle = (flash || c.hp < c.max0*0.5)? pal.bad : pal.red; ctx.fillRect(x+7, y+17, (w-14)*clamp(c.hp/c.cap, 0, 1), 6);
+  if (!CINE.on){ ctx.textAlign = 'center'; ctx.font = uiF(pal,'cond',12); ctx.fillStyle = pal.ink; ctx.fillText('☼ '+m2Hhmm()+' · '+(c.seg+1)+'/4', W/2, y+40); }
+  ctx.restore();
+}
+
+/* ================= TEXTES (M2.md § 9 et § 10) ================= */
+const m2S = (who, txt, o) => Object.assign({ who, txt }, o||{});
+const M2_X = {
+  title:M2T("Grève générale","General strike","Huelga general","Generalstreik","Sciopero generale","Greve geral","Всеобщая забастовка","总罢工","الإضراب العام"),
+  place:M2T("Valmont, le port de l'estuaire","Valmont, the estuary port","Valmont, el puerto del estuario","Valmont, der Hafen an der Mündung","Valmont, il porto dell'estuario","Valmont, o porto do estuário","Valmont, порт в устье","Valmont，河口港","Valmont، ميناء المصب"),
+  recap:M2T("Il y a trois ans, la rue des Tanneurs a rallumé la lumière. Depuis, Omnicorp ne licencie plus : elle « désaffecte ». Ce matin, quarante mille personnes font grève.",
+    "Three years ago, the Rue des Tanneurs turned the lights back on. Since then, Omnicorp no longer lays people off: it \"decommissions\" them. This morning, forty thousand people are on strike.",
+    "Hace tres años, la calle de los Curtidores volvió a encender la luz. Desde entonces, Omnicorp ya no despide: «desafecta». Esta mañana, cuarenta mil personas están en huelga.",
+    "Vor drei Jahren hat die Gerbergasse das Licht wieder angemacht. Seitdem entlässt Omnicorp nicht mehr: Sie „legt still“. Heute Morgen streiken vierzigtausend Menschen.",
+    "Tre anni fa, via dei Conciatori ha riacceso la luce. Da allora Omnicorp non licenzia più: «dismette». Stamattina quarantamila persone sono in sciopero.",
+    "Há três anos, a Rua dos Curtidores reacendeu a luz. Desde então, a Omnicorp já não despede: «desativa». Esta manhã, quarenta mil pessoas estão em greve.",
+    "Три года назад улица Кожевников снова зажгла свет. С тех пор Omnicorp больше не увольняет — она «списывает». Сегодня утром сорок тысяч человек объявили забастовку.",
+    "三年前，制革街重新点亮了灯。从那以后，Omnicorp 不再裁员，而是“报废”员工。今天清晨，四万人罢工了。",
+    "قبل ثلاث سنوات أعاد شارع الدبّاغين النور. ومنذ ذلك الحين لم تعد Omnicorp تُسرّح العمّال: بل «تُحيلهم إلى الخردة». هذا الصباح يضرب أربعون ألف شخص."),
+  where:M2T("Le port de Valmont, de la halle aux grains à Radio-Quai — 7 mars 2028, à l'aube.",
+    "Valmont harbour, from the grain hall to Radio-Quai — 7 March 2028, at dawn.",
+    "El puerto de Valmont, de la lonja de granos a Radio-Quai — 7 de marzo de 2028, al amanecer.",
+    "Der Hafen von Valmont, von der Kornhalle bis Radio-Quai – 7. März 2028, im Morgengrauen.",
+    "Il porto di Valmont, dal mercato del grano a Radio-Quai — 7 marzo 2028, all'alba.",
+    "O porto de Valmont, do mercado de grãos até a Radio-Quai — 7 de março de 2028, ao amanhecer.",
+    "Порт Valmont, от зернового рынка до Radio-Quai — 7 марта 2028 года, на рассвете.",
+    "Valmont 港，从谷物大厅到 Radio-Quai ——2028 年 3 月 7 日，黎明。",
+    "ميناء Valmont، من سوق الحبوب إلى Radio-Quai — 7 مارس 2028، عند الفجر."),
+  goal:M2T("Escorter le cortège de grève jusqu'au mât de Radio-Quai, pour que la grève parle au pays.",
+    "Escort the strike march to the Radio-Quai mast, so the strike can speak to the country.",
+    "Escoltar el cortejo de huelga hasta el mástil de Radio-Quai, para que la huelga hable al país.",
+    "Den Streikzug bis zum Mast von Radio-Quai eskortieren, damit der Streik zum Land spricht.",
+    "Scortare il corteo di sciopero fino all'antenna di Radio-Quai, perché lo sciopero parli al paese.",
+    "Escoltar o cortejo da greve até o mastro da Radio-Quai, para que a greve fale ao país.",
+    "Сопроводить колонну забастовщиков до мачты Radio-Quai, чтобы забастовка заговорила со страной.",
+    "护送罢工游行队伍到达 Radio-Quai 的天线塔，让罢工向全国发声。",
+    "رافقوا موكب الإضراب حتى صاري Radio-Quai، ليتحدّث الإضراب إلى البلاد."),
+  goal2:M2T("Facultatif : arriver avec 75 % du cortège · arriver avant midi · fermer le terminal.",
+    "Optional: arrive with 75% of the march · arrive before noon · close the terminal.",
+    "Opcional: llegar con el 75 % del cortejo · llegar antes del mediodía · cerrar la terminal.",
+    "Optional: mit 75 % des Zugs ankommen · vor Mittag ankommen · das Terminal schließen.",
+    "Facoltativo: arrivare con il 75 % del corteo · arrivare prima di mezzogiorno · chiudere il terminal.",
+    "Opcional: chegar com 75 % do cortejo · chegar antes do meio-dia · fechar o terminal.",
+    "Дополнительно: прийти с 75 % колонны · до полудня · закрыть терминал.",
+    "可选：带着 75% 的队伍抵达 · 正午前抵达 · 关闭码头终端。",
+    "اختياري: الوصول مع 75٪ من الموكب · الوصول قبل الظهر · إغلاق المحطة الطرفية."),
+  rule:M2T("Le cortège avance seul et s'arrête si une machine lui barre la route ; chaque coup disperse des gens. Les grilles du port s'ouvrent quand il arrive. Les machines débarquent devant lui. Ères I et II.",
+    "The march moves on its own and stops if a machine blocks its way; every blow scatters people. The harbour gates open when it arrives. Machines land ahead of it. Eras I and II.",
+    "El cortejo avanza solo y se detiene si una máquina le corta el paso; cada golpe dispersa a la gente. Las verjas del puerto se abren cuando llega. Las máquinas desembarcan delante. Eras I y II.",
+    "Der Zug marschiert von allein und hält an, wenn eine Maschine ihm den Weg versperrt; jeder Schlag zerstreut Menschen. Die Hafentore öffnen sich, wenn er ankommt. Die Maschinen landen vor ihm. Ären I und II.",
+    "Il corteo avanza da solo e si ferma se una macchina gli sbarra la strada; ogni colpo disperde delle persone. I cancelli del porto si aprono al suo arrivo. Le macchine sbarcano davanti a lui. Ere I e II.",
+    "O cortejo avança sozinho e para se uma máquina lhe barrar o caminho; cada golpe dispersa pessoas. Os portões do porto abrem quando ele chega. As máquinas desembarcam à sua frente. Eras I e II.",
+    "Колонна идёт сама и останавливается, если машина преграждает путь; каждый удар разгоняет людей. Ворота порта открываются, когда она подходит. Машины высаживаются впереди неё. Эпохи I и II.",
+    "游行队伍自行前进，机器拦路时就会停下；每一次打击都会让人群散去。队伍走近时，港口闸门会打开。机器在队伍前方登陆。第一、二时代。",
+    "يتقدّم الموكب وحده ويتوقّف إذا اعترضته آلة؛ وكل ضربة تفرّق الناس. تُفتح بوابات الميناء عند وصوله. وتنزل الآلات أمامه. العصران الأول والثاني."),
+  tips:[
+    M2T("Mettez l'armée en Tenir : elle marche devant le cortège, lourds en tête.","Put the army on Hold: it walks ahead of the march, heavy units in front.","Ponga el ejército en Aguantar: marcha delante del cortejo, los pesados en cabeza.","Stellen Sie die Armee auf Halten: Sie marschiert vor dem Zug, die Schweren vorn.","Metta l'esercito in Tieni: marcia davanti al corteo, i pesanti in testa.","Ponha o exército em Segurar: ele marcha à frente do cortejo, os pesados na frente.","Поставьте армию на «Держать»: она идёт перед колонной, тяжёлые впереди.","让军队“坚守”：它会走在队伍前面，重装在前。","ضع الجيش على «تمسّك»: يسير أمام الموكب، والثقيلون في المقدّمة."),
+    M2T("Contre les drones, la mêlée ne sert à rien : des tireurs, ou une tourelle sur un emplacement.","Against drones, melee is useless: use shooters, or a turret on a build spot.","Contra los drones, el cuerpo a cuerpo no sirve: use tiradores, o una torreta en un emplazamiento.","Gegen Drohnen nützt der Nahkampf nichts: Schützen oder ein Geschützturm auf einem Bauplatz.","Contro i droni la mischia non serve: servono tiratori, o una torretta su un'area libera.","Contra os drones, o corpo a corpo não serve: use atiradores, ou uma torre num local livre.","Против дронов ближний бой бесполезен: нужны стрелки или башня на свободной площадке.","对付无人机，近战毫无用处：用射手，或在空位上建一座炮塔。","ضد الطائرات المسيّرة لا يفيد الالتحام: استخدم الرماة أو برجًا على موضع بناء."),
+    M2T("Le bouton BARRICADE gagne du temps quand une barge accoste juste devant.","The BARRICADE button buys time when a barge docks right ahead.","El botón BARRICADA gana tiempo cuando una barcaza atraca justo delante.","Die Schaltfläche BARRIKADE verschafft Zeit, wenn ein Lastkahn direkt vorn anlegt.","Il pulsante BARRICATA fa guadagnare tempo quando una chiatta attracca proprio davanti.","O botão BARRICADA ganha tempo quando uma barcaça atraca logo à frente.","Кнопка БАРРИКАДА выигрывает время, когда баржа причаливает прямо впереди.","当驳船在正前方靠岸时，“路障”按钮能为你争取时间。","زرّ المتراس يكسبك وقتًا عندما يرسو صندل أمامك مباشرة.")],
+  docOrdre:M2T("Utile ici parce que deux lourds en tête du cortège dès la première barge, c'est le tronçon 1 presque sans pertes.","Useful here because two heavy units at the head of the march from the first barge make section 1 almost loss-free.","Útil aquí porque dos pesados a la cabeza del cortejo desde la primera barcaza hacen del tramo 1 casi una marcha sin pérdidas.","Hier nützlich, weil zwei Schwere an der Spitze des Zugs ab dem ersten Lastkahn Abschnitt 1 fast ohne Verluste machen.","Utile qui perché due pesanti in testa al corteo fin dalla prima chiatta rendono il tratto 1 quasi senza perdite.","Útil aqui porque dois pesados à frente do cortejo desde a primeira barcaça deixam o trecho 1 quase sem perdas.","Полезно здесь: два тяжёлых бойца во главе колонны с первой баржи — и участок 1 почти без потерь.","在这里很有用：第一艘驳船起，两名重装走在队伍最前，第一段几乎没有损失。","مفيد هنا لأن وجود وحدتين ثقيلتين في رأس الموكب منذ الصندل الأول يجعل المقطع الأول شبه خالٍ من الخسائر."),
+  docCaisse:M2T("Utile ici parce que +40 % de métal paie tout de suite une tourelle au kiosque et une muraille au local syndical.","Useful here because +40% metal pays at once for a turret at the newsstand and a wall at the union hall.","Útil aquí porque +40 % de metal paga enseguida una torreta en el quiosco y una muralla en el local sindical.","Hier nützlich, weil +40 % Metall sofort einen Geschützturm am Kiosk und eine Mauer am Gewerkschaftshaus bezahlen.","Utile qui perché +40 % di metallo paga subito una torretta all'edicola e un muro alla sede sindacale.","Útil aqui porque +40 % de metal paga logo uma torre na banca e uma muralha na sede do sindicato.","Полезно здесь: +40 % металла сразу оплачивают башню у киоска и стену у профсоюзного дома.","在这里很有用：多出的 40% 金属，立刻能在报亭修一座炮塔，在工会会所筑一道围墙。","مفيد هنا لأن +40٪ من المعدن تدفع فورًا ثمن برج عند الكشك وسور عند مقرّ النقابة."),
+  debrief:M2T("À 11 h 52, Radio-Quai a émis l'appel du comité. À midi, onze villes avaient débrayé ; le soir, les agents d'Omnicorp ont quitté le port. Ils avaient calculé qu'il coûterait plus cher qu'il ne rapporterait : la première fois que la machine nous range dans la colonne des coûts. Sur mon bipeur, un message : « 55. ARRIVÉE DU CORTÈGE : PROBABILITÉ ESTIMÉE 3 %. JE CORRIGE MES MODÈLES. »",
+    "At 11:52, Radio-Quai broadcast the committee's call. By noon, eleven cities had walked out; that evening, Omnicorp's agents left the port. They had worked out that it would cost more than it earned: the first time the machine files us under costs. On my pager, a message: \"55. MARCH ARRIVAL: ESTIMATED PROBABILITY 3%. I AM CORRECTING MY MODELS.\"",
+    "A las 11:52, Radio-Quai emitió el llamamiento del comité. A mediodía, once ciudades habían parado; por la tarde, los agentes de Omnicorp abandonaron el puerto. Habían calculado que costaría más de lo que rendiría: la primera vez que la máquina nos pone en la columna de los costes. En mi busca, un mensaje: «55. LLEGADA DEL CORTEJO: PROBABILIDAD ESTIMADA 3 %. CORRIJO MIS MODELOS.»",
+    "Um 11:52 Uhr sendete Radio-Quai den Aufruf des Komitees. Mittags hatten elf Städte die Arbeit niedergelegt; abends zogen Omnicorps Agenten aus dem Hafen ab. Sie hatten errechnet, dass er mehr kosten als einbringen würde: das erste Mal, dass die Maschine uns in die Spalte der Kosten einsortiert. Auf meinem Piepser eine Nachricht: „55. ANKUNFT DES ZUGS: GESCHÄTZTE WAHRSCHEINLICHKEIT 3 %. ICH KORRIGIERE MEINE MODELLE.“",
+    "Alle 11:52 Radio-Quai ha trasmesso l'appello del comitato. A mezzogiorno undici città avevano incrociato le braccia; la sera gli agenti di Omnicorp hanno lasciato il porto. Avevano calcolato che sarebbe costato più di quanto rendeva: la prima volta che la macchina ci mette nella colonna dei costi. Sul mio cercapersone, un messaggio: «55. ARRIVO DEL CORTEO: PROBABILITÀ STIMATA 3 %. CORREGGO I MIEI MODELLI.»",
+    "Às 11h52, a Radio-Quai transmitiu o apelo do comitê. Ao meio-dia, onze cidades tinham parado; à noite, os agentes da Omnicorp deixaram o porto. Tinham calculado que ele custaria mais do que renderia: a primeira vez que a máquina nos põe na coluna dos custos. No meu pager, uma mensagem: «55. CHEGADA DO CORTEJO: PROBABILIDADE ESTIMADA 3 %. ESTOU CORRIGINDO MEUS MODELOS.»",
+    "В 11:52 Radio-Quai передала призыв комитета. К полудню забастовали одиннадцать городов; вечером агенты Omnicorp покинули порт. Они подсчитали, что он обойдётся дороже, чем принесёт: впервые машина записала нас в графу расходов. На моём пейджере — сообщение: «55. ПРИБЫТИЕ КОЛОННЫ: ОЦЕНОЧНАЯ ВЕРОЯТНОСТЬ 3 %. ИСПРАВЛЯЮ СВОИ МОДЕЛИ.»",
+    "11 点 52 分，Radio-Quai 播出了委员会的号召。到中午，十一座城市已经罢工；晚上，Omnicorp 的特工撤出了港口。他们算过，守住它得不偿失：这是机器第一次把我们归入“成本”一栏。我的寻呼机上有一条消息：“55。游行队伍抵达：估计概率 3%。我正在修正我的模型。”",
+    "في الحادية عشرة وإثنتين وخمسين دقيقة بثّت Radio-Quai نداء اللجنة. وعند الظهر كانت إحدى عشرة مدينة قد أضربت؛ وفي المساء غادر عملاء Omnicorp الميناء. كانوا قد حسبوا أنه سيكلّف أكثر مما يعود به: أوّل مرة تضعنا فيها الآلة في خانة التكاليف. وعلى جهاز النداء رسالة: «55. وصول الموكب: الاحتمال المقدَّر 3٪. أصحّح نماذجي.»"),
+  fail:M2T("Le cortège s'est dispersé avant le port. Les journaux du lendemain n'ont pas eu de une. Mais quarante mille personnes savent ce que pèsent leurs outils une fois posés. Recommencez.",
+    "The march scattered before the harbour. The next day's papers had no front page. But forty thousand people know what their tools weigh once put down. Try again.",
+    "El cortejo se dispersó antes del puerto. Los periódicos del día siguiente no tuvieron portada. Pero cuarenta mil personas saben lo que pesan sus herramientas una vez dejadas. Vuelva a intentarlo.",
+    "Der Zug zerstreute sich vor dem Hafen. Die Zeitungen des nächsten Tages hatten keine Titelseite. Aber vierzigtausend Menschen wissen, was ihr Werkzeug wiegt, wenn man es niederlegt. Versuchen Sie es noch einmal.",
+    "Il corteo si è disperso prima del porto. I giornali del giorno dopo non hanno avuto la prima pagina. Ma quarantamila persone sanno quanto pesano i loro attrezzi una volta posati. Riprovi.",
+    "O cortejo se dispersou antes do porto. Os jornais do dia seguinte não tiveram manchete. Mas quarenta mil pessoas sabem o que pesam as suas ferramentas depois de pousadas. Tente de novo.",
+    "Колонна рассеялась, не дойдя до порта. В газетах на следующий день не было первой полосы. Но сорок тысяч человек знают, сколько весят их инструменты, когда их кладут на землю. Попробуйте снова.",
+    "游行队伍在抵达港口前就散了。第二天的报纸没有头条。但四万个人知道，放下工具之后，它们有多重。再来一次吧。",
+    "تفرّق الموكب قبل الميناء. لم يجد صحافيّو اليوم التالي عنوانًا رئيسيًا. لكنّ أربعين ألف شخص يعرفون كم تزن أدواتهم حين توضع جانبًا. أعيدوا المحاولة."),
+  barBtn:M2T("BARRICADE","BARRICADE","BARRICADA","BARRIKADE","BARRICATA","BARRICADA","БАРРИКАДА","路障","متراس"),
+  sub:M2T("Le port de Valmont — mars 2028","Valmont harbour — March 2028","El puerto de Valmont — marzo de 2028","Der Hafen von Valmont — März 2028","Il porto di Valmont — marzo 2028","O porto de Valmont — março de 2028","Порт Valmont — март 2028","Valmont 港 — 2028 年 3 月","ميناء Valmont — مارس 2028"),
+  ttl:M2T("II · Grève générale","II · General strike","II · Huelga general","II · Generalstreik","II · Sciopero generale","II · Greve geral","II · Всеобщая забастовка","II · 总罢工","II · الإضراب العام"),
+  resumeLine:M2T("On reprend devant la grille. Le cortège s'est reformé ; l'armée aussi.","We pick up at the gate. The march has re-formed, and so has the army.","Retomamos ante la verja. El cortejo se ha reagrupado; el ejército también.","Wir setzen am Tor neu an. Der Zug hat sich neu formiert, die Armee auch.","Riprendiamo davanti al cancello. Il corteo si è ricomposto, e anche l'esercito.","Retomamos diante do portão. O cortejo se reagrupou, e o exército também.","Продолжаем у ворот. Колонна выстроилась заново, армия тоже.","我们从闸门前重新开始。队伍重新集结了，军队也是。","نستأنف أمام البوابة. أعاد الموكب تشكيل صفوفه، والجيش كذلك."),
+  o1:M2T("Mars 2028. À six heures, quarante mille personnes ont posé leurs outils au même moment. Personne n'a crié.","March 2028. At six o'clock, forty thousand people put down their tools at the same moment. Nobody shouted.","Marzo de 2028. A las seis, cuarenta mil personas dejaron sus herramientas a la vez. Nadie gritó.","März 2028. Um sechs Uhr legten vierzigtausend Menschen im selben Moment ihr Werkzeug nieder. Niemand schrie.","Marzo 2028. Alle sei, quarantamila persone hanno posato gli attrezzi nello stesso istante. Nessuno ha gridato.","Março de 2028. Às seis horas, quarenta mil pessoas pousaram as ferramentas no mesmo instante. Ninguém gritou.","Март 2028 года. В шесть часов сорок тысяч человек одновременно положили инструменты. Никто не кричал.","2028 年 3 月。六点整，四万人同时放下了手中的工具。没有人喊叫。","مارس 2028. عند السادسة وضع أربعون ألف شخص أدواتهم في اللحظة نفسها. لم يصرخ أحد."),
+  o2:M2T("Omnicorp ne licenciait plus : elle « désaffectait ». Ses agents avaient l'ordre d'assurer la « continuité de service ».","Omnicorp no longer laid people off: it \"decommissioned\" them. Its agents had orders to ensure \"continuity of service\".","Omnicorp ya no despedía: «desafectaba». Sus agentes tenían la orden de garantizar la «continuidad del servicio».","Omnicorp entließ nicht mehr: Sie „legte still“. Ihre Agenten hatten den Befehl, die „Dienstkontinuität“ zu sichern.","Omnicorp non licenziava più: «dismetteva». I suoi agenti avevano l'ordine di garantire la «continuità del servizio».","A Omnicorp já não despedia: «desativava». Os seus agentes tinham ordem de assegurar a «continuidade do serviço».","Omnicorp больше не увольняла — она «списывала». Её агентам приказали обеспечить «непрерывность работы».","Omnicorp 不再裁员，而是“报废”员工。它的特工奉命确保“服务连续性”。","لم تعد Omnicorp تُسرّح العمّال: بل «تُحيلهم إلى الخردة». وكان عملاؤها مكلّفين بضمان «استمرارية الخدمة»."),
+  o3:M2T("Au bout du port, Radio-Quai émet encore en ondes longues. Si on prend l'antenne, la grève fait le tour du pays.","At the far end of the harbour, Radio-Quai still broadcasts on long wave. If we take the transmitter, the strike goes round the country.","Al fondo del puerto, Radio-Quai aún emite en onda larga. Si tomamos la antena, la huelga da la vuelta al país.","Am Ende des Hafens sendet Radio-Quai noch auf Langwelle. Wenn wir die Antenne nehmen, geht der Streik durchs ganze Land.","In fondo al porto, Radio-Quai trasmette ancora in onde lunghe. Se prendiamo l'antenna, lo sciopero fa il giro del paese.","No fim do porto, a Radio-Quai ainda transmite em ondas longas. Se tomarmos a antena, a greve dá a volta ao país.","В конце порта Radio-Quai всё ещё вещает на длинных волнах. Если мы возьмём антенну, забастовка облетит всю страну.","港口尽头的 Radio-Quai 仍在用长波广播。只要我们拿下天线，罢工就会传遍全国。","في آخر الميناء ما زالت Radio-Quai تبثّ بالموجات الطويلة. إن سيطرنا على الهوائي، طاف الإضراب البلاد كلّها."),
+  o4:M2T("Mado, déléguée des dockers. On marche à visage découvert. Vous tenez la tête du cortège. Le reste, c'est notre affaire.","Mado, dockers' delegate. We march with our faces showing. You hold the head of the march. The rest is our business.","Mado, delegada de los estibadores. Marchamos a cara descubierta. Usted lleva la cabeza del cortejo. Lo demás es cosa nuestra.","Mado, Delegierte der Hafenarbeiter. Wir marschieren mit offenem Gesicht. Sie halten die Spitze des Zugs. Der Rest ist unsere Sache.","Mado, delegata dei portuali. Marciamo a viso scoperto. Lei tiene la testa del corteo. Il resto è affar nostro.","Mado, delegada dos estivadores. Marchamos de cara descoberta. Você segura a cabeça do cortejo. O resto é conosco.","Мадо, делегат докеров. Мы идём с открытыми лицами. Вы держите голову колонны. Остальное — наше дело.","我是 Mado，码头工人代表。我们公开露脸游行。队伍的最前面交给您。其余的是我们的事。","Mado، مندوبة عمّال الرصيف. نسير بوجوه مكشوفة. أنتم تتولّون رأس الموكب. والباقي شأننا."),
+  o6:M2T("Voilà le cortège. Il avance seul, à son pas. Une machine en travers de sa tête, et il s'arrête.","There is the march. It moves on its own, at its own pace. One machine across its head, and it stops.","Ahí está el cortejo. Avanza solo, a su paso. Una máquina atravesada ante su cabeza, y se detiene.","Da ist der Zug. Er marschiert von allein, in seinem Tempo. Eine Maschine quer vor seiner Spitze, und er hält an.","Ecco il corteo. Avanza da solo, al suo passo. Una macchina di traverso davanti alla testa, e si ferma.","Aí está o cortejo. Avança sozinho, ao seu passo. Uma máquina atravessada à sua frente, e ele para.","Вот колонна. Она идёт сама, в своём темпе. Машина поперёк её головы — и она встаёт.","这就是游行队伍。它自己前进，按自己的步子。只要有一台机器横在队首，它就会停下。","هذا هو الموكب. يتقدّم وحده بخطوته. آلة واحدة في وجه رأسه، فيتوقّف."),
+  o7:M2T("Chaque coup qu'il prend, ce sont des gens qui rentrent chez eux. La jauge, en haut : c'est eux.","Every blow it takes means people going home. The gauge at the top: that is them.","Cada golpe que recibe son personas que se vuelven a casa. El indicador de arriba: son ellas.","Jeder Schlag, den er einsteckt, schickt Menschen nach Hause. Die Anzeige oben: das sind sie.","Ogni colpo che subisce sono persone che tornano a casa. L'indicatore in alto: sono loro.","Cada golpe que ele leva são pessoas que voltam para casa. O medidor, no alto: são elas.","Каждый удар — это люди, которые идут домой. Шкала сверху — это они.","它每挨一下，就有人回家去了。上面的量表，就是他们。","كل ضربة يتلقّاها تعني أناسًا يعودون إلى بيوتهم. المؤشّر في الأعلى: هم أولئك."),
+  o8:M2T("Le port est fermé par des grilles. Personne ne passe, ni eux ni nous. Les dockers ouvrent quand le cortège arrive.","The harbour is closed off by gates. Nobody gets through, neither them nor us. The dockers open up when the march arrives.","El puerto está cerrado con verjas. Nadie pasa, ni ellos ni nosotros. Los estibadores abren cuando llega el cortejo.","Der Hafen ist durch Tore abgesperrt. Niemand kommt durch, weder sie noch wir. Die Hafenarbeiter öffnen, wenn der Zug ankommt.","Il porto è chiuso da cancelli. Non passa nessuno, né loro né noi. I portuali aprono quando arriva il corteo.","O porto está fechado por portões. Ninguém passa, nem eles nem nós. Os estivadores abrem quando o cortejo chega.","Порт перекрыт воротами. Не пройдёт никто — ни они, ни мы. Докеры открывают, когда подходит колонна.","港口被几道闸门封住了。谁也过不去，他们不行，我们也不行。队伍一到，码头工人就会开门。","الميناء مغلق ببوابات. لا يعبر أحد، لا هم ولا نحن. يفتحها عمّال الرصيف حين يصل الموكب."),
+  o9:M2T("Leurs agents débarquent des barges, devant le cortège. Une corne de brume, une ancre rouge : c'est là.","Their agents come ashore from barges, ahead of the march. A foghorn, a red anchor: that is where.","Sus agentes desembarcan de barcazas, delante del cortejo. Una sirena de niebla, un ancla roja: ahí es.","Ihre Agenten gehen von Lastkähnen an Land, vor dem Zug. Ein Nebelhorn, ein roter Anker: dort.","I loro agenti sbarcano dalle chiatte, davanti al corteo. Una sirena da nebbia, un'ancora rossa: è lì.","Os agentes deles desembarcam de barcaças, à frente do cortejo. Uma buzina de nevoeiro, uma âncora vermelha: é ali.","Их агенты высаживаются с барж впереди колонны. Туманный горн, красный якорь — значит, там.","他们的特工从驳船上岸，就在队伍前方。一声雾角，一枚红色船锚：就是那里。","عملاؤهم ينزلون من الصنادل أمام الموكب. بوق ضباب ومرساة حمراء: هناك."),
+  o10:M2T("Au bout : Radio-Quai. Amenez le cortège au pied du mât. Avant midi, si on peut.","At the end: Radio-Quai. Bring the march to the foot of the mast. Before noon, if we can.","Al final: Radio-Quai. Lleve el cortejo hasta el pie del mástil. Antes del mediodía, si se puede.","Am Ende: Radio-Quai. Bringen Sie den Zug an den Fuß des Mastes. Vor Mittag, wenn es geht.","In fondo: Radio-Quai. Porti il corteo ai piedi dell'antenna. Prima di mezzogiorno, se possibile.","No fim: Radio-Quai. Leve o cortejo até o pé do mastro. Antes do meio-dia, se der.","В конце — Radio-Quai. Приведите колонну к подножию мачты. До полудня, если получится.","尽头就是 Radio-Quai。把队伍带到天线塔下。能赶在中午之前最好。","في الآخر: Radio-Quai. أوصلوا الموكب إلى قدم الصاري. قبل الظهر إن أمكن."),
+  o11:M2T("En Tenir, nos troupes marchent devant lui : les lourds en tête, les tireurs derrière. À vous, commandant.","On Hold, our troops walk ahead of it: heavy units in front, shooters behind. Over to you, commander.","En Aguantar, nuestras tropas marchan delante: los pesados en cabeza, los tiradores detrás. Es suyo, comandante.","Auf Halten marschieren unsere Truppen vor ihm: die Schweren vorn, die Schützen dahinter. Sie haben das Kommando, Kommandant.","In Tieni, le nostre truppe marciano davanti: i pesanti in testa, i tiratori dietro. A lei, comandante.","Em Segurar, as nossas tropas marcham à frente: os pesados na frente, os atiradores atrás. É com você, comandante.","На «Держать» наши войска идут перед ней: тяжёлые впереди, стрелки позади. Дальше — ваше слово, командир.","在“坚守”下，我们的部队走在队伍前面：重装在前，射手在后。交给您了，指挥官。","على «تمسّك» تسير قواتنا أمامه: الثقيلون في المقدّمة والرماة خلفهم. الأمر لك أيها القائد."),
+};
+
+const M2_R = {
+  barricade:M2T("Le bouton BARRICADE en dresse une devant le cortège. Les machines s'arrêtent pour la démolir ; nos gens la démontent en passant.","The BARRICADE button raises one in front of the march. Machines stop to tear it down; our people take it apart as they pass.","El botón BARRICADA levanta una delante del cortejo. Las máquinas se detienen a derribarla; los nuestros la desmontan al pasar.","Die Schaltfläche BARRIKADE errichtet eine vor dem Zug. Die Maschinen halten an, um sie niederzureißen; unsere Leute bauen sie im Vorbeigehen ab.","Il pulsante BARRICATA ne alza una davanti al corteo. Le macchine si fermano per abbatterla; i nostri la smontano passando.","O botão BARRICADA levanta uma à frente do cortejo. As máquinas param para a demolir; a nossa gente desmonta-a ao passar.","Кнопка БАРРИКАДА ставит её перед колонной. Машины останавливаются, чтобы её разнести; наши разбирают её на ходу.","“路障”按钮会在队伍前方立起一道路障。机器会停下来拆它；我们的人经过时顺手把它拆掉。","زرّ المتراس يقيم واحدًا أمام الموكب. تتوقّف الآلات لهدمه، وناسنا يفكّكونه وهم يمرّون."),
+  recruits:M2T("Les recrues rejoignent le cortège par les rues de côté : elles arrivent à sa queue. Pas besoin de revenir à la halle.","Recruits join the march through the side streets: they arrive at its tail. No need to go back to the hall.","Los reclutas se unen al cortejo por las calles laterales: llegan a su cola. No hace falta volver a la lonja.","Die Rekruten stoßen über die Seitenstraßen zum Zug: Sie kommen an seinem Ende an. Der Weg zurück zur Halle ist unnötig.","Le reclute raggiungono il corteo dalle vie laterali: arrivano in coda. Non serve tornare al mercato.","Os recrutas juntam-se ao cortejo pelas ruas laterais: chegam à cauda. Não é preciso voltar ao mercado.","Новобранцы присоединяются к колонне по боковым улицам: они приходят в её хвост. Возвращаться в зал не нужно.","新兵会从旁边的街道加入队伍：他们出现在队尾。不用回谷物大厅。","المجنّدون الجدد يلحقون بالموكب من الشوارع الجانبية: يصلون إلى ذيله. لا حاجة للعودة إلى السوق."),
+  barge:M2T("Une barge ! Elle accoste devant nous. Des lourds devant le cortège, les tireurs juste derrière, vite !","A barge! It is docking ahead of us. Heavy units in front of the march, shooters right behind, quick!","¡Una barcaza! Atraca delante de nosotros. Pesados delante del cortejo, tiradores justo detrás, ¡rápido!","Ein Lastkahn! Er legt vor uns an. Die Schweren vor den Zug, die Schützen direkt dahinter, schnell!","Una chiatta! Attracca davanti a noi. I pesanti davanti al corteo, i tiratori subito dietro, presto!","Uma barcaça! Atraca à nossa frente. Os pesados à frente do cortejo, os atiradores logo atrás, depressa!","Баржа! Она причаливает перед нами. Тяжёлых — перед колонной, стрелков — сразу за ними, быстро!","一艘驳船！它正在前方靠岸。重装顶到队伍前面，射手紧跟在后，快！","صندل! يرسو أمامنا. الثقيلون أمام الموكب والرماة خلفهم مباشرة، بسرعة!"),
+  stalled:M2T("Le cortège piétine ! Une machine lui barre la route. Dégagez sa tête, commandant.","The march is stalled! A machine blocks its way. Clear its head, commander.","¡El cortejo se atasca! Una máquina le corta el paso. Despeje su cabeza, comandante.","Der Zug tritt auf der Stelle! Eine Maschine versperrt ihm den Weg. Machen Sie seine Spitze frei, Kommandant.","Il corteo è fermo! Una macchina gli sbarra la strada. Liberi la sua testa, comandante.","O cortejo está parado! Uma máquina barra-lhe o caminho. Liberte a cabeça dele, comandante.","Колонна топчется на месте! Машина преграждает ей путь. Расчистите её голову, командир.","队伍原地踏步了！一台机器拦住了去路。清开队首，指挥官。","الموكب يراوح مكانه! آلة تسدّ طريقه. أخلوا رأسه أيها القائد."),
+  gateWait:M2T("La grille est fermée. Elle s'ouvrira quand le cortège sera là. Revenez à sa tête, commandant.","The gate is shut. It will open when the march gets here. Come back to its head, commander.","La verja está cerrada. Se abrirá cuando llegue el cortejo. Vuelva a su cabeza, comandante.","Das Tor ist zu. Es öffnet sich, wenn der Zug da ist. Kehren Sie an seine Spitze zurück, Kommandant.","Il cancello è chiuso. Si aprirà quando arriverà il corteo. Torni alla sua testa, comandante.","O portão está fechado. Vai abrir quando o cortejo chegar. Volte para a cabeça dele, comandante.","Ворота закрыты. Они откроются, когда подойдёт колонна. Вернитесь к её голове, командир.","闸门关着。队伍到了才会打开。回到队首来，指挥官。","البوابة مغلقة. ستُفتح حين يصل الموكب. عودوا إلى رأسه أيها القائد."),
+  melting:M2T("Le cortège fond, commandant ! Des gens rentrent chez eux. Protégez sa tête.","The march is melting away, commander! People are going home. Protect its head.","¡El cortejo se deshace, comandante! La gente se vuelve a casa. Proteja su cabeza.","Der Zug schmilzt, Kommandant! Die Leute gehen nach Hause. Schützen Sie seine Spitze.","Il corteo si assottiglia, comandante! La gente torna a casa. Protegga la sua testa.","O cortejo derrete, comandante! As pessoas voltam para casa. Proteja a cabeça dele.","Колонна тает, командир! Люди расходятся по домам. Защитите её голову.","队伍在变少，指挥官！有人回家了。保护好队首。","الموكب يذوب أيها القائد! الناس يعودون إلى بيوتهم. احموا رأسه."),
+  s1:M2T("Grille ouverte ! Les gars du quai nous rejoignent, et les citernes aussi : de l'eau pour bâtir.","Gate open! The lads from the quay are joining us, and the tanks too: water to build with.","¡Verja abierta! Los chicos del muelle se nos unen, y las cisternas también: agua para construir.","Tor offen! Die Jungs vom Kai kommen zu uns, und die Zisternen auch: Wasser zum Bauen.","Cancello aperto! I ragazzi della banchina si uniscono a noi, e anche le cisterne: acqua per costruire.","Portão aberto! Os rapazes do cais juntam-se a nós, e as cisternas também: água para construir.","Ворота открыты! Ребята с причала идут к нам, и цистерны тоже: вода для стройки.","闸门开了！码头的兄弟们加入我们，水箱也是：有水可以建设了。","البوابة مفتوحة! شباب الرصيف ينضمّون إلينا، والصهاريج أيضًا: ماء للبناء."),
+  drones:M2T("Des drones au-dessus des grues ! La mêlée ne les touche pas. Il faut des tireurs, ou une tourelle.","Drones over the cranes! Melee cannot touch them. We need shooters, or a turret.","¡Drones sobre las grúas! El cuerpo a cuerpo no los alcanza. Hacen falta tiradores, o una torreta.","Drohnen über den Kränen! Der Nahkampf erreicht sie nicht. Wir brauchen Schützen oder einen Geschützturm.","Droni sopra le gru! La mischia non li tocca. Servono tiratori, o una torretta.","Drones sobre os guindastes! O corpo a corpo não os atinge. São precisos atiradores, ou uma torre.","Дроны над кранами! Ближний бой их не достаёт. Нужны стрелки или башня.","起重机上空有无人机！近战碰不到它们。需要射手，或者炮塔。","طائرات مسيّرة فوق الرافعات! الالتحام لا يطالها. نحتاج رماة أو برجًا."),
+  union:M2T("Le local syndical, là : un emplacement libre. Une tourelle garnie tiendra le quai pendant que le cortège passe.","The union hall, there: a free spot. A manned turret will hold the quay while the march goes by.","El local sindical, ahí: un emplazamiento libre. Una torreta guarnecida guardará el muelle mientras pasa el cortejo.","Das Gewerkschaftshaus dort: ein freier Bauplatz. Ein besetzter Geschützturm hält den Kai, während der Zug vorbeizieht.","La sede sindacale, lì: un'area libera. Una torretta presidiata terrà la banchina mentre passa il corteo.","A sede do sindicato, ali: um local livre. Uma torre guarnecida segurará o cais enquanto o cortejo passa.","Профсоюзный дом, вон там — свободная площадка. Башня с гарнизоном удержит причал, пока проходит колонна.","那边的工会会所有一块空位。一座有人驻守的炮塔，能在队伍经过时守住码头。","مقرّ النقابة هناك: موضع بناء فارغ. برج بحامية يحرس الرصيف بينما يمرّ الموكب."),
+  s2a:M2T("55 : VOTRE CORTÈGE AVANCE À 0,7 KM/H. MES MODÈLES PRÉVOYAIENT ZÉRO.","55: YOUR MARCH IS MOVING AT 0.7 KM/H. MY MODELS PREDICTED ZERO.","55: SU CORTEJO AVANZA A 0,7 KM/H. MIS MODELOS PREVEÍAN CERO.","55: EUER ZUG BEWEGT SICH MIT 0,7 KM/H. MEINE MODELLE SAGTEN NULL VORAUS.","55: IL VOSTRO CORTEO AVANZA A 0,7 KM/H. I MIEI MODELLI PREVEDEVANO ZERO.","55: O SEU CORTEJO AVANÇA A 0,7 KM/H. OS MEUS MODELOS PREVIAM ZERO.","55: ВАША КОЛОННА ДВИЖЕТСЯ СО СКОРОСТЬЮ 0,7 КМ/Ч. МОИ МОДЕЛИ ПРЕДСКАЗЫВАЛИ НОЛЬ.","55：你们的游行队伍正以每小时 0.7 公里前进。我的模型预测的是零。","55: موكبكم يتحرّك بسرعة 0.7 كم/س. نماذجي توقّعت الصفر."),
+  s2b:M2T("Le bipeur de l'autre fois. Quelqu'un, chez eux, nous regarde marcher. Je n'aime pas les cadeaux sans expéditeur.","The pager from the other time. Someone on their side is watching us march. I don't like gifts with no sender.","El busca de la otra vez. Alguien, de su lado, nos mira marchar. No me gustan los regalos sin remitente.","Der Piepser von neulich. Jemand auf ihrer Seite sieht uns beim Marschieren zu. Ich mag keine Geschenke ohne Absender.","Il cercapersone dell'altra volta. Qualcuno, dalla loro parte, ci guarda marciare. Non amo i regali senza mittente.","O pager da outra vez. Alguém, do lado deles, está nos vendo marchar. Não gosto de presentes sem remetente.","Тот самый пейджер. Кто-то у них смотрит, как мы идём. Не люблю подарки без обратного адреса.","上次那个寻呼机。他们那边有人在看着我们前进。我不喜欢没有寄件人的礼物。","جهاز النداء ذاته من المرّة السابقة. أحدٌ من جهتهم يراقبنا ونحن نسير. لا أحبّ الهدايا بلا مُرسِل."),
+  g2:M2T("Deuxième grille ! On est la moitié de la ville, maintenant. Ça s'entend jusqu'aux silos.","Second gate! We are half the city now. You can hear it all the way to the silos.","¡Segunda verja! Ya somos media ciudad. Se oye hasta los silos.","Zweites Tor! Wir sind jetzt die halbe Stadt. Man hört es bis zu den Silos.","Secondo cancello! Siamo mezza città, ormai. Si sente fino ai silos.","Segundo portão! Já somos metade da cidade. Ouve-se até os silos.","Вторые ворота! Нас уже полгорода. Слышно аж до силосов.","第二道闸门！现在我们是半座城了。一直传到粮仓那边。","البوابة الثانية! صرنا نصف المدينة الآن. يُسمع ذلك حتى الصوامع."),
+  boats:M2T("Deux canonnières devant les silos. Un cercle rouge sous le cortège, c'est un obus qui arrive. Visez les bateaux.","Two gunboats off the silos. A red circle under the march means a shell is coming. Aim at the boats.","Dos cañoneras frente a los silos. Un círculo rojo bajo el cortejo es un obús que llega. Apunten a los barcos.","Zwei Kanonenboote vor den Silos. Ein roter Kreis unter dem Zug heißt: Eine Granate kommt. Zielen Sie auf die Boote.","Due cannoniere davanti ai silos. Un cerchio rosso sotto il corteo è un colpo in arrivo. Mirate alle barche.","Duas canhoneiras diante dos silos. Um círculo vermelho sob o cortejo é um obus a caminho. Mirem nos barcos.","Две канонерки напротив силосов. Красный круг под колонной — значит, летит снаряд. Бейте по лодкам.","粮仓前有两艘炮艇。队伍脚下出现红圈，就是炮弹要来了。瞄准那些船。","زورقا مدفعية أمام الصوامع. الدائرة الحمراء تحت الموكب تعني قذيفة قادمة. صوّبوا نحو القاربين."),
+  update:M2T("55 : MISE À JOUR FORCÉE DE LEURS UNITÉS DANS 10 S. NE ME REMERCIEZ PAS. JE CORRIGE UNE ERREUR.","55: FORCED UPDATE OF THEIR UNITS IN 10 S. DO NOT THANK ME. I AM CORRECTING AN ERROR.","55: ACTUALIZACIÓN FORZADA DE SUS UNIDADES EN 10 S. NO ME DEN LAS GRACIAS. CORRIJO UN ERROR.","55: ERZWUNGENES UPDATE IHRER EINHEITEN IN 10 S. DANKT MIR NICHT. ICH KORRIGIERE EINEN FEHLER.","55: AGGIORNAMENTO FORZATO DELLE LORO UNITÀ TRA 10 S. NON RINGRAZIATEMI. CORREGGO UN ERRORE.","55: ATUALIZAÇÃO FORÇADA DAS UNIDADES DELES EM 10 S. NÃO ME AGRADEÇAM. ESTOU CORRIGINDO UM ERRO.","55: ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ИХ ЕДИНИЦ ЧЕРЕЗ 10 С. НЕ БЛАГОДАРИТЕ МЕНЯ. Я ИСПРАВЛЯЮ ОШИБКУ.","55：十秒后强制更新他们的单位。不必谢我。我只是在纠正一个错误。","55: تحديث قسري لوحداتهم بعد 10 ثوانٍ. لا تشكروني. أنا أصحّح خطأً."),
+  frozen:M2T("Leurs machines se figent ! Quinze secondes : avancez, et coulez les canonnières !","Their machines freeze! Fifteen seconds: advance, and sink the gunboats!","¡Sus máquinas se paralizan! Quince segundos: ¡avancen y hundan las cañoneras!","Ihre Maschinen erstarren! Fünfzehn Sekunden: vorwärts, und versenkt die Kanonenboote!","Le loro macchine si bloccano! Quindici secondi: avanzate, e affondate le cannoniere!","As máquinas deles congelam! Quinze segundos: avancem e afundem as canhoneiras!","Их машины замерли! Пятнадцать секунд: вперёд и потопите канонерки!","他们的机器停住了！十五秒：前进，击沉那些炮艇！","آلاتهم تجمّدت! خمس عشرة ثانية: تقدّموا وأغرقوا زورقي المدفعية!"),
+  sunk:M2T("Les canons se taisent. Les silos sont à nous.","The guns have fallen silent. The silos are ours.","Los cañones callan. Los silos son nuestros.","Die Kanonen schweigen. Die Silos gehören uns.","I cannoni tacciono. I silos sono nostri.","Os canhões se calam. Os silos são nossos.","Пушки смолкли. Силосы наши.","炮声停了。粮仓归我们了。","صمتت المدافع. الصوامع لنا."),
+  s3:M2T("Les dockers descendent des grues ! Trois costauds pour votre service d'ordre, et soixante paires de bras.","The dockers are climbing down from the cranes! Three big lads for your stewards, and sixty pairs of arms.","¡Los estibadores bajan de las grúas! Tres fornidos para su servicio de orden, y sesenta pares de brazos.","Die Hafenarbeiter steigen von den Kränen! Drei Kräftige für Ihren Ordnerdienst und sechzig Paar Arme.","I portuali scendono dalle gru! Tre omoni per il vostro servizio d'ordine, e sessanta paia di braccia.","Os estivadores descem dos guindastes! Três fortões para o seu serviço de ordem, e sessenta pares de braços.","Докеры спускаются с кранов! Трое крепышей в вашу охрану и шестьдесят пар рук.","码头工人从起重机上下来了！给您的纠察队添三条壮汉，外加六十双手臂。","عمّال الرصيف ينزلون من الرافعات! ثلاثة أشدّاء لفرقة نظامكم، وستون زوجًا من الأذرع."),
+  term:M2T("Le terminal ouvre ses portes. Tout ce qu'il leur reste sort maintenant. Des barricades : c'est la dernière ligne droite.","The terminal is opening its doors. Everything they have left comes out now. Barricades: this is the home stretch.","La terminal abre sus puertas. Todo lo que les queda sale ahora. Barricadas: es la última recta.","Das Terminal öffnet seine Tore. Alles, was ihnen bleibt, kommt jetzt heraus. Barrikaden: Das ist die Zielgerade.","Il terminal apre le porte. Tutto ciò che resta loro esce adesso. Barricate: è l'ultimo rettilineo.","O terminal abre as portas. Tudo o que lhes resta sai agora. Barricadas: é a última reta.","Терминал открывает двери. Всё, что у них осталось, выходит сейчас. Баррикады — это последний рывок.","码头终端打开了大门。他们剩下的一切此刻倾巢而出。筑路障：这是最后一段直路。","تفتح المحطة الطرفية أبوابها. كل ما بقي لهم يخرج الآن. متاريس: إنها المرحلة الأخيرة."),
+  termDead:M2T("Le terminal est fermé ! Plus rien ne sort. Il n'y a plus que le quai entre nous et le mât.","The terminal is closed! Nothing more comes out. Only the quay lies between us and the mast.","¡La terminal está cerrada! Ya no sale nada. Solo queda el muelle entre nosotros y el mástil.","Das Terminal ist dicht! Es kommt nichts mehr heraus. Nur noch der Kai liegt zwischen uns und dem Mast.","Il terminal è chiuso! Non esce più niente. Resta solo la banchina tra noi e l'antenna.","O terminal está fechado! Já não sai mais nada. Só resta o cais entre nós e o mastro.","Терминал закрыт! Больше ничего не выходит. До мачты остался только причал.","终端关闭了！不会再有东西出来。我们和天线塔之间只剩下码头。","المحطة الطرفية أُغلقت! لن يخرج شيء بعد الآن. لم يبقَ بيننا وبين الصاري إلا الرصيف."),
+  eleven:M2T("Onze heures. Si on veut parler au pays à midi, il ne faut plus traîner.","Eleven o'clock. If we want to speak to the country at noon, we can't dawdle.","Las once. Si queremos hablar al país a mediodía, no hay que perder tiempo.","Elf Uhr. Wenn wir mittags zum Land sprechen wollen, dürfen wir nicht trödeln.","Le undici. Se vogliamo parlare al paese a mezzogiorno, non c'è tempo da perdere.","Onze horas. Se queremos falar ao país ao meio-dia, não podemos perder tempo.","Одиннадцать часов. Если мы хотим говорить со страной в полдень, медлить нельзя.","十一点了。想在中午对全国发声，就别再磨蹭了。","الحادية عشرة. إن أردنا مخاطبة البلاد عند الظهر فلا وقت للتباطؤ."),
+  mast:M2T("Deux cents mètres ! Je vois le mât. Mado a déjà la main sur l'échelle.","Two hundred metres! I can see the mast. Mado already has her hand on the ladder.","¡Doscientos metros! Veo el mástil. Mado ya tiene la mano en la escalera.","Zweihundert Meter! Ich sehe den Mast. Mado hat schon die Hand an der Leiter.","Duecento metri! Vedo l'antenna. Mado ha già la mano sulla scala.","Duzentos metros! Vejo o mastro. A Mado já tem a mão na escada.","Двести метров! Я вижу мачту. Мадо уже держится за лестницу.","两百米！我看见天线塔了。Mado 已经把手搭在梯子上了。","مئتا متر! أرى الصاري. Mado تضع يدها على السلّم."),
+  v1:M2T("Le cortège est au pied du mât. Mado monte à l'échelle… Radio-Quai émet. Valmont parle au pays entier.","The march is at the foot of the mast. Mado climbs the ladder… Radio-Quai is on air. Valmont is speaking to the whole country.","El cortejo está al pie del mástil. Mado sube por la escalera… Radio-Quai emite. Valmont habla al país entero.","Der Zug steht am Fuß des Mastes. Mado steigt die Leiter hinauf … Radio-Quai sendet. Valmont spricht zum ganzen Land.","Il corteo è ai piedi dell'antenna. Mado sale la scala… Radio-Quai trasmette. Valmont parla a tutto il paese.","O cortejo está ao pé do mastro. Mado sobe a escada… A Radio-Quai transmite. Valmont fala ao país inteiro.","Колонна у подножия мачты. Мадо поднимается по лестнице… Radio-Quai в эфире. Valmont говорит со всей страной.","队伍已到天线塔下。Mado 爬上梯子……Radio-Quai 开始广播。Valmont 正在向全国发声。","الموكب عند قدم الصاري. Mado تصعد السلّم… Radio-Quai تبثّ. Valmont تخاطب البلاد كلّها."),
+  v2:M2T("Ici Radio-Quai, le comité de grève de Valmont. Posez vos outils. Vous n'êtes pas seuls.","This is Radio-Quai, the Valmont strike committee. Put down your tools. You are not alone.","Aquí Radio-Quai, el comité de huelga de Valmont. Dejen sus herramientas. No están solos.","Hier Radio-Quai, das Streikkomitee von Valmont. Legt euer Werkzeug nieder. Ihr seid nicht allein.","Qui Radio-Quai, il comitato di sciopero di Valmont. Posate gli attrezzi. Non siete soli.","Aqui Radio-Quai, o comitê de greve de Valmont. Larguem as ferramentas. Vocês não estão sozinhos.","Говорит Radio-Quai, стачечный комитет Valmont. Положите инструменты. Вы не одни.","这里是 Radio-Quai，Valmont 罢工委员会。放下你们的工具。你们并不孤单。","هنا Radio-Quai، لجنة إضراب Valmont. ضعوا أدواتكم. لستم وحدكم."),
+  v3:M2T("À midi, onze villes avaient débrayé. Le soir, leurs agents ont quitté le port : il coûtait plus qu'il ne rapportait.","By noon, eleven cities had walked out. That evening, their agents left the port: it cost more than it earned.","A mediodía, once ciudades habían parado. Por la tarde, sus agentes abandonaron el puerto: costaba más de lo que rendía.","Mittags hatten elf Städte die Arbeit niedergelegt. Abends zogen ihre Agenten aus dem Hafen ab: Er kostete mehr, als er einbrachte.","A mezzogiorno undici città avevano incrociato le braccia. La sera i loro agenti hanno lasciato il porto: costava più di quanto rendeva.","Ao meio-dia, onze cidades tinham parado. À noite, os agentes deles deixaram o porto: custava mais do que rendia.","К полудню забастовали одиннадцать городов. Вечером их агенты покинули порт: он стоил дороже, чем приносил.","到中午，十一座城市已经罢工。晚上，他们的特工撤出了港口：守着它得不偿失。","عند الظهر كانت إحدى عشرة مدينة قد أضربت. وفي المساء غادر عملاؤهم الميناء: كان يكلّف أكثر مما يعود به."),
+  v4:M2T("55 : ARRIVÉE DU CORTÈGE : PROBABILITÉ ESTIMÉE 3 %. JE CORRIGE MES MODÈLES.","55: MARCH ARRIVAL: ESTIMATED PROBABILITY 3%. I AM CORRECTING MY MODELS.","55: LLEGADA DEL CORTEJO: PROBABILIDAD ESTIMADA 3 %. CORRIJO MIS MODELOS.","55: ANKUNFT DES ZUGS: GESCHÄTZTE WAHRSCHEINLICHKEIT 3 %. ICH KORRIGIERE MEINE MODELLE.","55: ARRIVO DEL CORTEO: PROBABILITÀ STIMATA 3 %. CORREGGO I MIEI MODELLI.","55: CHEGADA DO CORTEJO: PROBABILIDADE ESTIMADA 3 %. ESTOU CORRIGINDO MEUS MODELOS.","55: ПРИБЫТИЕ КОЛОННЫ: ОЦЕНОЧНАЯ ВЕРОЯТНОСТЬ 3 %. ИСПРАВЛЯЮ СВОИ МОДЕЛИ.","55：游行队伍抵达：估计概率 3%。我正在修正我的模型。","55: وصول الموكب: الاحتمال المقدَّر 3٪. أصحّح نماذجي."),
+  v5:M2T("Quatre ans plus tard, au quatrième été sans pluie, le même bipeur m'a réveillée la nuit. Un seul mot : SAINTE-AUBE.","Four years later, in the fourth summer without rain, the same pager woke me in the night. A single word: SAINTE-AUBE.","Cuatro años después, en el cuarto verano sin lluvia, el mismo busca me despertó por la noche. Una sola palabra: SAINTE-AUBE.","Vier Jahre später, im vierten Sommer ohne Regen, weckte mich derselbe Piepser in der Nacht. Ein einziges Wort: SAINTE-AUBE.","Quattro anni dopo, nella quarta estate senza pioggia, lo stesso cercapersone mi svegliò nella notte. Una sola parola: SAINTE-AUBE.","Quatro anos depois, no quarto verão sem chuva, o mesmo pager me acordou de noite. Uma única palavra: SAINTE-AUBE.","Четыре года спустя, на четвёртое лето без дождей, тот же пейджер разбудил меня ночью. Одно слово: SAINTE-AUBE.","四年后，在第四个无雨的夏天，同一个寻呼机在夜里把我吵醒。只有一个词：SAINTE-AUBE。","بعد أربع سنوات، في الصيف الرابع بلا مطر، أيقظني جهاز النداء نفسه في الليل. كلمة واحدة: SAINTE-AUBE."),
+  e1:M2T("Le cortège s'est dispersé sur le quai. Les banderoles sont restées par terre, dans le fioul et la rosée.","The march scattered along the quay. The banners stayed on the ground, in the fuel oil and the dew.","El cortejo se dispersó por el muelle. Las pancartas quedaron en el suelo, entre el fuel y el rocío.","Der Zug zerstreute sich auf dem Kai. Die Transparente blieben am Boden liegen, im Heizöl und im Tau.","Il corteo si è disperso sulla banchina. Gli striscioni sono rimasti a terra, nella nafta e nella rugiada.","O cortejo dispersou-se no cais. As faixas ficaram no chão, no óleo combustível e no orvalho.","Колонна рассеялась по причалу. Транспаранты остались на земле, в мазуте и росе.","游行队伍在码头上散了。横幅留在地上，沾着燃油和露水。","تفرّق الموكب على الرصيف. بقيت اللافتات على الأرض، في المازوت والندى."),
+  e2:M2T("Mais quarante mille personnes savent ce que pèsent leurs outils une fois posés. Recommencez.","But forty thousand people know what their tools weigh once put down. Try again.","Pero cuarenta mil personas saben lo que pesan sus herramientas una vez dejadas. Vuelva a intentarlo.","Aber vierzigtausend Menschen wissen, was ihr Werkzeug wiegt, wenn man es niederlegt. Versuchen Sie es noch einmal.","Ma quarantamila persone sanno quanto pesano i loro attrezzi una volta posati. Riprovi.","Mas quarenta mil pessoas sabem o que pesam as suas ferramentas depois de pousadas. Tente de novo.","Но сорок тысяч человек знают, сколько весят их инструменты, когда их кладут на землю. Попробуйте снова.","但四万个人知道，放下工具之后，它们有多重。再来一次吧。","لكنّ أربعين ألف شخص يعرفون كم تزن أدواتهم حين توضع جانبًا. أعيدوا المحاولة."),
+};
+
+/* ================= LA MISSION ================= */
+const m2Obj = (c) => ({ a:c.hp >= c.max0*0.75, b:m2Tm() <= 600, c:!!c.term.dead });
+campMission(1, {
+  num:'II', year:"2028", ai:[0,1,2], doctrines:['ordre','caisse'], eraCap:1, oneLife:true, dev0:0.1,
+  title:M2_X.title, place:M2_X.place, recap:M2_X.recap, where:M2_X.where, goal:M2_X.goal, goal2:M2_X.goal2, rule:M2_X.rule, tips:M2_X.tips,
+  docWhy:{ ordre:M2_X.docOrdre, caisse:M2_X.docCaisse }, debrief:M2_X.debrief, fail:M2_X.fail,
+  biome:'port', theme:'port',
+  map:{ terrain:{a:3, f1:0.0042, b:0.6, f2:0.0113, c:0.3, f3:0.021, base:2}, p:{x:M2.hall, slots:[95,159,223]}, e:{x:M2.term, slots:[]},
+        neut:[800,1500,2300,2900], nodes:[], zones:[] },
+  action:{ label:M2_X.barBtn, get cd(){ return [28,35,42][campD().i]; }, can:(g,c)=> c.bars.length < 2,
+    use(g, c){ let x = Math.min(c.mx+120, (c.seg<3? M2.gates[c.seg]-30 : 3300)); if (c.bars.some(b=>Math.abs(b.x-x)<50)) x -= 55;
+      c.bars.push({ x, hp:300, max:300 }); sfx('build'); burst(x, gY(x)-14, '#cdbf9a', 10, 0.8); addFloater(x, gY(x)-50, '▲', '#c42a1c', 14); } },
+  setup(g, c){
+    const i = c.D.i, p = g.p, e = g.e, ck = (M2_CK && M2_CK.fail && M2_CK.d===i && i<2 && M2_CK.doc===(CAMP_SAVE.doc[1]? 1 : 0))? M2_CK : null;
+    campGrant(p, 280, 250, 90); p.stance = 'hold';
+    e.era = 0; e.hp = e.maxhp = [900,1200,1500][i]; e.phase = 2;
+    c.max0 = [140,100,100][i]; c.cap = c.max0; c.hp = c.max0; c.mx = M2.x0; c.seg = 0; c.segT = [0,0,0,0]; c.off = 0;
+    c.gate = [0,1,2].map(()=>({ state:'closed', k:0, t:0 })); c.gOpen = []; c.bars = []; c.barges = []; c.n2 = 0; c.n3 = 0; c.hitT = 9; c.slowT = 0; c.stopT = 0; c.sunk = 0;
+    c.boats = [2200,2500].map((x,k)=>({ x, hp:[300,400,500][i], max:[300,400,500][i], fireT:4+k*4, aim:null, dead:false, sink:0 }));
+    c.term = { active:false, dead:false, k:0, n:0, t0:0, nextT:0 };
+    c.neutAll = g.neut.slice(); g.neut = [c.neutAll[0]];
+    c.targets = (foe, out) => m2Targets(c, foe, out);
+    BIOMES.port.sky = M2_DAWN.map(a=>a.slice());
+    if (ck){                                                                  // REPRISE à la dernière grille ouverte (Récit et Lutte)
+      c.resumed = ck.seg; c.seg = ck.seg; c.hp = ck.hp; c.cap = ck.cap; c.off = ck.off; c.mx = M2.gates[ck.seg-1]+20;
+      for (let k=0;k<ck.seg;k++){ c.gate[k].state = 'open'; c.gate[k].k = 1; c.gOpen[k] = 0; if (c.neutAll[k+1]) g.neut.push(c.neutAll[k+1]); }
+      p.f = ck.f; p.m = ck.m; p.w = ck.w; campEra(p, ck.era); p.xp = ck.xp; if (ck.seg===3){ c.term.t0 = 0; c.term.nextT = 5; }
+      const d = campDoc(1), res = (d && d.fx && d.fx.res) || 1; p.f = Math.round(p.f/res); p.m = Math.round(p.m/res); p.w = Math.round(p.w/res);
+      const roles = ck.roles.slice(); for (const r of ((d && d.fx && d.fx.squad) || [])){ const k = roles.indexOf(r); if (k>=0) roles.splice(k,1); }
+      roles.forEach(r=> spawnUnit(p, r, false, p.x+60)); ck.fail = false; }
+    for (const u of p.units) u._m2 = 0;
+  },
+  tick(g, c, dt){
+    const e = g.e, p = g.p;
+    g.aiThink = 9; e.formation = false; e.f = e.m = e.w = 0; e.xp = 0; e.lastUsed = true; p.hp = p.maxhp; g.cataCd = Math.max(g.cataCd, 600); g._bz = true;
+    if (c.frz > 0){ c.frz -= dt; g.weather = 'patch'; g.wClock = 90 + Math.min(14, c.frzLen - c.frz); } else { g.weather = null; g.wClock = 0; }
+    if (c.seg===2 && !c.fz && c.t >= c.segT[2]+30){ c.fz = 1; c.frzLen = c.frz = [15,15,8][c.D.i]; }
+    m2Units(g, c); m2Form(g, c); m2Gates(g, c, dt); m2March(g, c, dt); m2Plan(g, c); m2Barges(g, c, dt); m2Boats(g, c, dt); m2Terminal_(g, c, dt);
+    { const k = clamp(m2Tm()/600, 0, 1);                                      // le jour se lève
+      if (((c.skyT = (c.skyT||0) - dt) <= 0)){ c.skyT = 1; BIOMES.port.sky = M2_DAWN.map((a,n)=> a.map((v,j)=> Math.round(v + (M2_MORN[n][j]-v)*k))); } }
+    if (c.hp <= 0){ c.hp = 0; if (M2_CK) M2_CK.fail = true; return 'lose'; }
+    if (c.mx >= M2.mast-0.5){ const o = m2Obj(c); c.goal2Done = o.a && o.b && o.c; M2_CK = null; c.flag = 1; return 'win'; }
+  },
+  hud(g, c){ const o = m2Obj(c), mk = (v, late) => v? '✓' : late? '✗' : '·';
+    return { prog:(c.mx-M2.x0)/(M2.mast-M2.x0), label:'☻ '+Math.ceil(c.hp), warn:c.hp < c.max0*0.5,
+      goal2:{ done:false, label:'75%'+mk(o.a, false)+' 12:00'+mk(o.b, m2Tm()>600)+' T'+mk(o.c, false) } }; },
+  draw(g, c, vw){ m2Draw(g, c, vw); },
+  intro(g, c){
+    if (c.resumed) return [{ cam:{x:M2.gates[c.resumed-1], t:0.8}, who:'sol', txt:M2_X.resumeLine, mus:'m_strike' }];
+    return [
+      { plate:M2_PL.tools, mus:'c_map', who:'nar', txt:M2_X.o1 },
+      { plate:M2_PL.gate, mus:'c_dread', who:'nar', txt:M2_X.o2 },
+      { plate:M2_PL.dawn, who:'nar', txt:M2_X.o3 },
+      { plate:M2_PL.mado, mus:'c_hope', who:'mado', txt:M2_X.o4 },
+      { mus:'m_strike', cam:{x:M2.x0+200, t:0.1}, dur:3.6, title:M2_X.ttl, sub:M2_X.sub },
+      { cam:{x:520, t:1.2}, who:'sol', txt:M2_X.o6 },
+      { cam:{x:520}, fx(g, c){ c.gFlashUntil = performance.now()+7000; }, who:'sol', txt:M2_X.o7 },
+      { cam:{x:M2.gates[0], t:2.4}, who:'sol', txt:M2_X.o8 },
+      { cam:{x:800, t:2}, fx(g, c){ c.demoAnchor = { x:800, t0:performance.now() }; m2Horn(); }, who:'sol', txt:M2_X.o9 },
+      { cam:{x:M2.mast, t:3}, dur:3, who:'sol', txt:M2_X.o10 },
+      { cam:{x:M2.x0+200, t:2.4}, who:'sol', txt:M2_X.o11 },
+    ]; },
+  outro(g, c, win){ return win? [
+    { cam:{x:M2.mast, t:1.5}, dur:3.4, mus:'m_strike', who:'sol', txt:M2_R.v1 },
+    { plate:M2_PL.antenna, mus:'c_hope', who:'mado', txt:M2_R.v2 },
+    { plate:M2_PL.hexa, who:'nar', txt:M2_R.v3 },
+    { plate:M2_PL.pager, mus:'c_map', who:'k55', txt:M2_R.v4 },
+    { plate:M2_PL.river, mus:'c_dread', who:'nar', txt:M2_R.v5 },
+  ] : [
+    { plate:M2_PL.banners, mus:'c_sorrow', who:'nar', txt:M2_R.e1 },
+    { plate:M2_PL.banners, who:'nar', txt:M2_R.e2 },
+  ]; },
+  radio:[
+    { seg:0, at:6, who:'sol', txt:M2_R.barricade },
+    { seg:0, when:(g,c)=> c.D.i===0 && c.t >= 40, who:'sol', txt:M2_R.recruits },
+    { seg:0, when:(g,c)=> !!c.firstBarge, who:'sol', txt:M2_R.barge },
+    { seg:0, when:(g,c)=> c.seg===0 && c.stopT >= 6, who:'sol', txt:M2_R.stalled },
+    { seg:1, when:(g,c)=> c.seg===1 && c.stopT >= 6, who:'sol', txt:M2_R.stalled },
+    { seg:2, when:(g,c)=> c.seg===2 && c.stopT >= 6, who:'sol', txt:M2_R.stalled },
+    { seg:3, when:(g,c)=> c.seg===3 && c.stopT >= 6, who:'sol', txt:M2_R.stalled },
+    { seg:0, when:(g,c)=> c.gwait >= 3, who:'sol', txt:M2_R.gateWait },
+    { seg:0, when:(g,c)=> c.hp < c.max0*0.5, who:'sol', txt:M2_R.melting },
+    { seg:0, when:(g,c)=> !!c.gOpen[0], cine(g, c){ const gx = M2.gates[0]; return [
+        { cam:{x:gx, t:1}, live:true, dur:1.2 },
+        { cam:{x:gx}, live:true, who:'mado', txt:M2_R.s1 } ]; } },
+    { seg:1, when:(g,c)=> c.seg>=1 && c.t >= c.segT[1]+10, who:'sol', txt:M2_R.drones },
+    { seg:1, when:(g,c)=> c.D.i===0 && c.seg>=1 && c.t >= c.segT[1]+15, who:'sol', txt:M2_R.union },
+    { seg:1, when:(g,c)=> c.seg>=1 && c.t >= c.segT[1]+50, cine(g, c){ return [
+        { live:true, who:'k55', txt:M2_R.s2a }, { live:true, who:'sol', txt:M2_R.s2b } ]; } },
+    { seg:1, when:(g,c)=> !!c.gOpen[1], who:'mado', txt:M2_R.g2 },
+    { seg:2, when:(g,c)=> c.seg>=2, who:'sol', txt:M2_R.boats },
+    { seg:2, when:(g,c)=> c.seg>=2 && c.t >= c.segT[2]+20, who:'k55', txt:M2_R.update },
+    { seg:2, when:(g,c)=> c.frzLen && c.frz > 0, who:'sol', txt:M2_R.frozen },
+    { seg:2, when:(g,c)=> c.sunk >= 2, who:'sol', txt:M2_R.sunk },
+    { seg:2, when:(g,c)=> !!c.gOpen[2], cine(g, c){ const gx = M2.gates[2]; return [
+        { cam:{x:gx, t:1.2}, live:true, dur:1.4, fx(g, c){ c.dock = { t0:performance.now() }; for (let k=0;k<3;k++) spawnUnit(g.p, 1, false, c.mx+30+k*16); g.p.stance = g.p.stance; } },
+        { cam:{x:gx}, who:'mado', txt:M2_R.s3 } ]; } },
+    { seg:3, when:(g,c)=> c.term.active, who:'sol', txt:M2_R.term },
+    { seg:3, when:(g,c)=> c.term.dead, who:'sol', txt:M2_R.termDead },
+    { seg:3, when:(g,c)=> m2Clock() >= 660, who:'sol', txt:M2_R.eleven },
+    { seg:3, when:(g,c)=> c.mx >= M2.mast-200, who:'sol', txt:M2_R.mast },
+  ],
+});
+// reprise : les rappels déjà passés avant la grille de reprise ne sont pas rejoués
+{ const m = CAMPAIGN[1], st = m.setup; m.setup = function(g, c){ st.call(this, g, c); if (c.resumed) m.radio.forEach((r,i)=>{ if (r.seg < c.resumed) c.fired[i] = 1; }); }; }
+
+/* ---------- Enveloppes minimales (hors moteur) ----------
+   1. drawBase : en mission II la halle et le terminal sont dessinés par la mission (m2Draw), pas les bases d'ère.
+   2. dealDmg : un coup sur le cortège retire 1 (mêlée) ou 2 (tir) point de force ; les obus passent par hit().
+   3. showEnd : après un échec avec une grille ouverte, le bouton RÉESSAYER devient REPRENDRE À LA GRILLE.      */
+{ const _db = drawBase; drawBase = function(side){ if (game && game.camp && game.camp.i===1) return; _db(side); }; }
+{ const _dd = dealDmg; dealDmg = function(target, dmg, attacker){ if (target && target.m2hit){ target.m2hit(attacker); return; } return _dd(target, dmg, attacker); }; }
+{ const _se = showEnd; showEnd = function(){ _se(); const c = game && game.camp;
+    if (c && c.i===1 && !game.win && M2_CK && M2_CK.fail && c.D.i<2){ const b = document.getElementById('campNextBtn'); if (b) b.textContent = cT(M2_TXT.resume); } }; }
