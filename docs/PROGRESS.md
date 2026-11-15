@@ -10,8 +10,8 @@ Branche de travail : `claude/age-of-war-online-balance-xn6ump` · PR #56 (brouil
 | Audio (sons libres, musiques) | audio | — | **intégré** (337f61e) : 148 fichiers CC0, 6,5 Mo, 12 thèmes | écoute par l'auteur ; iOS/Electron non vérifiés |
 | Moteur de campagne | campagne-socle | — | **intégré** (da629f9) : briefing, difficulté Récit/Lutte/Dernier carré, doctrines, aide « ? », radio, actes, cartes sans lacs, escorte | équilibrage fragile (II, IV, V en Dernier carré) à revoir par les missions |
 | Bible (scénario) | writer | — | **intégrée** : docs/campagne/BIBLE.md + M1…M5.md | sert de spec au lot 3 |
-| Missions I–V | 1 agent sonnet par mission | claude/wip-m* | **I, II, III intégrées** ; IV et V en cours | QA : mission II courte (≈2 min 20 pour le bot) ; voix FR à régénérer |
-| Traductions, voix, QA, livraison | sonnet / qa / reviewer | — | — | lot 4 |
+| Missions I–V | 1 agent sonnet par mission | — | **intégrées** (I 4736679 · III 2ee060b · II 7e3d314 · IV 004be8a · V 7a82f4a) | équilibrage à revoir (II courte, actes de V inégaux) |
+| Traductions, voix, QA, livraison | reviewer (opus) + qa (sonnet) | worktree qa | **en cours** : audit du diff, parcours en captures, mesures d'équilibre ; voix FR en régénération | corriger → livrer v1.16 |
 
 ## Lots
 1. **En cours** : bases, gameplay, voix (reprises des agents presque terminés) → intégration.
