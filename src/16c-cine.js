@@ -127,11 +127,17 @@ function cineInput(sx, sy){
 }
 // CHOIX : boutons côte à côte (empilés sur écran étroit), sous le texte ; cinePick applique le choix et enchaîne sur ses plans
 function cineChoiceRects(s){
-  const lay = s.txt? cineLayout(s) : null, fs = lay? lay.fs : cineFrame().fs, n = s.choice.length, col = W<560;
-  const bw = col? Math.min(W-28, fs*17) : Math.min(fs*17, (W-40-(n-1)*20)/n), bh = Math.round(clamp(fs*3.9, 66, 104));
-  const tot = col? bw : n*bw+(n-1)*20, x0 = (W-tot)/2;
-  const top = lay && lay.box && lay.mode==='top'? lay.box.y+lay.box.h+16 : H*0.22;
-  const y0 = Math.min(top, Y_G - (col? n*(bh+10) : bh) - 10);
+  const lay = s.txt? cineLayout(s) : null, fs = lay? lay.fs : cineFrame().fs, n = s.choice.length;
+  // zone libre : planche (mise en page « côté » : la boîte de texte occupe l'autre colonne) ou tout l'écran
+  const side = lay && lay.mode==='side' && lay.plate, ax = side? lay.plate.x : 0, aw = side? lay.plate.w : W;
+  const col = aw<560 || !!side, bw = col? Math.min(aw-28, fs*17) : Math.min(fs*17, (aw-40-(n-1)*20)/n), bh = Math.round(clamp(fs*4.7, 78, 120));
+  const tot = col? bw : n*bw+(n-1)*20, x0 = ax+(aw-tot)/2, totH = col? n*bh+(n-1)*10 : bh;
+  let y0;
+  if (side) y0 = lay.plate.y + (lay.plate.h-totH)/2;                      // centrées dans la planche, jamais sous la boîte de dialogue
+  else { const top = lay && lay.box && lay.mode==='top'? lay.box.y+lay.box.h+16 : H*0.22;
+    y0 = Math.min(top, Y_G - totH - 10);
+    if (lay && lay.mode==='below') y0 = Math.min(y0, lay.box.y - 14 - totH); }   // et jamais sur le texte posé en bas
+  y0 = Math.max(y0, cineFrame().skip.y+cineFrame().skip.h+6);
   return s.choice.map((o,i)=> col? {x:x0, y:y0+i*(bh+10), w:bw, h:bh} : {x:x0+i*(bw+20), y:y0, w:bw, h:bh}); }
 function cinePick(i){ const s = cineShot(); if (!s || !s.choice || s.picked) return; const o = s.choice[i]; s.picked = 1; sfx('evolve');
   if (o.pick) o.pick(game, game.camp);
