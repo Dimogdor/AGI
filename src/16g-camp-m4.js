@@ -33,7 +33,7 @@ function m4Warm(g, x){ if (Math.abs(x-g.p.x) < M4.relayR) return true;
 function m4Seen(g, x){ if (m4Warm(g, x)) return true; for (const u of g.p.units) if (!u.fly && Math.abs(u.x-x) < 90) return true; return false; }
 // colonne adverse : n machines qui chargent d'elles-mêmes ; la rue ne tient pas plus de machines que le plafond
 function m4Wave(n, big){ const e = game.e, c = game.camp, pat = big? [1,0,2,0,3,2,0,1,4,2] : [0,0,2,0,1,2,0,3,0,2];
-  for (let i=0;i<n;i++){ if (e.units.length>=[40,44,46][c.D.i]) break; const k = e.units.length;
+  for (let i=0;i<n;i++){ if (e.units.length>=[40,44,42][c.D.i]) break; const k = e.units.length;
     spawnUnit(e, pat[(i + (c.waveN|0)) % pat.length], false, e.x - 40 - i*24);
     for (let j=k;j<e.units.length;j++) e.units[j].ord = 'charge'; }
   c.waveN = (c.waveN|0) + n; }
@@ -634,7 +634,7 @@ const m4G2 = c => (c.g1? 1 : 0) + (c.g2? 1 : 0) + (c.g3? 1 : 0);
 
 campMission(3, {
   num:'IV', year:"2035", ai:[0,2,2], doctrines:['caisse','ordre'], eraCap:3, era0:2, oneLife:true, dev0:0.25,
-  dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6, think:2.4, eraLag:0.8}, {inc:0.18, cheat:0.7, think:2.0, eraLag:0.8}],   // IA « Difficile » en Lutte et Dernier carré
+  dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6, think:2.4, eraLag:0.8}, {inc:0.15, cheat:0.6, think:2.2, eraLag:0.8}],   // IA « Difficile » en Lutte et Dernier carré
   dAdj:[null, null, { wave:1, gap:1, base:1, eBase:1, res:1, eHp:1, eDmg:1 }],                               // Dernier carré : la rue ne tient pas plus de machines et il n'y a plus de métal passif ; avec le modèle commun (colonnes ×1,25, machines ×1,12, ressources ×0,9) le joueur scripté s'effondre avant la fin, on tempère donc les colonnes, la vie et les dégâts des machines et la caisse
   title:M4_TX.title, place:M4_TX.place, recap:M4_TX.recap, where:M4_TX.where, goal2:M4_TX.goal2, rule:M4_TX.rule,
   tips:M4_TX.tips, docWhy:M4_TX.docWhy, debrief:M4_TX.debrief, fail:M4_TX.fail,
