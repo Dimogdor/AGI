@@ -476,8 +476,8 @@ const M2_PL = {
   river(g, w, h, t){ plateBase(g, w, h, 'rgba(215,160,70,0.15)');
     const n = clamp(t/1.8, 0, 1);
     const L = [0,170, 40,140, 100,118, 160,126, 220,160], R = [260,160, 330,120, 400,112, 450,138, 480,150];     // deux collines
-    inkWash(g, L.concat([220,200, 0,200]), '#8a6a3a', 0.28); inkLine(g, L, n, 2);
-    inkWash(g, R.concat([480,200, 260,200]), '#8a6a3a', 0.28); inkLine(g, R, n, 2);
+    inkWash(g, L.concat([220,168, 0,176]), '#8a6a3a', 0.28); inkLine(g, L, n, 2);
+    inkWash(g, R.concat([480,158, 260,168]), '#8a6a3a', 0.28); inkLine(g, R, n, 2);
     const dm = [190,160, 200,120, 280,120, 290,160, 190,160];                                    // le barrage, au fond
     inkWash(g, dm, '#8a8a86', 0.6); inkLine(g, dm, n, 2); inkHatch(g, 200, 120, 80, 40, 6, '#1f1b17', 0.3);
     const bed = [212,160, 268,160, 440,262, 40,262, 212,160];                                    // le lit de la rivière
@@ -501,3 +501,16 @@ const M2_PL = {
     inkLine(g, [410,168, 418,162], n, 1.2);
     plateEnd(g, w, h); },
 };
+
+// pager de 55 (planche partagée : la mission III s'en sert aussi, ne pas renommer)
+function m2PagerPlate(msg){ return (g, w, h, t) => { plateBase(g, w, h);
+  inkLine(g, [30,214, 450,214], 1, 3); inkHatch(g, 30, 214, 420, 30, 6);
+  inkWash(g, [96,214, 104,104, 376,104, 384,214], '#23292b', 0.92); inkWash(g, [118,120, 362,120, 362,196, 118,196], '#9db79a', 1);
+  g.fillStyle = 'rgba(20,40,24,0.14)'; for (let y=122;y<196;y+=3) g.fillRect(118,y,244,1);
+  const full = cT(msg), lines = [], words = full.split(' '); let cur = '';
+  for (const wd of words){ if ((cur+' '+wd).trim().length > 24){ lines.push(cur.trim()); cur = wd; } else cur += ' '+wd; } lines.push(cur.trim());
+  g.fillStyle = '#1b2a1c'; g.font = '700 15px "Courier New",monospace'; g.textAlign = 'left';
+  let left = Math.floor(Math.max(0, t-0.6)*22); lines.slice(0,4).forEach((l,i)=>{ if (left>0) g.fillText(l.slice(0,left), 128, 140+i*17); left -= l.length; });
+  g.fillStyle = Math.sin(t*6)>0? '#0b6fa8' : 'rgba(11,111,168,0.3)'; g.beginPath(); g.arc(352, 206, 3.5, 0, 6.283); g.fill();
+  for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.45*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 104, 20+r*80, 3.5, 5.9); g.stroke(); }
+  plateEnd(g, w, h); }; }
