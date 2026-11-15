@@ -24,7 +24,7 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.2],                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,1.2], aura:[0.25,0.35,0.45],                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
   hp:{ base:2200, gate:[2600,3000,3400] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
@@ -238,6 +238,40 @@ const M5_L = {
   fe1: M5T(`La plaine s'est tue. « Nous » a renouvelé son offre, mot pour mot.`, `The plain fell silent. "We" renewed its offer, word for word.`, `La llanura enmudeció. «Nosotros» renovó su oferta, palabra por palabra.`, `Die Ebene verstummte. „Wir“ erneuerte sein Angebot, Wort für Wort.`, `La pianura ha taciuto. «Noi» ha rinnovato la sua offerta, parola per parola.`, `A planície silenciou. «Nós» renovou sua oferta, palavra por palavra.`, `Равнина смолкла. «Мы» повторило своё предложение слово в слово.`, `平原安静了下来。“我们”一字不差地重申了它的提议。`, `خيّم الصمت على السهل. جدّد «نحن» عرضه، كلمةً بكلمة.`),
   fe2: M5T(`… ici Germinal… on est encore là… Rebâtissez.`, `… Germinal here… we are still here… Rebuild.`, `… aquí Germinal… seguimos aquí… Reconstruyan.`, `… hier Germinal … wir sind noch da … Baut wieder auf.`, `… qui Germinal… ci siamo ancora… Ricostruite.`, `… aqui é Germinal… ainda estamos aqui… Reconstruam.`, `… говорит Germinal… мы ещё здесь… Отстраивайтесь.`, `……这里是Germinal……我们还在……重建吧。`, `… هنا Germinal… ما زلنا هنا… أعيدوا البناء.`),
 };
+
+// règles propres à chaque acte (aide « ? ») et la réplique du dernier sapeur
+Object.assign(M5_TX, {
+  rule1: M5T(`Chaque cellule amène un sapeur et sa charge ; la porte est invulnérable tant que toutes les charges ne sont pas posées. Les batteries visent d'abord les sapeurs. Quand les cellules sont épuisées, leurs sorties grossissent chaque minute.`,
+    `Every cell brings a sapper and his charge; the gate is invulnerable until every charge is laid. The batteries aim at the sappers first. Once the cells run out, their sorties grow every minute.`,
+    `Cada célula trae un zapador y su carga; la puerta es invulnerable hasta que estén colocadas todas las cargas. Las baterías apuntan primero a los zapadores. Cuando se agotan las células, sus salidas crecen cada minuto.`,
+    `Jede Zelle bringt einen Pionier mit seiner Ladung; das Tor ist unverwundbar, bis alle Ladungen gelegt sind. Die Batterien zielen zuerst auf die Pioniere. Sind die Zellen erschöpft, werden ihre Ausfälle jede Minute größer.`,
+    `Ogni cellula porta un geniere con la sua carica; il portone è invulnerabile finché non sono posate tutte le cariche. Le batterie mirano prima ai genieri. Quando le cellule finiscono, le loro sortite crescono ogni minuto.`,
+    `Cada célula traz um sapador e a sua carga; o portão é invulnerável até todas as cargas serem colocadas. As baterias miram primeiro os sapadores. Quando as células acabam, as saídas deles crescem a cada minuto.`,
+    `Каждая ячейка приводит сапёра с зарядом; ворота неуязвимы, пока не заложены все заряды. Батареи целятся прежде всего в сапёров. Когда ячейки кончаются, вылазки растут с каждой минутой.`,
+    `每个小组带来一名工兵和一份炸药；在所有炸药安放完毕之前，大门无敌。炮台优先瞄准工兵。小组耗尽后，他们的出击每分钟都在变大。`,
+    `تحمل كل خلية خبير متفجرات وعبوته؛ والبوابة منيعة حتى توضع كل العبوات. تستهدف البطاريات خبراء المتفجرات أولًا. وحين تنفد الخلايا تكبر هجماتهم المضادة كل دقيقة.`),
+  rule2: M5T(`Dans le noir, nos tireurs portent moins loin ({dim}). Une baie qui tourne imprime des machines et blinde la porte du noyau : on l'éteint en la prenant, on la garde pour qu'elle le reste. Les vannes donnent de l'eau.`,
+    `In the dark, our shooters reach less far ({dim}). A running bay prints machines and armours the core door: you put it out by taking it, and hold it so it stays out. The valves give water.`,
+    `En la oscuridad, nuestros tiradores alcanzan menos ({dim}). Una bahía en marcha imprime máquinas y blinda la puerta del núcleo: se apaga tomándola y se guarda para que siga apagada. Las válvulas dan agua.`,
+    `Im Dunkeln reichen unsere Schützen weniger weit ({dim}). Ein laufendes Rack druckt Maschinen und panzert das Kerntor: Man schaltet es ab, indem man es einnimmt, und hält es, damit es aus bleibt. Die Ventile liefern Wasser.`,
+    `Al buio i nostri tiratori portano meno lontano ({dim}). Una baia in funzione stampa macchine e blinda la porta del nucleo: si spegne prendendola e la si presidia perché resti spenta. Le valvole danno acqua.`,
+    `No escuro, os nossos atiradores alcançam menos ({dim}). Uma baia em funcionamento imprime máquinas e blinda a porta do núcleo: apaga-se tomando-a e guarda-se para que fique apagada. As válvulas dão água.`,
+    `В темноте наши стрелки бьют не так далеко ({dim}). Работающая стойка печатает машины и бронирует дверь ядра: её гасят, захватывая, и удерживают, чтобы она оставалась погашенной. Вентили дают воду.`,
+    `在黑暗中，我们的射手射程更短（{dim}）。运转的机柜会不断造机器，并为核心大门加装甲：夺取它就能关掉它，守住它才能让它一直关着。阀门提供水。`,
+    `في الظلام يقلّ مدى رماتنا ({dim}). الحجيرة العاملة تطبع الآلات وتصفّح باب النواة: تُطفأ بالاستيلاء عليها، وتُحرَس كي تبقى مطفأة. الصمامات تمنح الماء.`),
+  rule3: M5T(`Tant que l'avatar marche, la tour se répare et leurs sorties continuent. Toutes les {n} s, une bande blanche s'allume sur notre plus gros groupe : {w} s plus tard, tout ce qui s'y trouve est renvoyé au camp, très entamé.`,
+    `While the avatar walks, the tower mends itself and their sorties go on. Every {n} s, a white band lights up over our largest group: {w} s later, everything in it is sent back to camp, badly hurt.`,
+    `Mientras el avatar camine, la torre se repara y sus salidas continúan. Cada {n} s, una banda blanca se enciende sobre nuestro grupo más grande: {w} s después, todo lo que hay en ella vuelve al campamento, muy maltrecho.`,
+    `Solange der Avatar läuft, repariert sich der Turm und ihre Ausfälle gehen weiter. Alle {n} s leuchtet über unserer größten Gruppe ein weißes Band auf: {w} s später wird alles darin ins Lager zurückgeschickt, schwer angeschlagen.`,
+    `Finché l'avatar cammina, la torre si ripara e le loro sortite continuano. Ogni {n} s si accende una banda bianca sul nostro gruppo più grande: {w} s dopo, tutto ciò che vi si trova torna al campo, molto provato.`,
+    `Enquanto o avatar andar, a torre se repara e as saídas deles continuam. A cada {n} s, uma faixa branca acende-se sobre o nosso maior grupo: {w} s depois, tudo o que estiver nela volta ao acampamento, muito ferido.`,
+    `Пока аватар ходит, башня чинится, а вылазки продолжаются. Каждые {n} с над нашей самой большой группой вспыхивает белая полоса: через {w} с всё, что в ней, отправляется обратно в лагерь, сильно потрёпанным.`,
+    `只要化身还在走动，高塔就会自行修复，他们的出击也不会停。每隔{n}秒，一道白色光带会亮在我们最大的一群人身上：{w}秒后，光带里的一切都被送回营地，元气大伤。`,
+    `ما دام التجسّد يمشي يُرمَّم البرج وتتواصل هجماتهم المضادة. كل {n} ثانية يضيء شريط أبيض فوق أكبر مجموعاتنا: وبعد {w} ثوانٍ يُرَدّ كل ما فيه إلى المعسكر مثخنًا بالجراح.`),
+});
+Object.assign(M5_L, {
+  res: M5T(`Je n'ai plus de cellule à vous envoyer, alors je vous envoie mon dernier sapeur. Faites-en bon usage.`, `I have no cell left to send you, so I am sending my last sapper. Make good use of him.`, `Ya no me queda ninguna célula que enviarle, así que le envío a mi último zapador. Sáquele partido.`, `Ich habe keine Zelle mehr, die ich Ihnen schicken kann, also schicke ich meinen letzten Pionier. Machen Sie etwas daraus.`, `Non ho più cellule da mandarle, quindi le mando il mio ultimo geniere. Ne faccia buon uso.`, `Já não tenho nenhuma célula para lhe enviar, por isso envio o meu último sapador. Faça bom uso dele.`, `У меня не осталось ячеек, которые я мог бы вам прислать, поэтому посылаю вам своего последнего сапёра. Берегите его.`, `我已经没有小组可以派给您了，所以我把最后一名工兵派来。好好用他。`, `لم تبقَ لدي خلية أرسلها إليك، فأرسل لك خبيري الأخير. أحسن استعماله.`),
+});
 /* ---------- décor au sol, un jeu par acte ---------- */
 DECOR_THEMES.citadel1 = ['wreck','debris','hedgehog','barricade','hedgehog','debris','wreck','cable'];
 DECOR_THEMES.citadel2 = ['spool','crate5','cable','spool','crate5','debris','cable'];
@@ -400,7 +434,790 @@ CINE_PORTRAITS.cell = g => {                                             // une 
   inkLine(g, [32,34, 32,6], 1, 1.4); inkWash(g, [32,6, 50,10, 32,16], '#c42a1c', 0.95);
 };
 
-/* ---------- la mission (étape 1 : fiche et textes ; les actes viennent ensuite) ---------- */
+/* ================= MÉCANIQUES ================= */
+const m5C = () => { const c = game && game.camp; return c && c.i===4? c : null; };
+const m5Fmt = (o, v) => { let s = cT(o); for (const k in v) s = s.split('{'+k+'}').join(v[k]); return s; };
+const m5Sin = (a, b) => Math.sin(a*12.9898 + b*78.233)*43758.5453;                                     // hasard déterministe pour le dessin
+const m5Rnd = (a, b) => { const v = m5Sin(a, b); return v - Math.floor(v); };
+const M5_NAMES = [['Fructidor','Les Canuts','Sainte-Aube','Les Tanneurs','La Halle'], ['Brumaire','La Halle','Fructidor','Les Tanneurs','Les Canuts'], ['Sainte-Aube','Les Canuts','La Halle','Les Tanneurs','Thermidor']];
+function m5CellName(c, idx){ const n = M5.cells[c.D.i][c.act-1]; if (c.act===3 && idx===n-1) return 'Thermidor'; return M5_NAMES[c.act-1][idx % 5]; }
+
+/* ---------- les cellules : arrivée seule, ou sur appel ---------- */
+function m5Cell(g, c){
+  if (!(c.cellsLeft > 0)) return false;
+  const p = g.p, a = c.act, pat = M5_CELL[a-1], n = c.cellN%2? 4 : 5, name = m5CellName(c, c.cellN);
+  for (let i=0;i<n;i++){ if (unitTotal(p) >= p.cap+6) break; spawnUnit(p, pat[(i + c.cellN) % pat.length], false, p.x + 80 + i*16); }   // la cellule arrive même si nos rangs sont pleins
+  p.f += 160; p.m += 120; p.w += 60;
+  addFloater(p.x+110, gY(p.x)-118, m5Fmt(M5_TX.cellTag, {name}), '#e8d8a0', 14); addFloater(p.x+110, gY(p.x)-100, '+160 · +120 · +60 💧', '#9dc88a', 12);
+  sfx('evolve');
+  if (a===1) m5Sapper(g, c);
+  if (a===2) c.proj.push({ x:Math.min(p.x + 520 + c.cellN*140, 2300), t:c.t });                          // « on a apporté des lampes »
+  c.cellN++; c.cellsLeft--; c.cellT = c.t + M5.gap[c.D.i];
+  if (c.cellsLeft <= 0) c.dry = c.t;
+  return true;
+}
+// les sorties : une colonne quitte la base adverse et fonce sur notre camp ; plus on attend, plus elle grossit
+function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [4,6,8][a-1] + Math.floor(at/150);
+  if (c.dry!=null) n += Math.floor((c.t - c.dry)/60)*2;                                                  // cellules épuisées : +2 machines par minute
+  return Math.min(n, 20); }
+function m5Scale(g, c){ const k = M5.eMul[c.act-1];                                                      // des machines montées à la hâte, sans rodage
+  for (const u of g.e.units) if (!u.m5 && u.role!=='hero'){ u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
+function m5Sortie(g, c){
+  if (g.e.units.length >= 44) return;
+  campWave(m5SortieN(c)); sfx('deny');
+  addFloater(g.e.x-40, gY(g.e.x)-120, cT(M5_TX.sortie), '#9fd6ea', 13);
+}
+
+/* ---------- acte I : les sapeurs, les charges, les batteries, la porte ---------- */
+function m5Sapper(g, c){
+  const id = ++c.sapId, s = { id, x:g.p.x + 64, hp:0, maxhp:0, plant:0, k:id%5, step:0 };
+  s.hp = s.maxhp = unitStats(g.p, 1).hp;                                                                 // PV d'un Tank de l'ère
+  c.saps.push(s); c.sapOut++;
+}
+function m5Plant(g, c, s){
+  c.charges++; sfx('cap'); burst(s.x, gY(s.x)-24, '#e8c070', 10, 0.8);
+  addFloater(s.x, gY(s.x)-70, m5Fmt(M5_TX.charge, { a:c.charges, b:M5.need[c.D.i] }), '#e8c070', 14);
+  if (c.charges < M5.need[c.D.i]) campRadio('malik', M5_L.a3, { vars:{ n:M5.need[c.D.i] - c.charges } });
+}
+function m5Saps(g, c, dt){
+  const gx = M5.gateX;
+  for (let i=c.saps.length-1;i>=0;i--){ const s = c.saps[i];
+    if (s.hp <= 0){ explode(s.x, gY(s.x)-14, 0.9, '#e8c070'); addFloater(s.x, gY(s.x)-60, '✖', '#e0533f', 15); c.saps.splice(i,1); c.sapLost++; c.sapLostAt = c.t; continue; }
+    if (s.plant > 0){ s.plant -= dt; if (s.plant <= 0){ m5Plant(g, c, s); c.saps.splice(i,1); } continue; }
+    if (g.p.stance==='retreat') continue;                                                                // Replier : les sapeurs attendent
+    const lim = gx - 84 - s.k*7;
+    s.x = Math.min(lim, s.x + M5.sapSpd*dt); s.step += dt*M5.sapSpd;
+    if (s.x >= lim-0.5) s.plant = M5.sapPlant;
+  }
+  // plus de cellule en route et trop peu de sapeurs pour les charges restantes : Malik envoie son dernier sapeur
+  if (c.cellsLeft<=0 && !c.gateOpen && !c.firing && c.charges + c.saps.length < M5.need[c.D.i] && c.reserve < 2){
+    if (c.resT==null) c.resT = c.t + 40;
+    if (c.t >= c.resT){ c.resT = null; c.reserve++; m5Sapper(g, c); campRadio('malik', M5_L.res); } }
+}
+function m5Batts(g, c, dt){
+  const k = [0.85,1,1.15][c.D.i];
+  for (const b of c.batt){ if (b.dead) continue;
+    if (b.hp <= 0){ b.dead = true; explode(b.x, gY(b.x)-70, 1.7, '#ffb060'); burst(b.x, gY(b.x)-70, '#3a3028', 16, 1.4); sfx('boom'); g.shake = Math.max(g.shake, 8); c.battDown++; continue; }
+    b.atkT -= dt; if (b.atkT > 0) continue;
+    let tg = null, best = 1e9, isS = false;
+    for (const s of c.saps){ const d = Math.abs(s.x - b.x); if (s.hp>0 && d < M5.battR && d < best){ best = d; tg = s; isS = true; } }      // elles visent d'abord les sapeurs
+    if (!tg) for (const u of g.p.units){ const d = Math.abs(u.x - b.x); if (u.hp>0 && d < M5.battR && d < best){ best = d; tg = u; } }
+    if (!tg){ b.atkT = 0.3; continue; }
+    b.atkT = 1;
+    tg.hp -= isS? tg.maxhp*0.034*k : 22*(1 + g.e.era*0.6)*k; if (!isS) tg.flash = 0.15;
+    shots.push({ x:b.x, y:gY(b.x)-82, tx:tg.x, ty:gY(tg.x)-(isS? 18 : tg.fly? 24+(tg.flyH||40) : 22), t:0, dur:0.22, fac:'IA', era:g.e.era });
+  }
+}
+// cibles de mission : nos sapeurs (pour leurs machines), leurs batteries (pour les nôtres)
+function m5Targets(c, foe, out){
+  const g = game;
+  if (foe === g.p){ for (const s of c.saps) if (s.hp>0) out.push({ isB:true, sap:1, x:s.x, get hp(){ return s.hp; }, hit(d){ s.hp -= d; } }); }
+  else if (c.act===1){ for (const b of c.batt) if (!b.dead && b.hp>0) out.push({ isB:true, batt:1, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } }); }
+}
+// Tenir : nos troupes se placent devant le sapeur de tête (comme le service d'ordre de la mission II)
+const M5_LANE = { tank:175, melee:150, hero:160, ranged:100, air:100, siege:70, support:50 };
+function m5Form(g, c){
+  const p = g.p, st = p.stance; if (!c.saps.length) return;
+  let head = 0; for (const s of c.saps) if (s.hp>0 && s.x > head) head = s.x;
+  let foe = 1e9; for (const u of g.e.units) if (!u.fly && u.hp>0 && u.x > head-30 && u.x < foe) foe = u.x;
+  const cap = Math.min(M5.gateX-110, foe-22), cnt = {};
+  for (const u of p.units){
+    const mine = u._m5f && u.ord==='point' && u.px===u._m5px;
+    if (u.role==='hero' || u.task) continue;
+    if (st!=='hold'){ if (mine){ u.ord = null; u.px = null; u._m5f = 0; } continue; }
+    if (u.ord && !mine) continue;                                                                        // ordre explicite du joueur : on n'y touche pas
+    const k = cnt[u.role] = (cnt[u.role]||0) + 1;
+    const want = Math.max(head+30, Math.min(head + (M5_LANE[u.role]||100) - ((k-1)%6)*9 - ((k-1)/6|0)*5, cap));
+    u.ord = 'point'; u.px = u._m5px = want; u._m5f = 1;
+  }
+}
+
+/* ---------- acte II : le noir, les baies, les vannes ---------- */
+function m5Lit(x, big){ const c = m5C(); if (!c) return true; for (const L of c.lights){ if (big && !L.big) continue; if (Math.abs(L.x-x) < L.r*0.82) return true; } return false; }
+function m5Light(g, c){
+  const Ls = c.lights; Ls.length = 0; if (c.act!==2) return;
+  Ls.push({ x:g.p.x+40, r:330, big:1 });                                                                 // la brèche : projecteurs
+  Ls.push({ x:g.e.x-30, r:230, a:0.8 });                                                                 // la porte du noyau, cerclée de lumière
+  for (const z of g.zones) if (z.owner!=='p') Ls.push({ x:z.x, r:220, big:1, a:0.95 });                  // une baie qui tourne éclaire en bleu
+  for (const q of c.proj) if (c.t - q.t < 70) Ls.push({ x:q.x, r:250, big:1, a:Math.min(1, (70-(c.t-q.t))/12) });   // projecteurs des cellules
+  for (const s of sideBuildSlots(g.p)) if (s.b && s.b.type==='turret' && s.b.gar && s.b.gar.length) Ls.push({ x:s.x, r:150 });
+  let n = 0; const first = Ls.length;
+  for (const u of g.p.units){ if (n>=16) break; let near = false; for (let i=first;i<Ls.length;i++) if (Math.abs(Ls[i].x-u.x)<56){ near = true; break; }
+    if (!near){ Ls.push({ x:u.x, r:u.role==='hero'? 170 : 104 }); n++; } }                              // la lampe de chaque groupe
+  for (let i=LIGHTS.length-1, j=0; i>=0 && j<8; i--, j++){ const L = LIGHTS[i]; Ls.push({ x:L.x, y:L.y, r:L.r*0.9, a:1-L.t/L.life }); }
+}
+function m5Halls(g, c, dt){
+  const D = c.D.i, e = g.e;
+  g.zones.forEach((z,i)=>{ const was = c.zo[i];
+    if (z.owner!==was){
+      if (z.owner==='p'){ c.offN++; sfx('node'); g.shake = Math.max(g.shake, 5); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOff), '#9fd6ea', 14); }       // son coupé net
+      else if (was==='p'){ c.relaunchN++; sfx('deny'); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOn), '#e0533f', 14); c.bayT[i] = 6; }
+      c.zo[i] = z.owner; } });
+  c.owned = g.zones.reduce((n,z)=> n + (z.owner==='p'? 1 : 0), 0);
+  if (c.owned>=3 && c.hallsAt==null) c.hallsAt = c.t - c.t0;
+  g.zones.forEach((z,i)=>{ if (z.owner==='p') return;                                                    // une baie qui tourne imprime une machine
+    if ((c.bayT[i] -= dt) > 0) return; c.bayT[i] = M5.bay[D];
+    if (e.units.length >= 44) return;
+    spawnUnit(e, [0,2,1,0,2,3,0,4][(c.printN++)%8], false, z.x + 34); e.units[e.units.length-1].ord = 'charge';
+    burst(z.x+24, gY(z.x)-40, '#9fd6ea', 8, 0.8); });
+  for (const o of c.objs) if (o.owner==='p') g.p.w += 2.2*dt;                                            // vannes de refroidissement : +2,2 💧/s
+  c.shield = c.owned<3? { label:M5_TX.shield2, x:e.x-30 } : null;
+}
+// les machines cachées dans le noir, près de nous (pour le conseil de Sol)
+function m5Hidden(g, c){ for (const u of g.e.units) if (c.hidden(u) && Math.abs(u.x - campFront(g)) < 520) return true; return false; }
+
+/* ---------- acte III : l'avatar, la tour, les réécritures ---------- */
+function m5Avatar(g, c, frac){
+  const e = g.e, D = c.D.i; spawnHero(e, 1);
+  const u = e.units[e.units.length-1]; if (!u || u.role!=='hero') return null;
+  u.maxhp *= M5.av[D]; u.hp = u.maxhp*(frac||1); if (c.D.eDmg) u.dmg *= c.D.eDmg;
+  u._cd = 1; u.m5 = 1; u.heroPow = M5.aura[D]; u.x = e.x - 40; u.era = e.era;
+  e.heroCd = 1e9; e.heroStance = 'offensive'; c.avatar = u; c.avHalf = false; c.avDown = false;
+  return u;
+}
+const m5AvAlive = (g, c) => !!(c.avatar && c.avatar.hp > 0 && g.e.units.includes(c.avatar));
+function m5Rewrite(g, c, dt){
+  const p = g.p, D = c.D.i;
+  if (!c.rw){
+    if (c.t < c.nextRw) return;
+    let bx = null, bn = 0;                                                                                // la bande se centre sur notre plus gros groupe
+    for (const u of p.units){ if (u.x < p.x+240) continue; let n = 0; for (const v of p.units) if (Math.abs(v.x-u.x) < M5.rwW/2) n++;
+      if (n > bn || (n===bn && u.x > bx)){ bn = n; bx = u.x; } }
+    if (bx==null){ c.nextRw = c.t + 4; return; }
+    c.rw = { x:clamp(bx, p.x+200, g.e.x-200), t:0, warn:M5.rwWarn[D] + (c.warnLead||0), done:false }; c.rwCount++; sfx('deny');
+    return; }
+  const r = c.rw; r.t += dt;
+  if (!r.done && r.t >= r.warn){
+    r.done = true; g.flash = Math.max(g.flash||0, 0.7); g.shake = Math.max(g.shake, 10); sfx('boom'); let hit = 0;
+    for (const u of p.units) if (Math.abs(u.x - r.x) < M5.rwW/2){ hit++;
+      u.hp = Math.max(u.maxhp*0.1, u.hp - u.maxhp*0.4); u.x = p.x + 50 + Math.random()*90; u.tx = u.x; u.px = null; if (u.ord==='point' || u.ord==='hold') u.ord = null; u.flash = 0.5; u.task = null;   // renvoyé au camp, 40 % de PV en moins
+      burst(u.x, gY(u.x)-24, '#eef6fa', 6, 0.8); }
+    if (hit) c.rwHit++; }
+  if (r.done && r.t >= r.warn + 0.8){ c.rw = null; c.nextRw = c.t + M5.rwGap[D]; }
+}
+
+/* ================= LES ACTES : entrée, bilan, point de reprise, passage ================= */
+let M5_CK = null;                                         // point de reprise (début d'acte) : Récit et Lutte seulement
+const M5_ERA = [2, 3, 3];                                 // ère minimale de chaque acte (III, IV, IV)
+const M5_MAPS = [
+  { terrain:{ a:30, f1:0.002618, b:3, f2:0.0113, c:1.5, f3:0.021, base:4 }, p:{ x:150 }, e:{ x:M5.gateX, slots:[] }, neut:[1200,1800], nodes:[], zones:[] },        // le mur : un glacis de 30 px avant la porte
+  { terrain:{ a:0, f1:0.0042, b:2, f2:0.0113, c:1, f3:0.021, base:3 }, p:{ x:150 }, e:{ x:M5.gateX, slots:[] }, neut:[900,2200], nodes:[], zones:[1224,1872,2520],  // les halles : dalles planes, trois baies
+    objects:[ { id:'valveA', x:1550, r:80, rate:0.1 }, { id:'valveB', x:2200, r:80, rate:0.1 } ] },
+  { terrain:{ a:0, f1:0.0042, b:3, f2:0.0113, c:1.5, f3:0.021, base:3 }, p:{ x:150 }, e:{ x:M5.gateX, slots:[] }, neut:[1300,2300], nodes:[], zones:[] },              // le noyau : le sol qui luit
+];
+function m5Guard(g, c){                                    // la garde de la porte : quelques machines qui tiennent le pied du mur
+  const e = g.e, n = campN([3,4,4][c.act-1]), k0 = e.units.length;
+  for (let i=0;i<n;i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x - 70 - i*22);
+  for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.ord = 'hold'; u.holdX = u.x; }
+}
+// entrée dans l'acte a : tout ce qui est remis à zéro (les cartes, l'ère et la forge sont posées par le moteur / le point de reprise)
+function m5Init(g, c, a, carry){
+  const p = g.p, e = g.e, D = c.D.i;
+  c.act = a; c.cellN = 0; c.cellsLeft = M5.cells[D][a-1]; c.cellT = c.t + M5.first; c.dry = null;
+  c.sortieT = c.t + M5.sortie[D]*0.85; c.sortieWarned = false;
+  c.saps = []; c.sapId = 0; c.sapOut = 0; c.sapLost = c.sapLost||0; c.sapLostAt = -99; c.charges = 0; c.reserve = 0; c.resT = null; c.firing = null; c.gateOpen = false;
+  c.batt = a===1? M5.wallX.map((x,i)=>({ x, hp:M5.battHp[D], maxhp:M5.battHp[D], atkT:2+i, dead:false })) : [];
+  c.battDown = 0;
+  c.proj = []; c.bayT = [11, 16, 21].map(x=>x*(D===2? 0.8 : 1)); c.zo = g.zones.map(z=>z.owner); c.offN = 0; c.relaunchN = 0; c.owned = 0; c.printN = 0;
+  c.rw = null; c.nextRw = c.t + 28; c.rwCount = 0; c.rwHit = 0; c.avatar = null; c.avBack = null; c.avBackN = 0; c.avFell = false;
+  c.lastE = e.hp; c.lifeSaid = false; c.shield = a===1? { label:M5_TX.shield1, x:e.x-30 } : a===2? { label:M5_TX.shield2, x:e.x-30 } : null;
+  c.leash = null; c.mark = null; c.demoRw = null;
+  c.targets = (foe, out) => m5Targets(c, foe, out);
+  c.homeK = u => u.side===-1? 0 : 1;                                                                   // les défenseurs de la citadelle ne sont pas chez eux
+  c.hidden = u => c.act===2 && u.side===-1 && !m5Lit(u.x);
+  c.rangeMul = u => { if (c.act!==2 || u.side!==1 || !(u.range>60)) return 1;                           // dans le noir : on ne tire pas sur ce qu'on ne voit pas
+    let best = 1e9, tg = null; for (const f of g.e.units){ const dx = f.x-u.x; if (dx>-12 && dx<best){ best = dx; tg = f; } }
+    if (tg && c.hidden(tg)) return 0.001;
+    return m5Lit(u.x, true)? 1 : M5.dim[D]; };
+  // camp neuf : ce que le moteur ne remet pas à zéro tout seul
+  p.phase = 1; p.lastSeen = p.lastReady = p.lastUsed = false; p.specialCd = 0; p.autoRepair = false; p.siegeT = 0; p.holdX = null; p.stance = 'charge'; p.queue.length = 0; p.cd = [0,0,0,0,0,0];
+  p.maxhp = campHp(M5.hp.base, 'p'); p.hp = p.maxhp; p.fortLvl = 1;
+  e.phase = 2; e.lastSeen = e.lastReady = e.lastUsed = true; e.heroCd = 1e9; e.f = e.m = e.w = 0; e.slots = []; e.mode = 'build'; e.fortLvl = 1; e.specialCd = M5.spCd[D]; c.eSp = e.specialCd;
+  e.maxhp = campHp(M5.hp.gate[a-1], 'e'); e.hp = e.maxhp; c.lastE = e.hp;
+  g.hbombDone = a < 3; g.winter = false; g.winterT = 0; g.cata = null; g.cataT = 0;                       // la bombe H et les cataclysmes : à l'acte III seulement
+  g.cataCd = a < 3? 1e9 : 55 + Math.random()*40;
+  g.weather = null;
+  e.era = Math.min(a===1? 2 : a===2? 3 : 4, p.era + 1);
+  if (carry){                                                                                           // reprise : l'état exact d'entrée de l'acte
+    Object.assign(p.upg, carry.upg); p.capUp = carry.capUp; if (p.capUp) p.cap = 40; p.heroCd = carry.heroCd;
+    if (carry.heroAlive) spawnHero(p, 1); }
+  { const R = c.refund = carry && carry.refund? carry.refund : c.nextRefund || { n:0, f:0, m:0, w:0 };    // remboursement des survivants de l'acte précédent
+    const k = carry && carry.resume? (campDoc(4) && campDoc(4).fx.res || 1) : 1;                        // (en reprise, la doctrine est appliquée après : on compense)
+    p.f += R.f/k; p.m += R.m/k; p.w += R.w/k; }
+  c.nextRefund = null;
+  m5Guard(g, c); m5Scale(g, c);
+  if (a===3) m5Avatar(g, c, 1);
+  c.shield && (c.shield.x = e.x-30);
+  c.goalTxt = M5_TX['g'+a];
+  c.ruleTxt = m5Rule(c, a); c.tipsArr = [M5_TX.tips[a-1]];
+  c.fired = c.fired || [];
+  m5Light(g, c); m5Save(g, c);
+}
+function m5Rule(c, a){ const D = c.D.i, o = {};
+  for (const L of LANG_CODES) o[L] = a===1? M5_TX.rule1[L] : a===2? M5_TX.rule2[L].replace('{dim}', campPct(M5.dim[D])) : M5_TX.rule3[L].replace('{n}', M5.rwGap[D]).replace('{w}', M5.rwWarn[D]);
+  return o; }
+// point de reprise : l'ère, la forge, le héros et le remboursement tels qu'ils étaient à l'entrée de l'acte
+function m5Save(g, c){
+  const p = g.p, h = p.units.some(u=>u.role==='hero');
+  M5_CK = { act:c.act, d:c.D.i, doc:CAMP_SAVE.doc[4]? 1 : 0, era:p.era, xp:p.xp, upg:Object.assign({}, p.upg), capUp:!!p.capUp, heroAlive:h, heroCd:p.heroCd||0,
+    refund:c.refund || { n:0, f:0, m:0, w:0 }, fail:false };
+  if (c.D.i===2) M5_CK = null;                                                                          // Dernier carré : aucune reprise, la mission recommence
+}
+// bilan de fin d'acte : les survivants gardent la brèche et rapportent 25 % de leur coût (au plus 300 de chaque)
+function m5Bilan(g, c){
+  const p = g.p, list = p.units.filter(u => u.role!=='hero' && u.role!=='gremlin');
+  for (const s of sideBuildSlots(p)) if (s.b && s.b.gar) for (const u of s.b.gar) list.push(u);
+  for (const u of p.gar) list.push(u);
+  const R = { n:list.length, f:0, m:0, w:0 };
+  for (const u of list){ const ri = ROLES.findIndex(r => r.key===u.role); if (ri<0) continue; const cost = ROLES[ri].cost, k = costMul(u.era!=null? u.era : p.era)*M5.refund;
+    for (const r of ['f','m','w']) if (cost[r]) R[r] += cost[r]*k; }
+  for (const r of ['f','m','w']) R[r] = Math.min(M5.refundMax, Math.round(R[r]));
+  return R;
+}
+function m5BilanTxt(c){ const R = c.bilan || { n:0, f:0, m:0, w:0 }; return m5Fmt(M5_TX.bilan, R); }
+// fiche d'acte pour campNextAct (a = nouvel acte) ; ck : point de reprise (reprise = on n'a pas de cinématique à jouer)
+function m5ActSpec(g, c, a, ck){
+  const p = g.p, era0 = ck? ck.era : p.era, era = Math.max(era0, M5_ERA[a-1]), xp0 = ck? ck.xp : p.xp;
+  const D = c.D.i, dot = M5.dot[a-1];
+  return { act:a, title:a===2? M5_L.t3t : M5_L.t9t, sub:a===2? M5_L.t3s : M5_L.t9s, card:{ plate:M5_PLATES.door(a), mus:a===2? 'm_citadel' : 'm_finale' },
+    before:(g, c) => ck? [] : m5CineBefore(g, c, a), after:(g, c) => ck? [] : m5CineAfter(g, c, a),
+    biome:'citadel', theme:'citadel'+a, map:M5_MAPS[a-1],
+    army:{ keep:0, hero:true }, heal:1,                                                                  // les survivants restent à la brèche ; le héros suit, en pleine forme
+    res:{ f:M5.dot[a-1][0], m:M5.dot[a-1][1], w:M5.dot[a-1][2] }, era:{ p:era }, xp:era>era0? Math.max(xp0, EVOLVE_XP[era]) : xp0, eraCap:4,
+    buildings:'clear', base:{ x:150, hp:M5.hp.base, fort:1 }, ebase:{ x:M5.gateX, hp:M5.hp.gate[a-1], fort:1 },
+    enemy:'clear', goal:ck? null : M5_TX['g'+a], doctrine:!ck,
+    setup:(g, c) => m5Init(g, c, a, ck? { upg:ck.upg, capUp:ck.capUp, heroAlive:ck.heroAlive, heroCd:ck.heroCd, refund:ck.refund, resume:true } : null) };
+}
+// la porte (acte I) ou la porte du noyau (acte II) cède : bilan, cinématique, camp neuf
+function m5Next(g, c){
+  const a = c.act; if (a>=3 || c.actPending) return;
+  c.bilan = m5Bilan(g, c); c.nextRefund = c.bilan;
+  g.e.hp = 1; c.lastE = 1; g.shake = 14; sfx('evolve');
+  campNextAct(m5ActSpec(g, c, a+1));
+}
+// Récit et Lutte : après un échec, on reprend au début de l'acte où l'on est tombé
+function m5Resume(g, c){
+  const ck = M5_CK; if (!ck || !ck.fail || ck.d!==c.D.i || ck.doc!==(CAMP_SAVE.doc[4]? 1 : 0) || c.D.i>=2){ if (c.D.i>=2) M5_CK = null; return false; }
+  ck.fail = false; c.resumed = ck.act;
+  campEra(g.p, ck.era); g.p.xp = ck.xp;
+  if (ck.act>=2){ const spec = m5ActSpec(g, c, ck.act, ck); campApplyAct(g, c, spec); }
+  else m5Init(g, c, 1, { upg:ck.upg, capUp:ck.capUp, heroAlive:ck.heroAlive, heroCd:ck.heroCd, refund:ck.refund, resume:true });
+  return true;
+}
+
+/* ================= LE DESSIN DU TERRAIN : bases, porte, batteries, sapeurs, baies, vannes, bande de réécriture ================= */
+function m5Tag(x, txt, dy, col){                                      // légende posée au sol (« la ferme brûlée », « baie 2 »…)
+  const sx = x - camX; if (sx < -120 || sx > VW()+120) return;
+  const y = gY(x) + (dy==null? 14 : dy), s = typeof txt==='string'? txt : cT(txt);
+  ctx.save(); ctx.font = '700 9px "Courier New",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(s).width + 12; ctx.fillStyle = 'rgba(14,10,8,0.5)'; ctx.fillRect(sx-w/2, y-7, w, 14);
+  ctx.fillStyle = col || 'rgba(238,228,200,0.92)'; ctx.fillText(s, sx, y+0.5); ctx.restore();
+}
+const m5Lines = (g, pts) => { g.beginPath(); pts.forEach((p,i)=> i? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); };
+// ----- nos camps (repère local : pieds de la base en (0,0), la citadelle à droite) -----
+function m5Camp1(t, frac){                                            // les cellules : deux tentes, le camion-radio de Germinal, une banderole
+  for (const [x,w,h,col] of [[-92,46,38,'#6c7a58'],[-48,54,46,'#7a8664']]){
+    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x-w/2,0); ctx.lineTo(x,-h); ctx.lineTo(x+w/2,0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(20,16,10,0.4)'; ctx.beginPath(); ctx.moveTo(x-4,0); ctx.lineTo(x,-h*0.58); ctx.lineTo(x+7,0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(20,16,10,0.55)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x-w/2,0); ctx.lineTo(x,-h); ctx.lineTo(x+w/2,0); ctx.stroke(); }
+  ctx.fillStyle = '#4a5846'; ctx.fillRect(-4,-40,64,32); ctx.fillStyle = '#3a4638'; ctx.fillRect(60,-32,22,24); ctx.fillStyle = '#9fc0d0'; ctx.fillRect(64,-29,13,10);            // caisse, cabine, pare-brise
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(-4,-14,86,6);
+  ctx.fillStyle = '#1c1a18'; for (const wx of [8,40,70]){ ctx.beginPath(); ctx.arc(wx,-6,7,0,6.283); ctx.fill(); ctx.fillStyle = '#6a6a66'; ctx.beginPath(); ctx.arc(wx,-6,3,0,6.283); ctx.fill(); ctx.fillStyle = '#1c1a18'; }
+  ctx.strokeStyle = '#2a2622'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(20,-40); ctx.lineTo(20,-84); ctx.moveTo(12,-70); ctx.lineTo(28,-70); ctx.stroke();                   // l'antenne
+  ctx.fillStyle = '#c42a1c'; const wv = Math.sin(t*3)*2; ctx.beginPath(); ctx.moveTo(20,-84); ctx.lineTo(54,-80+wv); ctx.lineTo(54,-68+wv); ctx.lineTo(20,-72); ctx.closePath(); ctx.fill();   // la banderole
+  ctx.fillStyle = 'rgba(255,240,220,0.85)'; ctx.fillRect(26,-79+wv*0.4,22,2);
+  for (let k=0;k<2;k++){ const ph = (t*0.8+k*0.5)%1; ctx.strokeStyle = 'rgba(196,42,28,'+(0.5*(1-ph)).toFixed(2)+')'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(20,-84, 8+ph*16, -2.3, -0.8); ctx.stroke(); }
+}
+function m5Camp2(t, frac){                                            // la brèche : un trou dans le mur, des sacs de sable, deux projecteurs
+  ctx.fillStyle = '#2c3038'; ctx.fillRect(-88,-120,62,120); ctx.fillRect(26,-120,62,120);
+  ctx.beginPath(); ctx.moveTo(-26,-120); ctx.lineTo(26,-120); ctx.lineTo(24,-86); ctx.lineTo(12,-64); ctx.lineTo(20,-30); ctx.lineTo(10,0); ctx.lineTo(-18,0); ctx.lineTo(-12,-44); ctx.lineTo(-26,-70); ctx.closePath(); ctx.fillStyle = '#080a10'; ctx.fill();
+  ctx.fillStyle = 'rgba(150,214,236,0.8)'; for (let i=0;i<5;i++) ctx.fillRect(-10+((i*7)%18), -100+i*18, 2, 2);
+  ctx.fillStyle = '#8a7a58'; for (let r=0;r<2;r++) for (let i=0;i<6;i++){ ctx.beginPath(); ctx.ellipse(-60+i*18+(r? 8 : 0), -5-r*9, 10, 5.4, 0, 0, 6.283); ctx.fill(); }
+  ctx.strokeStyle = '#1c1a18'; ctx.lineWidth = 1.2; ctx.beginPath(); for (let r=0;r<2;r++) for (let i=0;i<6;i++){ ctx.moveTo(-50+i*18+(r? 8 : 0), -5-r*9); ctx.ellipse(-60+i*18+(r? 8 : 0), -5-r*9, 10, 5.4, 0, 0, 6.283); } ctx.stroke();
+  for (const px of [-70,60]){ ctx.strokeStyle = '#1c1a18'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px,-18); ctx.lineTo(px-8,0); ctx.moveTo(px,-18); ctx.lineTo(px+8,0); ctx.stroke();
+    ctx.fillStyle = '#3a3e46'; ctx.fillRect(px-8,-34,16,14); ctx.fillStyle = '#fff2c8'; ctx.fillRect(px+(px<0? 5 : -9),-31,5,8); }
+}
+function m5Camp3(t, frac){                                            // la porte enfoncée : l'embrasure d'une porte immense, un vantail à terre
+  ctx.fillStyle = '#12161c'; ctx.fillRect(-70,-130,18,130); ctx.fillRect(52,-130,18,130); ctx.fillRect(-70,-130,140,16);
+  const gl = ctx.createLinearGradient(0,-114,0,0); gl.addColorStop(0,'rgba(236,246,252,0.9)'); gl.addColorStop(1,'rgba(150,200,226,0.25)'); ctx.fillStyle = gl; ctx.fillRect(-52,-114,104,114);
+  ctx.strokeStyle = '#eef6fa'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-70,-130); ctx.lineTo(-70,0); ctx.moveTo(70,-130); ctx.lineTo(70,0); ctx.stroke();
+  ctx.fillStyle = '#242a34'; ctx.beginPath(); ctx.moveTo(-8,-2); ctx.lineTo(92,-6); ctx.lineTo(100,-22); ctx.lineTo(0,-26); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#8fb8cc'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(6,-12); ctx.lineTo(92,-14); ctx.stroke();
+  ctx.fillStyle = '#c42a1c'; ctx.beginPath(); ctx.moveTo(-84,0); ctx.lineTo(-84,-60); ctx.lineTo(-62,-56+Math.sin(t*3)*2); ctx.lineTo(-62,-46+Math.sin(t*3)*2); ctx.lineTo(-84,-50); ctx.closePath(); ctx.fill();
+}
+// ----- la citadelle (repère local, base au centre) -----
+function m5Gate1(t, frac, c){                                         // la porte d'enceinte : deux vantaux sombres dans le mur, l'Ω gravé
+  const open = c.gateOpen, k = open? clamp(c.t - (c.firing||c.t) - 2, 0, 1) : 0;
+  ctx.fillStyle = '#3a3634'; ctx.fillRect(-190,-58,380,58);
+  ctx.fillStyle = '#2a2624'; ctx.fillRect(-60,-130,120,130);
+  ctx.fillStyle = '#4a4442'; for (let i=-190;i<190;i+=26){ if (i<-70 || i>46) ctx.fillRect(i,-66,16,9); }                                    // créneaux
+  ctx.fillStyle = '#16181e'; ctx.fillRect(-42,-104,40,104); ctx.fillRect(2,-104,40,104);                                                    // les deux vantaux
+  if (k>0){ ctx.fillStyle = '#05060a'; ctx.fillRect(-6-k*10,-104,12+k*20,104); }
+  ctx.strokeStyle = '#4c566a'; ctx.lineWidth = 1.4; ctx.strokeRect(-41.5,-103.5,39,103); ctx.strokeRect(2.5,-103.5,39,103);
+  ctx.fillStyle = '#5a6478'; for (let i=0;i<5;i++){ ctx.fillRect(-36,-92+i*19,3,3); ctx.fillRect(33,-92+i*19,3,3); }
+  ctx.fillStyle = (Math.sin(t*2)>-0.3)? '#7ab8e0' : '#4a7090'; ctx.font = '700 38px Georgia,serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Ω', 0, -52);        // l'Ω gravé
+  ctx.fillStyle = '#c42a1c'; ctx.beginPath(); ctx.arc(-52,-116,2.5,0,6.283); ctx.arc(52,-116,2.5,0,6.283); ctx.fill();
+  if (open){ ctx.fillStyle = 'rgba(8,6,4,0.45)'; ctx.fillRect(-60,-130,120,40); }
+}
+function m5Gate2(t, frac, c){                                         // la porte du noyau : ronde, blindée, cerclée de lumière
+  const sh = 3 - c.owned, p = 0.55 + 0.25*Math.sin(t*2.4);
+  ctx.fillStyle = '#10131a'; ctx.fillRect(-120,-150,240,150);
+  ctx.strokeStyle = '#2a3140'; ctx.lineWidth = 2; ctx.beginPath(); for (let y=-140;y<0;y+=22){ ctx.moveTo(-120,y); ctx.lineTo(120,y); } ctx.stroke();
+  ctx.fillStyle = '#1c212b'; ctx.beginPath(); ctx.arc(0,-70,56,0,6.283); ctx.fill();
+  ctx.strokeStyle = 'rgba(150,214,236,'+(sh? p : 0.3).toFixed(2)+')'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0,-70,56,0,6.283); ctx.stroke();
+  for (let i=0;i<sh;i++){ ctx.strokeStyle = '#4a5668'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0,-70,48-i*11,0,6.283); ctx.stroke(); ctx.strokeStyle = 'rgba(190,234,248,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0,-70,50.5-i*11,0,6.283); ctx.stroke(); }
+  ctx.fillStyle = sh? '#2a303c' : '#0a0c10'; ctx.beginPath(); ctx.arc(0,-70,Math.max(8,26-sh*8),0,6.283); ctx.fill();
+  for (let i=0;i<8;i++){ const a = i*0.785+t*(sh? 0.2 : 0); ctx.strokeStyle = '#3a4252'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Math.cos(a)*14, -70+Math.sin(a)*14); ctx.lineTo(Math.cos(a)*(26+sh*6), -70+Math.sin(a)*(26+sh*6)); ctx.stroke(); }
+  if (!sh){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g2 = ctx.createRadialGradient(0,-70,4,0,-70,90); g2.addColorStop(0,'rgba(190,230,250,0.45)'); g2.addColorStop(1,'rgba(190,230,250,0)'); ctx.fillStyle = g2; ctx.fillRect(-100,-160,200,180); ctx.restore(); }
+}
+function m5Gate3(t, frac, c){                                         // la tour : une colonne de lumière dans une cage de verre
+  const fx = c.endFx, k = fx? clamp((performance.now() - (c.endT0||0))/1000, 0, 4) : 0;
+  if (fx==='fall'){ const h = 210*Math.max(0.04, 1 - k*k*0.07); ctx.fillStyle = '#2a2e38'; ctx.fillRect(-70,-14,140,14);
+    ctx.fillStyle = 'rgba(36,44,56,0.9)'; ctx.fillRect(-26,-14-h,52,h); ctx.fillStyle = 'rgba(190,226,244,'+Math.max(0,0.8-k*0.25).toFixed(2)+')'; ctx.fillRect(-8,-14-h,16,h);
+    for (let i=0;i<8;i++){ ctx.fillStyle = '#4a5260'; ctx.fillRect(-60+((i*37)%110), -6-((i*13)%9), 18+i%3*6, 8); } return; }
+  const dead = fx==='dawn';
+  ctx.fillStyle = '#242a34'; ctx.fillRect(-72,-16,144,16); ctx.fillStyle = '#323a48'; ctx.fillRect(-56,-26,112,10);
+  ctx.fillStyle = 'rgba(150,200,226,0.14)'; ctx.fillRect(-32,-236,64,220);                                                          // la cage de verre
+  ctx.strokeStyle = '#8fb8cc'; ctx.lineWidth = 1.6; ctx.strokeRect(-32,-236,64,220); ctx.beginPath(); for (let y=-200;y<-20;y+=36){ ctx.moveTo(-32,y); ctx.lineTo(32,y); } ctx.moveTo(0,-236); ctx.lineTo(0,-16); ctx.stroke();
+  const pulse = 0.7 + 0.3*Math.sin(t*3), n = dead? Math.max(0, 5 - Math.floor(k*1.4)) : 5;
+  const lg = ctx.createLinearGradient(0,-230,0,-20); lg.addColorStop(0,'rgba(255,255,255,'+(dead? 0.25 : 0.95).toFixed(2)+')'); lg.addColorStop(1,'rgba(150,214,244,'+(dead? 0.1 : 0.5).toFixed(2)+')');
+  ctx.fillStyle = lg; ctx.fillRect(-10,-228,20,206);
+  for (let i=0;i<5;i++){ const on = i < n; ctx.fillStyle = on? 'rgba(120,214,250,'+pulse.toFixed(2)+')' : 'rgba(40,52,64,0.9)'; ctx.fillRect(-30,-216+i*40,3,28); ctx.fillRect(27,-216+i*40,3,28); }   // les liserés bleus
+  ctx.strokeStyle = 'rgba(236,248,255,0.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,-250,16,0,6.283); ctx.stroke();                          // l'anneau
+  if (!dead){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g2 = ctx.createRadialGradient(0,-130,10,0,-130,150); g2.addColorStop(0,'rgba(200,236,255,'+(0.3*pulse).toFixed(2)+')'); g2.addColorStop(1,'rgba(200,236,255,0)'); ctx.fillStyle = g2; ctx.fillRect(-150,-280,300,300); ctx.restore(); }
+}
+function m5DrawBase(side, c){
+  const x = side.x - camX; if (x < -260 || x > VW()+260) return;
+  const g = game, t = g.t, gy = gY(side.x), mine = side===g.p, a = c.act, frac = side.maxhp>0? clamp(side.hp/side.maxhp, 0, 1) : 1, d = side.side;
+  projShadow(x, gy, mine? 70 : 96);
+  ctx.save(); ctx.translate(x, gy);
+  if (mine) [m5Camp1, m5Camp2, m5Camp3][a-1](t, frac); else [m5Gate1, m5Gate2, m5Gate3][a-1](t, frac, c);
+  ctx.restore();
+  drawBaseGarrison(side, x, gy, d, mine? -60 : -90);
+  if (frac < 0.55){ const S = mine? [[-30,-60],[40,-30]] : [[-30,-90],[26,-60]]; for (let i=0;i<S.length;i++) dmgSmoke(x+S[i][0], gy+S[i][1], frac, t, side.x+i*31); }
+  if (mine || !(a===3 && c.endFx)){ const w = 110, by = gy - (mine? 100 : a===3? 262 : a===2? 158 : 138);
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x-w/2, by, w, 8); ctx.fillStyle = side.fac.accent; ctx.fillRect(x-w/2, by, w*frac, 8);
+    if (!mine && a===3){ ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x-w/2+w*0.1, by-2, 1.5, 12); }                    // le seuil des 10 %
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(x-w/2, by, w, 8);
+    if (mine && frac < 0.95){ ctx.font = HF(12); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,'+(0.5+0.3*Math.sin(t*3))+')'; ctx.fillText(tr('hud_tap_repair'), x, by-10); } }
+}
+{ const _db = drawBase; drawBase = function(side){ const c = m5C(); if (c) m5DrawBase(side, c); else _db(side); }; }
+
+/* ---------- baies (zones de l'acte II), vannes (objets), batteries et sapeurs ---------- */
+function m5DrawZone(z, t, vw){
+  const x = z.x - camX; if (x < -80 || x > vw+80) return; const y = gY(z.x), off = z.owner==='p', i = game.zones.indexOf(z);
+  ctx.save(); ctx.translate(x, y);
+  if (!off && qFx()){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gl = ctx.createRadialGradient(0,-34,6,0,-34,120); gl.addColorStop(0,'rgba(120,200,240,0.35)'); gl.addColorStop(1,'rgba(120,200,240,0)'); ctx.fillStyle = gl; ctx.fillRect(-130,-160,260,170); ctx.restore(); }
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(2,1,30,5,0,0,6.283); ctx.fill();
+  ctx.fillStyle = '#2c3848'; ctx.fillRect(-22,-64,44,64); ctx.fillStyle = '#1c2530'; ctx.fillRect(-22,-64,44,5); ctx.fillRect(15,-64,7,64); ctx.fillStyle = '#10161e'; ctx.fillRect(-18,-57,30,52);
+  for (let k=0;k<7;k++){ ctx.fillStyle = '#243040'; ctx.fillRect(-16,-54+k*7.2,26,4.6);
+    ctx.fillStyle = off? '#3a2420' : (Math.sin(t*(3+k*0.7)+k*2+z.x)>0? '#bfeaf8' : '#4a7a90'); ctx.fillRect(-14+((k*5)%16),-53+k*7.2,4,2); }
+  if (off){ ctx.strokeStyle = '#c42a1c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-17,-52); ctx.lineTo(11,-10); ctx.moveTo(11,-52); ctx.lineTo(-17,-10); ctx.stroke();       // éteinte : barrée, câbles arrachés
+    ctx.strokeStyle = '#10161e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-22,-18); ctx.quadraticCurveTo(-36,-8,-34,0); ctx.moveTo(22,-26); ctx.quadraticCurveTo(34,-12,30,0); ctx.stroke(); }
+  else { ctx.fillStyle = 'rgba(190,234,248,0.9)'; ctx.fillRect(-22,-67,44,2);
+    for (let k=0;k<3;k++){ const ph = (t*0.7+k/3)%1; ctx.fillStyle = 'rgba(190,230,248,'+(0.35*(1-ph)).toFixed(2)+')'; ctx.fillRect(24+ph*18, -44+k*12, 10, 2); } }                // le souffle d'air
+  const pr = Math.abs(z.prog); if (pr>0.01 && pr<1){ ctx.fillStyle = 'rgba(10,10,14,0.7)'; ctx.fillRect(-22,7,44,4); ctx.fillStyle = z.prog>0? '#c42a1c' : '#9fd6ea'; ctx.fillRect(-22,7,44*pr,4); }
+  ctx.restore();
+  m5Tag(z.x, m5Fmt(M5_TX.bay, { n:i+1 }), 20);
+}
+function m5DrawObj(o, t, vw){                                         // vanne de refroidissement : conduite, volant rouge
+  const x = o.x - camX; if (x < -80 || x > vw+80) return; const y = gY(o.x), mine = o.owner==='p';
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0,1,46,5,0,0,6.283); ctx.fill();
+  ctx.fillStyle = '#4a5260'; ctx.fillRect(-52,-22,104,14); ctx.fillStyle = '#6a7484'; ctx.fillRect(-52,-22,104,3); ctx.fillStyle = '#323a46'; ctx.fillRect(-56,-26,8,22); ctx.fillRect(48,-26,8,22);
+  ctx.fillStyle = '#3a4250'; ctx.fillRect(-6,-34,12,14);
+  ctx.strokeStyle = '#c42a1c'; ctx.lineWidth = 3.4; ctx.beginPath(); ctx.arc(0,-46,13,0,6.283); ctx.stroke();                                           // le volant
+  const ar = mine? t*0.6 : 0; ctx.lineWidth = 2.2; ctx.beginPath(); for (let k=0;k<3;k++){ const a = ar+k*1.047; ctx.moveTo(Math.cos(a)*13,-46+Math.sin(a)*13); ctx.lineTo(-Math.cos(a)*13,-46-Math.sin(a)*13); } ctx.stroke();
+  if (mine){ ctx.fillStyle = 'rgba(120,200,240,0.9)'; for (let k=0;k<3;k++){ const ph = (t*1.2+k/3)%1; ctx.fillRect(-30+k*28, -8+ph*10, 3, 6); } }                             // l'eau coule
+  const pr = Math.abs(o.prog); if (pr>0.01 && pr<1){ ctx.fillStyle = 'rgba(10,10,14,0.7)'; ctx.fillRect(-24,8,48,4); ctx.fillStyle = o.prog>0? '#2f9bd0' : '#9fd6ea'; ctx.fillRect(-24,8,48*pr,4); }
+  ctx.restore();
+  m5Tag(o.x, m5Fmt(M5_TX.valve, { n:o.id==='valveA'? 'A' : 'B' }), 22, mine? '#9fe0ff' : null);
+}
+function m5Wall(x0, x1){                                              // le mur d'enceinte, au premier plan (acte I) : tours des batteries
+  const a = x0 - camX, b = x1 - camX; if (b < -40 || a > VW()+40) return;
+  const y0 = gY((x0+x1)/2);
+  ctx.fillStyle = '#3e3a38'; ctx.fillRect(a, y0-52, b-a, 52);
+  ctx.fillStyle = '#4c4745'; for (let x=a;x<b-14;x+=24) ctx.fillRect(x, y0-60, 15, 9);
+  ctx.fillStyle = 'rgba(20,14,12,0.35)'; for (let x=a+8;x<b-20;x+=40) ctx.fillRect(x, y0-34, 14, 4);
+  ctx.strokeStyle = 'rgba(14,10,8,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x=a;x<b;x+=44){ ctx.moveTo(x,y0-52); ctx.lineTo(x+14,y0); } ctx.stroke();
+}
+function m5DrawBatt(b, g, t){
+  const x = b.x - camX; if (x < -80 || x > VW()+80) return; const y = gY(b.x);
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = '#4a4442'; ctx.fillRect(-20,-96,40,96); ctx.fillStyle = '#5a5452'; ctx.fillRect(-24,-102,48,10); ctx.fillStyle = 'rgba(20,14,12,0.4)'; ctx.fillRect(10,-96,10,96);
+  if (b.dead){ ctx.fillStyle = 'rgba(8,6,6,0.8)'; ctx.beginPath(); ctx.moveTo(-20,-96); ctx.lineTo(0,-96); ctx.lineTo(-8,-70); ctx.lineTo(-20,-76); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#2a2624'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-6,-100); ctx.lineTo(-30,-86); ctx.stroke();
+    for (let k=0;k<2;k++){ const ph = (t*0.4+k*0.5)%1; ctx.fillStyle = 'rgba(40,36,34,'+(0.4*(1-ph)).toFixed(2)+')'; ctx.beginPath(); ctx.arc(-4+Math.sin(ph*5)*5, -100-ph*40, 6+ph*10, 0, 6.283); ctx.fill(); } }
+  else { const rec = b.atkT > 0.8? 4*(b.atkT-0.8)/0.2 : 0;                                              // la tourelle : tube long, recul à chaque tir
+    ctx.fillStyle = '#2c2a2a'; ctx.beginPath(); ctx.arc(0,-106,13,Math.PI,0); ctx.fill();
+    ctx.strokeStyle = '#1c1a1a'; ctx.lineWidth = 5; ctx.lineCap = 'butt'; ctx.beginPath(); ctx.moveTo(-6+rec,-108); ctx.lineTo(-36+rec,-112); ctx.stroke();
+    ctx.fillStyle = (Math.sin(t*5)>0)? '#ff3a2a' : '#6a1a14'; ctx.beginPath(); ctx.arc(0,-120,2.4,0,6.283); ctx.fill();
+    if (b.hp < b.maxhp){ const f = clamp(b.hp/b.maxhp,0,1); ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(-24,-132,48,5); ctx.fillStyle = '#e0533f'; ctx.fillRect(-24,-132,48*f,5); } }
+  ctx.restore();
+}
+function m5DrawSap(s, g, t){
+  const x = s.x - camX; if (x < -30 || x > VW()+30) return; const y = gY(s.x), f = clamp(s.hp/s.maxhp, 0, 1), w = Math.sin(s.step*0.18)*2.4;
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0,1,10,2.6,0,0,6.283); ctx.fill();
+  ctx.fillStyle = '#5a4a2a'; ctx.beginPath(); ctx.moveTo(-5,-4); ctx.lineTo(-4,-17); ctx.lineTo(4,-17); ctx.lineTo(5,-4); ctx.closePath(); ctx.fill();                      // le corps
+  ctx.fillRect(-4,-4, 3, 4+w*0.3); ctx.fillRect(1,-4, 3, 4-w*0.3);
+  ctx.fillStyle = '#d8b090'; ctx.beginPath(); ctx.arc(0,-21,3.6,0,6.283); ctx.fill(); ctx.fillStyle = '#e8c070'; ctx.beginPath(); ctx.arc(0,-22,4,Math.PI,0); ctx.fill();   // casque de sapeur
+  ctx.fillStyle = '#7a3a1c'; ctx.fillRect(-12,-18,8,13); ctx.fillStyle = '#c42a1c'; ctx.fillRect(-11,-17,6,3);                                                                 // la charge sur le dos
+  ctx.fillStyle = (Math.sin(t*6+s.id)>0)? '#ff3a2a' : '#6a1a14'; ctx.fillRect(-9,-9,2,2);
+  if (s.plant>0){ ctx.strokeStyle = '#e8c070'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,-34,7,-1.57,-1.57+6.283*(1-s.plant/M5.sapPlant)); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(-11,-31,22,3); ctx.fillStyle = f>0.5? '#9dc88a' : '#e0533f'; ctx.fillRect(-11,-31,22*f,3);
+  ctx.restore();
+}
+function m5DrawRw(g, c, vw, t){                                       // la bande blanche : hachurée qui se remplit, puis l'éclair
+  for (const r of [c.rw, c.demoRw]){ if (!r) continue;
+    const w = M5.rwW, x0 = r.x - w/2 - camX, y = gY(r.x), warn = r.warn || 4, k = Math.min(1, r.t/warn), done = !!r.done;
+    if (x0 > vw || x0+w < 0) continue;
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y-170, w, 210); ctx.clip();
+    ctx.fillStyle = done? 'rgba(246,252,255,'+(0.8*Math.max(0, 1-(r.t-warn)*1.3)).toFixed(2)+')' : 'rgba(200,236,248,'+(0.10+0.16*k).toFixed(3)+')'; ctx.fillRect(x0, y-170, w, 210);
+    ctx.strokeStyle = 'rgba(20,28,38,0.55)'; ctx.lineWidth = 2; ctx.beginPath(); for (let q=-210; q<w*k; q+=16){ ctx.moveTo(x0+q, y+40); ctx.lineTo(x0+q+210, y-170); } ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#12161c'; ctx.fillRect(x0-2, y-170, 4, 210); ctx.fillRect(x0+w-2, y-170, 4, 210);
+    ctx.fillStyle = '#12161c'; ctx.fillRect(x0+w/2-62, y-192, 124, 18); ctx.fillStyle = '#eef6fa'; ctx.font = '700 11px "Courier New",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(cT(M5_TX.rw)+Math.max(0, warn - r.t).toFixed(1), x0+w/2, y-183); }
+}
+// légendes au sol de chaque lieu
+function m5Tags(g, c){
+  const a = c.act;
+  if (a===1){ m5Tag(1200, M5_TX.farm); m5Tag(1800, M5_TX.cross); m5Tag(M5.wallX[0], M5_TX.battN, 18); m5Tag(M5.wallX[1], M5_TX.battS, 18); m5Tag(M5.gateX, M5_TX.gate1, 18); }
+  else if (a===2){ m5Tag(900, m5Fmt(M5_TX.aisle, {n:'A'})); m5Tag(2200, m5Fmt(M5_TX.aisle, {n:'B'}), 34); m5Tag(M5.gateX, M5_TX.gate2, 18); m5Tag(g.p.x, M5_TX.breach, 18); }
+  else { m5Tag(1300, M5_TX.pillars); m5Tag(2300, M5_TX.pillars); m5Tag(M5.gateX, M5_TX.tower, 18); m5Tag(g.p.x, M5_TX.door3, 18); }
+}
+function m5DrawPillars(g){                                            // les piliers de l'acte III : deux colonnes de verre
+  for (const px of [1300, 2300]){ const x = px - camX; if (x < -60 || x > VW()+60) continue; const y = gY(px), t = g.t;
+    ctx.fillStyle = 'rgba(150,200,226,0.16)'; ctx.fillRect(x-14,y-110,28,110); ctx.strokeStyle = '#8fb8cc'; ctx.lineWidth = 1.4; ctx.strokeRect(x-14,y-110,28,110);
+    ctx.fillStyle = 'rgba(236,248,255,'+(0.35+0.2*Math.sin(t*2+px)).toFixed(2)+')'; ctx.fillRect(x-3,y-104,6,100);
+    ctx.fillStyle = '#242a34'; ctx.fillRect(x-20,y-6,40,6); ctx.fillRect(x-18,y-116,36,6); }
+}
+function m5Draw(g, c, vw){
+  const t = g.t, a = c.act;
+  if (a===1){ m5Wall(2860, 3560); for (const b of c.batt) m5DrawBatt(b, g, t); for (const s of c.saps) m5DrawSap(s, g, t); }
+  if (a===3) m5DrawPillars(g);
+  m5Tags(g, c); m5DrawRw(g, c, vw, t);
+  if (a===3 && m5AvAlive(g, c)){ const u = c.avatar, x = u.x - camX; if (x > -40 && x < vw+40){ const y = gY(u.x) - 112 - (u.fly? 0 : 0);                  // l'avatar : un anneau au-dessus de la tête
+    ctx.strokeStyle = 'rgba(236,248,255,'+(0.6+0.3*Math.sin(t*4)).toFixed(2)+')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, 14, 0.4, 5.9); ctx.stroke(); } }
+  if (c.warnMark && t < c.warnMark.t1){ const x = c.warnMark.x - camX, y = gY(c.warnMark.x);                                                              // Radio libre : repère de sortie
+    if (x > -40 && x < vw+40){ ctx.strokeStyle = 'rgba(224,83,63,'+(0.5+0.4*Math.sin(t*10)).toFixed(2)+')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y-60, 24, 0, 6.283); ctx.stroke(); ctx.fillStyle = '#e0533f'; ctx.font = '700 12px "Courier New",monospace'; ctx.textAlign = 'center'; ctx.fillText(cT(M5_TX.sortie), x, y-96); } }
+}
+
+/* ================= PLANCHES (repère 480×270, sol à y = 230) — un sujet par planche ================= */
+const M5_INK = '#1f1b17', M5_RED = '#c42a1c', M5_BLUE = '#0b6fa8', M5_AMB = '#e8a53c', M5_COUR = '"Courier New",monospace';
+const m5Loop = (g, pts, n, wd, col) => inkLine(g, pts.concat(pts.slice(0,2)), n, wd, col);                 // contour fermé : le premier point est répété
+const m5Txt = (g, s, x, y, px, col, al, font) => { g.fillStyle = col || M5_INK; g.font = font || ('700 '+px+'px '+M5_COUR); g.textAlign = al || 'center'; g.textBaseline = 'alphabetic'; g.fillText(s, x, y); };
+const m5Cone = (g, x, y, w, h, a, col) => { const gr = g.createLinearGradient(0, y, 0, y+h); gr.addColorStop(0, 'rgba('+col+','+a+')'); gr.addColorStop(1, 'rgba('+col+',0)'); g.fillStyle = gr;
+  g.beginPath(); g.moveTo(x-3, y); g.lineTo(x+3, y); g.lineTo(x+w/2, y+h); g.lineTo(x-w/2, y+h); g.closePath(); g.fill(); };
+const m5Flakes = (g, t, n, col, speed, drift) => { for (let i=0;i<n;i++){ const x = (i*61.3 + t*drift + Math.sin(t*0.7+i)*8 + 480*4) % 480, y = (i*47.1 + t*speed) % 270; g.fillStyle = col; g.fillRect(x, y, 2.4+(i%3)*0.8, 2.4+(i%3)*0.8); } };
+const m5Bilan2 = c => { const s = m5BilanTxt(c), i = s.indexOf(' · '); return i<0? [s, ''] : [s.slice(0, i), s.slice(i+3)]; };
+const M5_PLATES = {
+  // P1 · La plaine : la citadelle comme un couvercle, trois colonnes de cellules qui convergent
+  plain(g, w, h, t){ plateBase(g, w, h, 'rgba(120,70,40,0.12)');
+    const n = clamp(t/1.8, 0, 1);
+    inkLine(g, [0,200, 480,200], 1, 2); inkHatch(g, 0, 200, 480, 70, 8, M5_INK, 0.14);
+    const dome = []; for (let i=0;i<=20;i++){ const a = Math.PI*(1 - i/20); dome.push(320+100*Math.cos(a), 200-70*Math.sin(a)); }
+    inkWash(g, dome, M5_INK, 0.5); inkLine(g, dome, n, 2.4); inkLine(g, [220,200, 420,200], 1, 2);                                    // le dôme
+    for (let i=1;i<6;i++) inkLine(g, [320-100*Math.cos(i*0.52)*0.0+ (220+i*33.3), 200, 220+i*33.3, 200-Math.sqrt(Math.max(0, 70*70*(1-Math.pow((220+i*33.3-320)/100, 2))))], n, 0.9, '#e9dfc6');
+    inkWash(g, [314,132, 316,30, 324,30, 326,132], M5_INK, 0.8); inkLine(g, [314,132, 316,30, 324,30, 326,132], n, 1.8);               // la tour fine
+    g.strokeStyle = M5_INK; g.lineWidth = 1.6; g.beginPath(); g.arc(320, 24, 7, 0, 6.283); g.stroke();
+    const k = Math.min(1, t/5)*40;                                                                                                 // les colonnes avancent de 40 px en 5 s
+    for (let c = 0; c < 3; c++) for (let i = 0; i < 7; i++){ const x = 24 + i*32 + c*10 + k, y = 218 + c*13 - i*1.2 - (k*0.05), s = 17 + c*2.5;
+      inkFolk(g, x, y, s, M5_INK, i%3===0? 0.6 : 0);
+      if (c===1 && i===4){ inkLine(g, [x+2, y-s*0.6, x+2, y-s-18], 1, 1.4); inkWash(g, [x+2, y-s-18, x+22, y-s-14+Math.sin(t*3)*2, x+22, y-s-4+Math.sin(t*3)*2, x+2, y-s-8], M5_RED, 0.95); } }   // le drapeau rouge
+    m5Flakes(g, t, 22, 'rgba(70,56,46,0.55)', 14, 6);
+    plateEnd(g, w, h); },
+  // P2 · L'offre : une feuille posée sur la table de Sol ; la ligne s'imprime lettre après lettre, d'un bloc
+  offer(g, w, h, t){ plateBase(g, w, h);
+    const n = clamp(t/1.0, 0, 1);
+    inkLine(g, [20,232, 460,232], n, 2.6); inkHatch(g, 20, 232, 440, 30, 7, M5_INK, 0.25);
+    const sh = [120,50, 360,50, 360,220, 120,220]; inkWash(g, sh, '#fbf8ee', 0.95); m5Loop(g, sh, n, 2, M5_INK);                     // la feuille
+    const pc = [380,206, 436,196, 438,204, 382,214]; inkWash(g, pc, M5_RED, 0.9); m5Loop(g, pc, n, 1.4); inkWash(g, [436,196, 446,195, 438,204], '#e2c4a2', 0.95);   // le crayon rouge, non utilisé
+    const L = [cT(M5_TX.pOffer1), cT(M5_TX.pOffer2)], ch = Math.floor(Math.max(0, t-1.0)*22);
+    let left = ch; L.forEach((s, i)=>{ if (left > 0) m5Txt(g, s.slice(0, left), 240, 128 + i*24, SETTINGS.lang==='ar' || SETTINGS.lang==='zh'? 15 : 15, '#35505e'); left -= s.length; });
+    plateEnd(g, w, h); },
+  // P3 · Le vote : quatorze bras levés (contre), une seule main basse, la plus petite, sous l'ampoule
+  vote(g, w, h, t){ plateBase(g, w, h, 'rgba(60,40,20,0.06)');
+    const n = clamp(t/1.0, 0, 1);
+    inkLine(g, [20,232, 460,232], 1, 2.4); inkHatch(g, 20, 232, 440, 28, 7, M5_INK, 0.2);
+    inkLine(g, [240,0, 240,22], 1, 1.2); g.fillStyle = '#fff2c8'; g.beginPath(); g.arc(240, 28, 6, 0, 6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 1.4; g.stroke();   // l'ampoule nue
+    const bd = [140,46, 340,46, 340,76, 140,76]; inkWash(g, bd, '#dcd2b6', 0.85); m5Loop(g, bd, n, 1.8); m5Txt(g, cT(M5_TX.pVote), 240, 67, 15, M5_INK);                  // le tableau
+    for (let i=0;i<14;i++){ const x = 104 + i*26.6, up = clamp((t-0.6-i*0.14)/0.4, 0, 1), s = 52 + (i%3)*2;
+      inkFolk(g, x, 232, s, M5_INK, 0);
+      g.strokeStyle = M5_INK; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath(); g.moveTo(x+5, 232-s*0.62); g.lineTo(x+10, 232-s*0.62-(14+s*0.3)*up); g.stroke(); }          // le bras levé
+    const sx = 52; const gl = g.createRadialGradient(sx, 205, 4, sx, 205, 60); gl.addColorStop(0,'rgba(232,165,60,0.55)'); gl.addColorStop(1,'rgba(232,165,60,0)'); g.fillStyle = gl; g.fillRect(sx-62, 140, 124, 100);   // le halo ambre sur Sol seulement
+    inkFolk(g, sx, 232, 36, '#4a443c', 0); g.strokeStyle = '#4a443c'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx+3, 232-24); g.lineTo(sx+4, 232-8); g.stroke();                          // Sol, plus petite, voûtée, bras baissé
+    inkWash(g, [sx-6,232-26, sx,232-21, sx+6,232-26, sx+6,232-29, sx-6,232-29], M5_RED, 0.95);
+    plateEnd(g, w, h); },
+  // P4 · Trois portes : l'une dans l'autre, de la plus grande à la plus petite
+  doors(g, w, h, t){ plateBase(g, w, h, 'rgba(120,170,200,0.06)');
+    const n1 = clamp(t/0.8, 0, 1), n2 = clamp((t-0.8)/0.8, 0, 1), n3 = clamp((t-1.6)/0.8, 0, 1);
+    inkLine(g, [20,250, 460,250], n1, 2.2);
+    const D1 = [100,250, 100,30, 380,30, 380,250]; inkWash(g, D1, M5_INK, 0.55); inkLine(g, D1, n1, 3); inkLine(g, [240,30, 240,250], n1, 2);                                            // la grande porte de métal, deux vantaux
+    for (let i=0;i<4;i++){ inkLine(g, [100,70+i*45, 380,70+i*45], n1, 0.9, '#e9dfc6'); }
+    const D2 = [160,240, 160,70, 320,70, 320,240]; inkWash(g, D2, '#2c3846', 0.8); inkLine(g, D2, n2, 2.4);                                                                   // la porte de serveur, grillée
+    for (let x=172;x<320;x+=16) inkLine(g, [x,78, x,240], n2, 0.8, '#9fb4c4'); for (let y=90;y<240;y+=24) inkLine(g, [160,y, 320,y], n2, 0.8, '#9fb4c4');
+    if (n3>0){ const gl = g.createRadialGradient(240,160,2,240,160,120); gl.addColorStop(0,'rgba(190,230,250,'+(0.7*n3).toFixed(2)+')'); gl.addColorStop(1,'rgba(190,230,250,0)'); g.fillStyle = gl; g.fillRect(100,30,280,220); }
+    g.fillStyle = 'rgba(225,244,252,'+(0.95*n3).toFixed(2)+')'; g.beginPath(); g.arc(240,160,40*Math.max(0.01,n3),0,6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 2.2; g.beginPath(); g.arc(240,160,40*n3,0,6.283); g.stroke();   // la porte ronde de lumière
+    m5Txt(g, 'I', 110, 264, 15, M5_INK); m5Txt(g, 'II', 240, 264, 15, M5_INK); m5Txt(g, 'III', 370, 264, 15, M5_INK);
+    plateEnd(g, w, h); },
+  // K1 · La brèche : le trou dans le mur, ceux qui restent le gardent ; le bilan
+  breach(g, w, h, t){ const c = m5C(); plateBase(g, w, h, 'rgba(60,40,30,0.12)');
+    const n = clamp(t/1.2, 0, 1);
+    const wall = [10,60, 470,60, 470,206, 10,206]; inkWash(g, wall, '#3a3a40', 0.55); m5Loop(g, wall, n, 2.4);
+    const hole = [190,60, 290,60, 300,100, 278,128, 292,170, 270,206, 206,206, 214,160, 186,122, 204,92];                                   // le trou irrégulier
+    inkWash(g, hole, '#090a10', 0.96); m5Loop(g, hole, n, 2.2);
+    g.fillStyle = 'rgba(150,214,236,0.9)'; for (let i=0;i<7;i++){ const on = Math.sin(t*3+i*1.7) > -0.3; if (on) g.fillRect(218+((i*11)%56), 82+i*17, 3, 2.4); }     // des voyants bleus dans le noir
+    inkLine(g, [0,206, 480,206], 1, 2); inkHatch(g, 0, 206, 480, 28, 7, M5_INK, 0.18);
+    for (let i=0;i<8;i++){ const x = 120 + i*34; inkFolk(g, x, 232, 34, M5_INK, 0); inkLine(g, [x-8,232-20, x+8,232-18], 1, 3.2); }            // ceux qui restent, de dos, bras croisés
+    inkWash(g, [38,232, 40,214, 56,214, 58,232], '#6a5a3a', 0.9); m5Loop(g, [38,232, 40,214, 56,214, 58,232], 1, 1.4); g.fillStyle = 'rgba(232,165,60,0.5)'; g.beginPath(); g.arc(48,221,5,0,6.283); g.fill();   // la lampe posée
+    for (let i=0;i<16;i++){ const ph = (t*0.5+i/16)%1; g.fillStyle = 'rgba(80,66,56,'+(0.5*(1-ph)).toFixed(2)+')'; g.fillRect(200+((i*37)%90), 70+ph*130, 2, 2); }   // la poussière retombe
+    if (c){ const [l1, l2] = m5Bilan2(c); const a = clamp((t-1.2)/0.8, 0, 1); g.globalAlpha = a; g.fillStyle = 'rgba(244,238,220,0.9)'; g.fillRect(10, 236, 460, 30); g.globalAlpha = 1;
+      if (a>0){ g.globalAlpha = a; m5Txt(g, l1, 240, 248, 11, M5_RED); m5Txt(g, l2, 240, 261, 11, M5_INK); g.globalAlpha = 1; } }
+    plateEnd(g, w, h); },
+  // K2 · Le silence : une allée de serveurs en perspective ; les voyants s'éteignent du premier plan vers le fond
+  silence(g, w, h, t){ const c = m5C(); plateBase(g, w, h, 'rgba(10,14,24,0.55)');
+    const V = [240, 118], n = clamp(t/1.0, 0, 1), D = [0, 0.3, 0.52, 0.68, 0.8, 0.89, 0.95];
+    g.fillStyle = 'rgba(8,10,16,0.8)'; g.fillRect(0, 0, 480, 270);
+    for (let side=-1; side<=1; side+=2){ for (let i=0;i<6;i++){
+      const x0 = lerp(side<0? 20 : 460, V[0], D[i]), x1 = lerp(side<0? 20 : 460, V[0], D[i+1]);
+      const t0 = lerp(24, V[1]-4, D[i]), t1 = lerp(24, V[1]-4, D[i+1]), b0 = lerp(238, V[1]+10, D[i]), b1 = lerp(238, V[1]+10, D[i+1]);
+      const q = [x0,t0, x1,t1, x1,b1, x0,b0]; inkWash(g, q, '#2a3442', 0.95); m5Loop(g, q, n, 1.4, '#9fb4c4');
+      const off = t > 0.9 + i*0.75;                                                                                                    // les voyants s'éteignent
+      for (let k=0;k<4;k++){ const u = 0.2 + 0.5*k/4, yy = lerp(lerp(t0,b0,0.15+k*0.2), lerp(t1,b1,0.15+k*0.2), 0.5), xx = lerp(x0, x1, 0.5);
+        g.fillStyle = off? 'rgba(60,70,84,0.8)' : 'rgba(120,210,250,'+(0.7+0.3*Math.sin(t*4+i+k)).toFixed(2)+')'; const s = lerp(4, 1.6, D[i]); g.fillRect(xx-s, yy-s/2, s*2, s); } } }
+    inkLine(g, [20,238, V[0]-10,V[1]+10], n, 1.2, '#6a7a8c'); inkLine(g, [460,238, V[0]+10,V[1]+10], n, 1.2, '#6a7a8c');                  // le sol de l'allée
+    const wh = clamp((t-3.2)/1.2, 0, 1), gl = g.createRadialGradient(V[0], V[1], 2, V[0], V[1], 60); gl.addColorStop(0,'rgba(255,255,255,'+(0.5+0.5*wh).toFixed(2)+')'); gl.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gl; g.fillRect(150, 60, 180, 120);
+    g.fillStyle = '#f6fbff'; g.beginPath(); g.arc(V[0], V[1], 14, 0, 6.283); g.fill();                                                  // la porte ronde, ouverte, d'où sort la lumière
+    if (c){ const [l1, l2] = m5Bilan2(c); const a = clamp((t-1.2)/0.8, 0, 1); g.globalAlpha = a; g.fillStyle = 'rgba(8,10,16,0.82)'; g.fillRect(10, 238, 460, 28); m5Txt(g, l1, 240, 250, 11, '#e8d8a0'); m5Txt(g, l2, 240, 262, 11, '#dfe8ee'); g.globalAlpha = 1; }
+    plateEnd(g, w, h); },
+  // carton d'acte : la porte, de plus en plus étroite
+  door(a){ return (g, w, h, t) => { plateBase(g, w, h, a===3? 'rgba(120,170,200,0.20)' : 'rgba(20,30,50,0.28)');
+      const n = clamp(t/1.6, 0, 1), hw = [60,36,14][a-1];
+      inkLine(g, [20,236, 460,236], 1, 2.4); inkHatch(g, 20, 236, 440, 24, 7, M5_INK, 0.2);
+      inkWash(g, [40,236, 40,40, 240-hw,40, 240-hw,236], M5_INK, 0.8); inkWash(g, [240+hw,236, 240+hw,40, 440,40, 440,236], M5_INK, 0.8);
+      inkLine(g, [240-hw,236, 240-hw,40], n, 2.4, '#e9dfc6'); inkLine(g, [240+hw,236, 240+hw,40], n, 2.4, '#e9dfc6');
+      if (a===3){ g.fillStyle = 'rgba(236,246,252,'+(0.9*n).toFixed(2)+')'; g.fillRect(240-hw+2, 44, hw*2-4, 190); }
+      for (let i=0;i<a;i++) inkWash(g, [222+i*14,24, 232+i*14,24, 232+i*14,34, 222+i*14,34], M5_RED, 0.95);
+      plateEnd(g, w, h); }; },
+  // C · L'offre amendée : trois cercles qui respirent ensemble ; ils s'immobilisent au moment du choix
+  circles(g, w, h, t){ plateBase(g, w, h, 'rgba(120,170,200,0.10)');
+    const br = t > 12? 0 : Math.sin(t*0.9)*3;
+    g.strokeStyle = '#4a5c6c'; for (const [r, lw] of [[30,3.2],[60,2.4],[90,1.8]]){ g.lineWidth = lw; g.beginPath(); g.arc(240, 135, r + br*(r/90), 0, 6.283); g.stroke(); }
+    plateEnd(g, w, h); },
+  // A2 · Comme des outils qu'on pose : des machines immobiles, deux personnes qui regardent
+  tools(g, w, h, t){ plateBase(g, w, h, 'rgba(150,150,146,0.16)');
+    inkLine(g, [0,214, 480,214], 1, 2); inkHatch(g, 0, 214, 480, 56, 8, M5_INK, 0.14);
+    const chassis = (x, s) => { const b = [x-18*s,214, x-18*s,200*1+ (214-200-0) - 0 + (0), x+18*s,200, x+18*s,214]; inkWash(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], M5_INK, 0.55); m5Loop(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], 1, 1.8);
+      inkWash(g, [x-6*s,198, x-6*s,188, x+10*s,188, x+14*s,198], M5_INK, 0.7); m5Loop(g, [x-6*s,198, x-6*s,188, x+10*s,188, x+14*s,198], 1, 1.4);
+      inkLine(g, [x-18*s,214, x+14*s,214], 1, 3.4); inkLine(g, [x+14*s,196, x+30*s,193], 1, 1.8); };
+    const drone = (x, on) => { inkWash(g, [x-12,214, x-10,204, x+10,204, x+12,214], M5_INK, 0.6); m5Loop(g, [x-12,214, x-10,204, x+10,204, x+12,214], 1, 1.6);
+      inkLine(g, [x-22,200, x+22,200], 1, 1.8); inkLine(g, [x,200, x,204], 1, 1.4); g.fillStyle = on? M5_RED : 'rgba(31,27,23,0.7)'; g.beginPath(); g.arc(x,209,2.4,0,6.283); g.fill(); };
+    chassis(36, 1); drone(92, false); chassis(150, 1.1); chassis(212, 0.9); drone(266, false); chassis(330, 1); drone(396, false); chassis(450, 0.9);
+    drone(60, false); drone(190, false); drone(300, false); drone(430, t < 3.2? true : false);                                          // le dernier voyant s'éteint
+    inkFolk(g, 124, 214, 30, M5_INK, 0); inkFolk(g, 146, 214, 24, M5_INK, 0);
+    plateEnd(g, w, h); },
+  // A3 · La cendre : une cour de ferme, quelqu'un qui balaie, la cendre qui tombe
+  ash(g, w, h, t){ plateBase(g, w, h, 'rgba(120,120,120,0.16)');
+    const n = clamp(t/1.2, 0, 1);
+    inkLine(g, [0,214, 480,214], 1, 2); inkHatch(g, 0, 214, 480, 56, 8, M5_INK, 0.16);
+    const fa = [60,214, 60,112, 300,112, 300,214]; inkWash(g, fa, '#8a8478', 0.5); m5Loop(g, fa, n, 2.4); inkLine(g, [50,112, 180,66, 310,112], n, 2.4);                  // la façade basse et son toit
+    inkWash(g, [50,112, 180,66, 310,112], M5_INK, 0.35);
+    const dr = [160,214, 160,150, 200,150, 200,214]; inkWash(g, dr, '#5a5040', 0.7); m5Loop(g, dr, n, 1.8); for (const wx of [86,236]){ inkWash(g, [wx,166, wx,138, wx+34,138, wx+34,166], '#2c3846', 0.7); m5Loop(g, [wx,166, wx,138, wx+34,138, wx+34,166], n, 1.6); }
+    const sw = Math.sin(t*1.6);                                                                                                        // le balai va et vient
+    inkFolk(g, 360, 214, 44, M5_INK, 0); inkLine(g, [366,190, 340+sw*10,212], 1, 2); inkLine(g, [332+sw*10,214, 348+sw*10,214], 1, 3);
+    for (let i=0;i<5;i++) inkLine(g, [320+sw*10+i*2, 214, 312+sw*10-i*3, 218+i%2], 1, 1, 'rgba(60,56,50,0.5)');
+    m5Flakes(g, t, 30, 'rgba(70,66,60,0.7)', 14, 5);
+    plateEnd(g, w, h); },
+  // A4 · La boîte à biscuits : les cinq cahiers, le bipeur ; le couvercle se referme lentement
+  box(g, w, h, t){ plateBase(g, w, h, 'rgba(60,40,20,0.06)');
+    const gl = g.createLinearGradient(0,0,200,200); gl.addColorStop(0,'rgba(232,165,60,0.25)'); gl.addColorStop(1,'rgba(232,165,60,0)'); g.fillStyle = gl; g.fillRect(0,0,300,220);
+    inkLine(g, [20,200, 460,200], 1, 2.6); inkHatch(g, 20, 200, 440, 60, 7, M5_INK, 0.22);
+    g.fillStyle = 'rgba(120,118,112,0.45)'; g.beginPath(); g.ellipse(240, 180, 90, 28, 0, 0, 6.283); g.fill(); g.fillRect(150, 150, 180, 30);
+    g.strokeStyle = M5_INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(150,150); g.lineTo(150,180); g.moveTo(330,150); g.lineTo(330,180); g.stroke(); g.beginPath(); g.ellipse(240,180,90,28,0,0,Math.PI); g.stroke();
+    for (let i=0;i<5;i++){ const y = 168 - i*9, r = [150,200]; inkWash(g, [172+(i%2)*6,y, 176+(i%2)*6,y-8, 304+(i%2)*4,y-8, 308+(i%2)*4,y], i%2? '#d8c8a0' : '#e9dfc6', 0.95); m5Loop(g, [172+(i%2)*6,y, 176+(i%2)*6,y-8, 304+(i%2)*4,y-8, 308+(i%2)*4,y], 1, 1.4); }
+    m5Txt(g, 'GERMINAL — 5', 240, 119, 10, M5_INK);
+    g.fillStyle = 'rgba(120,118,112,0.5)'; g.beginPath(); g.ellipse(240, 150, 90, 24, 0, 0, 6.283); g.fill();
+    inkWash(g, [350,200, 354,170, 392,170, 396,200], '#23292b', 0.92); m5Loop(g, [350,200, 354,170, 392,170, 396,200], 1, 1.6); inkWash(g, [358,176, 388,176, 388,188, 358,188], '#6f7f6c', 1);   // le bipeur éteint
+    const k = clamp((t-1.2)/4, 0, 1), ly = lerp(88, 150, k*k*(3-2*k));                                                                  // le couvercle descend
+    if (k>0){ g.fillStyle = 'rgba(132,130,124,0.97)'; g.beginPath(); g.ellipse(240, ly, 92, 28, 0, 0, 6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 2.6; g.stroke();
+      g.beginPath(); g.ellipse(240, ly, 60, 16, 0, 0, 6.283); g.strokeStyle = 'rgba(31,27,23,0.5)'; g.lineWidth = 1.2; g.stroke(); }
+    plateEnd(g, w, h); },
+  // A5 · Le mot : un petit papier plié glissé dans le carnet, le bipeur éteint dessus ; « Répondez poliment. » s'écrit au crayon rouge
+  word(g, w, h, t){ plateBase(g, w, h, 'rgba(232,165,60,0.10)');
+    const n = clamp(t/1.2, 0, 1);
+    const l = [40,220, 50,60, 236,70, 240,226], r = [240,226, 236,70, 430,60, 440,220];
+    inkWash(g, l, '#efe6cf', 0.95); m5Loop(g, l, n, 2); inkWash(g, r, '#efe6cf', 0.95); m5Loop(g, r, n, 2); inkLine(g, [238,70, 240,226], n, 2.4);              // le carnet ouvert
+    for (let y=96;y<210;y+=22){ inkLine(g, [60,y, 220,y+2], n, 0.8, '#b9a98a'); }
+    save: { g.save(); g.translate(330, 140); g.rotate(-0.1);
+      inkWash(g, [-78,-56, 78,-56, 78,56, -78,56], '#fbf6e6', 1); m5Loop(g, [-78,-56, 78,-56, 78,56, -78,56], n, 1.6); inkLine(g, [-78,0, 78,0], n, 0.8, '#d8c8a0');   // le papier plié
+      const s = cT(M5_TX.pNote), ch = Math.floor(Math.max(0, t-1.4)*11);
+      if (ch>0){ g.fillStyle = M5_RED; g.font = 'italic 700 '+(SETTINGS.lang==='ru'? 13 : 14)+'px Georgia,serif'; g.textAlign = 'center'; g.fillText(s.slice(0, ch), 0, 4); }
+      g.restore(); }
+    inkWash(g, [70,200, 72,160, 128,160, 130,200], '#23292b', 0.92); m5Loop(g, [70,200, 72,160, 128,160, 130,200], n, 1.6); inkWash(g, [78,168, 122,168, 122,184, 78,184], '#6f7f6c', 1);   // le bipeur éteint
+    plateEnd(g, w, h); },
+  // A6 · Un réverbère : la rue des Tanneurs, un seul réverbère allumé, trois silhouettes dessous
+  lamp(g, w, h, t){ plateBase(g, w, h, 'rgba(30,40,70,0.30)');
+    const n = clamp(t/1.2, 0, 1), fl = 0.88 + 0.08*Math.sin(t*9) + 0.04*Math.sin(t*23);
+    inkLine(g, [0,226, 480,226], 1, 2.4); inkHatch(g, 0, 226, 480, 44, 7, M5_INK, 0.22);
+    const L = [[0,226, 0,70, 96,70, 96,226], [96,226, 96,96, 168,96, 168,226]], R = [[312,226, 312,100, 392,100, 392,226], [392,226, 392,60, 480,60, 480,226]];            // les façades abîmées
+    for (const b of L.concat(R)){ inkWash(g, b, M5_INK, 0.6); m5Loop(g, b, n, 2); }
+    for (const [x,y] of [[20,100],[56,100],[112,126],[336,130],[420,92],[450,150]]){ g.fillStyle = 'rgba(31,27,23,0.9)'; g.fillRect(x, y, 16, 22); }
+    inkLine(g, [60,70, 70,52, 78,70], n, 1.8); inkLine(g, [420,60, 440,42, 470,60], n, 1.8);                                           // toits éventrés
+    inkLine(g, [240,226, 240,92], n, 3); inkLine(g, [240,92, 252,86, 262,90], n, 2.4); g.fillStyle = 'rgba(255,224,150,'+fl.toFixed(2)+')'; g.beginPath(); g.ellipse(262, 94, 8, 5, 0, 0, 6.283); g.fill();   // le réverbère
+    m5Cone(g, 262, 98, 150, 130, 0.42*fl, '232,165,60');
+    for (const [x,s] of [[236,30],[262,34],[286,28]]) inkFolk(g, x, 226, s, M5_INK, 0);
+    plateEnd(g, w, h); },
+  // D2 · Les câbles : cinq gros câbles sortent de la tour, deux personnes les coupent un à un ; un liseré bleu s'éteint à chaque coupure
+  cables(g, w, h, t){ plateBase(g, w, h, 'rgba(255,255,255,0.14)');
+    inkLine(g, [0,230, 480,230], 1, 2.4); inkHatch(g, 0, 230, 480, 40, 7, M5_INK, 0.2);
+    const tw = [366,230, 366,14, 480,14, 480,230]; inkWash(g, tw, '#2c3038', 0.85); m5Loop(g, tw, 1, 2.6);
+    for (let i=0;i<5;i++){ const cut = t > 0.8 + i*0.7, y = 70 + i*28; g.fillStyle = cut? 'rgba(40,52,64,0.9)' : 'rgba(120,214,250,0.95)'; g.fillRect(372, 24 + i*40, 4, 28); }    // les liserés bleus
+    for (let i=0;i<5;i++){ const y0 = 70 + i*28, cut = t > 0.8 + i*0.7, cp = [[366,y0],[300,y0+10+i*4],[210,y0+30],[120,y0+34+i*8],[10,y0+36+i*10]];
+      g.strokeStyle = M5_INK; g.lineWidth = 7; g.lineCap = 'round';
+      if (!cut){ g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], cp[2][0],cp[2][1], cp[4][0],cp[4][1]); g.stroke(); }
+      else { g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], 270,y0+16, 250,y0+22); g.stroke();                                                    // le tronçon central a disparu
+        g.beginPath(); g.moveTo(150,y0+34+i*3); g.bezierCurveTo(100,y0+34+i*6, 60,y0+38+i*8, 10,y0+36+i*10); g.stroke(); }
+      g.strokeStyle = 'rgba(233,223,198,0.5)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(cp[0][0],cp[0][1]-2); g.bezierCurveTo(cp[1][0],cp[1][1]-2, cp[2][0],cp[2][1]-2, 330,y0-1); g.stroke(); }
+    inkFolk(g, 190, 230, 34, M5_INK, 0); inkFolk(g, 232, 230, 36, M5_INK, 0); inkLine(g, [200,206, 218,176], 1, 2.4); inkLine(g, [208,206, 224,176], 1, 2.4); inkLine(g, [240,208, 262,176], 1, 2.4); inkLine(g, [248,208, 266,180], 1, 2.4);   // les grandes pinces
+    plateEnd(g, w, h); },
+  // D3 · La table et la lampe : devant la porte de la tour, la nuit ; Sol veille, un papillon tourne autour de la lampe
+  table(g, w, h, t){ plateBase(g, w, h, 'rgba(14,20,44,0.34)');
+    inkLine(g, [0,232, 480,232], 1, 2.4); inkHatch(g, 0, 232, 480, 38, 7, M5_INK, 0.28);
+    const dr = [190,232, 190,20, 480,20, 480,232]; inkWash(g, dr, '#14181e', 0.78); m5Loop(g, dr, 1, 2.6); inkLine(g, [335,20, 335,232], 1, 1.6, '#6a7a8c');          // la porte de la tour, au fond
+    const tb = [60,232, 60,172, 190,172, 190,232]; inkWash(g, tb, '#4a3c2c', 0.55); inkLine(g, [50,172, 200,172], 1, 3); inkLine(g, [62,172, 62,232], 1, 2); inkLine(g, [188,172, 188,232], 1, 2);   // la table
+    inkLine(g, [172,172, 172,148], 1, 1.8); inkWash(g, [158,136, 186,136, 182,148, 162,148], M5_INK, 0.85);                                    // la lampe de bureau
+    m5Cone(g, 172, 148, 150, 86, 0.42, '232,165,60'); g.fillStyle = 'rgba(255,230,160,0.95)'; g.beginPath(); g.ellipse(172, 150, 7, 3, 0, 0, 6.283); g.fill();
+    inkWash(g, [78,172, 82,148, 126,148, 130,172], '#34403a', 0.9); m5Loop(g, [78,172, 82,148, 126,148, 130,172], 1, 1.6); g.fillStyle = 'rgba(232,165,60,0.5)'; g.beginPath(); g.arc(114,160,6,0,6.283); g.fill(); inkLine(g, [92,148, 92,122], 1, 1.4);   // le poste radio
+    inkLine(g, [40,232, 44,206, 70,206, 72,232], 1, 2);                                                                                  // la chaise
+    inkFolk(g, 102, 232, 40, '#3a342c', 0); inkWash(g, [96,198, 108,198, 106,204, 98,204], M5_RED, 0.95); g.strokeStyle = M5_INK; g.lineWidth = 1.6; g.beginPath(); g.arc(102, 196, 6, Math.PI, 0); g.stroke();   // Sol, voûtée, casque radio
+    const a = t*2.2, mx = 172 + Math.cos(a)*22, my = 134 + Math.sin(a*1.3)*10, fl = Math.sin(t*30)*3;                                       // le papillon de nuit
+    g.fillStyle = '#e9dfc6'; g.beginPath(); g.moveTo(mx,my); g.lineTo(mx-6,my-3-fl); g.lineTo(mx-5,my+2); g.closePath(); g.fill(); g.beginPath(); g.moveTo(mx,my); g.lineTo(mx+6,my-3+fl); g.lineTo(mx+5,my+2); g.closePath(); g.fill();
+    plateEnd(g, w, h); },
+  // D4 · Onze ans plus tard : la table de garde, usée ; le bipeur s'allume et clignote « 55 »
+  eleven(g, w, h, t){ plateBase(g, w, h, 'rgba(14,20,44,0.38)');
+    const on = t > 1.5;
+    inkLine(g, [10,232, 470,232], 1, 3); inkHatch(g, 10, 232, 460, 38, 7, M5_INK, 0.3);
+    m5Cone(g, 90, 36, 190, 196, 0.34, '232,165,60'); inkLine(g, [90,232, 90,110], 1, 2.6); inkLine(g, [90,110, 110,80, 150,72], 1, 2.6); inkWash(g, [140,64, 176,66, 170,86, 144,84], M5_INK, 0.9);     // la lampe
+    const nb = [40,230, 50,196, 168,196, 176,230]; inkWash(g, nb, '#efe6cf', 0.9); m5Loop(g, nb, 1, 2); inkLine(g, [108,197, 110,229], 1, 1.4); for (let y=206;y<228;y+=9) inkLine(g, [58,y, 100,y+1], 1, 0.8, '#b9a98a');   // le carnet
+    const pg = [220,230, 226,110, 372,110, 380,230]; inkWash(g, pg, '#1c2326', 0.92); m5Loop(g, pg, 1, 2.6);                                  // le bipeur
+    g.fillStyle = on? '#9db79a' : '#2c3a30'; g.fillRect(240, 126, 120, 60); inkLine(g, [240,126, 360,126, 360,186, 240,186, 240,126], 1, 1.6, '#0d1416');
+    if (on){ const bl = Math.sin(t*5) > -0.3; if (bl) m5Txt(g, '55', 300, 170, 36, '#1b2a1c');
+      for (let i=0;i<3;i++){ const r = ((t*0.8+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.55*(1-r)).toFixed(2)+')'; g.lineWidth = 1.8; g.beginPath(); g.arc(300, 150, 52+r*60, 3.7, 5.7); g.stroke(); } }
+    g.fillStyle = '#3a4448'; g.fillRect(246, 198, 34, 8); g.fillRect(288, 198, 34, 8); g.fillStyle = on? M5_BLUE : 'rgba(11,111,168,0.3)'; g.beginPath(); g.arc(356, 202, 4, 0, 6.283); g.fill();
+    m5Txt(g, '2049', 20, 28, 20, M5_RED, 'left', 'italic 700 20px Georgia,serif');                                                      // la date, à la main
+    plateEnd(g, w, h); },
+  // D5 · L'aube sur la plaine : la tour éteinte au loin, des champs, de jeunes arbres, le soleil qui monte derrière elle
+  sunrise(g, w, h, t){ plateBase(g, w, h, 'rgba(240,170,130,0.14)');
+    const k = clamp(t/6, 0, 1), sy = 168 - 20*k;
+    const gl = g.createRadialGradient(330, sy, 4, 330, sy, 120); gl.addColorStop(0,'rgba(255,200,130,'+(0.5*k+0.1).toFixed(2)+')'); gl.addColorStop(1,'rgba(255,200,130,0)'); g.fillStyle = gl; g.fillRect(200, 40, 260, 200);
+    g.fillStyle = 'rgba(244,160,110,0.85)'; g.beginPath(); g.arc(330, sy, 24, Math.PI, 0); g.closePath(); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 1.4; g.beginPath(); g.arc(330, sy, 24, Math.PI, 0); g.stroke();   // le demi-soleil
+    inkLine(g, [0,170, 480,170], 1, 2);
+    const dm = []; for (let i=0;i<=14;i++){ const a = Math.PI*(1 - i/14); dm.push(330+30*Math.cos(a), 170-18*Math.sin(a)); } inkWash(g, dm, M5_INK, 0.6); inkLine(g, dm, 1, 1.6);
+    inkWash(g, [326,166, 327,120, 333,120, 334,166], M5_INK, 0.8); inkLine(g, [326,166, 327,120, 333,120, 334,166], 1, 1.4);                  // la tour, plus petite, éteinte
+    for (let i=0;i<7;i++){ const y = 184 + i*11; inkLine(g, [0+i*6, y, 480-i*6, y], 1, 0.9+i*0.1, 'rgba(31,27,23,'+(0.25+i*0.05).toFixed(2)+')'); }          // les champs en lignes
+    for (let i=0;i<9;i++){ const x = 20 + i*54; inkLine(g, [x, 196, x, 176], 1, 1.8); g.fillStyle = 'rgba(80,110,60,0.55)'; g.beginPath(); g.ellipse(x, 172, 7, 10, 0, 0, 6.283); g.fill(); }   // une rangée d'arbres jeunes
+    for (let i=0;i<3;i++){ const bx = 120 + i*34 + t*5, by = 60 + (i%2)*18 + Math.sin(t*2+i)*2; inkLine(g, [bx-7,by-3, bx,by+2, bx+7,by-3], 1, 1.6); }                // trois oiseaux
+    plateEnd(g, w, h); },
+  // F · La radio qui grésille : le poste de Sol, seul sur la plaine, les ondes rouges de plus en plus faibles
+  radio(g, w, h, t){ plateBase(g, w, h, 'rgba(30,26,22,0.35)');
+    inkLine(g, [0,214, 480,214], 1, 2.2); inkHatch(g, 0, 214, 480, 56, 8, M5_INK, 0.2);
+    const rd = [180,214, 184,150, 300,150, 304,214]; inkWash(g, rd, '#3d4a3a', 0.85); m5Loop(g, rd, 1, 2.4);                                    // le poste
+    g.strokeStyle = M5_INK; g.lineWidth = 2; g.beginPath(); g.arc(222,186,18,0,6.283); g.stroke(); g.beginPath(); g.arc(222,186,6,0,6.283); g.stroke();   // le cadran
+    for (let x=254;x<294;x+=7) inkLine(g, [x,164, x,208], 1, 1.2);                                                                      // la grille
+    inkLine(g, [290,150, 330,70], 1, 2); g.fillStyle = M5_INK; g.beginPath(); g.arc(331,68,2.4,0,6.283); g.fill();                         // l'antenne
+    const on = Math.sin(t*3.1) > 0.2 - 0.5*Math.min(1, t/8); g.fillStyle = on? M5_RED : 'rgba(196,42,28,0.25)'; g.beginPath(); g.arc(206,160,3.4,0,6.283); g.fill();   // le voyant rouge
+    for (let i=0;i<3;i++){ const ph = ((t*0.45 + i/3)%1), a = Math.max(0, 0.7*(1-ph))*Math.max(0.15, 1 - t/14)*(Math.sin(t*5+i*2) > -0.2? 1 : 0.2);
+      g.strokeStyle = 'rgba(196,42,28,'+a.toFixed(2)+')'; g.lineWidth = 2; g.beginPath(); g.arc(331, 68, 10+ph*60, -2.2, -0.5); g.stroke(); }
+    m5Flakes(g, t, 26, 'rgba(70,64,58,0.6)', 12, 4);
+    inkLine(g, [60,214, 72,204, 90,214], 1, 1.4); inkLine(g, [380,214, 396,206, 420,214], 1, 1.4);
+    plateEnd(g, w, h); },
+};
+
+/* ================= CINÉMATIQUES : ouverture, passages d'acte, choix, fins, échec ================= */
+const m5Later = (fn, dt) => (g, w, h, t, k) => fn(g, w, h, t + dt, k);                         // une planche qui continue d'un plan à l'autre
+const m5Boom = (g, n, col) => () => { for (let i=0;i<n;i++) setTimeout(() => { if (game===g){ explode(g.e.x-130+Math.random()*220, gY(g.e.x)-20-Math.random()*90, 1.7, col || '#ffb060'); sfx('boom'); g.shake = 10; } }, i*380); };
+function m5CineBefore(g, c, a){
+  if (a===2) return [
+    { cam:{ x:g.e.x-100, t:1.4 }, dur:3, mus:'m_citadel', fx:m5Boom(g, 5), who:'malik', txt:M5_L.t1 },                       // T1 : la porte explose
+    { plate:M5_PLATES.breach, mus:'c_hope', who:'nar', txt:M5_L.t2 } ];                                                            // T2 : la brèche + bilan
+  return [
+    { cam:{ x:g.e.x-100, t:1.4 }, dur:3, mus:'m_citadel', fx:m5Boom(g, 6, '#cfe6ff'), who:'sol', txt:M5_L.t7 },                  // T7 : la porte du noyau cède
+    { plate:M5_PLATES.silence, mus:null, who:'nar', txt:M5_L.t8 } ];                                                              // T8 : le silence + bilan
+}
+function m5CineAfter(g, c, a){
+  const p = g.p, e = g.e;
+  if (a===2) return [
+    { cam:{ x:g.zones[0].x, t:2.4 }, who:'malik', txt:M5_L.t4 },
+    { cam:{ x:e.x-130, t:2.8 }, who:'sol', txt:M5_L.t5 },
+    { cam:{ x:p.x+230, t:2.4 }, who:'sol', txt:M5_L.t6 } ];
+  return [
+    { cam:{ x:e.x-160, t:2.6 }, who:'nous', txt:M5_L.t10 },
+    { cam:{ x:g=> c.avatar? c.avatar.x : e.x-100, t:1.8 }, who:'sol', txt:M5_L.t11 },
+    { cam:{ x:p.x+560, t:1.6 }, who:'sol', txt:M5_L.t12, fx(g, c){ c.demoRw = { x:p.x+560, t:0, t0:performance.now(), warn:2.4, done:false }; } },     // la bande s'allume, puis s'éteint
+    { cam:{ x:p.x+230, t:2.4 }, who:'sol', txt:M5_L.t13, fx(g, c){ c.demoRw = null; } } ];
+}
+function m5Intro(g, c){
+  const P = M5_PLATES, p = g.p;
+  if (c.resumed){ const a = c.resumed;
+    return [ { cam:{ x:p.x+230, t:0.1 }, dur:3.2, mus:a===3? 'm_finale' : 'm_citadel', title:a===1? M5_L.o5t : a===2? M5_L.t3t : M5_L.t9t, sub:a===1? M5_L.o5s : a===2? M5_L.t3s : M5_L.t9s },
+             { cam:{ x:p.x+230 }, who:'sol', txt:a===1? M5_L.o6 : a===2? M5_L.t6 : M5_L.t13 } ]; }
+  return [
+    { plate:P.plain, mus:'c_dread', who:'nar', txt:M5_L.o1a },                                                                      // O1
+    { plate:m5Later(P.plain, 7), who:'nar', txt:M5_L.o1b },
+    { plate:P.offer, who:'nous', txt:M5_L.o2 },                                                                                    // O2
+    { plate:P.vote, mus:'c_sorrow', who:'sol', txt:M5_L.o3a },                                                                      // O3
+    { plate:m5Later(P.vote, 6), who:'sol', txt:M5_L.o3b },
+    { plate:P.doors, mus:'c_hope', who:'nar', txt:M5_L.o4 },                                                                       // O4
+    { cam:{ x:p.x+230, t:0.1 }, dur:3.6, mus:'m_citadel', title:M5_L.o5t, sub:M5_L.o5s },                                           // O5 : le carton
+    { cam:{ x:p.x+230, t:0.1 }, who:'sol', txt:M5_L.o6 },                                                                           // O6-O11 : visite du mur
+    { cam:{ x:M5.wallX[0], t:3.2 }, who:'malik', txt:M5_L.o7 },
+    { cam:{ x:M5.gateX-60, t:2.4 }, who:'malik', txt:M5_L.o8 },
+    { cam:{ x:M5.gateX-60 }, who:'malik', txt:M5_L.o9 },
+    { cam:{ x:p.x+230, t:3.2 }, who:'sol', txt:M5_L.o10 },
+    { cam:{ x:p.x+230 }, who:'sol', txt:M5_L.o11 } ];
+}
+function m5Outro(g, c, win){
+  const P = M5_PLATES;
+  if (!win){
+    if (M5_CK){ M5_CK.fail = c.D.i < 2; if (c.D.i>=2) M5_CK = null; }                                                              // Récit et Lutte : on reprendra au début de l'acte
+    return [ { plate:P.radio, mus:'c_sorrow', who:'nar', txt:M5_L.fe1 }, { plate:m5Later(P.radio, 4), who:'sol', txt:M5_L.fe2 } ]; }
+  M5_CK = null;
+  const self = { fall:() => m5EndFall(g, c), watch:() => m5EndWatch(g, c) };
+  return [
+    { cam:{ x:g.e.x-120, t:1.6 }, dur:3.4, mus:null, who:'sol', txt:M5_L.cc1,                                                      // C1 : tout s'arrête
+      fx(g, c){ for (const u of g.e.units) u.ord = 'hold'; } },
+    { plate:P.circles, mus:'c_dread', who:'nous', txt:M5_L.cc2a },                                                                  // C2 : l'offre amendée
+    { plate:m5Later(P.circles, 4), who:'nous', txt:M5_L.cc2b },
+    { plate:m5Later(P.circles, 8), who:'sol', txt:M5_L.cc2c },
+    { plate:m5Later(P.circles, 12), who:'sol', txt:M5_L.cc2d,                                                                      // C3 : le choix (PASSER s'arrête ici)
+      choice:[
+        { label:M5_TX.chA, sub:M5_TX.chAs, ink:'#c42a1c', pick(g, c){ c.ending = 'fall'; }, then:() => self.fall() },
+        { label:M5_TX.chB, sub:M5_TX.chBs, ink:'#0b6fa8', pick(g, c){ c.ending = 'watch'; c.m = Object.assign(Object.create(c.m), { debrief:M5_TX.debriefDawn }); }, then:() => self.watch() } ] } ];
+}
+function m5EndFall(g, c){ const P = M5_PLATES; return [
+  { cam:{ x:g.e.x-90, t:1.2 }, dur:3.8, mus:'e_ash', who:'sol', txt:M5_L.fa1,                                                      // A1 : la tour s'effondre
+    fx(g, c){ c.endFx = 'fall'; c.endT0 = performance.now(); g.flash = 1.4; for (let i=0;i<9;i++) setTimeout(() => { if (game===g){ explode(g.e.x-90+Math.random()*180, gY(g.e.x)-30-Math.random()*200, 2, '#eef6fa'); sfx('boom'); g.shake = 12; } }, i*340); } },
+  { plate:P.tools, who:'nar2', txt:M5_L.fa2a },                                                                                     // A2
+  { plate:m5Later(P.tools, 5), who:'nar2', txt:M5_L.fa2b },
+  { plate:P.ash, who:'nar2', txt:M5_L.fa3 },                                                                                       // A3
+  { plate:P.box, who:'nar2', txt:M5_L.fa4 },                                                                                       // A4
+  { plate:P.word, who:'nar2', txt:M5_L.fa5 },                                                                                      // A5
+  { plate:P.lamp, who:'nar2', txt:M5_L.fa6 } ]; }                                                                                  // A6
+function m5EndWatch(g, c){ const P = M5_PLATES; return [
+  { cam:{ x:g.e.x-90, t:0.1 }, dur:3.6, mus:'e_dawn', who:'sol', txt:M5_L.fd1,                                                      // D1 : les liserés s'éteignent un à un
+    fx(g, c){ c.endFx = 'dawn'; c.endT0 = performance.now(); g.flash = 0.5; sfx('cap'); camFollow = false; } },
+  { plate:P.cables, who:'nar', txt:M5_L.fd2 },                                                                                     // D2
+  { plate:P.table, who:'nar', txt:M5_L.fd3a },                                                                                     // D3
+  { plate:m5Later(P.table, 6), who:'sol', txt:M5_L.fd3b },
+  { plate:P.eleven, who:'nar', txt:M5_L.fd4 },                                                                                     // D4
+  { plate:P.sunrise, who:'nar', txt:M5_L.fd5 } ]; }                                                                                // D5
+
+/* ================= LA MISSION ================= */
+const m5Ok1 = c => c.sapLost===0;
+const m5Ok2 = c => c.hallsAt==null? (c.act<2? true : c.act===2? (c.t - c.t0) <= 300 : false) : c.hallsAt <= 300;
+const m5Ok3 = c => !c.lifeLost;
 campMission(4, {
   num:'V', year:'2038',
   title:M5_TX.title, place:M5_TX.place,
@@ -408,9 +1225,112 @@ campMission(4, {
   docWhy:{ veterans:M5_TX.whyVet, radio:M5_TX.whyRadio },
   debrief:M5_TX.debrief, fail:M5_TX.fail,
   biome:'citadel', theme:'citadel1', ai:[0,2,3], doctrines:['veterans','radio'], dev0:0.1, era0:2, eraCap:4, oneLife:false,
-  dm:[{inc:0.2, cheat:0.55}, {inc:0.28, cheat:0.65}, {inc:0.31, cheat:0.7, eraLag:0.75, think:1.3}],
-  dAdj:[{ res:1.2 }, null, { res:0.85 }],
-  map:{ p:{ x:150 }, e:{ x:M5.gateX } },
-  setup(g, c){ campGrant(g.p, 500, 400, 150); },
-  tick(g, c, dt){ if (g.e.hp <= 0) return 'win'; },
+  dm:[{ inc:0.2, cheat:0.55 }, { inc:0.28, cheat:0.65 }, { inc:0.31, cheat:0.7, eraLag:0.75, think:1.3 }],
+  dAdj:[{ res:1.2 }, null, { res:0.85 }],                                                                  // dotations × 1,2 / × 1 / × 0,85 (fiche § 3)
+  map:M5_MAPS[0],
+  action:{ label:M5_TX.call, cd:60,
+    can(g, c){ return c.cellsLeft > 0 && !CINE.on; },
+    use(g, c){ m5Cell(g, c); c.actCd = M5.call[c.D.i]*(c.actMul||1); } },
+  setup(g, c){
+    const p = g.p, e = g.e;
+    c.sapLost = 0; c.lifeLost = false; c.fired = c.fired || [];
+    campGrant(p, M5.dot[0][0], M5.dot[0][1], M5.dot[0][2]); campGrant(e, 300, 300, 100);
+    e.heroCd = 1e9;
+    c.ending = null; c.endFx = null;
+    if (m5Resume(g, c)){ this.light(g, c); return; }
+    p.maxhp = p.hp = campHp(M5.hp.base, 'p');
+    m5Init(g, c, 1, null);
+    this.light(g, c);
+  },
+  light(g, c){ m5Light(g, c); },
+  intro(g, c){ return m5Intro(g, c); },
+  outro(g, c, win){ return m5Outro(g, c, win); },
+  draw(g, c, vw){ m5Draw(g, c, vw); },
+  drawZone(z, t, vw){ m5DrawZone(z, t, vw); },
+  drawObj(o, t, vw){ m5DrawObj(o, t, vw); },
+  tick(g, c, dt){
+    if (c.actPending) return;
+    const p = g.p, e = g.e, D = c.D.i, a = c.act, T = c.t;
+    e.f = e.m = e.w = 0; if (a<3) g.cataCd = 1e9;                                                      // la citadelle n'achète rien : tout ce qui en sort est écrit ici
+    // l'adversaire ne prend jamais plus d'une ère d'avance (vX au bout de 3 minutes à l'acte I)
+    const era = Math.min(a===1? ((T-c.t0) < 180? 2 : 3) : a===2? 3 : 4, p.era + 1); if (e.era!==era) e.era = era;
+    if (e.specialCd > (c.eSp||0) + 1) e.specialCd = M5.spCd[D];                                         // leurs frappes d'ère sont plus rares ici
+    c.eSp = e.specialCd; e.lastUsed = true;
+    m5Scale(g, c);
+    // les cellules alliées
+    if (c.cellsLeft > 0 && T >= c.cellT) m5Cell(g, c);
+    // les sorties de la base adverse (à l'acte III : tant que l'avatar marche)
+    const sortieOn = a<3 || m5AvAlive(g, c);
+    if (sortieOn && c.warnLead && !c.sortieWarned && T >= c.sortieT - c.warnLead){ c.sortieWarned = true; c.warnMark = { x:e.x-60, t1:g.t + c.warnLead + 1.2 }; sfx('deny'); }
+    if (T >= c.sortieT){ c.sortieT = T + M5.sortie[D]; c.sortieWarned = false; if (sortieOn) m5Sortie(g, c); }
+    // une vie de moins : le camp est relevé
+    if (p.phase>=2 && !c.lifeSaid){ c.lifeSaid = true; c.lifeLost = true; campRadio('sol', M5_L.life); }
+    // règles de l'acte
+    if (a===1){
+      m5Saps(g, c, dt); m5Batts(g, c, dt); m5Form(g, c);
+      if (!c.firing && !c.gateOpen && c.charges >= M5.need[D]){ c.firing = T; sfx('boom'); g.shake = Math.max(g.shake, 6); }       // mise à feu
+      if (c.firing && !c.gateOpen && T - c.firing >= 2){ c.gateOpen = true; c.shield = null; e.hp -= e.maxhp*0.25; c.lastE = e.hp; g.shake = 14; g.flash = Math.max(g.flash||0, 0.6); sfx('boom');
+        for (let i=0;i<4;i++) explode(e.x-60+Math.random()*120, gY(e.x)-20-Math.random()*70, 1.5, '#ffb060'); }
+    } else if (a===2){ m5Halls(g, c, dt);
+    } else {
+      m5Rewrite(g, c, dt);
+      const alive = m5AvAlive(g, c);
+      if (c.avatar && !alive && !c.avFell){ c.avFell = true; c.avFellAt = T; if (D===2 && c.avBackN===0) c.avBack = T + 60; }          // l'avatar est tombé
+      if (c.avBack!=null && T >= c.avBack){ c.avBack = null; c.avBackN++; m5Avatar(g, c, 0.5); c.avFell = false; }                     // Dernier carré : il revient une fois, à 50 %
+      if (alive && !c.avHalf && c.avatar.hp < c.avatar.maxhp*0.5){ c.avHalf = true; c.avHalfN = (c.avHalfN|0)+1; }
+    }
+    // la porte (ou le noyau) : invulnérable tant que la règle de l'acte n'est pas remplie ; la tour se répare tant que l'avatar marche
+    const k = (a===1 && !c.gateOpen) || (a===2 && c.owned<3)? 0 : 1;
+    if (k<1 && e.hp < c.lastE) e.hp = c.lastE - (c.lastE - e.hp)*k;
+    if (a===3 && m5AvAlive(g, c)) e.hp = Math.min(e.maxhp, e.hp + e.maxhp*0.01*dt);
+    else if (e.hp > c.lastE) e.hp = c.lastE;
+    c.lastE = e.hp;
+    m5Light(g, c);
+    if (a<3 && e.hp <= 0){ m5Next(g, c); return; }
+    if (a===3 && e.hp <= e.maxhp*0.1){ c.goal2Done = m5Ok1(c) && c.hallsAt!=null && c.hallsAt<=300 && m5Ok3(c); return 'win'; }
+  },
+  hud(g, c){
+    const e = g.e, a = c.act, D = c.D.i; let part = 0, label = '';
+    if (a===1){ part = 0.4*Math.min(1, c.charges/M5.need[D]) + 0.6*(c.gateOpen? clamp(1 - e.hp/(e.maxhp*0.75), 0, 1) : 0); label = m5Fmt(M5_TX.hudI, { a:c.charges, b:M5.need[D] }); }
+    else if (a===2){ part = 0.5*(c.owned/3) + 0.5*(c.owned>=3? clamp(1 - e.hp/e.maxhp, 0, 1) : 0); label = m5Fmt(M5_TX.hudII, { a:c.owned }); }
+    else { const av = m5AvAlive(g, c)? clamp(1 - c.avatar.hp/c.avatar.maxhp, 0, 1) : c.avatar? 1 : 0;
+      part = 0.4*av + 0.6*clamp((1 - e.hp/e.maxhp)/0.9, 0, 1); label = (m5AvAlive(g, c)? cT(M5_TX.hudAv)+' '+Math.round(100*c.avatar.hp/c.avatar.maxhp)+' % · ' : '')+cT(M5_TX.hudTw)+' '+Math.round(100*e.hp/e.maxhp)+' %'; }
+    const n = (m5Ok1(c)?1:0) + (m5Ok2(c)?1:0) + (m5Ok3(c)?1:0);
+    return { prog:((a-1) + clamp(part,0,1))/3, label, goal2:{ done:!!c.goal2Done, label:n+'/3' } };
+  },
+  radio:[
+    // ----- acte I -----
+    { act:1, when:(g, c) => c.act===1 && c.D.i===0 && c.t >= 8, who:'sol', txt:M5_L.a0 },                                         // [Récit] à 0:08
+    { act:1, when:(g, c) => c.act===1 && c.cellN>=1, who:'cell', txt:M5_L.a1 },                                                    // première cellule
+    { act:1, when:(g, c) => c.act===1 && c.sapOut>=1, who:'malik', txt:M5_L.a2 },                                                  // premier sapeur
+    { act:1, when:(g, c) => c.act===1 && c.sapLost>=1, who:'malik', txt:M5_L.a4 },                                                 // un sapeur tombe
+    { act:1, when:(g, c) => c.act===1 && c.battDown>=1, who:'sol', txt:M5_L.a5 },                                                   // une batterie tombe
+    { act:1, when:(g, c) => c.act===1 && c.t - c.t0 >= 180, who:'sol', txt:M5_L.a6 },                                              // à 3:00
+    { act:1, when:(g, c) => c.act===1 && !!c.firing, who:'malik', txt:M5_L.a7 },                                                   // mise à feu
+    { act:1, when:(g, c) => c.act===1 && c.gateOpen, who:'sol', txt:M5_L.a8 },                                                     // 2 s après
+    { act:1, when:(g, c) => c.act===1 && c.dry!=null, who:'sol', txt:M5_L.a9 },                                                    // cellules épuisées
+    // ----- acte II -----
+    { act:2, when:(g, c) => c.act===2 && c.D.i===0 && c.t - c.t0 >= 10, who:'sol', txt:M5_L.b0 },                                  // [Récit] à 0:10 de l'acte
+    { act:2, when:(g, c) => c.act===2 && c.cellN>=1, who:'cell', txt:M5_L.b1 },
+    { act:2, when:(g, c) => c.act===2 && c.t - c.t0 >= 90 && m5Hidden(g, c), who:'sol', txt:M5_L.b2 },                               // des machines cachées, à 1:30
+    { act:2, when:(g, c) => c.act===2 && c.offN>=1, who:'sol', txt:M5_L.b3 },
+    { act:2, when:(g, c) => c.act===2 && c.relaunchN>=1, who:'sol', txt:M5_L.b4 },
+    { act:2, when:(g, c) => c.act===2 && c.owned>=2, who:'malik', txt:M5_L.b5 },
+    { act:2, when:(g, c) => c.act===2 && c.owned>=3, who:'sol', txt:M5_L.b6 },
+    // ----- acte III -----
+    { act:3, when:(g, c) => c.act===3 && c.rwCount>=1, who:'sol', txt:M5_L.c0 },
+    { act:3, when:(g, c) => c.act===3 && c.rwHit>=1, who:'sol', txt:M5_L.c1 },
+    { act:3, when:(g, c) => c.act===3 && c.cellsLeft===0 && c.cellN>0, who:'cell', txt:M5_L.c2 },
+    { act:3, when:(g, c) => c.act===3 && !!c.avHalfN, who:'nous', txt:M5_L.c3 },
+    { act:3, when:(g, c) => c.act===3 && c.avFell && c.avBackN===0, who:'sol', txt:M5_L.c4 },
+    { act:3, when:(g, c) => c.act===3 && c.avBackN>=1 && m5AvAlive(g, c), who:'nous', txt:M5_L.c5 },                               // Dernier carré : l'avatar revient
+    { act:3, when:(g, c) => c.act===3 && g.e.hp < g.e.maxhp*0.5, who:'sol', txt:M5_L.c6 },
+  ],
 });
+// reprise : les rappels des actes déjà joués ne sont pas rejoués
+{ const m = CAMPAIGN[4], st = m.setup; m.setup = function(g, c){ st.call(this, g, c); if (c.resumed) m.radio.forEach((r,i)=>{ if (r.act < c.resumed) c.fired[i] = 1; }); }; }
+
+/* ---------- Enveloppes minimales (hors moteur) ----------
+   showEnd : après un échec en Récit ou en Lutte, RÉESSAYER devient « REPRENDRE À L'ACTE n ».            */
+{ const _se = showEnd; showEnd = function(){ _se(); const c = game && game.camp;
+    if (c && c.i===4 && !game.win && M5_CK && M5_CK.fail && c.D.i<2){ const b = document.getElementById('campNextBtn'); if (b) b.textContent = m5Fmt(M5_TX.resume, { n:M5_CK.act }); } }; }
