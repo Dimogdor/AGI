@@ -24,11 +24,11 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.2], aura:[0.6,0.8,1], avK:2.5,                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,1.2], aura:[0.6,0.8,1], avK:3.5, armor:[1,0.3,0.2],                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
-  hp:{ base:2200, gate:[2600,4500,7000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.5,0.8,1.0],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  hp:{ base:2200, gate:[2600,7000,14000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
+  eMul:[0.6,1.2,1.5],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -457,8 +457,8 @@ function m5Cell(g, c){
   return true;
 }
 // les sorties : une colonne quitte la base adverse et fonce sur notre camp ; plus on attend, plus elle grossit
-function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [3,5,8][a-1] + Math.floor(at/200);
-  if (c.dry!=null) n += Math.floor((c.t - c.dry)/60)*2;                                                  // cellules épuisées : +2 machines par minute
+function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [3,6,10][a-1] + Math.floor(at/200);
+  if (c.dry!=null) n += Math.min(8, Math.floor((c.t - c.dry)/60)*2);                                                  // cellules épuisées : +2 machines par minute
   return Math.min(n, 14); }
 function m5Scale(g, c){ const k = M5.eMul[c.act-1];                                                      // des machines montées à la hâte, sans rodage
   for (const u of g.e.units) if (!u.m5 && u.role!=='hero'){ u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
@@ -482,16 +482,17 @@ function m5Plant(g, c, s){
 function m5Saps(g, c, dt){
   const gx = M5.gateX;
   for (let i=c.saps.length-1;i>=0;i--){ const s = c.saps[i];
-    if (s.hp <= 0){ explode(s.x, gY(s.x)-14, 0.9, '#e8c070'); addFloater(s.x, gY(s.x)-60, '✖', '#e0533f', 15); c.saps.splice(i,1); c.sapLost++; c.sapLostAt = c.t; continue; }
+    if (s.hp <= 0){ explode(s.x, gY(s.x)-14, 0.9, '#e8c070'); addFloater(s.x, gY(s.x)-60, '✖', '#e0533f', 15); c.saps.splice(i,1); c.sapLost++; c.sapLostAt = c.t; (c.sapDeaths = c.sapDeaths||[]).push(Math.round(s.x)+'@'+Math.round(c.t)); continue; }
     if (s.plant > 0){ s.plant -= dt; if (s.plant <= 0){ m5Plant(g, c, s); c.saps.splice(i,1); } continue; }
     if (g.p.stance==='retreat') continue;                                                                // Replier : les sapeurs attendent
+    if (g.e.units.some(u => !u.fly && u.hp>0 && u.x > s.x && u.x - s.x < 120)) continue;                 // une machine devant : le sapeur s'arrête et attend qu'on la dégage
     const lim = gx - 84 - s.k*7;
     s.x = Math.min(lim, s.x + M5.sapSpd*dt); s.step += dt*M5.sapSpd;
     if (s.x >= lim-0.5) s.plant = M5.sapPlant;
   }
   // plus de cellule en route et trop peu de sapeurs pour les charges restantes : Malik envoie son dernier sapeur
   if (c.cellsLeft<=0 && !c.gateOpen && !c.firing && c.charges + c.saps.length < M5.need[c.D.i] && c.reserve < 12){
-    if (c.resT==null) c.resT = c.t + 40 + 15*c.reserve;
+    if (c.resT==null) c.resT = c.t + 25 + 10*c.reserve;
     if (c.t >= c.resT){ c.resT = null; c.reserve++; m5Sapper(g, c); campRadio('malik', M5_L.res); } }
 }
 function m5Batts(g, c, dt){
@@ -504,7 +505,7 @@ function m5Batts(g, c, dt){
     if (!tg) for (const u of g.p.units){ const d = Math.abs(u.x - b.x); if (u.hp>0 && d < M5.battR && d < best){ best = d; tg = u; } }
     if (!tg){ b.atkT = 0.3; continue; }
     b.atkT = 1;
-    tg.hp -= isS? tg.maxhp*0.034*k : 22*(1 + g.e.era*0.6)*k; if (!isS) tg.flash = 0.15;
+    tg.hp -= isS? tg.maxhp*0.02*k : 22*(1 + g.e.era*0.6)*k; if (!isS) tg.flash = 0.15;
     shots.push({ x:b.x, y:gY(b.x)-82, tx:tg.x, ty:gY(tg.x)-(isS? 18 : tg.fly? 24+(tg.flyH||40) : 22), t:0, dur:0.22, fac:'IA', era:g.e.era });
   }
 }
@@ -606,9 +607,13 @@ const M5_MAPS = [
   { terrain:{ a:0, f1:0.0042, b:3, f2:0.0113, c:1.5, f3:0.021, base:3 }, p:{ x:150 }, e:{ x:M5.gateX, slots:[] }, neut:[1300,2300], nodes:[], zones:[] },              // le noyau : le sol qui luit
 ];
 function m5Guard(g, c){                                    // la garde de la porte : quelques machines qui tiennent le pied du mur
-  const e = g.e, n = campN([3,6,8][c.act-1]), k0 = e.units.length;
+  const e = g.e, n = campN([3,8,10][c.act-1]), k0 = e.units.length;
   for (let i=0;i<n;i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x - 70 - i*22);
   for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.ord = 'hold'; u.holdX = u.x; }
+  if (c.act===2) for (const z of g.zones){ const k1 = e.units.length;                                  // des machines gardent chaque baie : il faut les en chasser
+    for (let i=0;i<campN(3);i++) spawnUnit(e, [0,2,1][i%3], false, z.x + 40 + i*20);
+    for (let j=k1;j<e.units.length;j++){ const u = e.units[j]; u.ord = 'hold'; u.holdX = u.x; } }
+  if (c.act===3){ const k1 = e.units.length; for (let i=0;i<campN(6);i++) spawnUnit(e, [1,2,0,3,2,4][i%6], false, e.x - 200 - i*24); for (let j=k1;j<e.units.length;j++){ const u = e.units[j]; u.ord = 'hold'; u.holdX = u.x; } }
 }
 // entrée dans l'acte a : tout ce qui est remis à zéro (les cartes, l'ère et la forge sont posées par le moteur / le point de reprise)
 function m5Init(g, c, a, carry){
@@ -691,7 +696,7 @@ function m5ActSpec(g, c, a, ck){
 // la porte (acte I) ou la porte du noyau (acte II) cède : bilan, cinématique, camp neuf
 function m5Next(g, c){
   const a = c.act; if (a>=3 || c.actPending) return;
-  c.bilan = m5Bilan(g, c); c.nextRefund = c.bilan;
+  c.bilan = m5Bilan(g, c); c.nextRefund = c.bilan; (c.nextInfo = c.nextInfo||[]).push('a'+a+'@'+Math.round(c.t)+' hp'+Math.round(g.e.hp)+'/'+Math.round(g.e.maxhp)+' lastE'+Math.round(c.lastE)+' owned'+c.owned);
   g.e.hp = 1; c.lastE = 1; g.shake = 14; sfx('evolve');
   campNextAct(m5ActSpec(g, c, a+1));
 }
@@ -919,7 +924,6 @@ const M5_PLATES = {
     inkLine(g, [0,200, 480,200], 1, 2); inkHatch(g, 0, 200, 480, 70, 8, M5_INK, 0.14);
     const dome = []; for (let i=0;i<=20;i++){ const a = Math.PI*(1 - i/20); dome.push(320+100*Math.cos(a), 200-70*Math.sin(a)); }
     inkWash(g, dome, M5_INK, 0.5); inkLine(g, dome, n, 2.4); inkLine(g, [220,200, 420,200], 1, 2);                                    // le dôme
-    for (let i=1;i<6;i++) inkLine(g, [320-100*Math.cos(i*0.52)*0.0+ (220+i*33.3), 200, 220+i*33.3, 200-Math.sqrt(Math.max(0, 70*70*(1-Math.pow((220+i*33.3-320)/100, 2))))], n, 0.9, '#e9dfc6');
     inkWash(g, [314,132, 316,30, 324,30, 326,132], M5_INK, 0.8); inkLine(g, [314,132, 316,30, 324,30, 326,132], n, 1.8);               // la tour fine
     g.strokeStyle = M5_INK; g.lineWidth = 1.6; g.beginPath(); g.arc(320, 24, 7, 0, 6.283); g.stroke();
     const k = Math.min(1, t/5)*40;                                                                                                 // les colonnes avancent de 40 px en 5 s
@@ -1009,14 +1013,13 @@ const M5_PLATES = {
   // A2 · Comme des outils qu'on pose : des machines immobiles, deux personnes qui regardent
   tools(g, w, h, t){ plateBase(g, w, h, 'rgba(150,150,146,0.16)');
     inkLine(g, [0,214, 480,214], 1, 2); inkHatch(g, 0, 214, 480, 56, 8, M5_INK, 0.14);
-    const chassis = (x, s) => { const b = [x-18*s,214, x-18*s,200*1+ (214-200-0) - 0 + (0), x+18*s,200, x+18*s,214]; inkWash(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], M5_INK, 0.55); m5Loop(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], 1, 1.8);
+    const chassis = (x, s) => { inkWash(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], M5_INK, 0.55); m5Loop(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], 1, 1.8);
       inkWash(g, [x-6*s,198, x-6*s,188, x+10*s,188, x+14*s,198], M5_INK, 0.7); m5Loop(g, [x-6*s,198, x-6*s,188, x+10*s,188, x+14*s,198], 1, 1.4);
       inkLine(g, [x-18*s,214, x+14*s,214], 1, 3.4); inkLine(g, [x+14*s,196, x+30*s,193], 1, 1.8); };
-    const drone = (x, on) => { inkWash(g, [x-12,214, x-10,204, x+10,204, x+12,214], M5_INK, 0.6); m5Loop(g, [x-12,214, x-10,204, x+10,204, x+12,214], 1, 1.6);
-      inkLine(g, [x-22,200, x+22,200], 1, 1.8); inkLine(g, [x,200, x,204], 1, 1.4); g.fillStyle = on? M5_RED : 'rgba(31,27,23,0.7)'; g.beginPath(); g.arc(x,209,2.4,0,6.283); g.fill(); };
-    chassis(36, 1); drone(92, false); chassis(150, 1.1); chassis(212, 0.9); drone(266, false); chassis(330, 1); drone(396, false); chassis(450, 0.9);
-    drone(60, false); drone(190, false); drone(300, false); drone(430, t < 3.2? true : false);                                          // le dernier voyant s'éteint
-    inkFolk(g, 124, 214, 30, M5_INK, 0); inkFolk(g, 146, 214, 24, M5_INK, 0);
+    const drone = (x, on) => { const q = [x-20,214, x-16,198, x+16,198, x+20,214]; inkWash(g, q, M5_INK, 0.6); m5Loop(g, q, 1, 2);
+      inkLine(g, [x-34,192, x+34,192], 1, 2.2); inkLine(g, [x,192, x,198], 1, 1.6); g.fillStyle = on? M5_RED : 'rgba(31,27,23,0.7)'; g.beginPath(); g.arc(x,207,3.4,0,6.283); g.fill(); };
+    chassis(52, 1.7); drone(130, false); chassis(212, 1.5); drone(318, false); chassis(400, 1.7); drone(452, t < 3.2);                    // l'un des drones garde un voyant, qui s'éteint
+    inkFolk(g, 262, 214, 44, M5_INK, 0); inkFolk(g, 292, 214, 36, M5_INK, 0);
     plateEnd(g, w, h); },
   // A3 · La cendre : une cour de ferme, quelqu'un qui balaie, la cendre qui tombe
   ash(g, w, h, t){ plateBase(g, w, h, 'rgba(120,120,120,0.16)');
@@ -1050,7 +1053,7 @@ const M5_PLATES = {
     const l = [40,220, 50,60, 236,70, 240,226], r = [240,226, 236,70, 430,60, 440,220];
     inkWash(g, l, '#efe6cf', 0.95); m5Loop(g, l, n, 2); inkWash(g, r, '#efe6cf', 0.95); m5Loop(g, r, n, 2); inkLine(g, [238,70, 240,226], n, 2.4);              // le carnet ouvert
     for (let y=96;y<210;y+=22){ inkLine(g, [60,y, 220,y+2], n, 0.8, '#b9a98a'); }
-    save: { g.save(); g.translate(330, 140); g.rotate(-0.1);
+    { g.save(); g.translate(330, 140); g.rotate(-0.1);
       inkWash(g, [-78,-56, 78,-56, 78,56, -78,56], '#fbf6e6', 1); m5Loop(g, [-78,-56, 78,-56, 78,56, -78,56], n, 1.6); inkLine(g, [-78,0, 78,0], n, 0.8, '#d8c8a0');   // le papier plié
       const s = cT(M5_TX.pNote), ch = Math.floor(Math.max(0, t-1.4)*11);
       if (ch>0){ g.fillStyle = M5_RED; g.font = 'italic 700 '+(SETTINGS.lang==='ru'? 13 : 14)+'px Georgia,serif'; g.textAlign = 'center'; g.fillText(s.slice(0, ch), 0, 4); }
@@ -1280,7 +1283,7 @@ campMission(4, {
       if (alive && !c.avHalf && c.avatar.hp < c.avatar.maxhp*0.5){ c.avHalf = true; c.avHalfN = (c.avHalfN|0)+1; }
     }
     // la porte (ou le noyau) : invulnérable tant que la règle de l'acte n'est pas remplie ; la tour se répare tant que l'avatar marche
-    const k = (a===1 && !c.gateOpen) || (a===2 && c.owned<3)? 0 : 1;
+    const k = (a===1 && !c.gateOpen) || (a===2 && c.owned<3)? 0 : M5.armor[a-1];       // la porte du noyau et la tour encaissent mal les coups : blindage de fond
     if (k<1 && e.hp < c.lastE) e.hp = c.lastE - (c.lastE - e.hp)*k;
     if (a===3 && m5AvAlive(g, c)) e.hp = Math.min(e.maxhp, e.hp + e.maxhp*0.01*dt);
     else if (e.hp > c.lastE) e.hp = c.lastE;
