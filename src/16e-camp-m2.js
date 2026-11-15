@@ -15,7 +15,7 @@
      4. Les recrues de la halle arrivent à la QUEUE du cortège (rues de côté), pas à la halle.
    Ce fichier ajoute, hors moteur, trois enveloppes minimales (dessin des bases, dégâts au cortège, bouton
    de reprise) — voir « Enveloppes » en fin de fichier.                                                    */
-const M2 = { x0:430, span:170, gates:[1100,1900,2650], mast:3150, term:3450, v:22, vSlow:11, hall:150 };
+const M2 = { x0:430, span:170, gates:[1100,1900,2650], mast:3150, term:3450, v:11, vSlow:6, hall:150 };
 const M2T = (fr,en,es,de,it,pt,ru,zh,ar) => ({fr,en,es,de,it,pt,ru,zh,ar});            // objet de texte à 9 langues
 const m2Tm = () => (game && game.camp)? game.camp.t + (game.camp.off||0) : 0;         // temps de mission (reprise comprise)
 const m2Clock = () => 360 + 0.6*m2Tm();                                              // heure du port, en minutes : 06:00 → midi (10 min = 6 h)
@@ -561,13 +561,13 @@ function m2Plan(g, c){                                                   // chro
   const s = c.seg, dt = c.t - c.segT[s];
   if (s===0){
     if (!c.t1 && c.mx >= 600){ c.t1 = c.t; c.n1 = 0; }
-    if (c.t1!=null && c.n1 < 3 && c.t - c.t1 >= 35*c.n1){ if (m2Barge(g, c, M2_BARGE_ROLES[0])) c.n1++; else c.n1 = 3; }
-    if (c.D.i===2 && c.t >= 25 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
+    if (c.t1!=null && c.n1 < 3 && c.t - c.t1 >= 26*c.n1){ if (m2Barge(g, c, M2_BARGE_ROLES[0])) c.n1++; else c.n1 = 3; }
+    if (c.D.i>=1 && c.t >= 25 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
   } else if (s===1){
-    if (c.n2 < 2 && dt >= [12,62][c.n2]){ if (m2Barge(g, c, M2_BARGE_ROLES[1])) c.n2++; else c.n2 = 2; }
+    if (c.n2 < 2 && dt >= [10,38][c.n2]){ if (m2Barge(g, c, M2_BARGE_ROLES[1])) c.n2++; else c.n2 = 2; }
     if (dt >= 8 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
   } else if (s===2){
-    if (c.n3 < 2 && dt >= [6,60][c.n3]){ if (m2Barge(g, c, M2_BARGE_ROLES[2])) c.n3++; else c.n3 = 2; }
+    if (c.n3 < 2 && dt >= [6,36][c.n3]){ if (m2Barge(g, c, M2_BARGE_ROLES[2])) c.n3++; else c.n3 = 2; }
   } else if (c.term.active && !c.term.dead){
     if (c.t >= c.term.nextT){ const k = c.term.n++, early = c.t - c.term.t0 < 60;
       c.term.nextT = c.t + (early? 6 : 12);
@@ -899,7 +899,7 @@ campMission(1, {
     const i = c.D.i, p = g.p, e = g.e, ck = (M2_CK && M2_CK.fail && M2_CK.d===i && i<2 && M2_CK.doc===(CAMP_SAVE.doc[1]? 1 : 0))? M2_CK : null;
     campGrant(p, 280, 250, 90); p.stance = 'hold';
     e.era = 0; e.hp = e.maxhp = [900,1200,1500][i]; e.phase = 2;
-    c.max0 = [140,100,100][i]; c.cap = c.max0; c.hp = c.max0; c.mx = M2.x0; c.seg = 0; c.segT = [0,0,0,0]; c.off = 0;
+    c.max0 = [120,90,80][i]; c.cap = c.max0; c.hp = c.max0; c.mx = M2.x0; c.seg = 0; c.segT = [0,0,0,0]; c.off = 0;
     c.gate = [0,1,2].map(()=>({ state:'closed', k:0, t:0 })); c.gOpen = []; c.bars = []; c.barges = []; c.n2 = 0; c.n3 = 0; c.hitT = 9; c.slowT = 0; c.stopT = 0; c.sunk = 0;
     c.boats = [2200,2500].map((x,k)=>({ x, hp:[300,400,500][i], max:[300,400,500][i], fireT:4+k*4, aim:null, dead:false, sink:0 }));
     c.term = { active:false, dead:false, k:0, n:0, t0:0, nextT:0 };
