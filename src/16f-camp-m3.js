@@ -212,7 +212,7 @@ const M3_PLATES = {
     g.fillStyle = M3_INK0; for (const wx of [318,372,436]){ g.beginPath(); g.arc(wx, 220, 10, 0, 6.283); g.fill(); }
     m3Plate(g, cT(M3_UI.tank), 360, 188, 12, '#2a2620');
     const step = Math.min(6, Math.floor(t/1.5));                                                              // un pas de 8 px toutes les 1,5 s
-    for (let i=0;i<9;i++){ const x = 252 - i*24 + step*8, s = 25 + ((i*5)%3);
+    for (let i=0;i<9;i++){ const x = 262 - i*26 + step*8, s = 28 + ((i*5)%3);
       inkFolk(g, x, 230, s); g.fillStyle = M3_RED; g.fillRect(x+5, 230-s*0.42, 6, 8); }                      // chacun son bidon
     plateEnd(g, w, h); },
   // P2 · Les centres de calcul : un bâtiment bas sans fenêtres, trois tours qui fument, la rivière captée
@@ -244,9 +244,9 @@ const M3_PLATES = {
     g.fillStyle = (fade > 0.05 && Math.sin(t*5) > 0)? M3_BLUE : 'rgba(11,111,168,0.25)'; g.beginPath(); g.arc(292, 190, 4, 0, 6.283); g.fill();
     g.save(); g.beginPath(); g.rect(182,124,116,48); g.clip();
     const typed = (s, k) => s.slice(0, Math.max(0, Math.floor(k*14)));
-    if (arb){ if (t < 3.4) m3Plate(g, typed(cT(M3_UI.arb), t-0.4), 240, 156, 17, '#10241c'); }
-    else { const off = clamp((t-2.8)/0.7, 0, 1)*26;
-      m3Plate(g, typed(cT(M3_UI.kname), t-0.3), 240, 152-off, 15, '#10241c'); m3Plate(g, typed(cT(M3_UI.codes), t-3.3), 240, 178-off, 14, '#10241c'); }
+    if (arb){ if (t < 3.4) m3Plate(g, typed(cT(M3_UI.arb), t-0.4), 240, 154, 15, '#10241c'); }
+    else { const off = clamp((t-2.8)/0.7, 0, 1)*16;
+      m3Plate(g, typed(cT(M3_UI.kname), t-0.3), 240, 150-off, 12, '#10241c'); m3Plate(g, typed(cT(M3_UI.codes), t-3.3), 240, 174-off, 11, '#10241c'); }
     g.restore();
     const nb = [40,208, 54,186, 134,186, 146,208];                                                            // le carnet
     inkWash(g, nb, '#e9dfc6', 0.8); m3Loop(g, nb, n, 2); inkLine(g, [92,187, 92,207], n, 1.2);
@@ -271,17 +271,21 @@ const M3_PLATES = {
   fountain(g, w, h, t){ plateBase(g, w, h, 'rgba(232,165,60,0.10)');
     const n = clamp(t/1.4, 0, 1);
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, M3_INK0, 0.2);
-    g.fillStyle = 'rgba(31,27,23,0.28)'; g.beginPath(); g.ellipse(240, 214, 100, 20, 0, 0, 6.283); g.fill();     // l'ombre portée
-    g.fillStyle = 'rgba(138,132,120,0.7)'; g.beginPath(); g.ellipse(240, 190, 90, 20, 0, 0, 6.283); g.fill();   // la vasque
-    g.strokeStyle = M3_INK0; g.lineWidth = 2.4; g.beginPath(); g.ellipse(240, 190, 90, 20, 0, 0, 6.283); g.stroke();
-    g.fillStyle = 'rgba(70,130,170,0.78)'; g.beginPath(); g.ellipse(240, 190, 80, 15, 0, 0, 6.283); g.fill();   // l'eau
-    g.lineWidth = 1.1; for (let i=0;i<3;i++){ const ph = (t*0.4 + i/3) % 1; g.strokeStyle = 'rgba(240,248,250,'+(0.8*(1-ph)).toFixed(3)+')'; g.beginPath(); g.ellipse(240, 192, 8+ph*62, 1.5+ph*10, 0, 0, 6.283); g.stroke(); }
-    inkLine(g, [236,192, 236,116], n, 3.4); inkLine(g, [244,192, 244,116], n, 3.4); inkLine(g, [228,116, 252,116], n, 3);   // la colonne
-    inkLine(g, [240,112, 266,126, 280,176], n, 2, '#2f6f9a'); inkLine(g, [240,112, 214,126, 200,176], n, 2, '#2f6f9a');   // le filet d'eau : deux arcs
-    g.fillStyle = '#2f6f9a'; for (let i=0;i<7;i++){ const ph = (t*0.9 + i/7) % 1, sd = i%2? 1 : -1; g.beginPath(); g.arc(240 + sd*(ph*40), 112 + ph*ph*64 + ph*14, 1.7, 0, 6.283); g.fill(); }
-    for (const [cx, dir] of [[180,1],[240,0],[306,-1]]){ const cy = cx===240? 208 : 206;                       // trois enfants assis, pieds dans l'eau
-      g.save(); g.beginPath(); g.rect(cx-20, cy-40, 40, 26); g.clip(); inkFolk(g, cx, cy+4, 24); g.restore();
-      g.strokeStyle = M3_INK0; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(cx-2, cy-14); g.lineTo(cx-3+dir*4, cy-20); g.moveTo(cx+3, cy-14); g.lineTo(cx+4+dir*4, cy-20); g.stroke(); }
+    const ped = [200,206, 204,230, 276,230, 280,206];                                                          // le pied de pierre
+    inkWash(g, ped, '#8a8478', 0.7); m3Loop(g, ped, n, 2.2);
+    g.fillStyle = 'rgba(138,132,120,0.85)'; g.beginPath(); g.ellipse(240, 190, 90, 20, 0, 0, 6.283); g.fill();   // la vasque : le bord
+    g.strokeStyle = M3_INK0; g.lineWidth = 2.6; g.beginPath(); g.ellipse(240, 190, 90, 20, 0, 0, 6.283); g.stroke();
+    g.fillStyle = 'rgba(70,130,170,0.85)'; g.beginPath(); g.ellipse(240, 190, 78, 14, 0, 0, 6.283); g.fill();   // l'eau
+    g.lineWidth = 1.1; for (let i=0;i<3;i++){ const ph = (t*0.4 + i/3) % 1; g.strokeStyle = 'rgba(240,248,250,'+(0.85*(1-ph)).toFixed(3)+')'; g.beginPath(); g.ellipse(240, 192, 6+ph*62, 1.5+ph*10, 0, 0, 6.283); g.stroke(); }
+    inkLine(g, [236,192, 236,118], n, 3.2); inkLine(g, [244,192, 244,118], n, 3.2);                              // la colonne
+    g.fillStyle = '#8a8478'; g.beginPath(); g.ellipse(240, 116, 15, 4.5, 0, 0, 6.283); g.fill(); g.strokeStyle = M3_INK0; g.lineWidth = 2; g.beginPath(); g.ellipse(240, 116, 15, 4.5, 0, 0, 6.283); g.stroke();
+    g.strokeStyle = '#2f6f9a'; g.lineWidth = 2.4; g.lineCap = 'round';                                          // le filet d'eau : deux arcs
+    g.beginPath(); g.moveTo(240, 114); g.quadraticCurveTo(272, 84, 284, 184); g.stroke(); g.beginPath(); g.moveTo(240, 114); g.quadraticCurveTo(208, 84, 196, 184); g.stroke();
+    g.fillStyle = '#2f6f9a'; for (let i=0;i<8;i++){ const ph = (t*0.8 + i/8) % 1, sd = i%2? 1 : -1; g.beginPath(); g.arc(240 + sd*(4 + ph*44), 114 - Math.sin(ph*3.14)*22 + ph*ph*76, 1.8, 0, 6.283); g.fill(); }
+    for (const [cx, cy, dir] of [[155,191,1],[309,204,-1],[325,190,-1]]){                                          // trois enfants assis sur le bord, pieds dans l'eau
+      inkWash(g, [cx-5.5,cy, cx-5,cy-13, cx+5,cy-13, cx+5.5,cy], M3_INK0, 0.92); g.fillStyle = M3_INK0; g.beginPath(); g.arc(cx, cy-18, 4.6, 0, 6.283); g.fill();
+      g.strokeStyle = M3_INK0; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath(); g.moveTo(cx, cy-3); g.lineTo(cx+dir*13, cy-4); g.lineTo(cx+dir*14, cy+2); g.stroke();
+      g.strokeStyle = 'rgba(240,248,250,0.95)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(cx+dir*14, cy+3, 5+Math.sin(t*3+cx)*1.5, 1.7, 0, 0, 6.283); g.stroke(); }
     inkWash(g, [346,230, 350,208, 370,208, 374,230], '#7a746a', 0.75); m3Loop(g, [346,230, 350,208, 370,208, 374,230], n, 1.8); inkLine(g, [350,208, 360,196, 370,208], n, 1.4);   // le seau
     plateEnd(g, w, h); },
   // P7 · Le ciel gris : un plateau, un chevalement de mine, une construction lisse, la neige
@@ -293,7 +297,7 @@ const M3_PLATES = {
     const tw = [330,190, 330,62, 398,62, 398,190];                                                            // la future Mnémosyne : lisse, sans fenêtre
     inkWash(g, tw, '#4a505a', 0.55); m3Loop(g, tw, n, 2.4);
     g.fillStyle = (Math.sin(t*3) > 0)? M3_RED : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(364, 56, 3.4, 0, 6.283); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.95)'; for (let i=0;i<20;i++){ const x = (i*61.3 + t*26 + 480) % 480, y = (i*47.1 + t*40) % 270; g.fillRect(x, y, 2.6, 2.6); }
+    for (let i=0;i<20;i++){ const x = (i*61.3 + t*26 + 480) % 480, y = (i*47.1 + t*40) % 270; g.fillStyle = 'rgba(80,86,98,0.55)'; g.fillRect(x-0.6, y-0.6, 4.2, 4.2); g.fillStyle = '#fff'; g.fillRect(x, y, 3, 3); }
     plateEnd(g, w, h); },
   // P8 · La vanne fermée : la vanne, son volant, la chaîne et le cadenas Omnicorp, le lit craquelé, une feuille sèche
   shut(g, w, h, t){ plateBase(g, w, h, 'rgba(210,150,80,0.15)');
