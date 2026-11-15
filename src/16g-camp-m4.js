@@ -334,7 +334,8 @@ const M4_PLATES = {
     for (let i=0;i<8;i++) inkLine(g, [106,70+i*20, 376,70+i*20], n, 0.9, 'rgba(70,90,130,0.45)');               // la page lignée
     inkLine(g, [124,44, 124,230], n, 1.1, 'rgba(196,42,28,0.55)');                                               // la marge, à l'encre rouge
     const l1 = cT(M4_TX.pCopy1), l2 = cT(M4_TX.pCopy2); let left = Math.floor((t-1.2)*14);                       // l'écriture s'écrit, ligne par ligne
-    [l1, l2].forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), 134, 94+i*40, 15, M4_RED, 236, 'left'); left -= l.length+4; });
+    const rtl = SETTINGS.lang==='ar';
+    [l1, l2].forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), rtl? 372 : 134, 94+i*40, 15, M4_RED, 236, rtl? 'right' : 'left'); left -= l.length+4; });
     const pc = [330,200, 410,164, 414,170, 334,208];                                                              // le crayon rouge, posé en travers
     inkWash(g, pc, M4_RED, 0.9); inkLine(g, pc.concat(pc.slice(0,2)), 1, 1.6);
     inkWash(g, [410,164, 424,158, 414,170], '#e2c4a2', 0.95);
