@@ -136,7 +136,7 @@ console.log('\nESCORTE (mission II) : jamais de machines dans notre dos, grilles
 
 console.log('\nAIDE « ? », SAUVEGARDE, SORTIE PROPRE');
 { const { page, errs } = await open('{"done":3,"lvl":2,"best":{"0":120},"doc":{"2":1}}');
-  const r = await page.evaluate(() => { const o = { diff:CAMP_SAVE.diff, done:CAMP_SAVE.done, doc:CAMP_SAVE.doc[2], v:CAMP_SAVE.v };
+  const r = await page.evaluate(() => { const o = { diff:CAMP_SAVE.diff, done:CAMP_SAVE.done, doc:CAMP_SAVE.doc[2], doc1:CAMP_SAVE.doc[1], doc4:CAMP_SAVE.doc[4], v:CAMP_SAVE.v };
     campStart(0); cineEnd(); for (let k=0;k<40;k++) update(0.05);
     const kd = code => window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles:true }));
     kd('KeyO'); o.help = game.camp.help && paused; R();
@@ -152,7 +152,7 @@ console.log('\nAIDE « ? », SAUVEGARDE, SORTIE PROPRE');
     o.clean = !game.camp && !game.biome && game.nodes.length===3 && !CAMP_BRIEF.open && musicMode()==='war';
     kd('KeyO'); o.keyFree = !paused;
     return o; });
-  check(r.diff===2 && r.done===3 && r.doc===1 && r.v===2 && r.saved===2, 'sauvegarde v1 (« niveau de récit ») migrée vers la difficulté v2');
+  check(r.diff===2 && r.done===3 && r.doc===undefined && r.doc1===1 && r.doc4===undefined && r.v===2 && r.saved===2, 'sauvegarde v1 (« niveau de récit ») migrée vers la difficulté v2 (doctrines II-IV permutées comme leurs paires)');
   check(r.help && r.rects && r.closed && r.click, 'touche O / bouton « ? » : l’aide met en pause et se referme');
   check(r.log, 'radio : message affiché et inscrit au journal');
   check(r.clean && r.keyFree, 'escarmouche après la campagne : aucun reste (lacs revenus, pas de briefing, musique de guerre, touche O libre)');

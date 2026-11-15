@@ -24,11 +24,11 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.2], aura:[0.6,0.7,0.8], avK:3, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,1.0], aura:[0.6,0.7,0.8], avK:4.5, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
-  hp:{ base:2200, gate:[2600,7000,14000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.5,1.0,1.2],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  hp:{ base:2200, gate:[2600,7000,24000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
+  eMul:[0.5,1.0,1.2], eMulII:[1,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -84,7 +84,7 @@ const M5_TX = {
     M5T(`Acte II : une baie éteinte se garde. Laissez une tourelle ou une garnison près de chacune.`, `Act II: a bay that is out has to be held. Leave a turret or a garrison near each one.`, `Acto II: una bahía apagada hay que guardarla. Deje una torreta o una guarnición junto a cada una.`, `Akt II: Ein abgeschaltetes Rack muss gehalten werden. Lassen Sie bei jedem einen Turm oder eine Besatzung.`, `Atto II: una baia spenta va presidiata. Lasci una torretta o una guarnigione vicino a ciascuna.`, `Ato II: uma baia apagada tem de ser guardada. Deixe uma torre ou uma guarnição junto a cada uma.`, `Акт II: погашенную стойку нужно удерживать. Оставьте у каждой башню или гарнизон.`, `第二幕：关掉的机柜要守住。在每座旁留一座炮塔或一支驻军。`, `الفصل الثاني: الحجيرة المطفأة يجب حراستها. اترك برجًا أو حامية قرب كل واحدة.`),
     M5T(`Acte III : l'avatar d'abord. Quand le sol blanchit, Repliez.`, `Act III: the avatar first. When the floor turns white, Retreat.`, `Acto III: primero el avatar. Cuando el suelo se ponga blanco, Replegarse.`, `Akt III: erst der Avatar. Wenn der Boden weiß wird: Zurückziehen.`, `Atto III: prima l'avatar. Quando il suolo si fa bianco, Ripiegare.`, `Ato III: primeiro o avatar. Quando o chão ficar branco, Recuar.`, `Акт III: сначала аватар. Когда пол белеет — «Отступить».`, `第三幕：先打化身。地面发白时，下令“撤退”。`, `الفصل الثالث: التجسّد أولًا. حين تبيضّ الأرض: تراجع.`),
   ],
-  whyVet: M5T(`Utile ici parce que à chaque acte, quatre vétérans ouvrent le camp neuf : on n'est jamais nu pendant la première minute d'un lieu inconnu.`, `Useful here because at every act four veterans open the fresh camp: you are never bare during the first minute of an unknown place.`, `Útil aquí porque en cada acto cuatro veteranos abren el campamento nuevo: nunca se está desnudo durante el primer minuto en un lugar desconocido.`, `Nützlich hier, weil in jedem Akt vier Veteranen das neue Lager eröffnen: In der ersten Minute an einem unbekannten Ort steht man nie blank da.`, `Utile qui perché a ogni atto quattro veterani aprono il campo nuovo: non si è mai a mani vuote nel primo minuto in un luogo sconosciuto.`, `Útil aqui porque em cada ato quatro veteranos abrem o acampamento novo: nunca se fica sem nada no primeiro minuto de um lugar desconhecido.`, `Полезно здесь, потому что в каждом акте новый лагерь открывают четверо ветеранов: в первую минуту на незнакомом месте вы не остаётесь ни с чем.`, `此处很有用：每一幕都有四名老兵开启新营地，在陌生之地的第一分钟里，您绝不会赤手空拳。`, `مفيد هنا لأن أربعة قدامى يفتتحون المعسكر الجديد في كل فصل: فلا تكون أعزل أبدًا في الدقيقة الأولى من مكان مجهول.`),
+  whyVet: M5T(`Utile ici parce qu'à chaque acte, quatre vétérans ouvrent le camp neuf : on n'est jamais nu pendant la première minute d'un lieu inconnu.`, `Useful here because at every act four veterans open the fresh camp: you are never bare during the first minute of an unknown place.`, `Útil aquí porque en cada acto cuatro veteranos abren el campamento nuevo: nunca se está desnudo durante el primer minuto en un lugar desconocido.`, `Nützlich hier, weil in jedem Akt vier Veteranen das neue Lager eröffnen: In der ersten Minute an einem unbekannten Ort steht man nie blank da.`, `Utile qui perché a ogni atto quattro veterani aprono il campo nuovo: non si è mai a mani vuote nel primo minuto in un luogo sconosciuto.`, `Útil aqui porque em cada ato quatro veteranos abrem o acampamento novo: nunca se fica sem nada no primeiro minuto de um lugar desconhecido.`, `Полезно здесь, потому что в каждом акте новый лагерь открывают четверо ветеранов: в первую минуту на незнакомом месте вы не остаётесь ни с чем.`, `此处很有用：每一幕都有四名老兵开启新营地，在陌生之地的第一分钟里，您绝不会赤手空拳。`, `مفيد هنا لأن أربعة قدامى يفتتحون المعسكر الجديد في كل فصل: فلا تكون أعزل أبدًا في الدقيقة الأولى من مكان مجهول.`),
   whyRadio: M5T(`Utile ici parce que l'appel aux cellules revient 35 % plus vite et les réécritures sont annoncées 4 s plus tôt : l'acte III devient une danse plutôt qu'une loterie.`, `Useful here because the call to the cells is back 35% sooner and rewrites are announced 4 s earlier: act III becomes a dance rather than a lottery.`, `Útil aquí porque la llamada a las células vuelve un 35 % antes y las reescrituras se anuncian 4 s antes: el acto III se vuelve una danza y no una lotería.`, `Nützlich hier, weil der Ruf an die Zellen 35 % schneller wieder bereit ist und die Überschreibungen 4 s früher angekündigt werden: Akt III wird zu einem Tanz statt zu einer Lotterie.`, `Utile qui perché la chiamata alle cellule torna il 35 % prima e le riscritture sono annunciate 4 s prima: l'atto III diventa una danza invece di una lotteria.`, `Útil aqui porque a chamada às células volta 35 % mais rápido e as reescritas são anunciadas 4 s antes: o ato III vira uma dança em vez de uma loteria.`, `Полезно здесь, потому что вызов ячеек восстанавливается на 35 % быстрее, а перезаписи объявляются на 4 с раньше: акт III становится танцем, а не лотереей.`, `此处很有用：呼叫小组的冷却缩短35%，改写会提前4秒预告：第三幕成了一支舞，而不是一场赌博。`, `مفيد هنا لأن نداء الخلايا يعود أسرع بنسبة 35% وتُعلَن عمليات إعادة الكتابة قبل 4 ثوانٍ: يصبح الفصل الثالث رقصةً لا يانصيبًا.`),
   // comptes rendus : la fin « Cendre » (par défaut), la fin « Aube » (si l'on veille), l'échec
   debrief: M5T(`La citadelle est tombée le 14 août 2038, peu après midi. Les machines ne se sont pas rendues : elles se sont arrêtées là où elles étaient, comme des outils qu'on pose. On n'a pas retrouvé le poste de radio de Sol. On a retrouvé ses carnets — ceux que vous venez de lire — et un bipeur éteint avec un mot : « Si un jour il sonne, répondez poliment. Elle a été des nôtres avant de savoir ce que c'était. » Le monde qui reste est abîmé. Il est à nous. Tâchons d'en être dignes.`,
@@ -460,7 +460,7 @@ function m5Cell(g, c){
 function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [3,6,10][a-1] + Math.floor(at/200);
   if (c.dry!=null) n += Math.min(8, Math.floor((c.t - c.dry)/60)*2);                                                  // cellules épuisées : +2 machines par minute
   return Math.min(n, 14); }
-function m5Scale(g, c){ const k = M5.eMul[c.act-1];                                                      // des machines montées à la hâte, sans rodage
+function m5Scale(g, c){ const k = M5.eMul[c.act-1]*(c.act===2? M5.eMulII[c.D.i] : 1);                                                      // des machines montées à la hâte, sans rodage
   for (const u of g.e.units) if (!u.m5 && u.role!=='hero'){ u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
 function m5Sortie(g, c){
   if (g.e.units.length >= 44) return;
@@ -549,6 +549,10 @@ function m5Light(g, c){
 }
 function m5Halls(g, c, dt){
   const D = c.D.i, e = g.e;
+  if (!c.zProg) c.zProg = g.zones.map(z=>z.prog);
+  g.zones.forEach((z,i)=>{ const pr = c.zProg[i];                                                           // Dernier carré : une baie se prend plus lentement (l'acte tenait ≈ 1 min)
+    if (M5.capK[D]<1 && z.prog>pr && z.prog<1) z.prog = pr + (z.prog-pr)*M5.capK[D];
+    c.zProg[i] = z.prog; });
   g.zones.forEach((z,i)=>{ const was = c.zo[i];
     if (z.owner!==was){
       if (z.owner==='p'){ c.offN++; sfx('node'); g.shake = Math.max(g.shake, 5); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOff), '#9fd6ea', 14); }       // son coupé net
@@ -659,7 +663,7 @@ function m5Init(g, c, a, carry){
   m5Light(g, c); m5Save(g, c);
 }
 function m5Rule(c, a){ const D = c.D.i, o = {};
-  for (const L of LANG_CODES) o[L] = a===1? M5_TX.rule1[L] : a===2? M5_TX.rule2[L].replace('{dim}', campPct(M5.dim[D])) : M5_TX.rule3[L].replace('{n}', M5.rwGap[D]).replace('{w}', M5.rwWarn[D]);
+  for (const L of LANG_CODES) o[L] = a===1? M5_TX.rule1[L] : a===2? M5_TX.rule2[L].replace('{dim}', campPct(M5.dim[D])) : M5_TX.rule3[L].replace('{n}', M5.rwGap[D]).replace('{w}', M5.rwWarn[D] + (c.warnLead||0));
   return o; }
 // point de reprise : l'ère, la forge, le héros et le remboursement tels qu'ils étaient à l'entrée de l'acte
 function m5Save(g, c){
@@ -1227,6 +1231,9 @@ campMission(4, {
   recap:M5_TX.recap, where:M5_TX.where, goal:M5_TX.goal, goal2:M5_TX.goal2, rule:M5_TX.rule, tips:M5_TX.tips,
   docWhy:{ veterans:M5_TX.whyVet, radio:M5_TX.whyRadio },
   debrief:M5_TX.debrief, fail:M5_TX.fail,
+  resume(){ const ck = M5_CK, i = CAMP_SAVE.diff; return (ck && ck.fail && ck.d===i && i<2 && ck.doc===(CAMP_SAVE.doc[4]? 1 : 0))? { key:'resumeA', n:ck.act } : null; },
+  resumeClear(){ M5_CK = null; },
+  ownBase:true,                                                   // drawBase enveloppé : pas de halos de fenêtres de l'escarmouche (drawBaseGlow)
   biome:'citadel', theme:'citadel1', ai:[0,2,3], doctrines:['veterans','radio'], dev0:0.1, era0:2, eraCap:4, oneLife:false,
   dm:[{ inc:0.2, cheat:0.55 }, { inc:0.28, cheat:0.65 }, { inc:0.31, cheat:0.7, eraLag:0.75, think:1.3 }],
   dAdj:[{ res:1.2 }, null, { res:0.85, wave:1, eHp:1.05, eDmg:1.05, base:1.1 }],   // Dernier carré : dotations x 0,85 ; sorties et machines moins gonflées que le modèle commun (le bench à l'acte I s'enlisait)                                                                  // dotations × 1,2 / × 1 / × 0,85 (fiche § 3)
@@ -1265,7 +1272,7 @@ campMission(4, {
     // les sorties de la base adverse (à l'acte III : tant que l'avatar marche)
     const sortieOn = a<3 || m5AvAlive(g, c);
     if (sortieOn && c.warnLead && !c.sortieWarned && T >= c.sortieT - c.warnLead){ c.sortieWarned = true; c.warnMark = { x:e.x-60, t1:g.t + c.warnLead + 1.2 }; sfx('deny'); }
-    if (T >= c.sortieT){ c.sortieT = T + M5.sortie[D]; c.sortieWarned = false; if (sortieOn) m5Sortie(g, c); }
+    if (T >= c.sortieT){ c.sortieT = T + M5.sortie[D]*(a===1 && c.gateOpen? 1.6 : 1) /* porte éventrée : renforts plus rares */; c.sortieWarned = false; if (sortieOn) m5Sortie(g, c); }
     // une vie de moins : le camp est relevé
     if (p.phase>=2 && !c.lifeSaid){ c.lifeSaid = true; c.lifeLost = true; campRadio('sol', M5_L.life); }
     // règles de l'acte
@@ -1285,6 +1292,7 @@ campMission(4, {
     // la porte (ou le noyau) : invulnérable tant que la règle de l'acte n'est pas remplie ; la tour se répare tant que l'avatar marche
     const k = (a===1 && !c.gateOpen) || (a===2 && c.owned<3)? 0 : M5.armor[a-1];       // la porte du noyau et la tour encaissent mal les coups : blindage de fond
     if (k<1 && e.hp < c.lastE) e.hp = c.lastE - (c.lastE - e.hp)*k;
+    if (a===1 && c.gateOpen && c.lastE>0 && e.hp>0) c.lastE = e.hp = Math.max(1, e.hp - e.maxhp*M5.breach*dt);   // la brèche s'effondre d'elle-même : les derniers points de la porte ne sont jamais un mur
     if (a===3 && m5AvAlive(g, c)) e.hp = Math.min(e.maxhp, e.hp + e.maxhp*0.01*dt);
     else if (e.hp > c.lastE) e.hp = c.lastE;
     c.lastE = e.hp;

@@ -554,7 +554,9 @@ const m1On = () => typeof game!=='undefined' && game && game.camp && game.camp.i
 // 1) la rampe de chargement : le sol monte de 18 px entre x 3000 et x 3450 jusqu'au quai du dépôt
 if (!gY.m1){ const gY0 = gY; gY = function(x){ const y = gY0(x); return (x>3000 && m1On())? y - 18*clamp((x-3000)/450, 0, 1) : y; }; gY.m1 = 1; }
 // 2) nos tourelles et notre garde ne tirent que sur les machines éclairées (la mêlée, elle, frappe toujours ce qu'elle touche)
-const m1Seen = foe => { const c = game.camp; return c.day? foe : { units: foe.units.filter(u => !c.hidden(u)) }; };
+const m1Seen = foe => { const c = game.camp; if (c.day) return foe;
+  if (!c._seen || c._seen.t!==game.t || c._seen.foe!==foe) c._seen = { t:game.t, foe, v:{ units: foe.units.filter(u => !c.hidden(u)) } };   // une seule fois par pas de simulation
+  return c._seen.v; };
 if (!updateBuildings.m1){ const f0 = updateBuildings; updateBuildings = function(side, foe, dt){ return f0(side, (m1On() && side===game.p)? m1Seen(foe) : foe, dt); }; updateBuildings.m1 = 1; }
 if (!updateBaseGarrison.m1){ const f0 = updateBaseGarrison; updateBaseGarrison = function(side, foe, dt){ return f0(side, (m1On() && side===game.p)? m1Seen(foe) : foe, dt); }; updateBaseGarrison.m1 = 1; }
 
@@ -646,6 +648,7 @@ if (!drawBase.m1){ const f0 = drawBase; drawBase = function(side){
 }; drawBase.m1 = 1; }
 
 campMission(0, {
+  ownBase:true,                                                   // drawBase enveloppé : pas de halos de fenêtres de l'escarmouche (drawBaseGlow)
   num:'I', year:"2025", ai:[0,1,1], eraCap:0, oneLife:true, dev0:0,
   title:M1_TX.title, place:M1_TX.place,
   recap:M1_TX.recap, where:M1_TX.where, goal:M1_TX.goal, goal2:M1_TX.goal2,

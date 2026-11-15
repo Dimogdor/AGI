@@ -3605,6 +3605,7 @@ function drawBase(side){
 // Appelée APRÈS le voile sombre (14-loop) : halos additifs cuits, une poignée par base.
 function drawBaseGlow(){
   const B = game && game.biome; if (!B || !qFx()) return;
+  if (game.camp && game.camp.m && game.camp.m.ownBase) return;     // la mission dessine ses propres bases (et leurs lumières)
   const dk = typeof B.dark==='function'? B.dark() : (B.dark||0); if (!(dk>0.05)) return;
   const t = game.t;
   ctx.save(); ctx.translate(0, zTY()); ctx.scale(zoom, zoom); ctx.globalCompositeOperation='lighter';

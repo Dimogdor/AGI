@@ -19,6 +19,7 @@ try { const j = JSON.parse(localStorage.getItem(CAMP_KEY) || 'null');
     const d = j.diff!=null? j.diff : j.lvl;                               // migration v1 → v2
     CAMP_SAVE.diff = Number.isFinite(+d) && d!=='' && d!==null? clamp(+d|0, 0, 2) : 1;
     if (j.doc && typeof j.doc==='object') for (let i=1;i<5;i++) if (+j.doc[i]===1) CAMP_SAVE.doc[i] = 1;
+    if (j.v==null) for (let i=1;i<4;i++){ if (CAMP_SAVE.doc[i]) delete CAMP_SAVE.doc[i]; else CAMP_SAVE.doc[i] = 1; }   // v1.15 : paires des missions II, III, IV permutées depuis → même doctrine
     if (j.bonus && typeof j.bonus==='object') for (let i=0;i<5;i++) if (+j.bonus[i]===1) CAMP_SAVE.bonus[i] = 1;
     if (j.best && typeof j.best==='object') for (let i=0;i<5;i++) if (Number.isFinite(+j.best[i]) && +j.best[i]>0) CAMP_SAVE.best[i] = +j.best[i];
   } } catch(e){}
@@ -94,6 +95,9 @@ const CAMP_UI = {
   radioLog: {fr:"RADIO — DERNIERS MESSAGES", en:"RADIO — LATEST MESSAGES", es:"RADIO — ÚLTIMOS MENSAJES", de:"FUNK — LETZTE MELDUNGEN", it:"RADIO — ULTIMI MESSAGGI", pt:"RÁDIO — ÚLTIMAS MENSAGENS", ru:"РАЦИЯ — ПОСЛЕДНИЕ СООБЩЕНИЯ", zh:"电台——最近消息", ar:"اللاسلكي — آخر الرسائل"},
   noLog:    {fr:"Pas encore de message.", en:"No messages yet.", es:"Todavía no hay mensajes.", de:"Noch keine Meldungen.", it:"Ancora nessun messaggio.", pt:"Ainda não há mensagens.", ru:"Сообщений пока нет.", zh:"暂无消息。", ar:"لا رسائل بعد."},
   resume:   {fr:"REPRENDRE", en:"RESUME", es:"REANUDAR", de:"WEITER", it:"RIPRENDI", pt:"RETOMAR", ru:"ПРОДОЛЖИТЬ", zh:"继续", ar:"استئناف"},
+  resumeG:  {fr:"Reprise : grille {n}", en:"Resume: gate {n}", es:"Reanudar: verja {n}", de:"Fortsetzung: Tor {n}", it:"Ripresa: cancello {n}", pt:"Retomada: portão {n}", ru:"Продолжение: ворота {n}", zh:"继续：第{n}道闸门", ar:"استئناف: البوابة {n}"},
+  resumeA:  {fr:"Reprise : acte {n}", en:"Resume: act {n}", es:"Reanudar: acto {n}", de:"Fortsetzung: Akt {n}", it:"Ripresa: atto {n}", pt:"Retomada: ato {n}", ru:"Продолжение: акт {n}", zh:"继续：第{n}幕", ar:"استئناف: الفصل {n}"},
+  restart:  {fr:"Recommencer du début", en:"Start over from the beginning", es:"Empezar desde el principio", de:"Von vorn beginnen", it:"Ricomincia dall'inizio", pt:"Recomeçar do início", ru:"Начать сначала", zh:"从头开始", ar:"البدء من جديد"},
   newGoal:  {fr:"NOUVEL OBJECTIF", en:"NEW OBJECTIVE", es:"NUEVO OBJETIVO", de:"NEUES ZIEL", it:"NUOVO OBIETTIVO", pt:"NOVO OBJETIVO", ru:"НОВАЯ ЦЕЛЬ", zh:"新目标", ar:"هدف جديد"},
   bonusDone:{fr:"OBJECTIF SECONDAIRE ACCOMPLI", en:"SECONDARY OBJECTIVE ACHIEVED", es:"OBJETIVO SECUNDARIO CUMPLIDO", de:"NEBENZIEL ERREICHT", it:"OBIETTIVO SECONDARIO RAGGIUNTO", pt:"OBJETIVO SECUNDÁRIO CUMPRIDO", ru:"ДОПОЛНИТЕЛЬНАЯ ЦЕЛЬ ВЫПОЛНЕНА", zh:"次要目标达成", ar:"تحقّق الهدف الثانوي"},
   bonusEnd: {fr:"Objectif secondaire : {s}", en:"Secondary objective: {s}", es:"Objetivo secundario: {s}", de:"Nebenziel: {s}", it:"Obiettivo secondario: {s}", pt:"Objetivo secundário: {s}", ru:"Дополнительная цель: {s}", zh:"次要目标：{s}", ar:"الهدف الثانوي: {s}"},
@@ -237,7 +241,7 @@ function docApply(d, g, c){ const f = d.fx || {}, p = g.p;
   if (f.baseHp){ p.maxhp = Math.round(p.maxhp*f.baseHp); p.hp = p.maxhp; }
   if (f.squad){ const k0 = p.units.length; campSquad(p, f.squad);
     if (f.vet) for (let j=k0;j<p.units.length;j++){ const u = p.units[j]; u.vet = 1; u.hp *= 1.2; u.maxhp *= 1.2; if (u.dmg) u.dmg *= 1.1; } }   // vétérans : brassard rouge
-  if (f.cap){ if (c.capBase==null) c.capBase = p.cap; p.cap = Math.max(10, c.capBase + f.cap); }
+  if (f.cap){ if (c.capBase==null) c.capBase = p.cap; p.cap = Math.max(10, (p.capUp? 40 : c.capBase) + f.cap); }
   if (f.eco) c.eco = { k:f.eco, until:c.t + 180 };                     // production des bâtiments renforcée 3 minutes
   if (f.actCd) c.actMul = f.actCd;
   if (f.warn) c.warnLead = f.warn;                                     // les missions annoncent leurs arrivées c.warnLead s plus tôt
@@ -401,7 +405,7 @@ function campEndCine(){
 function campAct(){
   const c = game && game.camp, a = c && c.m.action; if (!a || game.over || paused || CINE.on) return false;
   if ((c.actCd||0) > 0 || (a.can && !a.can(game, c))){ sfx('deny'); return true; }
-  c.actCd = a.cd*(c.actMul||1); a.use(game, c); return true;
+  c.actCd = a.cd*(c.actMul||1); a.use(game, c); c.actCd0 = c.actCd; return true;   // la mission peut fixer sa propre durée : la jauge part de la valeur réelle
 }
 // RADIO : file de messages ; txt = objet {fr,en,…} (de préférence) ou chaîne ; opts.vars = {clé:valeur} pour « {clé} »
 function campRadio(who, txt, opts){ const c = game && game.camp; if (!c || !txt) return;
@@ -453,7 +457,7 @@ function campTick(dt){
 // fin de mission : enregistre la progression (une seule fois) et renvoie le texte du compte rendu
 function campResult(){
   const c = game.camp, m = c.m;
-  if (game.win && !c.saved){ c.saved = true;
+  if (game.win && !c._recorded){ c._recorded = true;
     CAMP_SAVE.done = Math.max(CAMP_SAVE.done, c.i+1);
     if (!(CAMP_SAVE.best[c.i] > 0) || game.t < CAMP_SAVE.best[c.i]) CAMP_SAVE.best[c.i] = Math.round(game.t);
     if (c.goal2Done) CAMP_SAVE.bonus[c.i] = 1;
@@ -479,7 +483,10 @@ function campLaunch(i){ campBriefOpen(i); }
 const campWhoName = who => { if (who==='k55') return cT(CAMP_UI.radioK);
   const w = CINE_WHO[who], n = w && w.name? (typeof w.name==='string'? w.name : cT(w.name)) : String(who||'sol').toUpperCase();
   return cT(CAMP_UI.radioSol).replace('SOL', n); };
-function campTrunc(s, maxW){ if (ctx.measureText(s).width <= maxW) return s; while (s.length>1 && ctx.measureText(s+'…').width > maxW) s = s.slice(0,-1); return s+'…'; }
+const CAMP_TRUNC = new Map();                                              // texte tronqué mémorisé (police + largeur + texte) : pas de mesure caractère par caractère à chaque image
+function campTrunc(s, maxW){ const k = ctx.font+'|'+Math.round(maxW)+'|'+s, hit = CAMP_TRUNC.get(k); if (hit!==undefined) return hit;
+  let r = s; if (ctx.measureText(r).width > maxW){ while (r.length>1 && ctx.measureText(r+'…').width > maxW) r = r.slice(0,-1); r += '…'; }
+  if (CAMP_TRUNC.size>300) CAMP_TRUNC.clear(); CAMP_TRUNC.set(k, r); return r; }
 // étiquette d'objectif (haut droite) + bouton « ? » + action de mission + bandeau + transmission radio
 function drawCampHUD(){
   const c = game.camp; if (!c || game.over) return;
@@ -489,7 +496,7 @@ function drawCampHUD(){
   ctx.font = uiF(pal,'cond',11.5); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
   const bar = h.prog!=null || h.clock!=null, g2 = !!m.goal2;
   const hh = 19 + lines.length*13 + (bar? 13 : 0) + (g2? 14 : 0) + 2;
-  c.objH = hh;
+  c.objH = hh; c.objRect = { x, y, w, h:hh };
   paperChip(x, y, w, hh, pal);
   ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
   if (c.goalFlash>0 && Math.sin(performance.now()/120)>0){ ctx.strokeStyle = pal.red; ctx.lineWidth = 2; ctx.strokeRect(x+1, y+1, w-2, hh-2); }
@@ -521,7 +528,7 @@ function drawCampHUD(){
   if (m.action){ const a = m.action, aw = 150, ax = W-aw-8, ay = 43 + hh + 6, ah = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
     c.actRect = {x:ax, y:ay, w:aw, h:ah};
     paperChip(ax, ay, aw, ah, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(ax, ay, aw, 2.5);
-    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(ax, ay, aw*clamp(cd/(a.cd*(c.actMul||1)),0,1), ah); }
+    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(ax, ay, aw*clamp(cd/(c.actCd0||a.cd*(c.actMul||1)),0,1), ah); }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
     ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), ax+aw/2, ay+ah/2+1.5); }
   campDrawBanner(pal);
@@ -707,7 +714,7 @@ function campBriefRender(){
   { const s = sec(cT(CAMP_UI.diffLbl), 'cbDiff'), row = el('div', 'cbPills');
     [0,1,2].forEach(k=>{ const b = el('button', 'cbPill'+(CAMP_SAVE.diff===k? ' sel' : ''), cT(CAMP_UI['d'+k]));
       b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campBriefRender(); }); row.appendChild(b); });
-    s.appendChild(row); const D = campDiff(CAMP_SAVE.diff);
+    s.appendChild(row); const D = campDiff(CAMP_SAVE.diff); if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);   // comme startMission()
     s.appendChild(el('p', 'cbDiffTag', cT(CAMP_UI['dTag'+D.i])));
     const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); s.appendChild(ul);
     R.appendChild(s); }
@@ -735,7 +742,11 @@ function campBriefRender(){
     body.appendChild(s); }
   // pied : retour / lancer
   const foot = el('div', 'cbFoot');
-  const back = el('button', 'cbBack', '← '+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
+  const back = el('button', 'cbBack', (SETTINGS.lang==='ar'? '→ ' : '← ')+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
+  const rs = m.resume && m.resume();                                                  // point de reprise d'une mission (grille / acte) : visible et effaçable
+  if (rs){ const row = el('div', 'cbResume'); row.appendChild(el('b', null, cT(CAMP_UI[rs.key]).replace('{n}', rs.n)+'  '));
+    const rb = el('button', 'cbBack', cT(CAMP_UI.restart)); rb.addEventListener('click', ()=>{ m.resumeClear(); campBriefRender(); });
+    row.appendChild(rb); foot.appendChild(row); }
   const go = el('button', 'go cbGo', cT(CAMP_UI.launch)); go.addEventListener('click', ()=>campStart(i));
   foot.appendChild(back); foot.appendChild(go); sheet.appendChild(foot);
   body.scrollTop = st;

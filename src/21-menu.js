@@ -87,6 +87,7 @@ function toggleFullscreen(){ if (isFullscreen()) exitFullscreen(); else goFullsc
 // depuis le menu Pause (ligne « Plein écran »).
 function fsBtnHidden(){
   if (IS_NATIVE || (IS_IOS && IS_STANDALONE)) return true;
+  if (typeof CINE!=='undefined' && CINE && CINE.on) return true;           // cinématiques de campagne (y compris la fin, game.over) : « Passer » occupe le coin
   return (typeof game!=='undefined' && game && !game.over) || (typeof intro!=='undefined' && intro>=0);
 }
 function refreshFsBtn(){

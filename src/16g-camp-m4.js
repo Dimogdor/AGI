@@ -443,15 +443,15 @@ const M4_TX = {
          ru:"По желанию: вернуть четыре группы мирных жителей · зажечь все пять жаровен · остановить снегоуборщик, пока он не погасил огонь.",
          zh:"可选：带回四组平民 · 点燃全部五个火盆 · 在除雪车扑灭火盆之前拦下它。",
          ar:"اختياري: إعادة مجموعات المدنيين الأربع · إشعال المجامر الخمس · إيقاف كاسحة الثلوج قبل أن تُطفئ نارًا."},
-  rule:{fr:"Loin d'un brasero allumé, nos troupes gèlent et ralentissent ; pas les machines. Restez près d'un feu pour le rallumer. Des civils attendent dans quatre maisons : escortez-les au relais. L'argent est rare. Ères III et IV.",
-        en:"Away from a lit brazier, our troops freeze and slow down; machines do not. Stay near a fire to relight it. Civilians are waiting in four houses: escort them to the relay. Money is scarce. Eras III and IV.",
-        es:"Lejos de un brasero encendido, nuestras tropas se congelan y se ralentizan; las máquinas no. Quédense junto a un fuego para reavivarlo. Hay civiles esperando en cuatro casas: escóltelos hasta el relé. El dinero escasea. Eras III y IV.",
-        de:"Fern von einem brennenden Feuerkorb erfrieren und verlangsamen sich unsere Truppen; Maschinen nicht. Bleiben Sie an einem Feuer, um es neu zu entzünden. In vier Häusern warten Zivilisten: Eskortieren Sie sie zum Relais. Geld ist knapp. Zeitalter III und IV.",
-        it:"Lontano da un braciere acceso, le nostre truppe gelano e rallentano; le macchine no. Restate vicino a un fuoco per riaccenderlo. In quattro case aspettano dei civili: scortateli fino al ripetitore. Il denaro scarseggia. Ere III e IV.",
-        pt:"Longe de um braseiro aceso, nossas tropas congelam e ficam lentas; as máquinas não. Fique perto de um fogo para reacendê-lo. Há civis esperando em quatro casas: escolte-os até o retransmissor. O dinheiro é escasso. Eras III e IV.",
-        ru:"Вдали от горящей жаровни наши бойцы мёрзнут и замедляются; машины — нет. Стойте у огня, чтобы разжечь его снова. В четырёх домах ждут мирные жители: проводите их до ретранслятора. Денег мало. Эры III и IV.",
-        zh:"离开燃着的火盆，我们的部队会冻伤并减速；机器却不会。守在火盆旁就能重新点燃它。四座房子里有平民在等：护送他们回中继站。钱很紧。第三、第四纪元。",
-        ar:"بعيدًا عن مجمرة مشتعلة، تتجمّد قواتنا وتبطؤ؛ أمّا الآلات فلا. ابقوا قرب نار لتعيدوا إشعالها. في أربعة بيوت ينتظر مدنيون: رافقوهم إلى المرحِّل. المال شحيح. العصران الثالث والرابع."},
+  rule:{fr:"Loin d'un brasero allumé, nos troupes gèlent et ralentissent ; pas les machines. Restez près d'un feu pour le rallumer. Des civils attendent dans quatre maisons : escortez-les au relais. L'argent est rare. Ères III et IV, une seule vie.",
+        en:"Away from a lit brazier, our troops freeze and slow down; machines do not. Stay near a fire to relight it. Civilians are waiting in four houses: escort them to the relay. Money is scarce. Eras III and IV, one life.",
+        es:"Lejos de un brasero encendido, nuestras tropas se congelan y se ralentizan; las máquinas no. Quédense junto a un fuego para reavivarlo. Hay civiles esperando en cuatro casas: escóltelos hasta el relé. El dinero escasea. Eras III y IV, una sola vida.",
+        de:"Fern von einem brennenden Feuerkorb erfrieren und verlangsamen sich unsere Truppen; Maschinen nicht. Bleiben Sie an einem Feuer, um es neu zu entzünden. In vier Häusern warten Zivilisten: Eskortieren Sie sie zum Relais. Geld ist knapp. Zeitalter III und IV, ein Leben.",
+        it:"Lontano da un braciere acceso, le nostre truppe gelano e rallentano; le macchine no. Restate vicino a un fuoco per riaccenderlo. In quattro case aspettano dei civili: scortateli fino al ripetitore. Il denaro scarseggia. Ere III e IV, una sola vita.",
+        pt:"Longe de um braseiro aceso, nossas tropas congelam e ficam lentas; as máquinas não. Fique perto de um fogo para reacendê-lo. Há civis esperando em quatro casas: escolte-os até o retransmissor. O dinheiro é escasso. Eras III e IV, uma só vida.",
+        ru:"Вдали от горящей жаровни наши бойцы мёрзнут и замедляются; машины — нет. Стойте у огня, чтобы разжечь его снова. В четырёх домах ждут мирные жители: проводите их до ретранслятора. Денег мало. Эры III и IV, одна жизнь.",
+        zh:"离开燃着的火盆，我们的部队会冻伤并减速；机器却不会。守在火盆旁就能重新点燃它。四座房子里有平民在等：护送他们回中继站。钱很紧。第三、第四纪元，只有一条命。",
+        ar:"بعيدًا عن مجمرة مشتعلة، تتجمّد قواتنا وتبطؤ؛ أمّا الآلات فلا. ابقوا قرب نار لتعيدوا إشعالها. في أربعة بيوت ينتظر مدنيون: رافقوهم إلى المرحِّل. المال شحيح. العصران الثالث والرابع، وحياة واحدة."},
   tips:[
     {fr:"Des tireurs en garnison dans la tourelle et la muraille : à l'abri, ils ne gèlent pas.", en:"Shooters garrisoned in the turret and the wall: under cover, they do not freeze.", es:"Tiradores en guarnición en la torreta y la muralla: a cubierto, no se congelan.", de:"Schützen als Besatzung in Turm und Mauer: im Schutz erfrieren sie nicht.", it:"Tiratori di guarnigione nella torretta e nel muro: al riparo, non gelano.", pt:"Atiradores de guarnição na torre e na muralha: abrigados, não congelam.", ru:"Стрелки в гарнизоне башни и стены: в укрытии они не мёрзнут.", zh:"让射手驻守在炮塔和城墙里：有遮蔽，就不会冻伤。", ar:"رماة في حامية البرج والسور: في المأوى لا يتجمّدون."},
     {fr:"Réparez entre deux colonnes, pas pendant : c'est le réflexe de défense de l'escarmouche.", en:"Repair between two columns, not during one: that is the defender's reflex from skirmish.", es:"Repare entre dos columnas, no durante una: es el reflejo de defensa de la escaramuza.", de:"Reparieren Sie zwischen zwei Kolonnen, nicht währenddessen: Das ist der Verteidigungsreflex aus dem Gefecht.", it:"Ripari tra due colonne, non durante: è il riflesso difensivo della schermaglia.", pt:"Conserte entre duas colunas, não durante: é o reflexo de defesa da escaramuça.", ru:"Чините между двумя колоннами, а не во время: это оборонный рефлекс из схватки.", zh:"在两波纵队之间修理，别在交战中修：这是遭遇战里的防守反射。", ar:"أصلحوا بين رتلين لا أثناءه: إنه منعكس الدفاع في المناوشة."},
@@ -633,6 +633,7 @@ function m4Bonus(c, k){ c.banner = { head:CAMP_UI.bonusDone, txt:[M4_TX.b1, M4_T
 const m4G2 = c => (c.g1? 1 : 0) + (c.g2? 1 : 0) + (c.g3? 1 : 0);
 
 campMission(3, {
+  ownBase:true,                                                   // drawBase enveloppé : pas de halos de fenêtres de l'escarmouche (drawBaseGlow)
   num:'IV', year:"2035", ai:[0,2,2], doctrines:['caisse','ordre'], eraCap:3, era0:2, oneLife:true, dev0:0.25,
   dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6, think:2.4, eraLag:0.8}, {inc:0.15, cheat:0.6, think:2.2, eraLag:0.8}],   // IA « Difficile » en Lutte et Dernier carré
   dAdj:[null, null, { wave:1, gap:1, base:1, eBase:1, res:1, eHp:1, eDmg:1 }],                               // Dernier carré : la rue ne tient pas plus de machines et il n'y a plus de métal passif ; avec le modèle commun (colonnes ×1,25, machines ×1,12, ressources ×0,9) le joueur scripté s'effondre avant la fin, on tempère donc les colonnes, la vie et les dégâts des machines et la caisse
@@ -685,7 +686,7 @@ campMission(3, {
     sl[1].b = mkB(p, 'turret'); sl[1].owner = p; if (!retry) sl[1].b.hp *= 0.45;                          // la tourelle et la muraille ont souffert cette nuit
     sl[2].b = mkB(p, 'wall'); sl[2].owner = p; sl[2].b.hp *= 0.5;
     campSquad(p, [1,0,2,2]);
-    c.total = M4.total[D]; c.gust = 0; c.bliz = false; c.stoke = 0; c.saved = 0; c.lost = 0; c.out = 0; c.lit = g.zones.filter(m4Lit).length;
+    c.total = M4.total[D]; c.gust = 0; c.bliz = false; c.stoke = 0; c.civSaved = 0; c.lost = 0; c.out = 0; c.lit = g.zones.filter(m4Lit).length;
     c.wave = 0; c.nextWave = 34; c.houses = M4.houses.map(x=>({ x, st:0 })); c.groups = []; c.say = {}; c.bandT = 0; c.debt = 0; c.beepT = 4;
     c.pls = []; c.plN = 0; c.pEx = 0; c.pDead = 0; c.plTimes = [M4.plT[D]].concat(D===2? [c.total - M4.plT2] : []); c.plI = 0;
     c.g1 = c.g2 = c.g3 = false; c.cineSeen = 0;
@@ -713,7 +714,7 @@ campMission(3, {
     // L'ARGENT EST RARE : les marchés ne rendent que 30 % (Dernier carré : plus aucun revenu passif de métal) ; les civils sauvés rapportent +1 métal/s chacun
     { const R = calcRates(p), base = 2.5*(p.prodMul||1)*winterMul();
       c.debt += (M4.mk > 0? (1-M4.mk)*Math.max(0, R.m-base) : 0)*dt + (D===2? base*dt : 0);
-      const pay = Math.min(c.debt, p.m); p.m -= pay; c.debt -= pay; p.m += c.saved*dt; }
+      const pay = Math.min(c.debt, p.m); p.m -= pay; c.debt -= pay; p.m += c.civSaved*dt; }
     // la neige fondue : chaque brasero allumé donne +0,5 💧/s
     let lit = 0; for (const z of g.zones) if (m4Lit(z)) lit++;
     p.w += 0.5*lit*dt;
@@ -735,9 +736,9 @@ campMission(3, {
       let threat = false; for (const u of e.units) if (!u.fly && Math.abs(u.x-gr.x) < 46){ threat = true; break; }   // une machine au sol à moins de 46 px
       gr.harm = threat? gr.harm + dt : Math.max(0, gr.harm - dt*0.5);
       if (gr.harm >= 3){ c.groups.splice(i,1); c.lost++; burst(gr.x, gY(gr.x)-10, '#eef1f5', 12, 1); sfx('deny'); m4Say(c, 'lost', M4_TX.rI, 40); continue; }
-      if (gr.x <= p.x+70){ c.groups.splice(i,1); c.saved++; p.f += 150; p.m += 220; p.w += 50; if (unitTotal(p) < p.cap) spawnUnit(p, 1, false);   // du pain, l'argent de la mine, de l'eau, un costaud de plus
+      if (gr.x <= p.x+70){ c.groups.splice(i,1); c.civSaved++; p.f += 150; p.m += 220; p.w += 50; if (unitTotal(p) < p.cap) spawnUnit(p, 1, false);   // du pain, l'argent de la mine, de l'eau, un costaud de plus
         sfx('evolve'); m4Sound('bell'); addFloater(p.x+60, gY(p.x)-90, '+220', '#e8d8a0', 15); m4Say(c, 'saved', M4_TX.rH, 20);
-        if (c.saved >= 4 && !c.g1){ c.g1 = true; m4Bonus(c, 0); } } }
+        if (c.civSaved >= 4 && !c.g1){ c.g1 = true; m4Bonus(c, 0); } } }
     // colonnes adverses : de plus en plus fournies ; la dernière minute, elles se suivent de près
     if (T >= c.nextWave){ const k = c.wave++; c.nextWave += T >= c.total-60? 40 : 44;
       m4Wave(Math.round((3 + 1.0*k) * 0.92 * c.D.wave), k>=4); }
@@ -760,7 +761,7 @@ campMission(3, {
     if (p.hp <= 0){ if (D===0) M4_RETRY = true; return 'lose'; }
   },
   hud(g, c){ const left = Math.max(0, c.total-c.t);
-    return { clock:left, prog:c.t/c.total, warn:left<60, label:cT(M4_TX.hFires)+c.lit+'/5 · '+cT(M4_TX.hCiv)+c.saved+'/4', goal2:{ done:false, label:m4G2(c)+'/3' } }; },
+    return { clock:left, prog:c.t/c.total, warn:left<60, label:cT(M4_TX.hFires)+c.lit+'/5 · '+cT(M4_TX.hCiv)+c.civSaved+'/4', goal2:{ done:false, label:m4G2(c)+'/3' } }; },
   drawZone(z, t, vw){ m4DrawZone(z, t, vw); },
   draw(g, c, vw){ const t = g.t;
     m4DrawProps(c, t, vw);
