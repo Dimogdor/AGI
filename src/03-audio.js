@@ -1,18 +1,29 @@
 /* ================= AUDIO ================= */
 let AC=null, master=null, MUSIC={started:false, nextT:0, step:0, timer:null};
-let sfxBus = null;                       // si défini, tone/noise s'y branchent (spatialisation)
-function busOut(){ return sfxBus || master; }
+/* BUS (v1.16) : chaque famille de sons a son bus, tous réunis dans `master` (volume des réglages)
+   puis un limiteur doux avant la sortie :
+     musicBus  ← BUS.mduck ← un bus par thème (fondu enchaîné)  — musicBus est baissé par la voix off
+     BUS.sfx   effets (armes, explosions, héros, interface)    — BUS.amb ambiances (boucles, météo)
+   tone()/noise() écrivent sur le bus « courant » : sfxBus s'il est posé (panoramique, thème, ambiance),
+   sinon les effets. */
+let musicBus = null;
+const BUS = { sfx:null, amb:null, mduck:null, verb:null, lim:null };
+let sfxBus = null;                       // si défini, tone/noise s'y branchent (spatialisation, thème…)
+function busOut(){ return sfxBus || BUS.sfx || master; }
 // SON SPATIALISÉ : joue un effet panoramiqué selon la position écran (gauche/droite).
 function sfxAt(kind, worldX, p=0){
   if (!AC || !SETTINGS.sfx || !AC.createStereoPanner || typeof camX==='undefined'){ sfx(kind,p); return; }
   const px = (worldX - camX) / (VW()||960);                  // 0 (gauche) → 1 (droite)
-  const pan = AC.createStereoPanner(); pan.pan.value = clamp((px-0.5)*1.6, -0.92, 0.92);
-  pan.connect(master); sfxBus = pan; sfx(kind,p); sfxBus = null;
+  const pan = clamp((px-0.5)*1.6, -0.92, 0.92);
+  if (sampSfx(kind, p, pan)) { if (NET_SFX.has(kind)) netEv({k:'s',n:kind,p}); return; }
+  const pn = AC.createStereoPanner(); pn.pan.value = pan;
+  pn.connect(BUS.sfx||master); sfxBus = pn; sfx(kind,p); sfxBus = null;
 }
 let audioDuckUntil = 0;                   // silence dramatique (Bombe H) : la musique se tait jusque-là
 // RÉPLIQUE DE COMMANDANT : court motif synthétique, distinct par faction, sur événement majeur.
 function voice(facKey){
   if (!AC || !SETTINGS.sfx) return; const t0=AC.currentTime;
+  if (sampPlay(facKey==='HUM'? 'che_cry' : 'ia_up', {vol:0.55, at:t0+0.25})) return;   // enregistrement si chargé
   if (facKey==='HUM'){           // cuivre montant, héroïque (« Hasta la victoria »)
     tone(330,t0,.15,'sawtooth',.08); tone(392,t0+.13,.15,'sawtooth',.08); tone(523,t0+.27,.24,'square',.07);
   } else {                       // bip froid, calculé (« Calcul optimisé »)
@@ -29,9 +40,33 @@ document.addEventListener('visibilitychange', ()=>{
 function audioInit(){
   if (AC) { if (AC.state==='suspended') AC.resume(); return; }
   AC = new (window.AudioContext||window.webkitAudioContext)();
-  master = AC.createGain(); master.gain.value = SETTINGS.vol;
-  const comp = AC.createDynamicsCompressor();
-  master.connect(comp); comp.connect(AC.destination);
+  audioBuses(AC);
+  try { sampInit(); } catch(e){}                       // sons enregistrés : manifeste puis lot « core » (03b)
+}
+// graphe de mixage (aussi utilisé tel quel par le banc d'essai hors ligne, tools/test-audio.mjs)
+function audioBuses(ctx){
+  master = ctx.createGain(); master.gain.value = SETTINGS.vol;
+  // limiteur doux : ne touche que les crêtes (les sons sont déjà à niveau), évite le pompage
+  const lim = BUS.lim = ctx.createDynamicsCompressor();
+  lim.threshold.value = -6; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.2;
+  master.connect(lim); lim.connect(ctx.destination);
+  musicBus = ctx.createGain(); musicBus.gain.value = 1; musicBus.connect(master);
+  BUS.mduck = ctx.createGain(); BUS.mduck.gain.value = 1; BUS.mduck.connect(musicBus);
+  BUS.sfx = ctx.createGain(); BUS.sfx.gain.value = 1; BUS.sfx.connect(master);
+  BUS.amb = ctx.createGain(); BUS.amb.gain.value = 0.42; BUS.amb.connect(master);   // boucles à −26 LUFS : placées sous les effets
+  BUS.verb = null;
+  if (SETTINGS.quality!=='low' && ctx.createConvolver) try {     // réverbération de la musique (réponse synthétique, 2,4 s)
+    const cv = ctx.createConvolver(), n = Math.round(ctx.sampleRate*2.4), ir = ctx.createBuffer(2, n, ctx.sampleRate);
+    let s = 7; const rnd = () => (s = (s*16807)%2147483647)/1073741823.5 - 1;
+    for (let c=0;c<2;c++){ const d = ir.getChannelData(c); let lp = 0;
+      for (let i=0;i<n;i++){ const k = i/n, w = rnd(); lp += (w-lp)*(0.55 - 0.4*k); d[i] = lp*Math.pow(1-k, 2.2)*(i<ctx.sampleRate*0.012? i/(ctx.sampleRate*0.012) : 1); } }
+    cv.buffer = ir; const g = ctx.createGain(); g.gain.value = 0.55; cv.connect(g); g.connect(BUS.mduck); BUS.verb = cv;
+  } catch(e){ BUS.verb = null; }
+}
+// baisse passagère de la musique (grosse explosion, entrée d'un héros) — indépendante de la voix off
+function musicDip(db, dur){
+  if (!AC || !BUS.mduck) return; const g = BUS.mduck.gain, t = AC.currentTime, v = Math.pow(10, -db/20);
+  g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.setTargetAtTime(v, t, 0.04); g.setTargetAtTime(1, t+dur, 0.5);
 }
 // att = attaque douce (s) : le son GONFLE au lieu de claquer — indispensable aux nappes.
 // lp = filtre passe-bas (Hz) : adoucit radicalement les dents de scie (cordes chaudes, pas criardes).
@@ -60,6 +95,8 @@ const NET_SFX = new Set(['shoot','boom','die','evolve','cap','node','spec','tran
 function sfx(kind, p=0){
   if (NET_SFX.has(kind)) netEv({k:'s',n:kind,p});   // sons du monde renvoyés à l'invité
   if (!AC || !SETTINGS.sfx) return; const t=AC.currentTime;
+  if (!sfxBus && sampSfx(kind, p, 0)) return;                  // enregistrement CC0 si chargé (03b), sinon synthèse
+  if (kind==='deny'){ tone(220,t,.09,'square',.035,-40); tone(165,t+.1,.14,'square',.035,-30); }
   if (kind==='buy')   tone(300+p*70, t, .09, 'triangle', .05);
   if (kind==='shoot') tone(620+p*120, t, .05, 'square', .025, -200);
   if (kind==='boom')  { tone(90,t,.3,'sawtooth',.07,-40); noise(t,.25,.06); }
@@ -96,8 +133,9 @@ function heroSfx(fac, kind, wx, fromNet){
     pan = clamp((px-0.5)*1.6, -0.92, 0.92);
   }
   const n = HSFX_N[key] = ((HSFX_N[key]|0)+1) % 6, t = AC.currentTime;
+  if (sampHero(fac, kind, n, V, pan)) return true;                  // voix et machines enregistrées (03b)
   let bus = null;
-  if (AC.createStereoPanner){ bus = AC.createStereoPanner(); bus.pan.value = pan; bus.connect(master); sfxBus = bus; }
+  if (AC.createStereoPanner){ bus = AC.createStereoPanner(); bus.pan.value = pan; bus.connect(BUS.sfx||master); sfxBus = bus; }
   try {
     if (fac==='HUM'){
       if (kind==='spawn'){                                             // roulement de caisse claire puis sonnerie de clairon
@@ -199,9 +237,10 @@ MUSIC_THEMES.carnet = { bpm:64, step(st, t, d){
   if (n){ tone(m2f(n), t, d*2.6, 'square', .010, 0, d*0.5, 1200); tone(m2f(n)+0.8, t, d*2.6, 'sawtooth', .008, 0, d*0.5, 1000); }
 } };
 function stress(){ return (game && !game.over)? clamp(game.t/600 + game.dev*0.35, 0, 0.8) : 0; }
-function musicMode(){
+function musicMode(){ return musicResolve(musicWanted()); }       // musicResolve : alias vers les thèmes enregistrés (03c)
+function musicWanted(){
   if (typeof intro!=='undefined' && intro>=0) return 'intro';
-  if (!game) return 'menu';
+  if (!game) return campMenuOpen()? 'c_map' : 'menu';
   if (CINE.on && CINE.mus && MUSIC_THEMES[CINE.mus]) return CINE.mus;                      // cinématique : thème imposé par le plan
   if (game.biome && MUSIC_THEMES[game.biome.music] && !game.p.trans) return game.biome.music; // lieu de campagne : sa propre musique
   if (game.p.trans) return game.p.facKey==='HUM'? 'anthem':'break';
@@ -213,20 +252,45 @@ function musicStart(){
   MUSIC.nextT = AC.currentTime+0.1; MUSIC.step=0;
   MUSIC.timer = setInterval(musicSched, 90);
 }
+// le carnet de campagne est affiché (menu → onglet CAMPAGNE) : musique du carnet
+function campMenuOpen(){
+  try { const m = document.getElementById('menu'), pg = document.getElementById('page-camp');
+    return !!(m && pg && m.style.display!=='none' && pg.classList.contains('on')); } catch(e){ return false; }
+}
+// changement de thème : l'ancien s'éteint en ~2 s (et ses notes tenues sont coupées), le nouveau entre en ~1,5 s
+function musicSwitch(mode){
+  const t = AC.currentTime, old = MUSIC.bus;
+  if (old){ old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t); old.gain.setTargetAtTime(0, t, 0.6);
+    const srcs = old._srcs; setTimeout(()=>{ try { for (const x of srcs) try { x.stop(); } catch(e){} old.disconnect(); } catch(e){} }, 4500); }
+  const th = MUSIC_THEMES[mode], b = AC.createGain();
+  const lv = (th && th.inst? 0.6 : 1) * ((th && th.lvl) || 1);            // thèmes échantillonnés : niveau calé au banc d'essai
+  b.gain.setValueAtTime(0.0001, t); b.gain.setTargetAtTime(lv, t, old? 0.5 : 0.05); b._srcs = new Set(); b._lv = lv;
+  b.connect(BUS.mduck || master);
+  if (th && th.verb && BUS.verb){ const sd = AC.createGain(); sd.gain.value = th.verb; b.connect(sd); sd.connect(BUS.verb); }
+  MUSIC.bus = b; MUSIC.cur = mode; MUSIC.st0 = MUSIC.step;
+}
 function musicSched(){
   if (!AC) return;
-  if (!SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
+  const off = !SETTINGS.music || (game&&paused) || audioDuckUntil>AC.currentTime;
+  if (MUSIC.bus && MUSIC.off!==off){ const g = MUSIC.bus.gain, t = AC.currentTime;   // pause, musique coupée, silence dramatique : on éteint vraiment
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.setTargetAtTime(off? 0 : (MUSIC.bus._lv||1), t, off? 0.15 : 0.4); }
+  MUSIC.off = off;
+  if (off) { MUSIC.nextT = Math.max(MUSIC.nextT, AC.currentTime); return; }
   while (MUSIC.nextT < AC.currentTime + 0.35) {
     const mode = musicMode(), s = stress();
-    const th = MUSIC_THEMES[mode];
+    if (mode!==MUSIC.cur || !MUSIC.bus) musicSwitch(mode);
+    const th = MUSIC_THEMES[mode], st = MUSIC.step - MUSIC.st0;
     const bpm = (th? th.bpm : mode==='intro'? 70 : mode==='menu'? 88 : mode==='anthem'? 104 : mode==='break'? 112 : 100 + 24*s) * MUSIC_TEMPO;
     const stepDur = 60/bpm/2;
-    if (th) th.step(MUSIC.step, MUSIC.nextT, stepDur, s);
-    else if (mode==='intro') stepIntro(MUSIC.step, MUSIC.nextT, stepDur);
-    else if (mode==='menu') stepMenu(MUSIC.step, MUSIC.nextT, stepDur);
-    else if (mode==='anthem') stepAnthem(MUSIC.step, MUSIC.nextT, stepDur);
-    else if (mode==='break') stepBreak(MUSIC.step, MUSIC.nextT, stepDur);
-    else stepWar(MUSIC.step, MUSIC.nextT, stepDur, s);
+    sfxBus = MUSIC.bus;                                   // tone()/noise() des thèmes (y compris ceux des missions) → bus du thème
+    try {
+      if (th) th.step(st, MUSIC.nextT, stepDur, s);
+      else if (mode==='intro') stepIntro(st, MUSIC.nextT, stepDur);
+      else if (mode==='menu') stepMenu(st, MUSIC.nextT, stepDur);
+      else if (mode==='anthem') stepAnthem(st, MUSIC.nextT, stepDur);
+      else if (mode==='break') stepBreak(st, MUSIC.nextT, stepDur);
+      else stepWar(st, MUSIC.nextT, stepDur, s);
+    } catch(e){} finally { sfxBus = null; }
     MUSIC.step++; MUSIC.nextT += stepDur;
   }
 }
@@ -370,23 +434,25 @@ function ambTick(){
   const t = AC.currentTime, dev = live? (game.dev||0) : 0;
   const bam = live && game.biome && game.biome.amb || null;              // ambiance propre au lieu de campagne
   const rainy = live && (game.boon==='rain' || game.cata==='acid' || game.cata==='flood' || (bam && bam.rain>0));
-  AMBS.wind.g.gain.setTargetAtTime(live? (bam && bam.wind || 0) + 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, t, 0.8);
+  const windL = live? (bam && bam.wind || 0) + 0.010 + 0.05*dev + (game.cata==='sand'? 0.05 : 0) : 0, rainL = rainy? (bam && bam.rain) || 0.035 : 0;
+  const cov = sampAmb(live, { wind:windL, rain:rainL, dev, bam, cine:(typeof CINE!=='undefined' && CINE.on) });   // boucles enregistrées (03b)
+  AMBS.wind.g.gain.setTargetAtTime(cov.wind? 0 : windL, t, 0.8);
   AMBS.wind.f.frequency.setTargetAtTime(330 + 260*Math.sin(t*0.13) + 300*dev, t, 1.5);   // rafales
-  AMBS.rain.g.gain.setTargetAtTime(rainy? (bam && bam.rain) || 0.035 : 0, t, 0.6);
+  AMBS.rain.g.gain.setTargetAtTime(cov.rain? 0 : rainL, t, 0.6);
   if (!live) return;
-  if (bam && bam.tick) bam.tick(t, 0.25);
+  if (bam && bam.tick && !cov.tick){ sfxBus = BUS.amb; try { bam.tick(t, 0.25); } catch(e){} finally { sfxBus = null; } }
   const dt = 0.25;
   // oiseaux : gazouillis rares tant que le monde est sain (et pas en plein cataclysme)
   if ((AMBS.birdT -= dt) <= 0){ AMBS.birdT = 3 + Math.random()*7;
-    if (dev < 0.35 && !game.cata && !(bam && !bam.birds) && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
+    if (dev < 0.35 && !game.cata && !(bam && !bam.birds) && !cov.birds && Math.random() < 1 - dev*2.2){ const f0 = 2300 + Math.random()*1500, n = 2 + (Math.random()*3|0);
       for (let i=0;i<n;i++) tone(f0*(1+0.06*i), t+i*0.09, 0.07, 'sine', 0.006, 500+Math.random()*400); } }
   // feu : crépitements (canicule, frappe nucléaire, hiver nucléaire, monde agonisant)
   const fiery = game.cata==='heat' || game.cata==='nuke' || game.winter || dev > 0.75;
-  if (fiery && (AMBS.crackT -= dt) <= 0){ AMBS.crackT = 0.15 + Math.random()*0.5;
+  if (fiery && !cov.fire && (AMBS.crackT -= dt) <= 0){ AMBS.crackT = 0.15 + Math.random()*0.5;
     for (let i=0;i<2;i++) noise(t+Math.random()*0.2, 0.012, 0.012, 2500); }
   // grondement lointain (artillerie hors champ) quand la bataille dure
   if ((AMBS.rumbleT -= dt) <= 0){ AMBS.rumbleT = 7 + Math.random()*10;
-    if (stress() > 0.3){ tone(48+Math.random()*10, t, 1.3, 'sine', 0.035, -12); noise(t, 0.9, 0.012, 120); } }
+    if (stress() > 0.3 && !sampPlay('boom_far', {vol:0.5, pan:(Math.random()-0.5)*1.2, bus:BUS.amb})){ sfxBus = BUS.amb; tone(48+Math.random()*10, t, 1.3, 'sine', 0.035, -12); noise(t, 0.9, 0.012, 120); sfxBus = null; } }
   // battement de cœur : votre base sous 30 %
   const p = game.p, low = p.maxhp>0 && p.hp>0 && p.hp/p.maxhp < 0.30 && !game.tut;
   if (low && (AMBS.beatT -= dt) <= 0){ AMBS.beatT = 1.05;

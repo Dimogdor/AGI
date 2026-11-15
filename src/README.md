@@ -24,7 +24,9 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `00-core.js` | canvas, `resize`, conversions écran↔monde, relief |
 | `01-settings.js` | réglages + touches reconfigurables |
 | `02-i18n.js` | tables de traduction (fr/en/es/de/it/pt/ru/zh/ar) |
-| `03-audio.js` | moteur audio (musique procédurale + SFX) |
+| `03-audio.js` | moteur audio : bus (musique / effets / ambiances, limiteur, réverbération), synthèse de repli, musique d'escarmouche, ambiance |
+| `03b-samples.js` | sons enregistrés CC0 (`assets/audio/`, manifeste) : chargement par lots, effets, héros, boucles d'ambiance par lieu — repli synthèse hors ligne |
+| `03c-music.js` | thèmes de campagne joués aux instruments échantillonnés (`m_night`… `e_ash`), ritournelles ; refaire les sons : `tools/audio/build.py`, banc : `tools/test-audio.mjs` |
 | `04-data.js` | données : `ROLES`, `BUILDS`, `FACTIONS`, ères |
 | `05-state.js` | variables d'état globales |
 | `06-cheat.js` | mode triche (dev — à retirer avant release) |
@@ -59,6 +61,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `16b-campaign.js` | MOTEUR seul (aucun texte de mission) : sauvegarde `agi_camp` v2, difficulté, doctrines, cartes, actes, cycle de vie, HUD (objectif, « ? », radio, bandeau), briefing plein écran, carnet du menu. |
 | `16c-cine.js` / `16c0-voice.js` | Cinématiques (`cinePlay`) et voix off (`voiceSay`, appelée par la radio). |
 | `16d…16h-camp-m1…m5.js` | Une mission = un fichier : `campMission(i, def)` (puis `campExtend` si besoin). **Rien d'une mission ailleurs.** |
+| `03-audio.js` · `03c-music.js` | `MUSIC_THEMES[id] = {bpm, step(st,t,stepDur,tension)}` ; thèmes du contrat : `m_night m_strike m_dam m_cold m_citadel m_finale c_dread c_hope c_sorrow c_map e_dawn e_ash` (les anciens ids `night carnet strike dam rochefroide citadel` y sont redirigés quand les instruments sont chargés). `biome.amb = {rain, wind, birds, tick(t,dt)}` sert de repli ; les boucles enregistrées par lieu sont dans `AMB_PROFILES` (03b). |
 
 ### Flux
 Carnet (menu) → `campLaunch(i)` = **briefing** (`#campBrief`) → « Lancer » → `campStart(i)` → cinématique d'ouverture →

@@ -7,7 +7,7 @@ Branche de travail : `claude/age-of-war-online-balance-xn6ump` · PR #56 (brouil
 | Bases par époque | bases | — | **intégré** (66b032b), tests verts | — |
 | Gameplay (grève, ordres, postures, guide) | gameplay | — | **intégré** (7fa6c4f) | surveiller l'équilibre en difficulté 2 (parties longues) |
 | Voix off + lisibilité | voix | — | **intégré** (FR généré, 125 répliques, 3,4 Mo) | régénérer après la bible, autres langues au lot 4 |
-| Audio (sons libres, musiques) | audio | claude/wip-audio | tri des enregistrements de pluie | lot 2 |
+| Audio (sons libres, musiques) | audio | — | **intégré** (337f61e) : 148 fichiers CC0, 6,5 Mo, 12 thèmes | écoute par l'auteur ; iOS/Electron non vérifiés |
 | Moteur de campagne | campagne-socle (opus, reprise) | claude/wip-campagne-socle | en cours | intégrer |
 | Bible (scénario) | writer | — | **intégrée** : docs/campagne/BIBLE.md + M1…M5.md | sert de spec au lot 3 |
 | Missions I–V | dev (sonnet) | — | attend bible + socle | lot 3 |
