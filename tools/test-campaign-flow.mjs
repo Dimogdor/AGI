@@ -85,7 +85,7 @@ console.log('\nCARTES : pas de lacs d’escarmouche, objets d’objectif');
     campStart(0); cineEnd(); const c = game.camp; c.objs.push({ id:'test', x:900, r:80, rate:0.5, owner:null, prog:0, capture:true });
     for (let k=0;k<4;k++) spawnUnit(game.p, 1, false, 900);
     for (let k=0;k<100;k++){ update(0.05); for (const u of game.p.units) u.x = 900; } R();
-    return { out, obj:c.objs[0].owner }; });
+    return { out, obj:c.objs.find(o=>o.id==='test').owner }; });
   for (const o of r.out) check((o.nodes===0 || o.custom) && o.bz, `mission ${o.i+1} : ${o.nodes? o.nodes+' points d’eau au visage du lieu' : 'aucun lac'}, pas de zone bonus d’escarmouche`);
   check(r.obj==='p', 'objet d’objectif de carte : capturé par nos troupes');
   check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
