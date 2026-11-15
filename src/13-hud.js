@@ -314,7 +314,8 @@ function drawHUD(){
   }
   // ère : étiquette peinte au centre ; santé du monde : réglette graduée dessous
   ctx.textAlign='center';
-  { const etxt = p.trans? lTransName(p.facKey) : lEra(p.facKey,p.era);
+  { const cm = game.camp && game.camp.m, etxt = cm && cm.year? cm.year+' · '+cT(cm.place).split(/[,，،]/)[0].toUpperCase()   // campagne : l'année et le lieu de la mission, pas l'année de l'ère de la faction
+      : p.trans? lTransName(p.facKey) : lEra(p.facKey,p.era);
     fitFont(etxt, 230, uiF(pal,'head',13), 8);
     const tw = Math.min(230, ctx.measureText(etxt).width), lw = tw+20;
     ctx.fillStyle = p.trans? '#c9a227' : pal.red; ctx.fillRect(W/2-lw/2, 2, lw, 16);
@@ -391,12 +392,20 @@ function drawHUD(){
     ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(wt, W/2+1, 72);
     ctx.fillStyle = game.weather==='strike'? '#ff9d45':'#5ad0ff'; ctx.fillText(wt, W/2, 71);
   }
-  // ---- annonce (y=100) ----
+  // ---- annonce (y=100) + ligne d'explication éventuelle (1re occurrence d'un événement, posture du héros) ----
   if (game.msgT>0 && game.msg){
     ctx.globalAlpha = Math.min(1, game.msgT);
-    ctx.font=uiF(pal,'head',24); ctx.textAlign='center';
+    ctx.textAlign='center';
+    fitFont(game.msg.txt, W-40, uiF(pal,'head',24), 12);      // jamais hors de l'écran, même dans les langues longues
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillText(game.msg.txt, W/2+2, 102);
     ctx.fillStyle=game.msg.color; ctx.fillText(game.msg.txt, W/2, 100);
+    if (game.msg.sub){
+      const sub = String(game.msg.sub), mw = Math.min(W-80, 680);
+      fitFont(sub, mw, uiF(pal,'type',12.5), 8);
+      const tw = Math.min(mw, ctx.measureText(sub).width);
+      ctx.fillStyle='rgba(14,10,9,0.66)'; ctx.fillRect(W/2-tw/2-10, 113, tw+20, 21);
+      ctx.fillStyle=DESK_CREAM; ctx.fillText(sub, W/2, 124);
+    }
     ctx.globalAlpha=1;
   }
   drawNews();                                      // fil d'actualités du monde (haut gauche, discret)
@@ -420,6 +429,8 @@ function drawHUD(){
     if (prs || deal>0) ctx.restore();
   }
   if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
+  if (hoverHudBtn && hoverHudBtn.type==='hstance' && !btnHidden(hoverHudBtn)) drawStanceTooltip(hoverHudBtn);
+  drawLongPress();
   // ---- bandeau de sélection (y=H-132, jamais sur les boutons) : bande de papier ----
   HUD.selRect = null;
   if (game.sel.size>0){
@@ -573,6 +584,64 @@ function drawUnitCard(b){
 // rappel du raccourci clavier RÉEL (touches reconfigurables) — rien sur un écran tactile sans clavier
 const HK_TOUCH = !!(window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches);
 function hk(action){ const c = SETTINGS.keys[action]; return (HK_TOUCH || !c)? '' : ' ['+keyName(c)+']'; }
+// ---- POSTURE DU HÉROS : pictogramme, et fiche explicative au survol du bouton ----
+const HST_ICON = { prudent:'🛡 ', normal:'★ ', offensive:'⚔ ' };
+function drawStanceTooltip(b){
+  const pal = uiPal(), p = game.p, cur = p.heroStance||'normal';
+  const head = tr('hst_tip') + hk('herostance');
+  const fT = uiF(pal,'cond',12.5), fN = uiF(pal,'cond',12), fL = uiF(pal,'type',10.5);
+  const lines = HERO_STANCES.map(s => ({ s, name:HST_ICON[s]+tr('hst_'+s), txt:tr('hsx_'+s) }));
+  ctx.font = fT; let tw = ctx.measureText(head).width;
+  for (const l of lines){ ctx.font = fN; tw = Math.max(tw, ctx.measureText(l.name).width); ctx.font = fL; tw = Math.max(tw, ctx.measureText(l.txt).width); }
+  const w = Math.min(W-16, tw+28), h = 30 + lines.length*34, x = clamp(b.x+b.w/2-w/2, 8, W-w-8), y = b.y-h-8;
+  paperPanel(x, y, w, h, pal);
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle = pal.ink2; fitFont(head, w-24, fT, 8); ctx.fillText(head, x+12, y+15);
+  lines.forEach((l, i) => { const yy = y+32+i*34, on = l.s===cur;
+    if (on){ ctx.fillStyle = pal.red; ctx.fillRect(x+6, yy-2, 3, 30); }
+    ctx.fillStyle = on? pal.red : pal.ink; fitFont(l.name, w-28, fN, 8); ctx.fillText(l.name, x+14, yy+6);
+    ctx.fillStyle = pal.ink2; fitFont(l.txt, w-28, fL, 7); ctx.fillText(l.txt, x+14, yy+20); });
+}
+// APPUI LONG en cours (tactile) : un anneau se remplit sous le doigt jusqu'à l'ordre de position
+function drawLongPress(){
+  if (!pdown || !pdown.touch || pdown.moved || pdown.done || pdown.lasso || paused || buildMenu || ptrs.size!==1) return;
+  const el = performance.now()-pdown.t0; if (el<120) return;
+  const k = clamp((el-120)/(LONG_PRESS_MS-120), 0, 1), x = pdown.sx, y = pdown.sy;
+  ctx.save(); ctx.lineCap='round';
+  ctx.strokeStyle='rgba(12,9,8,0.55)'; ctx.lineWidth=6; ctx.beginPath(); ctx.arc(x, y, 24, 0, 6.283); ctx.stroke();
+  ctx.strokeStyle='#ffd34a'; ctx.lineWidth=3.5; ctx.beginPath(); ctx.arc(x, y, 24, -1.5708, -1.5708+6.283*k); ctx.stroke();
+  ctx.fillStyle='#ffd34a'; ctx.font=HF(15); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('⚑', x, y+1);
+  ctx.restore();
+}
+/* ---------- FANIONS ⚑ des ordres de position (dessinés DANS le monde zoomé, voir 14-loop.js) ----------
+   Planté d'un coup sec au point visé, il flotte tant que les unités envoyées ne sont pas TOUTES
+   arrivées (puis s'efface) ; un trait pointillé au sol montre l'emprise du bloc où elles se posent. */
+function drawPointFlags(){
+  const fl = game.flags; if (!fl || !fl.length) return;
+  const vw = VW();
+  for (const f of fl){
+    const x = f.x-camX; if (x<-90 || x>vw+90) continue;
+    const a = clamp(1 - f.out/0.9, 0, 1); if (a<=0) continue;
+    const gy = gY(f.x), drop = Math.min(1, f.t*5), fy = gy-46*drop, t = f.t;
+    ctx.save(); ctx.globalAlpha = a; ctx.lineCap = 'round';
+    if (f.half>3){                                                   // emprise du bloc
+      ctx.strokeStyle = 'rgba(255,211,74,0.6)'; ctx.lineWidth = 1.6; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(x-f.half-5, gy+5); ctx.lineTo(x+f.half+5, gy+5); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,211,74,0.75)'; ctx.fillRect(x-f.half-6, gy+1, 2, 8); ctx.fillRect(x+f.half+4, gy+1, 2, 8);
+    }
+    const ph = (t*1.1)%1;                                            // onde au sol, en boucle
+    ctx.strokeStyle = 'rgba(255,211,74,'+(0.65*(1-ph)).toFixed(3)+')'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(x, gy+2, 7+ph*22, (7+ph*22)*0.34, 0, 0, 6.283); ctx.stroke();
+    ctx.strokeStyle = 'rgba(20,14,10,0.85)'; ctx.lineWidth = 4.2;   // hampe cernée d'encre : lisible sur tous les fonds
+    ctx.beginPath(); ctx.moveTo(x, gy+2); ctx.lineTo(x, fy); ctx.stroke();
+    ctx.strokeStyle = '#e8d8a0'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(x, gy+2); ctx.lineTo(x, fy); ctx.stroke();
+    const wv = Math.sin(t*8)*2.2, wv2 = Math.sin(t*8+1.3)*1.6;
+    ctx.beginPath(); ctx.moveTo(x, fy); ctx.quadraticCurveTo(x+10, fy+1+wv2, x+22, fy+7+wv); ctx.quadraticCurveTo(x+10, fy+10+wv2, x, fy+15); ctx.closePath();
+    ctx.fillStyle = '#ffd34a'; ctx.fill(); ctx.strokeStyle = 'rgba(20,14,10,0.85)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.restore();
+  }
+}
 function drawBtn(b){
   const A0 = ctx.globalAlpha, pal = uiPal();
   const p=game.p;
@@ -608,7 +677,7 @@ function drawBtn(b){
     label=b.label; ok = game.sel.size? false : p.stance===b.st;
   } else if (b.type==='hstance'){
     const hs = p.heroStance||'normal';
-    label = (hs==='prudent'? '🛡 ' : hs==='offensive'? '⚔ ' : '★ ') + tr('hst_'+hs) + hk('herostance'); ok = hs!=='normal';
+    label = HST_ICON[hs] + tr('hst_'+hs) + hk('herostance'); ok = true;    // trois postures à égalité : la courante est encrée
   } else if (b.type==='lasso'){
     label=b.label; ok=selMode;
   } else if (b.type==='formation'){

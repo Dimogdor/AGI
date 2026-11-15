@@ -336,7 +336,7 @@ console.log('\nCORRECTIFS D\'AUDIT (v1.11)');
   await page.close();
 }
 
-console.log('\nCAMPAGNE (v1.15)');
+console.log('\nCAMPAGNE (v1.16)');
 { // chaque texte de campagne {fr, en, …} porte les 9 langues (lecture statique des sources)
   const { readFileSync, readdirSync } = await import('node:fs');
   const dir = new URL('../src/', import.meta.url), miss = [];
@@ -357,18 +357,18 @@ console.log('\nCAMPAGNE (v1.15)');
     document.querySelector('.tab[data-page="camp"]').click();
     const rows = [...document.querySelectorAll('#campBox .mis')];
     const o = { n: rows.length, locked: rows.filter(b=>b.disabled).length };
-    rows[0].click(); o.brief = document.querySelectorAll('#campBox .campStory p').length; o.go = !!document.querySelector('#campBox .go');
-    SETTINGS.lang = 'en'; applyLang(); o.en = document.querySelector('#campBox .campHead').textContent;
+    rows[0].click(); o.brief = document.querySelectorAll('#campBrief .cbSec p').length; o.go = !!document.querySelector('#campBrief .cbGo');   // le carnet ouvre le briefing plein écran
+    SETTINGS.lang = 'en'; applyLang(); o.en = document.querySelector('#campBrief .cbTitle').textContent; campBriefClose(true);
     SETTINGS.lang = 'fr'; applyLang();
     return o; });
   check(r.n===5 && r.locked===4 && r.brief>=3 && r.go && /meters/i.test(r.en) && !errs.length,
-    `carnet : ${r.n} missions, ${r.locked} verrouillées au départ, dossier de ${r.brief} paragraphes, traduit à la volée`+(errs[0]? ' — '+errs[0] : ''));
+    `carnet : ${r.n} missions, ${r.locked} verrouillées au départ, briefing de ${r.brief} paragraphes, traduit à la volée`+(errs[0]? ' — '+errs[0] : ''));
   await page.close();
   const p2 = await browser.newPage(); const e2 = []; p2.on('pageerror', e => e2.push(e.message));
   await p2.addInitScript(() => { window.requestAnimationFrame = () => 0; localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_camp', '{"done":99,"lvl":"x","best":{"0":-5,"__proto__":{"a":1}}}'); });
   await p2.goto(GAME); await p2.waitForTimeout(300);
-  const sv = await p2.evaluate(() => ({ done: CAMP_SAVE.done, lvl: CAMP_SAVE.lvl, best: Object.keys(CAMP_SAVE.best).length, pol: ({}).a }));
-  check(sv.done===5 && sv.lvl>=0 && sv.lvl<=2 && sv.best===0 && sv.pol===undefined && !e2.length, 'sauvegarde de campagne falsifiée : bornée et nettoyée au chargement');
+  const sv = await p2.evaluate(() => ({ done: CAMP_SAVE.done, diff: CAMP_SAVE.diff, best: Object.keys(CAMP_SAVE.best).length, pol: ({}).a }));
+  check(sv.done===5 && sv.diff>=0 && sv.diff<=2 && sv.best===0 && sv.pol===undefined && !e2.length, 'sauvegarde de campagne falsifiée : bornée et nettoyée au chargement');
   await p2.close();
 }
 { // chaque mission (v1.15) : cinématique d'ouverture rendue plan par plan, lieu + musique propres,
@@ -378,14 +378,15 @@ console.log('\nCAMPAGNE (v1.15)');
   const r = await page.evaluate(() => {
     const out = [], R = () => { ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60); };
     const playCine = () => { let n = 0; while (CINE.on && n++ < 60){ CINE.t = cineDur(cineShot())*0.6; R(); cineNext(); } return n; };
-    CAMP_SAVE.done = 0; CAMP_SAVE.best = {}; CAMP_SAVE.lvl = 1; CAMP_SAVE.doc = {2:1};
+    CAMP_SAVE.done = 0; CAMP_SAVE.best = {}; CAMP_SAVE.diff = 1; CAMP_SAVE.doc = {2:1};
     for (let i=0;i<CAMPAIGN.length;i++){
       const o = { i };
       if (i===0) campLaunch(0); else { document.getElementById('campNextBtn').click(); }
+      o.brief = getComputedStyle(document.getElementById('campBrief')).display!=='none'; document.querySelector('#campBrief .cbGo').click();   // briefing → lancer
       o.started = !!(game && game.camp && game.camp.i===i);
       o.biome = !!game.biome && !!MUSIC_THEMES[game.biome.music];
       o.introOn = CINE.on; o.intro = playCine();
-      o.doc = i===2? game.camp.actMul===0.65 || !game.camp.m.action : true;              // doctrine « radio libre » choisie pour la III
+      o.doc = i===2? campDoc(2)===DOCTRINES[CAMPAIGN[2].doctrines[1]] : true;            // seconde doctrine choisie pour la III
       for (let k=0;k<60*20 && !game.over;k++){ game.p.hp = game.p.maxhp; update(0.05); if (k%100===0) R(); if (CINE.on) playCine(); }
       o.alive = !game.over;
       game.over = true; game.win = true; campEndCine();                                 // victoire forcée
@@ -394,14 +395,14 @@ console.log('\nCAMPAGNE (v1.15)');
       out.push(o);
     }
     // échec : cinématique d'échec puis « réessayer » relance la même mission
-    campLaunch(1); cineEnd(); game.over = true; game.win = false; campEndCine(); const f = playCine();
+    campStart(1); cineEnd(); game.over = true; game.win = false; campEndCine(); const f = playCine();
     const retry = document.getElementById('campNextBtn').dataset.i;
     // retour au carnet puis escarmouche : plus aucune trace de la campagne
     document.getElementById('replayBtn').click(); const back = document.getElementById('menu').style.display + '/' + document.querySelector('.tab.on').dataset.page;
     newGame('HUM', 1, false); for (let k=0;k<40;k++) update(0.05); R();
     const clean = !game.camp && !game.biome && !game.devBase && game.eraCap===4 && (game.p.phase||1)===1 && !CINE.on;
     return { out, f, retry, back, clean }; });
-  for (const o of r.out) check(o.started && o.biome && o.introOn && o.intro>=3 && o.doc && o.alive && o.outro>=1 && o.end && o.done===o.i+1,
+  for (const o of r.out) check(o.brief && o.started && o.biome && o.introOn && o.intro>=3 && o.doc && o.alive && o.outro>=1 && o.end && o.done===o.i+1,
     `mission ${['I','II','III','IV','V'][o.i]} : lieu et musique propres, ouverture de ${o.intro} plans, 60 s jouées, clôture de ${o.outro} plans, progression enregistrée`);
   check(r.f>=1 && r.retry==='1', 'échec : cinématique d’échec puis « réessayer » relance la même mission');
   check(r.back==='flex/camp' && r.clean && !errs.length, 'retour au carnet, puis escarmouche sans reste de campagne'+(errs[0]? ' — '+errs[0] : ''));
@@ -549,9 +550,11 @@ console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
     // OFFENSIF : mêmes PV, armée en repli → il avance quand même, jamais de fuite
     h = setup('offensive', 0.3); setStance(game.p, 'retreat'); run(60);
     out.lead = h.x > 1700 && h.hstate!=='flee';
-    // NORMAL : comportement historique (obéit au repli de l'armée, ne fuit pas de lui-même)
-    h = setup('normal', 0.3); run(40); const adv = h.x > 1500; setStance(game.p, 'retreat'); run(200);
-    out.normal = adv && h.hstate==null && Math.abs(h.x-(game.p.x+150)) < 40;
+    // AVEC LA TROUPE (clé « normal ») : au front de l'armée, jamais devant ; obéit au repli de l'armée, ne fuit pas de lui-même
+    h = setup('normal', 0.3); h.x = 1285; const p1 = game.p; for (let i=0;i<4;i++) spawnUnit(p1, 0, false, 1300+i*10);
+    let ahead = 0; for (let i=0;i<60;i++){ run(1); const fr = Math.max(...p1.units.filter(u=>u.role!=='hero').map(u=>u.x)); ahead = Math.max(ahead, h.x-fr); }
+    const near = Math.abs(h.x - armyFront(p1, h)) < 12; setStance(p1, 'retreat'); run(200);
+    out.normal = ahead <= 1 && near && h.hstate==null && Math.abs(h.x-(p1.x+150)) < 40;
     // statistiques inchangées par la posture ; aura identique
     const a = setup('prudent', 1), sA = [a.maxhp, a.dmg, a.spd, a.range, a.rate].join(); run(2); const powA = game.p.heroPow;
     const b = setup('normal', 1), sB = [b.maxhp, b.dmg, b.spd, b.range, b.rate].join(); run(2);
@@ -578,7 +581,7 @@ console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
     return out; });
   check(r.flee && r.stay && r.back && r.behind, 'posture PRUDENT : repli vers la base sous 35 % de PV, retour une fois soigné (≥ 60 %), reste derrière la ligne');
   check(r.lead, 'posture OFFENSIF : avance malgré 30 % de PV et une armée en repli, ne fuit jamais');
-  check(r.normal && r.stats, 'posture NORMAL : comportement historique ; statistiques et aura identiques quelle que soit la posture');
+  check(r.normal && r.stats, 'posture AVEC LA TROUPE : au front de l\'armée, jamais devant, suit son repli ; statistiques et aura identiques quelle que soit la posture');
   check(r.ui && r.cmd, 'posture : bouton du HUD, touche J, commande réseau validée (valeur inconnue ignorée)');
   check(r.draw===true && r.era, 'héros : 2 camps × 5 ères rendus (repos, deux attaques, blessure, mort), l\'apparence suit l\'ère du camp'+(r.draw!==true? ' — '+r.draw : ''));
   check(r.snap, 'instantané : posture, n° d\'attaque et repli du héros reçus par l\'invité');

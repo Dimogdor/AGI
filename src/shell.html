@@ -104,6 +104,25 @@
     box-shadow:inset 0 -6px 8px -6px rgba(0,0,0,.35); transform-origin:bottom; transition:transform .12s, color .12s; }
   #menu .tab:nth-child(2) { background:var(--grain), var(--tab2); } #menu .tab:nth-child(3) { background:var(--grain), var(--tab3); }
   #menu .tab:nth-child(4) { background:var(--grain), var(--tab4); } #menu .tab:nth-child(5) { background:var(--grain), var(--tab2); }
+  #menu .tab:nth-child(6) { background:var(--grain), var(--tab3); }
+  /* six intercalaires (v1.15, onglet GUIDE) : un peu moins d'air pour que les langues longues tiennent */
+  #menu .tab { padding-left:10px; padding-right:10px; letter-spacing:.02em; }
+  /* ---- GUIDE : rubriques dépliables tapées à la machine (lisibles au téléphone en paysage) ---- */
+  #menu .guide { display:flex; flex-direction:column; gap:2px; font-size:clamp(12px,2vh,14.5px); line-height:1.5; color:var(--ink); }
+  #menu .gHead { font-family:var(--f-sten); font-weight:800; font-size:clamp(17px,3.2vh,26px); letter-spacing:.03em; line-height:1.05; border-bottom:3px double var(--ink); padding-bottom:4px; }
+  #menu .gSec { border-bottom:1px dashed var(--line); }
+  #menu .gSec summary { cursor:pointer; list-style:none; padding:clamp(5px,1.1vh,8px) 2px; font-family:'AGI Cond','Arial Narrow',sans-serif; font-weight:600;
+    font-size:clamp(14.5px,2.6vh,19px); letter-spacing:.02em; color:var(--ink); }
+  #menu .gSec summary::-webkit-details-marker { display:none; }
+  #menu .gSec summary::after { content:' +'; color:var(--red); font-weight:800; }
+  #menu .gSec[open] summary::after { content:' −'; }
+  #menu .gSec summary:hover, #menu .gSec[open] summary { color:var(--red); }
+  #menu .gBody { padding:0 2px 8px; user-select:text; -webkit-user-select:text; }
+  #menu .gBody p { margin:0 0 .45em; } #menu .gBody ul { margin:0 0 .45em; padding-inline-start:1.2em; } #menu .gBody li { margin:.12em 0; }
+  #menu .gBody b { color:var(--ink); }
+  #menu .gKeys { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1px 14px; margin-bottom:6px; }
+  #menu .gKeys span { border-bottom:1px dotted var(--line); } #menu .gKeys b { border-bottom:1px dotted var(--line); color:var(--red); text-align:end; white-space:nowrap; }
+  #menu.fac-ia .gHead { font-family:var(--f-term); font-weight:400; }
   #menu .tabs { flex-wrap:nowrap; } #menu .tab { white-space:nowrap; flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   @media (max-width:760px), (max-height:420px){ #menu .tab { padding-left:8px; padding-right:8px; letter-spacing:0; } }
   /* ---- CAMPAGNE : carnet de missions ---- */
@@ -240,6 +259,7 @@
     padding:2px 4px; cursor:pointer; }
   #menu .volBtns { display:flex; gap:8px; align-items:center; }
   #menu #oVol { width:140px; accent-color:var(--red); cursor:pointer; }
+  #menu #oVoiceVol { width:96px; accent-color:var(--red); cursor:pointer; }
   #menu #oVolV { min-width:42px; text-align:end; }
   #menu .keyBtn { cursor:pointer; font-family:inherit; font-size:.92em; color:var(--ink); background:none; border:0; border-bottom:1.5px solid var(--ink);
     padding:1px 8px; min-width:80px; }
@@ -288,7 +308,7 @@
   /* ---------- écran de fin : COMMUNIQUÉ DE GUERRE (même papier que le menu) ---------- */
   #endscreen {
     --paper:#e8dfc9; --paper2:#ddd2b8; --ink:#1f1b17; --ink2:#4d453b; --red:#c42a1c; --line:rgba(31,27,23,.28);
-    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:0;
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:safe center; gap:0;
     background:radial-gradient(ellipse at 50% 30%, rgba(26,16,14,.86) 0%, rgba(8,6,6,.95) 70%); z-index:11; color:var(--ink);
     font-family:'AGI Type','Courier New',monospace; overflow-y:auto; padding:10px 14px; }
   #endscreen.fac-ia { --paper:#eef2ea; --paper2:#d9e8d6; --ink:#10262d; --ink2:#3d5a62; --red:#0b6fa8; --line:rgba(16,38,45,.25);
@@ -303,7 +323,7 @@
       repeating-linear-gradient(180deg, #d6e9d3 0 40px, #f2f5ee 40px 80px); padding-left:34px; padding-right:34px; }
   #endscreen .endHead { display:flex; justify-content:space-between; border-bottom:3px double var(--ink); padding-bottom:4px;
     font-size:12px; letter-spacing:.14em; text-transform:uppercase; }
-  #endtitle { margin:10px 0 6px; display:inline-block; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800;
+  #endtitle { margin:22px 0 20px; display:inline-block; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800;
     font-size:clamp(40px,8vh,68px); line-height:1; letter-spacing:.04em; text-transform:uppercase; padding:6px 18px 3px;
     border:5px solid currentColor; outline:2px solid currentColor; outline-offset:4px; transform:rotate(-4deg);
     -webkit-mask-image:var(--worn); mask-image:var(--worn); -webkit-mask-size:240px 120px; mask-size:240px 120px;
@@ -320,13 +340,75 @@
   .esJournal { display:block; margin-top:6px; padding-top:6px; border-top:1px dashed var(--line); color:var(--ink2); font-style:italic; line-height:1.45; }
   #endscreen .go { margin-top:12px; }
   #endscreen.fac-ia .go { font-family:'AGI Term','Courier New',monospace; font-weight:400; background:var(--red); transform:none; border-radius:0; box-shadow:4px 4px 0 var(--ink); }
+  /* écrans bas (≈ 1280×720) : illustration réduite et boutons côte à côte, tout tient sans défiler */
+  @media (min-height:521px) and (max-height:800px){ #endart { width:min(250px,60vw); margin-bottom:-18px; }
+    #endscreen .endSheet { padding-top:10px; padding-bottom:12px; }
+    #endscreen .go, #endscreen #campNextBtn { margin-top:8px; margin-bottom:0; margin-right:10px; padding:8px 22px 6px; font-size:20px; } }
   /* téléphones en paysage : illustration à gauche, communiqué à droite (tout tient sans défiler) */
   @media (max-height:520px){ #endscreen { flex-direction:row; gap:0; }
     #endart { width:min(340px,40vw); margin:0 -24px 0 0; }
-    #endtitle { font-size:clamp(26px,8.5vh,42px); margin:6px 0 4px; }
+    #endtitle { font-size:clamp(26px,8.5vh,42px); margin:10px 0 14px; }
     #endscreen .endSheet { width:min(500px,58vw); padding-top:10px; padding-bottom:10px; }
-    #endstats { font-size:12px; line-height:1.38; } .esJournal { margin-top:4px; padding-top:4px; }
+    #endstats { font-size:11px; line-height:1.3; } .esJournal { margin-top:3px; padding-top:3px; line-height:1.3; } #endscreen .endHead { font-size:10px; }
     #endscreen .go { margin-top:8px; padding:7px 24px 5px; font-size:19px; } }
+  /* ---------- BRIEFING DE CAMPAGNE (v1.16) : dossier de mission plein écran, même papier que le menu ---------- */
+  #menu .campAbout { font-size:clamp(11.5px,1.9vh,14px); line-height:1.45; color:var(--ink); border-left:3px solid var(--red); padding:2px 0 2px 9px; }
+  body[dir="rtl"] #menu .campAbout { border-left:0; border-right:3px solid var(--red); padding:2px 9px 2px 0; }
+  #menu .campDiffTag { margin-top:-4px; }
+  #campBrief { --paper:#e8dfc9; --paper2:#ddd2b8; --ink:#1f1b17; --ink2:#4d453b; --red:#c42a1c; --line:rgba(31,27,23,.28);
+    position:absolute; inset:0; z-index:12; display:none; align-items:center; justify-content:center; pointer-events:auto;
+    padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+    background:radial-gradient(ellipse at 50% 35%, rgba(30,20,16,.84) 0%, rgba(8,6,6,.97) 75%); color:var(--ink); font-family:var(--f-type); touch-action:manipulation; }
+  #campBrief * { touch-action:manipulation; }
+  #campBrief .cbSheet { position:relative; width:min(1120px,100%); height:min(780px,100%); display:flex; flex-direction:column; min-height:0;
+    background:var(--grain), linear-gradient(180deg, var(--paper) 0%, var(--paper2) 100%); box-shadow:0 18px 44px rgba(0,0,0,.6), 0 2px 4px rgba(0,0,0,.4); transform:rotate(-.25deg); }
+  #campBrief .cbHead { flex:none; display:flex; align-items:center; gap:14px; padding:clamp(6px,1.6vh,14px) clamp(12px,2vw,24px) clamp(4px,1vh,8px); padding-right:58px;   /* bouton plein écran (toujours à droite) */ border-bottom:3px double var(--ink); }
+  #campBrief .cbNo { flex:none; min-width:1.6em; text-align:center; font-family:var(--f-sten); font-weight:800; font-size:clamp(24px,6vh,48px); line-height:1; color:var(--paper); background:var(--red); padding:4px 10px 2px; transform:rotate(-3deg); }
+  #campBrief .cbHT { min-width:0; }
+  #campBrief .cbKick { font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.16em; color:var(--red); text-transform:uppercase; }
+  #campBrief .cbTitle { font-family:var(--f-sten); font-weight:800; font-size:clamp(18px,4.4vh,34px); line-height:1.02; letter-spacing:.02em; text-transform:uppercase; }
+  #campBrief .cbPlace { font-size:clamp(10px,1.7vh,13px); color:var(--ink2); }
+  #campBrief .cbBody { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:clamp(6px,1.4vh,14px) clamp(14px,2.4vw,30px); padding:clamp(6px,1.4vh,14px) clamp(12px,2vw,24px); align-content:start; scrollbar-width:thin; scrollbar-color:var(--ink2) transparent; }
+  #campBrief .cbCol { display:flex; flex-direction:column; gap:clamp(6px,1.4vh,12px); min-width:0; }
+  #campBrief .cbSec h3 { font-family:var(--f-sten); font-weight:800; font-size:clamp(11.5px,2vh,15px); letter-spacing:.08em; color:var(--red); margin:0 0 3px; border-bottom:1px dashed var(--line); padding-bottom:2px; }
+  #campBrief .cbSec h4 { font-family:var(--f-sten); font-weight:800; font-size:clamp(10.5px,1.8vh,13px); letter-spacing:.06em; color:var(--ink2); margin:6px 0 1px; }
+  #campBrief .cbSec p, #campBrief .cbSec li { font-size:clamp(11.5px,1.95vh,14.5px); line-height:1.45; margin:0 0 .5em; user-select:text; -webkit-user-select:text; }
+  #campBrief .cbPrev { margin:0 0 .6em; padding:4px 9px; border-left:3px solid var(--ink2); font-style:italic; color:var(--ink2); font-size:clamp(11px,1.85vh,13.5px); line-height:1.4; }
+  #campBrief .cbPrev b { font-style:normal; color:var(--ink); }
+  #campBrief .cbWhere { font-weight:bold; }
+  #campBrief .cbGoal { border:2px solid var(--red); padding:6px 10px 2px; background:rgba(255,255,255,.16); }
+  #campBrief .cbGoalTxt { font-family:var(--f-sten); font-weight:800; font-size:clamp(13px,2.4vh,18px) !important; line-height:1.2 !important; }
+  #campBrief ul { margin:0; padding-inline-start:1.2em; }
+  #campBrief .cbPills { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 4px; }
+  #campBrief .cbPill { cursor:pointer; font-family:inherit; font-size:clamp(12px,2.1vh,15px); color:var(--ink); background:none; border:2px solid var(--ink); padding:3px 12px 2px; }
+  #campBrief .cbPill.sel { color:var(--paper); background:var(--red); border-color:var(--red); transform:rotate(-2deg); }
+  #campBrief .cbDiffTag { font-style:italic; }
+  #campBrief .cbDiffLines li { font-size:clamp(10.5px,1.75vh,13px) !important; margin:0 !important; color:var(--ink2); }
+  #campBrief .cbDocs { grid-column:1 / -1; }
+  #campBrief .cbHint { color:var(--ink2); }
+  #campBrief .cbCards { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,18px); }
+  #campBrief .cbDoc { position:relative; cursor:pointer; text-align:start; border:2px solid var(--ink); padding:8px 11px 6px; background:rgba(255,255,255,.14); transition:transform .1s; }
+  #campBrief .cbDoc:hover { transform:translateY(-1px); }
+  #campBrief .cbDoc.sel { border-color:var(--red); outline:2px solid var(--red); outline-offset:3px; background:rgba(255,255,255,.3); }
+  #campBrief .cbDoc:focus-visible { outline:3px dashed var(--red); outline-offset:3px; }
+  #campBrief .cbMark { display:none; position:absolute; top:6px; inset-inline-end:8px; font-family:var(--f-sten); font-weight:800; font-size:12px; color:var(--red); border:2px solid var(--red); padding:1px 6px 0; transform:rotate(6deg); }
+  #campBrief .cbDoc.sel .cbMark { display:block; }
+  #campBrief .cbDocName { display:block; font-family:var(--f-sten); font-weight:800; font-size:clamp(14px,2.6vh,20px); padding-inline-end:5.5em; }
+  #campBrief .cbDocShort { display:block; font-size:clamp(11px,1.85vh,13.5px); color:var(--ink2); margin:1px 0 4px; }
+  #campBrief .cbDoc h5 { font-family:var(--f-sten); font-weight:800; font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.08em; color:var(--red); margin:4px 0 1px; }
+  #campBrief .cbFx li { font-weight:bold; font-size:clamp(11px,1.85vh,13.5px) !important; margin:0 !important; }
+  #campBrief .cbDocLong { margin:5px 0 3px !important; }
+  #campBrief .cbWhy { margin:4px 0 0 !important; font-style:italic; color:var(--red); }
+  #campBrief .cbMinus li { color:var(--ink2); font-weight:bold; margin:0 !important; }
+  #campBrief .cbMinus p { color:var(--ink2); margin:0 !important; }
+  #campBrief .cbFoot { flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:clamp(5px,1.2vh,10px) clamp(12px,2vw,24px); border-top:2px solid var(--ink); }
+  #campBrief .cbBack { cursor:pointer; font-family:inherit; font-size:clamp(12px,2vh,15px); color:var(--ink2); background:none; border:0; text-decoration:underline; text-underline-offset:3px; }
+  #campBrief .cbBack:hover { color:var(--red); }
+  #campBrief .cbGo { font-size:clamp(16px,3.2vh,26px); padding:clamp(5px,1.2vh,10px) clamp(18px,3vw,34px) clamp(3px,1vh,7px); }
+  #campBrief .cbGo:focus-visible, #campBrief .cbPill:focus-visible { outline:3px dashed var(--red); outline-offset:3px; }
+  @media (max-width:700px){ #campBrief .cbBody, #campBrief .cbCards { grid-template-columns:minmax(0,1fr); } }
+  @media (max-height:460px){ #campBrief .cbSheet { transform:none; } #campBrief .cbPlace { display:none; } }
   /* ---------- sélecteur de langue (1er lancement) et bouton plein écran : même papier ---------- */
   #langPick .lpSheet { background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); color:#1f1b17; padding:18px 22px 20px;
     box-shadow:0 18px 40px rgba(0,0,0,.6); transform:rotate(-1deg); max-width:640px; display:flex; flex-direction:column; gap:14px; align-items:center; }
@@ -371,6 +453,7 @@
         <button class="tab on" data-page="play" data-i18n="tab_play">JOUER</button>
         <button class="tab" data-page="camp">CAMPAGNE</button>
         <button class="tab" data-page="tuto" data-i18n="tab_tuto">TUTORIEL</button>
+        <button class="tab" data-page="guide" data-i18n="tab_guide">GUIDE</button>
         <button class="tab" data-page="opts" data-i18n="tab_opts">PARAMÈTRES</button>
         <button class="tab" data-page="about" data-i18n="tab_about">À PROPOS</button>
       </div>
@@ -473,6 +556,7 @@
           </div>
           <button class="pick link" id="storyBtn" data-i18n="intro_watch">REVOIR L'HISTOIRE</button>
         </div>
+        <div class="page" id="page-guide"><div class="guide" id="guideBox"></div></div>
         <div class="page" id="page-opts">
           <div class="setH" data-i18n="opts_h_display">AFFICHAGE</div>
           <div class="setRow"><span data-i18n="set_lang">Langue</span>
@@ -500,6 +584,7 @@
               <span id="oVolV">80%</span>
             </div>
           </div>
+          <div class="setRow"><span data-i18n="set_voice">Voix off</span><div class="volBtns"><input type="range" id="oVoiceVol" min="0" max="100" step="5" value="100"><button class="tog on" id="oVoice">ACTIVE</button></div></div>
           <div class="setH" data-i18n="opts_h_controls">COMMANDES</div>
           <div id="keysTitle" class="fNote" data-i18n="set_keys">TOUCHES CLAVIER — cliquez puis pressez la nouvelle touche</div>
           <div id="keysBox"></div>
@@ -541,6 +626,8 @@
       <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
     </div>
   </div>
+  <!-- BRIEFING DE CAMPAGNE : dossier de mission plein écran (rempli par campBriefRender, 16b-campaign.js) -->
+  <div id="campBrief" class="panel" role="dialog" aria-modal="true"></div>
 </div>
 <button id="fsBtn" title="Plein écran" aria-label="Plein écran">⛶</button>
 <script>

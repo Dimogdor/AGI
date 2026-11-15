@@ -16,11 +16,11 @@ function render(dt){
   for (const s of game.e.slots) drawSlot(s, game.e, false);
   for (const n of game.neut) drawSlot(n, null, true);
   drawBase(game.p); drawBase(game.e);
-  if (game.camp && game.camp.m.draw) game.camp.m.draw(game, game.camp, VW());   // objets propres à la mission
+  if (game.camp) campDrawWorld(VW());               // campagne : objets de la mission, objets d'objectif, laisse, bouclier
   if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
-  if (game.rally) drawRally(game.rally);                     // fanion ⚑ d'ordre de position
+  drawPointFlags();                                          // fanions ⚑ des ordres de position (13-hud.js)
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   if (shots.length){ ctx.lineCap='round';
     if (qFx()){ ctx.save(); ctx.globalCompositeOperation='lighter';   // halo additif (sans shadowBlur — coûteux)
@@ -123,7 +123,7 @@ function render(dt){
   }
   ctx.globalAlpha=1;
   ctx.restore(); // fin du monde zoomé
-  if (game.biome) biomeFront(dt);                 // lieu de campagne : nuit éclairée, pluie, neige
+  if (game.biome){ biomeFront(dt); drawBaseGlow(); }   // lieu de campagne : nuit éclairée, pluie, neige ; fenêtres des bases
   drawWinter();
   drawCata();
   if (game.boon==='rain') drawRainBoon(game.t);   // PLUIE FERTILE : l'averse se voit
@@ -144,7 +144,7 @@ function render(dt){
     ctx.globalAlpha=(0.25+0.3*Math.min(1,beat))*(paused? 0.5 : 1)*(1-php/0.30*0.4); ctx.fillStyle=VIGN_RED; ctx.fillRect(0,0,W,H); ctx.globalAlpha=1;
   }
   drawFilmGrade();               // étalonnage cinéma (ombres froides / hautes lumières chaudes) + grain
-  if (CINE.on) drawCine(); else drawHUD();   // cinématique de campagne : bandes noires et sous-titres à la place du HUD
+  if (CINE.on) drawCine(); else { drawHUD(); if (game.camp) drawCampOverlay(); }   // cinématique : bandes noires et sous-titres à la place du HUD ; campagne : aide « ? » par-dessus tout
   drawSpeedOverlays();
   ctx.restore();
 }

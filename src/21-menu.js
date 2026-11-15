@@ -15,6 +15,7 @@ document.querySelectorAll('.tab').forEach(tb=>{
     tb.classList.add('on');
     $('page-'+tb.dataset.page).classList.add('on');
     if (tb.dataset.page==='tuto') refreshTutoPage();
+    if (tb.dataset.page==='guide') refreshGuidePage();
     if (tb.dataset.page==='camp') campRenderMenu();
   });
 });
@@ -86,6 +87,7 @@ function toggleFullscreen(){ if (isFullscreen()) exitFullscreen(); else goFullsc
 // depuis le menu Pause (ligne « Plein écran »).
 function fsBtnHidden(){
   if (IS_NATIVE || (IS_IOS && IS_STANDALONE)) return true;
+  if (typeof CINE!=='undefined' && CINE && CINE.on) return true;           // cinématiques de campagne (y compris la fin, game.over) : « Passer » occupe le coin
   return (typeof game!=='undefined' && game && !game.over) || (typeof intro!=='undefined' && intro>=0);
 }
 function refreshFsBtn(){
@@ -280,6 +282,7 @@ function refreshOpts(){
   $('oVol').value = Math.round(SETTINGS.vol*100);
   $('oVolV').textContent = Math.round(SETTINGS.vol*100)+'%';
   const oq=$('oQuality'); if (oq){ oq.classList.add('on'); oq.textContent = qualityName().toUpperCase(); }
+  if (typeof voiceRefreshOpts==='function') voiceRefreshOpts();   // voix off (16c0-voice.js)
 }
 $('oMusic').addEventListener('click', ()=>{ SETTINGS.music=!SETTINGS.music; saveSettings(); refreshOpts(); });
 $('oSfx').addEventListener('click', ()=>{ SETTINGS.sfx=!SETTINGS.sfx; saveSettings(); refreshOpts(); });

@@ -145,6 +145,7 @@ await rm(OUT, { recursive: true, force: true });
 await mkdir(new URL('./icons/', OUT), { recursive: true });
 await writeFile(new URL('./index.html', OUT), await addCSP(outHtml));
 
+
 // --- manifest PWA ---
 const manifest = {
   name: "AGI — La Dernière Bataille de l'Humanité", short_name: "AGI", description: pkg.description,
@@ -179,10 +180,10 @@ catch(e){ console.warn('  ⚠ PeerJS non auto-hébergé ('+e.message+') — repl
 
 // --- service worker : RÉSEAU D'ABORD pour le HTML (toujours la dernière version en ligne),
 //     cache d'abord pour les ressources statiques (offline). Cache unique par build → mise
-//     à jour et purge automatiques à chaque déploiement. ---
-const sw = `const P='agi-',C=P+'${BUILD_ID}';const A=['./','index.html','manifest.webmanifest','peerjs.min.js','icons/icon-192.png','icons/icon-512.png'];
+//     à jour et purge automatiques à chaque déploiement, SAUF assets/ (cache stable agi-assets-v1). ---
+const sw = `const P='agi-',C=P+'${BUILD_ID}',AS='agi-assets-v1';const A=['./','index.html','manifest.webmanifest','peerjs.min.js','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>Promise.allSettled(A.map(a=>c.add(a)))))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith(P)&&x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith(P)&&x!==C&&x!==AS).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const req=e.request,u=new URL(req.url);
@@ -192,6 +193,9 @@ self.addEventListener('fetch',e=>{
     e.respondWith(fetch(req).then(res=>{if(res.ok&&res.type==='basic'&&/text\/html/.test(res.headers.get('content-type')||'')){const cp=res.clone();caches.open(C).then(c=>c.put('index.html',cp).catch(()=>{}));}return res;}).catch(()=>caches.match('index.html').then(r=>r||caches.match('./'))));
     return;
   }
+  // sons, voix et images (assets/, ≈12 Mo) : cache SÉPARÉ et stable, cache d'abord, sans rafraîchissement ni purge
+  // à chaque déploiement (un fichier modifié change d'URL ou de nom) : on ne retélécharge pas 12 Mo par version
+  if(u.pathname.indexOf('/assets/')>=0){e.respondWith(caches.open(AS).then(c=>c.match(req).then(r=>r||fetch(req).then(res=>{if(res.ok&&res.status===200&&res.type==='basic'){c.put(req,res.clone()).catch(()=>{});}return res;}))));return;}
   // ressources statiques : cache d'abord + rafraîchissement en arrière-plan
   // (seules les réponses 200 de même origine entrent en cache : une 404 ou une page d'erreur
   //  ne peut plus remplacer durablement une ressource)
@@ -244,6 +248,14 @@ if (privacyMd) {
     `</head><body>${bodyHtml}</body></html>`;
   await writeFile(new URL('./privacy.html', OUT), privacyHtml);
   console.log('  privacy.html : généré depuis PRIVACY.md');
+}
+
+// --- ressources audio enregistrées (bruitages libres, musique, voix off) : assets/ → www/assets/
+//     Chargées à la demande par le jeu (puis mises en cache par le service worker) ; le fichier
+//     unique la-derniere-bataille.html ouvert en file:// retombe sur l'audio procédural. ---
+if (await exists(new URL('./assets/', ROOT))){
+  await cp(new URL('./assets/', ROOT), new URL('./assets/', OUT), { recursive: true });
+  console.log('  assets/ : copiées dans www/assets/');
 }
 
 console.log('✔ www/ prêt');

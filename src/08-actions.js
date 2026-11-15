@@ -246,8 +246,9 @@ function assignWorker(side, slot){
   slot._w = null;
   let best=null, bd=1e9;
   for (const u of side.units){
-    if (u.task || u.role==='support' || u.role==='gremlin') continue;
-    const d = Math.abs(u.x-slot.x);
+    if (u.task || u.role==='support' || u.role==='gremlin' || u.role==='hero') continue;
+    // de préférence une unité SANS ordre explicite : une troupe postée (⚑, tenir) ne quitte plus son poste
+    const d = Math.abs(u.x-slot.x) + (u.ord? 4000 : 0);
     if (d<bd){ bd=d; best=u; }
   }
   if (best){ best.task = {kind:'build', slot}; slot._w = best; }
@@ -447,7 +448,8 @@ function setHeroStance(side, st){
   if (HERO_STANCES.indexOf(st)<0) return false;
   if (isGuest(side)){ guestCmd({c:'hst', st}); side._hsLock = performance.now()+800; }   // l'hôte confirmera par instantané
   side.heroStance = st;
-  if (side===game.p){ sfx('sel'); game.msg = {txt:tr('a_hst_'+st), color:'#e8d8a0'}; game.msgT = 2.6; }   // (pas d'announce : rien à révéler à l'adversaire)
+  // (pas d'announce : rien à révéler à l'adversaire) — titre + la règle de la posture en une ligne
+  if (side===game.p){ sfx('sel'); game.msg = {txt:tr('a_hst_'+st), color:'#e8d8a0', sub:tr('hsx_'+st)}; game.msgT = 4.2; }
   return true;
 }
 function cycleHeroStance(side){
@@ -455,33 +457,80 @@ function cycleHeroStance(side){
 }
 // ---- ORDRE DE POSITION : aller DÉFENDRE un point précis du terrain ----
 // Avec une sélection : seules les unités sélectionnées y vont. SANS sélection : TOUTE
-// l'armée reçoit l'ordre. Les unités s'y rendent (combattent en chemin), s'étalent en
-// éventail pour ne pas s'empiler, puis tiennent la position (ord='point').
+// l'armée reçoit l'ordre. Elles s'y rendent en ne combattant que ce qui leur barre le
+// chemin (vers l'arrière : elles décrochent sans s'arrêter), s'y POSENT en un bloc compact
+// centré sur le point, puis le tiennent — en ripostant à tout ce qui entre à portée — jusqu'au
+// prochain ordre (ord='point', place u.px, groupe u.pid).
+// PLACEMENT (v1.15) : avant, un éventail de 16 px par unité dans l'ordre de la liste (30 unités
+// = 464 px de large, des unités qui se croisaient). Désormais un bloc : au sol, du front vers
+// l'arrière, tanks · mêlée/héros · tireurs · artillerie · soutien, 7 px par unité (2 à 3 de front,
+// comme une colonne normale) ; les volants, au-dessus, à part (12 px). Dans chaque rang, l'ordre
+// suit la position actuelle : personne ne croise personne en chemin. Hôte ET invité (applyPointIds).
+const POINT_RANK = { tank:0, melee:1, gremlin:1, hero:1, ranged:2, air:2, siege:3, support:4 };
+const POINT_GAP = 7, POINT_GAP_AIR = 12;
+let POINT_SEQ = 0;
+function pointHalf(n, gap){ return Math.max(0, n-1)*gap/2; }
+function assignPoint(side, units, x){
+  x = clamp(x, 40, WORLD-40);
+  const s = side.side;
+  const place = (list, gap, ranked) => {
+    list.sort((a,b)=> (ranked? (POINT_RANK[a.role]||0)-(POINT_RANK[b.role]||0) : 0) || (b.x-a.x)*s);
+    const half = pointHalf(list.length, gap);
+    list.forEach((u,i)=>{ u.px = clamp(x + s*(half - i*gap), 40, WORLD-40); });
+  };
+  place(units.filter(u=>!u.fly), POINT_GAP, true);
+  place(units.filter(u=>u.fly), POINT_GAP_AIR, false);
+  const id = ++POINT_SEQ;
+  for (const u of units){ u.ord = 'point'; u.task = null; u.pid = id; }
+  return id;
+}
 function orderPoint(side, wx){
   const all = !game.sel.size;
   wx = clamp(wx, 40, WORLD-40);
-  if (isGuest(side)){
-    if (all && !side.units.length) return false;
-    // vue miroir → coordonnée hôte ; ids vide = toute l'armée
-    guestCmd({c:'point', x:Math.round(WORLD-wx), ids: all? [] : [...game.sel].map(u=>u.id)});
-    game.rally = {x:wx, t:0};
-    sfx('sel'); announce(all? tr('a_point_all') : fmt('a_point',{n:game.sel.size}), '#e8d8a0');
-    return true;
-  }
-  const sel = all? side.units.filter(u=>u.role!=='gremlin') : [...game.sel];
+  const sel = all? side.units.filter(u=>u.role!=='gremlin') : [...game.sel].filter(u=>side.units.includes(u));
   if (!sel.length) return false;
-  sel.forEach((u,i)=>{
-    u.ord = 'point'; u.task = null;
-    u.px = clamp(wx + (i-(sel.length-1)/2)*16, 40, WORLD-40);   // éventail autour du point
-  });
-  game.rally = {x:wx, t:0};
+  if (isGuest(side)){
+    // vue miroir → coordonnée hôte ; ids vide = toute l'armée (l'hôte calcule le même bloc)
+    guestCmd({c:'point', x:Math.round(WORLD-wx), ids: all? [] : sel.map(u=>u.id)});
+    addPointFlag(wx, sel, 0);
+  } else addPointFlag(wx, sel, assignPoint(side, sel, wx));
   sfx('sel'); announce(all? tr('a_point_all') : fmt('a_point',{n:sel.length}), '#e8d8a0');
-  addFloater(wx, gY(wx)-60, '⚑', '#ffd34a', 16);
   return true;
+}
+// FANION ⚑ : reste planté tant que les unités envoyées ne sont pas TOUTES arrivées (avant : il
+// s'effaçait au bout de 3 s, unités encore en chemin), puis s'efface. Un fanion par ordre (5 max).
+// Solo/hôte : suivi exact (u.pid, u.px). Invité : il ne reçoit pas les places calculées par l'hôte —
+// il suit ses unités par identifiant et les tient pour arrivées une fois dans l'emprise du bloc.
+function addPointFlag(x, units, id){
+  const fl = game.flags || (game.flags = []);
+  const ids = units.map(u=>u.id), set = new Set(ids);
+  for (const f of fl) if (f.ids) f.ids = f.ids.filter(i=>!set.has(i));   // ces unités changent d'ordre
+  const nG = units.filter(u=>!u.fly).length, nA = units.length-nG;
+  fl.push({x, id, ids: id? null : ids, t:0, out:0, half: Math.max(pointHalf(nG, POINT_GAP), pointHalf(nA, POINT_GAP_AIR))});
+  if (fl.length>5) fl.shift();
+}
+function forgetPointFlags(ids){                // invité : un nouvel ordre retire ces unités de leurs fanions
+  if (!game.flags) return;
+  if (!ids) { game.flags.length = 0; return; }
+  const set = new Set(ids); for (const f of game.flags) if (f.ids) f.ids = f.ids.filter(i=>!set.has(i));
+}
+function tickPointFlags(dt){
+  const fl = game && game.flags; if (!fl || !fl.length) return;
+  const p = game.p;
+  for (let i=fl.length-1;i>=0;i--){
+    const f = fl[i]; f.t += dt;
+    let alive = 0, pending = 0;
+    if (f.id){ for (const u of p.units) if (u.pid===f.id && u.ord==='point'){ alive++; if (Math.abs(u.x-u.px)>2) pending++; } }
+    else { const set = new Set(f.ids); for (const u of p.units) if (set.has(u.id)){ alive++; if (Math.abs(u.x-f.x)>f.half+16) pending++; } }
+    if (!alive){ fl.splice(i,1); continue; }                    // plus personne sous cet ordre (morts, autre ordre)
+    if (pending && f.t<120) f.out = 0;
+    else if ((f.out += dt) > 0.9) fl.splice(i,1);              // tous arrivés : le fanion s'efface
+  }
 }
 function setStance(side, st){
   if (isGuest(side)){
     guestCmd({c:'stance', st, ids: game.sel.size? [...game.sel].map(u=>u.id) : []});
+    forgetPointFlags(game.sel.size? [...game.sel].map(u=>u.id) : null);
     sfx('buy', st==='charge'?3:st==='hold'?1:0); return;
   }
   if (side===game.p && game.sel.size>0){

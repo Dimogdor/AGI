@@ -288,6 +288,12 @@ v1.0 — Lancement.
 • Plein écran mobile et défilement du menu
 ```
 
+## Notes de version — v1.16
+
+**FR** — La campagne est réécrite de bout en bout : une vraie histoire (qui nous sommes, ce qu'on reprend à la machine, mission après mission), un briefing avant chaque mission avec l'objectif, la règle du lieu, des conseils et deux doctrines expliquées, trois difficultés claires (Récit, Lutte, Dernier carré), une aide « ? » en mission. Voix off sur les cinématiques et la radio. De vrais enregistrements libres de droits (pluie, vent, port, foule, combat) et une musique par lieu. Les bases changent avec les époques : ZAD, usine occupée, quartier insurgé, base militaire, commune ; côté machines, du conteneur de serveurs à la Singularité. Pendant une grève, vos troupes ne bougent plus mais se défendent. Ordres de position précis, postures du héros vraiment différentes, et un guide complet du jeu dans le menu.
+
+**EN** — The campaign has been rewritten end to end: a real story (who we are, what we take back from the machine, mission after mission), a briefing before every mission with the objective, the local rule, tips and two explained doctrines, three clear difficulty levels (Story, Struggle, Last Stand), and an in-mission "?" help. Voice-over on cutscenes and radio. Real royalty-free recordings (rain, wind, docks, crowds, combat) and music for each place. Bases now change with the eras: protest camp, occupied factory, insurgent district, military base, commune; for the machines, from a server container to the Singularity. During a strike your troops stop moving but still fight back. Precise move orders, truly distinct hero stances, and a full game guide in the menu.
+
 ## Notes de version — v1.15
 
 **FR** — La campagne « Les carnets de Germinal » est entièrement refaite. Chaque mission a son lieu, sa musique et sa règle : la nuit des compteurs dans une banlieue sans courant, l'escorte d'un cortège de grévistes sur le port, les vannes d'un barrage de montagne, le froid d'une ville minière sous le blizzard, et une citadelle en trois actes qui se termine par un choix et deux fins. Cinématiques à l'encre avant, pendant et après chaque mission, nouveaux personnages, doctrine à choisir entre les missions. Les héros (le Che et l'AGI) changent d'allure à chaque ère, ont de vraies animations, des sons variés et trois postures : prudent, normal, offensif.

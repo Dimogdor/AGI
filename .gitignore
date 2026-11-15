@@ -1,5 +1,5 @@
 # dépendances & artefacts de build (régénérés par `npm run build`)
-node_modules/
+node_modules
 www/
 dist-pc/
 dist-ota/
@@ -24,3 +24,4 @@ android-signing/
 keystore.properties
 KEYSTORE-SECRETS.txt
 .claude/worktrees/
+tools/voice/.cache

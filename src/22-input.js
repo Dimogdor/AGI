@@ -97,14 +97,38 @@ function inRect(x,y,r){ return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h; }
 
 cv.addEventListener('contextmenu', e=>e.preventDefault());
 
-// SURVOL (souris uniquement) : tooltip détaillé sur les boutons d'unités.
-let hoverUnitBtn = -1;
+// SURVOL (souris uniquement) : tooltip détaillé sur les boutons d'unités et de posture du héros.
+let hoverUnitBtn = -1, hoverHudBtn = null;
 cv.addEventListener('pointermove', e=>{
-  if (e.pointerType==='touch'){ hoverUnitBtn=-1; return; }
-  if (!game || game.over || paused || buildMenu){ hoverUnitBtn=-1; return; }
-  const {sx,sy} = evXY(e); hoverUnitBtn=-1;
-  for (const b of HUD.btns) if (b.type==='unit' && !btnHidden(b) && inRect(sx,sy,b)){ hoverUnitBtn=b.i; break; }
+  if (e.pointerType==='touch'){ hoverUnitBtn=-1; hoverHudBtn=null; return; }
+  if (!game || game.over || paused || buildMenu){ hoverUnitBtn=-1; hoverHudBtn=null; return; }
+  const {sx,sy} = evXY(e); hoverUnitBtn=-1; hoverHudBtn=null;
+  for (const b of HUD.btns) if (!btnHidden(b) && inRect(sx,sy,b)){
+    if (b.type==='unit') hoverUnitBtn=b.i; else if (b.type==='hstance') hoverHudBtn=b;
+    break; }
 });
+// le point (sx, sy) tombe-t-il sur l'interface (bandeau, bouton, bannière de sélection, fil) ?
+function overHud(sx, sy){
+  if (sy<=38) return true;
+  for (const b of HUD.btns) if (!btnHidden(b) && inRect(sx,sy,b)) return true;
+  for (const r of HUD.upgRects) if (inRect(sx,sy,r)) return true;
+  if (HUD.selRect && inRect(sx,sy,HUD.selRect)) return true;
+  if (typeof NEWSF!=='undefined' && NEWSF.rect && inRect(sx,sy,NEWSF.rect)) return true;
+  const cc = game && game.camp;                                         // campagne : étiquette d'objectif, bouton « ? » et action de mission
+  if (cc) for (const r of [cc.objRect, cc.helpRect, cc.actRect]) if (r && inRect(sx,sy,r)) return true;
+  return false;
+}
+// APPUI LONG (tactile) = ordre de position : il part DÈS que le délai est écoulé, doigt encore posé
+// (un anneau se remplit sous le doigt), au lieu d'attendre qu'on le lève.
+const LONG_PRESS_MS = 450;
+function longPressOrder(pd){
+  if (!game || game.over || paused || settingsOpen || buildMenu || speedPanel || speedVote || CINE.on) return false;
+  if (game.tut && TUT && TUT.confirmSkip) return false;
+  if (overHud(pd.sx, pd.sy)) return false;
+  if (!orderPoint(game.p, s2wX(pd.sx))) return false;
+  try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
+  return true;
+}
 
 let _fsTried=false;
 let tutDragging=null;          // glisser-déposer de la carte du tutoriel
@@ -127,10 +151,20 @@ cv.addEventListener('pointerdown', e=>{
     tutDragging = { ox: sx-TUT.cardRect.x, oy: sy-TUT.cardRect.y, sx0:sx, sy0:sy, moved:false };
     pdown = null; return;
   }
+  // CLIC DROIT = ordre de position, donné DÈS L'APPUI (comme dans tout jeu de stratégie). Avant, il
+  // partait au relâcher et seulement si la souris n'avait pas bougé de plus de 6 px logiques : un clic
+  // droit « en mouvement » (≥ 9 px à l'écran, mesuré) devenait un glissé de caméra et l'ordre était perdu.
+  if (e.button===2 && game && !game.over && intro<0){
+    pdown = {sx, sy, moved:false, lasso:false, btn:2, done:true};
+    handleTap(sx, sy, e.shiftKey, {right:true});
+    return;
+  }
   if (!game || game.over || paused || buildMenu){ pdown={sx,sy,moved:false,lasso:false,btn:e.button}; return; }
   const lasso = (selMode || e.shiftKey) && e.button===0 && sy>38 && sy<H-102;
   pdown = {sx, sy, moved:false, lasso, t0:performance.now(), touch:e.pointerType==='touch', btn:e.button};
   if (lasso) selBox = {x0:sx, y0:sy, x1:sx, y1:sy};
+  else if (pdown.touch){ const pd = pdown;
+    pd.lpT = setTimeout(()=>{ if (pdown===pd && !pd.moved && ptrs.size===1 && longPressOrder(pd)) pd.done = true; }, LONG_PRESS_MS); }
 });
 
 cv.addEventListener('pointermove', e=>{
@@ -150,13 +184,16 @@ cv.addEventListener('pointermove', e=>{
       TUT.cardPos = { x: clamp(sx-tutDragging.ox, 8, W-cr.w-8), y: clamp(sy-tutDragging.oy, 8, H-cr.h-8) }; }
     return;
   }
-  if (!pdown) return;
+  if (!pdown || pdown.done) return;      // ordre déjà donné (clic droit, appui long) : pas de glissé de caméra
   // ⚙ réglages : glisser sur la barre de volume la règle en continu (avant : un tap par réglage)
   if (settingsOpen && pauseRects){ const r = pauseRects.find(r=>r.key==='vol' && r.slider);
     if (r && inRect(pdown.sx, pdown.sy, r)){ pdown.moved = true;
       SETTINGS.vol = clamp(Math.round(((sx-r.slider.x)/r.slider.w)*20)/20, 0, 1); saveSettings(); refreshOpts(); return; } }
   const dx = sx-prev.sx;
-  if (Math.abs(sx-pdown.sx)>6 || Math.abs(sy-pdown.sy)>6) pdown.moved = true;
+  // seuil de glissé : 6 px logiques à la souris ; 12 au doigt (6 px logiques ≈ 4 px réels sur un
+  // téléphone : le moindre tremblement annulait l'appui long et faisait glisser la caméra)
+  const thr = pdown.touch? 12 : 6;
+  if (Math.abs(sx-pdown.sx)>thr || Math.abs(sy-pdown.sy)>thr) pdown.moved = true;
   if (pdown.lasso){ selBox.x1 = sx; selBox.y1 = sy; return; }
   // glisser = caméra (zone monde) — autorisé aussi en PAUSE (sauf menu réglages) pour observer la carte
   if (game && !game.over && !buildMenu && !settingsOpen && pdown.moved && pdown.sy>38 && pdown.sy<H-102){
@@ -175,6 +212,8 @@ function endPointer(e){
   const was = ptrs.has(e.pointerId);
   ptrs.delete(e.pointerId);
   if (ptrs.size<2) pinch = null;
+  if (pdown && pdown.lpT) clearTimeout(pdown.lpT);
+  if (pdown && pdown.done){ pdown = null; dragging = false; selBox = null; return; }   // ordre déjà donné à l'appui
   if (!was || !pdown) { dragging = ptrs.size>0 && dragging; return; }
   const {sx,sy} = evXY(e);
   const tap = !pdown.moved;
@@ -197,7 +236,7 @@ function endPointer(e){
   if (tap) handleTap(sx,sy,e.shiftKey,{touch:e.pointerType==='touch', long, right});
 }
 cv.addEventListener('pointerup', endPointer);
-cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; pdown=null; selBox=null; dragging=false; tutDragging=null; });
+cv.addEventListener('pointercancel', e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; if (pdown && pdown.lpT) clearTimeout(pdown.lpT); pdown=null; selBox=null; dragging=false; tutDragging=null; });
 
 function finishLasso(){
   if (!selBox){ return; }
@@ -233,8 +272,11 @@ function handleTap(sx, sy, shift, opts){
   // CLIC DROIT : réservé EXCLUSIVEMENT à l'ordre de position — il n'actionne jamais un bouton,
   // un menu ni la sélection. Sélection active → elle seule y va ; AUCUNE sélection → toute l'armée.
   if (opts && opts.right){
-    if (paused || settingsOpen || buildMenu) return;
+    if (paused || settingsOpen) return;
     if (game.tut && TUT && TUT.confirmSkip) return;
+    // menu de construction ouvert : un clic droit le referme ; hors du menu, l'ordre part aussi
+    if (buildMenu){ const bx = buildMenu.box; buildMenu = null; if (bx && inRect(sx,sy,bx)) return; }
+    if (overHud(sx, sy)) return;            // jamais sur un bouton ni sur le bandeau du haut
     orderPoint(game.p, s2wX(sx));
     return;
   }
@@ -382,6 +424,14 @@ function handleTap(sx, sy, shift, opts){
   if (sy<=38) return; // bandeau de ressources
   // ---- monde ----
   const wx = s2wX(sx), wy = s2wY(sy);
+  // ORDRE DE POSITION (tactile) : APPUI LONG sur le terrain = envoyer la sélection — ou TOUTE
+  // l'armée si rien n'est sélectionné — DÉFENDRE ce point exact (souris : clic droit, plus haut).
+  // Prioritaire sur la sélection d'unité / l'ouverture d'un socle : avant, un appui long près de ses
+  // propres troupes (là où on veut justement les poster) les sélectionnait au lieu de les envoyer.
+  // (En jeu, l'appui long part dès 450 ms doigt posé — voir longPressOrder ; ceci couvre le relâcher.)
+  if (opts && opts.touch && opts.long){
+    if (orderPoint(p, wx)) return;
+  }
   // priorité de clic : unité touchée PRÉCISÉMENT (10 px) > structures > unité proche (22 px)
   const pickUnit = (radius)=>{
     let b2=null, bd2=radius;
@@ -418,11 +468,6 @@ function handleTap(sx, sy, shift, opts){
     return;
   }
   // ---- sol ----
-  // ORDRE DE POSITION (tactile) : APPUI LONG sur le terrain = envoyer la sélection — ou TOUTE
-  // l'armée si rien n'est sélectionné — DÉFENDRE ce point exact (souris : clic droit, plus haut).
-  if (opts && opts.touch && opts.long){
-    if (orderPoint(p, wx)) return;
-  }
   // tap bref / clic gauche sur le sol : désélection (comportement historique)
   if (game.sel.size){ game.sel.clear(); sfx('sel'); }
 }
