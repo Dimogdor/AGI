@@ -742,7 +742,7 @@ function campBriefRender(){
     body.appendChild(s); }
   // pied : retour / lancer
   const foot = el('div', 'cbFoot');
-  const back = el('button', 'cbBack', '← '+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
+  const back = el('button', 'cbBack', (SETTINGS.lang==='ar'? '→ ' : '← ')+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
   const rs = m.resume && m.resume();                                                  // point de reprise d'une mission (grille / acte) : visible et effaçable
   if (rs){ const row = el('div', 'cbResume'); row.appendChild(el('b', null, cT(CAMP_UI[rs.key]).replace('{n}', rs.n)+'  '));
     const rb = el('button', 'cbBack', cT(CAMP_UI.restart)); rb.addEventListener('click', ()=>{ m.resumeClear(); campBriefRender(); });
