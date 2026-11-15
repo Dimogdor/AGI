@@ -32,76 +32,154 @@ DECOR_EXTRA.bin = (d, s) => {                                        // conteneu
 function campNightLit(x){ if (!game || !game.zones) return false; for (const z of game.zones) if (z.owner==='p' && Math.abs(z.x-x)<430) return true; return false; }
 function campInLight(x, big){ const Ls = game.camp.lights; for (const L of Ls){ if (big && !L.big) continue; if (Math.abs(L.x-x) < L.r*0.82) return true; } return false; }
 
-/* ---------- planches du prologue et de l'épilogue (repère 480×270, encre sur page de carnet) ---------- */
+/* ---------- planches (repère 480×270, encre sur page de carnet) : un sujet, un trait = un objet, une couleur d'accent ---------- */
+const m1R = (x, y, w, h) => [x,y, x+w,y, x+w,y+h, x,y+h, x,y];                     // contour fermé : le premier point est répété
+const m1Rot = (pts, cx, cy, a) => { const c = Math.cos(a), s = Math.sin(a), o = [];
+  for (let i=0;i<pts.length;i+=2){ const dx = pts[i]-cx, dy = pts[i+1]-cy; o.push(cx+dx*c-dy*s, cy+dx*s+dy*c); } return o; };
+// texte de planche : Courier gras, réduit jusqu'à tenir dans maxW
+function m1Text(g, s, x, y, px, col, maxW){
+  g.fillStyle = col || '#1f1b17'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  let f = px; for (; f>7; f-=0.5){ g.font = '700 '+f+'px "Courier New",monospace'; if (g.measureText(s).width <= maxW) break; }
+  g.fillText(s, x, y); }
 const M1_PLATES = {
-  tap(g, w, h, t, k){ plateBase(g, w, h);
-    const n = clamp(t/2.2, 0, 1);
-    inkLine(g, [60,80, 160,80, 160,96, 196,96, 204,104, 204,128], n, 5);                                   // robinet
-    inkLine(g, [60,96, 144,96], n, 5); inkLine(g, [150,66, 150,80], n, 4); inkLine(g, [134,64, 166,64], n, 5);
-    inkLine(g, [196,128, 212,128], n, 3);
-    const dy = (t*38)%120; if (t>2.2 && t<5){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(204, 134+dy, 2.4, 4, 0, 0, 6.283); g.fill(); }   // les dernières gouttes
-    inkLine(g, [120,236, 300,236], n, 2); inkLine(g, [140,236, 150,214, 270,214, 280,236], n, 2);        // évier
-    // le compteur « intelligent »
-    const m = clamp((t-1.2)/2, 0, 1);
-    inkLine(g, [320,70, 420,70, 420,170, 320,170, 320,70], m, 2.4); inkLine(g, [334,86, 406,86, 406,116, 334,116, 334,86], m, 1.6);
-    if (m>=1){ g.fillStyle = '#1f1b17'; g.font = '700 17px "Courier New",monospace'; g.textAlign = 'center'; g.fillText('SCORE 41', 370, 107);
-      g.fillStyle = (Math.sin(t*5)>0)? '#c42a1c' : 'rgba(196,42,28,0.25)'; g.beginPath(); g.arc(344, 146, 5.5, 0, 6.283); g.fill();
-      g.fillStyle = '#1f1b17'; g.font = '9px "Courier New",monospace'; g.fillText('OMNICORP · RÉGIE', 370, 150); inkHatch(g, 320, 170, 100, 10, 5); }
+  // P1 · Le robinet : un évier, un robinet, le compteur « intelligent »
+  tap(g, w, h, t){ plateBase(g, w, h);
+    const n = clamp(t/1.6, 0, 1), m = clamp((t-0.5)/1.2, 0, 1);
+    inkWash(g, m1R(0,0,480,270), '#8a8f98', 0.10);                                                          // lavis gris léger
+    inkLine(g, [60,80, 160,80, 160,122], n, 9);                                                              // le robinet : un seul trait (bec, coude, descente)
+    inkLine(g, m1R(152,122,16,10), n, 2.4);                                                                  // l'embout
+    inkLine(g, [100,80, 100,66], n, 3); inkLine(g, [86,64, 114,64], n, 4);                                   // la manette en T (traits séparés)
+    inkWash(g, [110,214, 270,214, 252,236, 128,236, 110,214], '#1f1b17', 0.2); inkLine(g, [110,214, 270,214, 252,236, 128,236, 110,214], n, 2.4);   // le bac de l'évier
+    inkHatch(g, 134, 216, 112, 18, 6, '#1f1b17', 0.22); inkLine(g, [184,228, 196,228], n, 2);                // la bonde
+    // trois dernières gouttes, puis plus rien
+    for (const t0 of [1.1, 2.3, 3.5]){
+      const sw = clamp((t-(t0-0.55))/0.55, 0, 1), k = (t-t0)/0.8;
+      if (sw>0 && k<0){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(160, 135+sw*2, 1.2+sw*1.3, 1.6+sw*2.4, 0, 0, 6.283); g.fill(); }        // la goutte grossit au bout du bec
+      if (k>=0 && k<1){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(160, 136+k*k*76, 2.4, 4, 0, 0, 6.283); g.fill(); }                    // elle tombe
+      if (k>=1 && k<1.7){ const r = (k-1)/0.7; g.strokeStyle = 'rgba(31,27,23,'+(0.55*(1-r)).toFixed(3)+')'; g.lineWidth = 1.3; g.beginPath(); g.ellipse(160, 214, 4+r*16, 1.5+r*3, 0, 0, 6.283); g.stroke(); } }
+    // le compteur
+    inkWash(g, m1R(320,70,100,100), '#3d4a5a', 0.3); inkLine(g, m1R(320,70,100,100), m, 2.6);
+    inkLine(g, m1R(334,86,72,30), m, 1.6);
+    if (m>=1){ inkWash(g, m1R(334,86,72,30), '#9db79a', 0.85);
+      m1Text(g, cT(M1_TX.pScore), 370, 106, 14, '#1b2a1c', 66);
+      m1Text(g, cT(M1_TX.pRegie), 370, 134, 8.5, '#1f1b17', 92);
+      g.fillStyle = Math.sin(t*5)>0? '#c42a1c' : 'rgba(196,42,28,0.25)'; g.beginPath(); g.arc(400, 154, 5.5, 0, 6.283); g.fill(); }
     plateEnd(g, w, h); },
-  street(g, w, h, t, k){ plateBase(g, w, h, 'rgba(30,34,70,0.10)');
-    const xs = [20,96,150,236,300,372], ws = [70,48,80,58,66,90], hs = [150,110,176,128,160,120];
-    xs.forEach((x,i)=>{ const top = 230-hs[i]; inkWash(g, [x,230, x,top, x+ws[i],top, x+ws[i],230], '#1f1b17', 0.16);
-      inkLine(g, [x,230, x,top, x+ws[i],top, x+ws[i],230], clamp(t/1.5-i*0.1,0,1), 1.8);
-      for (let r=0;r<Math.floor(hs[i]/22);r++) for (let c=0;c<Math.floor(ws[i]/18);c++){
-        const id = i*31+r*7+c*3, off = t > 2.2 + (id%17)*0.28;                                             // les fenêtres s'éteignent une à une
-        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(x+7+c*18, top+9+r*22, 9, 12); } });
-    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.22);
-    inkFolk(g, 118, 230, 26); inkFolk(g, 214, 230, 24); inkFolk(g, 352, 230, 27);
+
+  // P2 · La rue s'éteint : les fenêtres s'éteignent de gauche à droite, la croix de l'hôpital en dernier
+  street(g, w, h, t){ plateBase(g, w, h, 'rgba(30,34,70,0.10)');
+    const B = [[20,64,150],[92,58,110],[158,66,176],[232,60,128],[300,64,160],[372,90,120]];                 // x, largeur, hauteur (le dernier : l'hôpital)
+    B.forEach(([x,bw,bh], i)=>{ const top = 230-bh, p = m1R(x, top, bw, bh);
+      inkWash(g, p, '#1f1b17', 0.16); inkLine(g, p, clamp(t/1.2-i*0.08, 0, 1), 1.8);
+      const cols = Math.floor((bw-8)/17), rows = Math.floor((bh-14)/22);
+      for (let r=0;r<rows;r++) for (let c=0;c<cols;c++){ const wx = x+7+c*17, off = t > 1.4 + ((wx-20)/442)*2.7 + ((i*7+r*3+c*5)%5)*0.07;
+        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(wx, top+9+r*22, 9, 12); } });
+    const hx = 417, ht = 230-120, lit = t<4.6 || t>5.8, ca = t<4.6? 1 : 0.35;                                 // la croix du toit : s'éteint, puis se rallume faiblement
+    g.globalAlpha = lit? ca : 1; g.fillStyle = lit? '#e8a53c' : 'rgba(31,27,23,0.45)'; g.fillRect(hx-3, ht-26, 6, 20); g.fillRect(hx-10, ht-19, 20, 6); g.globalAlpha = 1;
+    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.2);
+    inkFolk(g, 126, 230, 26); inkFolk(g, 262, 230, 24); inkFolk(g, 340, 230, 27);
     plateEnd(g, w, h); },
-  radio(g, w, h, t, k){ plateBase(g, w, h);
-    const n = clamp(t/2, 0, 1);
-    inkLine(g, [40,206, 440,206], n, 3); inkHatch(g, 40, 206, 400, 30, 6);                                 // table
-    inkLine(g, [230,206, 230,120, 380,120, 380,206], n, 2.6); inkWash(g, [230,206, 230,120, 380,120, 380,206], '#3d4a3a', 0.35);   // poste radio
-    g.strokeStyle = '#1f1b17'; g.lineWidth = 2; g.beginPath(); g.arc(270, 162, 20, 0, 6.283*n); g.stroke();
-    for (let i=0;i<5;i++) inkLine(g, [308, 140+i*10, 366, 140+i*10], n, 1.2);
-    g.fillStyle = Math.sin(t*4)>0? '#c42a1c' : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(360, 192, 4, 0, 6.283); g.fill();
-    inkLine(g, [372,120, 396,40], n, 1.6);                                                                  // antenne
-    for (let i=1;i<4;i++){ g.strokeStyle = 'rgba(196,42,28,'+(0.5*(1-((t*0.6+i/3)%1))).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(396, 40, ((t*0.6+i/3)%1)*60, -2.4, -0.4); g.stroke(); }
-    inkLine(g, [70,206, 84,178, 170,178, 184,206], n, 2); for (let i=0;i<4;i++) inkLine(g, [96,186+i*5, 160,186+i*5], n, 0.9);   // le carnet
-    inkLine(g, [150,170, 186,150], n, 2.4, '#c42a1c');                                                      // le crayon rouge
-    inkLine(g, [120,206, 120,96, 150,84], n, 2.2); inkWash(g, [140,78, 176,78, 186,98, 132,98], '#1f1b17', 0.7);   // lampe
-    inkWash(g, [134,98, 184,98, 220,206, 100,206], '#e8a53c', 0.16);
+
+  // P3 · Le comité : sept personnes sous une ampoule nue, quatre bras se lèvent un à un ; au tableau « GERMINAL »
+  committee(g, w, h, t){ plateBase(g, w, h);
+    const n = clamp(t/1.4, 0, 1);
+    inkWash(g, [240,46, 118,214, 362,214], '#e8a53c', 0.16);                                                 // le cône de l'ampoule
+    inkLine(g, [240,0, 240,34], n, 1.2); g.fillStyle = '#f6e3a0'; g.beginPath(); g.arc(240, 40, 6, 0, 6.283); g.fill();
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 40, 6, 0, 6.283); g.stroke();
+    inkWash(g, m1R(12,70,66,60), '#2b2f2c', 0.92); inkLine(g, m1R(12,70,66,60), n, 2.2);                      // le tableau noir
+    inkLine(g, [10,134, 80,134], n, 2.4);
+    if (n>=1) m1Text(g, 'GERMINAL', 45, 104, 11, '#efe6cf', 58);
+    for (let i=0;i<7;i++){ const arm = [1,2,4,5].indexOf(i), up = arm>=0 && t > 1.8+arm*0.3? 1 : 0;           // sept personnes ; les bras se lèvent à 0,3 s d'écart
+      inkFolk(g, 113+i*43, 198, 26, '#1f1b17', up); }
+    inkWash(g, m1R(80,190,320,10), '#6b5a44', 0.6); inkLine(g, [80,190, 400,190], n, 3);                      // la table
+    inkLine(g, [100,200, 100,232], n, 2.4); inkLine(g, [380,200, 380,232], n, 2.4);
+    inkLine(g, [0,232, 480,232], 1, 2); inkHatch(g, 0, 232, 480, 38, 7, '#1f1b17', 0.2);
     plateEnd(g, w, h); },
-  march(g, w, h, t, k){ plateBase(g, w, h, 'rgba(30,34,70,0.12)');
-    inkWash(g, [300,230, 300,96, 470,96, 470,230], '#1f1b17', 0.5); inkLine(g, [300,230, 300,96, 470,96, 470,230], 1, 2.4);      // le dépôt Halvard
-    for (let i=0;i<6;i++) inkLine(g, [318+i*24, 150, 318+i*24, 230], 1, 1);
-    g.fillStyle = '#e9dfc6'; g.font = '700 15px "Courier New",monospace'; g.textAlign = 'center'; g.fillText('HALVARD', 385, 124);
-    g.fillStyle = Math.sin(t*3)>0? '#3aa0e0' : 'rgba(58,160,224,0.3)'; for (let i=0;i<3;i++) g.fillRect(330+i*50, 132, 10, 3);
-    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.22);
-    for (let i=0;i<11;i++){ const x = -40 + i*23 + Math.min(1,t/5)*60, s = 24+((i*7)%5)*2; inkFolk(g, x, 230+((i*3)%4), s, '#1f1b17', i%4===1? 1 : 0); }
-    const fx = 120 + Math.min(1,t/5)*60;                                                                    // le drapeau rouge
-    inkLine(g, [fx,228, fx,150], 1, 2); const wv = Math.sin(t*3)*3;
-    inkWash(g, [fx,150, fx+34,154+wv, fx+34,172+wv, fx,170], '#c42a1c', 0.92);
+
+  // P4 · La radio : la table de Sol, le poste, l'antenne et ses ondes rouges
+  radio(g, w, h, t){ plateBase(g, w, h);
+    const n = clamp(t/1.8, 0, 1);
+    inkLine(g, [30,206, 450,206], n, 3); inkHatch(g, 30, 206, 420, 30, 6);                                   // la table
+    inkWash(g, m1R(230,120,150,86), '#3d4a3a', 0.35); inkLine(g, m1R(230,120,150,86), n, 2.6);               // le poste
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 2; g.beginPath(); g.arc(270, 162, 20, 0, 6.283*n); g.stroke();   // le cadran
+    for (let i=0;i<5;i++) inkLine(g, [308, 140+i*10, 366, 140+i*10], n, 1.2);                                // la grille
+    inkLine(g, [372,120, 394,58], n, 1.8);                                                                   // l'antenne
+    for (let i=0;i<3;i++){ const r = (t*0.6+i/3)%1; g.strokeStyle = 'rgba(196,42,28,'+(0.7*(1-r)).toFixed(3)+')'; g.lineWidth = 1.8;
+      g.beginPath(); g.arc(394, 58, 6+r*46, -2.5, -0.3); g.stroke(); }                                       // les ondes rouges
+    inkWash(g, m1R(96,184,96,22), '#1f1b17', 0.08); inkLine(g, m1R(96,184,96,22), n, 1.8); inkLine(g, [144,184, 144,206], n, 1.2);   // le carnet ouvert
+    for (let i=0;i<3;i++){ inkLine(g, [102,191+i*5, 138,191+i*5], n, 0.9); inkLine(g, [150,191+i*5, 186,191+i*5], n, 0.9); }
+    inkLine(g, [118,176, 160,168], n, 3, '#c42a1c');                                                         // le crayon rouge
+    inkWash(g, [66,92, 78,92, 190,206, 40,206], '#e8a53c', 0.16);                                            // le cône de la lampe
+    inkLine(g, [60,206, 60,122, 84,96], n, 2.4); inkWash(g, [70,86, 108,92, 100,106, 66,100], '#1f1b17', 0.7);   // la lampe d'architecte (pied, bras, abat-jour)
+    inkLine(g, [46,206, 74,206], n, 3);
     plateEnd(g, w, h); },
-  shutter(g, w, h, t, k){ plateBase(g, w, h);
-    inkWash(g, [50,250, 50,40, 430,40, 430,250], '#1f1b17', 0.14); inkLine(g, [50,250, 50,40, 430,40, 430,250], 1, 2.6);
-    for (let y=56; y<250; y+=12) inkLine(g, [56,y, 424,y], 1, 0.8);
-    inkHatch(g, 50, 40, 380, 60, 6, '#1f1b17', 0.4);                                                         // suie
-    const full = cT({fr:"ICI, ON A COUPÉ LE COURANT|À CEUX QUI COUPAIENT L'EAU.", en:"HERE WE CUT THE POWER|OF THOSE WHO CUT THE WATER.", es:"AQUÍ CORTAMOS LA LUZ|A LOS QUE CORTABAN EL AGUA.", de:"HIER HABEN WIR DEN STROM GEKAPPT|BEI DENEN, DIE DAS WASSER ABDREHTEN.", it:"QUI ABBIAMO TOLTO LA CORRENTE|A CHI TOGLIEVA L'ACQUA.", pt:"AQUI CORTÁMOS A LUZ|A QUEM CORTAVA A ÁGUA.", ru:"ЗДЕСЬ МЫ ОТКЛЮЧИЛИ СВЕТ|ТЕМ, КТО ОТКЛЮЧАЛ ВОДУ.", zh:"我们在这里切断了电|给那些切断了水的人。", ar:"هنا قطعنا الكهرباء|عمّن قطعوا عنا الماء."}).split('|');
-    g.fillStyle = '#c42a1c'; g.font = '700 21px "Courier New",monospace'; g.textAlign = 'center';
-    let left = Math.floor(t*16); full.forEach((l,i)=>{ g.fillText(l.slice(0, Math.max(0,left)), 240, 140+i*34); left -= l.length; });
+
+  // P5 · Halvard : la rue vue de la Fraternelle ; la foule et le drapeau rouge avancent vers le hangar
+  halvard(g, w, h, t){ plateBase(g, w, h, 'rgba(30,34,70,0.12)');
+    inkWash(g, m1R(300,96,170,134), '#1f1b17', 0.5); inkLine(g, m1R(300,96,170,134), 1, 2.4);                // le hangar
+    m1Text(g, 'HALVARD', 385, 128, 15, '#e9dfc6', 120);                                                      // l'enseigne
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.5; g.fillStyle = '#1f1b17';                                    // six drones posés sur le toit
+    for (let i=0;i<6;i++){ const dx = 318+i*27, dy = 93; g.beginPath(); g.moveTo(dx-6,dy-4); g.lineTo(dx+6,dy+1); g.moveTo(dx+6,dy-4); g.lineTo(dx-6,dy+1); g.stroke();
+      for (const q of [-6,6]){ g.beginPath(); g.arc(dx+q,dy-4.6,2,0,6.283); g.fill(); } }
+    g.fillStyle = Math.sin(t*3)>0? '#3aa0e0' : 'rgba(58,160,224,0.35)'; for (let i=0;i<3;i++) g.fillRect(328+i*52, 160, 12, 4);   // trois voyants bleus
+    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.2);
+    const adv = Math.min(1, t/5)*60;                                                                        // la foule avance de 60 px en 5 s
+    for (let i=0;i<11;i++) inkFolk(g, 16+i*19+adv, 232+((i*3)%3)*2, 26+((i*7)%4)*1.5, '#1f1b17', 0);
+    const fx = 16+5*19+adv+5; inkLine(g, [fx,222, fx,128], 1, 2.2); const wv = Math.sin(t*3)*3;               // le drapeau rouge, tenu haut
+    inkWash(g, [fx,128, fx+36,132+wv, fx+36,152+wv, fx,148], '#c42a1c', 0.92);
     plateEnd(g, w, h); },
-  pager(g, w, h, t, k){ plateBase(g, w, h);
-    inkLine(g, [30,210, 450,210], 1, 3); inkHatch(g, 30, 210, 420, 30, 6);
-    inkWash(g, [170,210, 176,150, 304,150, 310,210], '#23292b', 0.9); inkWash(g, [190,160, 290,160, 290,190, 190,190], '#9db79a', 1);
-    if (t>1.4){ g.fillStyle = '#1b2a1c'; g.font = '700 26px "Courier New",monospace'; g.textAlign = 'center'; g.fillText(Math.sin(t*5)>-0.4? '55' : '', 240, 184); }
-    if (t>1.4) for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.5*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 150, 20+r*70, 3.5, 5.9); g.stroke(); }
-    inkLine(g, [70,210, 84,184, 150,184, 160,210], 1, 2);
+
+  // P6 · Le rideau de fer : le graffiti s'écrit lettre par lettre (16 signes par seconde)
+  shutter(g, w, h, t){ plateBase(g, w, h, 'rgba(120,130,140,0.12)');
+    inkWash(g, m1R(50,40,380,210), '#1f1b17', 0.14); inkLine(g, m1R(50,40,380,210), 1, 2.6);
+    for (let y=52; y<250; y+=12) inkLine(g, [56,y, 424,y], 1, 0.8);                                         // les lames
+    inkHatch(g, 51, 41, 378, 56, 6, '#1f1b17', 0.4);                                                        // la suie
+    const lines = cT(M1_TX.graffiti).split('|'); let px = 21;
+    g.font = '700 21px "Courier New",monospace'; for (const l of lines) while (px>9 && (g.font = '700 '+px+'px "Courier New",monospace', g.measureText(l).width > 346)) px -= 0.5;
+    g.fillStyle = '#c42a1c'; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.font = '700 '+px+'px "Courier New",monospace';
+    let left = Math.floor(t*16); lines.forEach((l, i)=>{ g.fillText(l.slice(0, Math.max(0, left)), 240, 146+i*34); left -= l.length; });
     plateEnd(g, w, h); },
-  dark(g, w, h, t, k){ plateBase(g, w, h, 'rgba(14,16,34,0.55)');
+
+  // P7 · L'eau revient : le robinet coule dans un verre, le compteur est arraché
+  water(g, w, h, t){ plateBase(g, w, h, 'rgba(232,165,60,0.10)');
+    const lv = clamp((t-0.9)/6.5, 0, 1)*0.72, sy = 214-lv*42;                                               // niveau de l'eau dans le verre
+    inkWash(g, m1R(0,0,480,270), '#8a8f98', 0.08);
+    inkLine(g, [60,80, 160,80, 160,122], 1, 9); inkLine(g, m1R(152,122,16,10), 1, 2.4);
+    inkLine(g, [100,80, 100,66], 1, 3); inkLine(g, [86,64, 114,64], 1, 4);
+    inkWash(g, [110,214, 270,214, 252,236, 128,236, 110,214], '#1f1b17', 0.2); inkLine(g, [110,214, 270,214, 252,236, 128,236, 110,214], 1, 2.4);
+    if (lv>0){ const q = (sy-172)/42; inkWash(g, [175-4*q, sy, 145+4*q, sy, 149, 214, 171, 214], '#6b8794', 0.75); }                  // l'eau monte
+    inkLine(g, [145,172, 175,172, 171,214, 149,214, 145,172], 1, 2);                                        // le verre
+    const tip = Math.min(sy, 132+Math.max(0, t-0.4)*300);                                                    // le filet d'eau continu
+    if (t>0.4){ const pts = []; for (let y=132; y<=tip; y+=6) pts.push(160+Math.sin(y*0.3-t*6)*1.3, y); pts.push(160, tip); if (pts.length>=4) inkLine(g, pts, 1, 2.6, '#6b8794'); }
+    // le compteur arraché : boîtier penché, écran noir, fils pendants
+    const a = -0.22, box = m1Rot(m1R(320,70,100,100), 330, 72, a), scr = m1Rot(m1R(334,86,72,30), 330, 72, a);
+    inkWash(g, box, '#3d4a5a', 0.3); inkLine(g, box, 1, 2.6); inkWash(g, scr, '#101214', 0.95); inkLine(g, scr, 1, 1.6);
+    const cr = m1Rot([346,92, 360,104, 372,98, 388,112], 330, 72, a); inkLine(g, cr, 1, 1.1, '#e9dfc6');       // l'écran fêlé
+    for (const [bx,by,ph] of [[352,170,0],[392,168,1.7]]){ const p0 = m1Rot([bx,by], 330, 72, a), pts = [];
+      for (let k=0;k<=8;k++){ const yy = p0[1]+k*(26/8)*1.7; pts.push(p0[0]+Math.sin(k*0.7+t*1.4+ph)*3+k*0.6, yy); } inkLine(g, pts, 1, 1.6); }
+    plateEnd(g, w, h); },
+
+  // P8 · Le bipeur : sur la table, de nuit ; « 55 » s'affiche après 1,4 s
+  pager(g, w, h, t){ plateBase(g, w, h, 'rgba(14,16,34,0.2)');
+    inkLine(g, [20,210, 460,210], 1, 3); inkHatch(g, 20, 210, 440, 28, 6);
+    if (t>1.4) inkWash(g, [196,210, 284,210, 330,238, 150,238], '#9db79a', 0.22);                             // l'écran éclaire la table
+    const body = [176,150, 304,150, 310,156, 310,210, 170,210, 170,156, 176,150];
+    inkWash(g, body, '#23292b', 0.92); inkLine(g, body, 1, 2.2);
+    inkWash(g, m1R(190,160,100,30), '#9db79a', 1); inkLine(g, m1R(190,160,100,30), 1, 1.4);
+    for (let i=0;i<3;i++){ g.fillStyle = '#4a5558'; g.fillRect(196+i*28, 196, 18, 6); }
+    if (t>1.4 && Math.sin(t*5)>-0.4) m1Text(g, '55', 240, 184, 26, '#1b2a1c', 90);
+    if (t>1.4) for (let i=0;i<3;i++){ const r = (t*0.9+i/3)%1; g.strokeStyle = 'rgba(11,111,168,'+(0.8*(1-r)).toFixed(3)+')'; g.lineWidth = 2;
+      g.beginPath(); g.arc(240, 186, 78+r*46, 3.75, 5.67); g.stroke(); }                                      // la vibration
+    inkWash(g, [20,210, 34,186, 126,184, 140,210], '#1f1b17', 0.08); inkLine(g, [20,210, 34,186, 126,184, 140,210], 1, 2);   // le coin du carnet
+    for (let i=0;i<3;i++) inkLine(g, [44+i*2,193+i*5, 112,191+i*5], 1, 0.9);
+    plateEnd(g, w, h); },
+
+  // P9 · La rue noire : un lampadaire éteint, cinq silhouettes qui s'éloignent vers la gauche (8 px/s)
+  dark(g, w, h, t){ plateBase(g, w, h, 'rgba(14,16,34,0.55)');
     inkLine(g, [0,230, 480,230], 1, 2.2);
-    for (let i=0;i<5;i++) inkFolk(g, 400 - i*70 - t*8, 230, 24+(i%3)*2, 'rgba(20,18,24,0.8)');
-    inkLine(g, [60,230, 60,120, 76,112], 1, 2.4);
+    g.fillStyle = 'rgba(190,200,230,0.10)'; g.fillRect(0, 232, 480, 6);                                       // un reflet de pavé mouillé
+    inkLine(g, [44,230, 44,112, 66,102], 1, 2.6); inkWash(g, [58,98, 78,98, 80,104, 62,106], '#0a0a12', 0.9);   // le lampadaire éteint
+    for (let i=0;i<5;i++) inkFolk(g, 400 - i*56 - t*8, 230, 28+(i%3)*2, '#0a0a12', 0);
     plateEnd(g, w, h); },
 };
 
@@ -717,23 +795,34 @@ campMission(0, {
     ctx.fillStyle = 'rgba(230,230,240,0.6)'; ctx.beginPath(); ctx.arc(x, y-16, 8, 3.14, 6.283); ctx.fill();
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(lightSprite('#ffe9a8'), x-34, y-34, 68, 68); ctx.restore();
     ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.arc(x, y-2.6*0, 2.6, 0, 6.283); ctx.fill(); },
-  intro(g, c){ const z = g.zones; return [
-    { plate:M1_PLATES.tap, mus:'carnet', who:'nar', txt:{fr:"Octobre 2025. Chez nous, l'eau s'est arrêtée un mardi. Ce n'était pas une panne. C'était une décision.", en:"October 2025. In our street the water stopped on a Tuesday. It was not a breakdown. It was a decision.", es:"Octubre de 2025. En nuestra calle el agua se cortó un martes. No fue una avería. Fue una decisión.", de:"Oktober 2025. Bei uns in der Straße wurde an einem Dienstag das Wasser abgestellt. Das war keine Panne. Das war eine Entscheidung.", it:"Ottobre 2025. Da noi l'acqua si è fermata un martedì. Non era un guasto. Era una decisione.", pt:"Outubro de 2025. Na nossa rua a água parou numa terça-feira. Não foi uma avaria. Foi uma decisão.", ru:"Октябрь 2025-го. У нас на улице воду отключили во вторник. Это была не авария. Это было решение.", zh:"2025年10月。我们这条街的水在一个星期二停了。那不是故障，是一项决定。", ar:"أكتوبر 2025. في شارعنا انقطع الماء ذات ثلاثاء. لم يكن عطلًا. كان قرارًا."} },
-    { plate:M1_PLATES.street, who:'nar', txt:{fr:"Puis le courant. Rue après rue, selon un « score de fiabilité » que personne n'avait demandé à passer.", en:"Then the power. Street after street, by a \"reliability score\" nobody had asked to sit.", es:"Luego la luz. Calle tras calle, según una «puntuación de fiabilidad» que nadie había pedido examinar.", de:"Dann der Strom. Straße für Straße, nach einem „Zuverlässigkeitswert“, für den sich niemand je angemeldet hatte.", it:"Poi la corrente. Strada dopo strada, secondo un «punteggio di affidabilità» che nessuno aveva chiesto di sostenere.", pt:"Depois a luz. Rua após rua, segundo uma «pontuação de fiabilidade» a que ninguém pedira para ser submetido.", ru:"Потом свет. Улица за улицей, по «рейтингу надёжности», сдавать который никто не просился.", zh:"接着是电。一条街接一条街，依据一个没人要求参加的“可靠度评分”。", ar:"ثم الكهرباء. شارعًا بعد شارع، وفق «درجة موثوقية» لم يطلب أحد أن يخضع لها."} },
-    { plate:M1_PLATES.radio, who:'sol', txt:{fr:"Je m'appelle Sol. Trente ans au standard des pompiers. Je sais reconnaître une voix qui a peur — et une ville qui se tait.", en:"My name is Sol. Thirty years on the fire-brigade switchboard. I know a frightened voice when I hear one — and a city falling silent.", es:"Me llamo Sol. Treinta años en la centralita de los bomberos. Reconozco una voz que tiene miedo, y una ciudad que se calla.", de:"Ich heiße Sol. Dreißig Jahre in der Feuerwehr-Leitstelle. Ich erkenne eine Stimme, die Angst hat — und eine Stadt, die verstummt.", it:"Mi chiamo Sol. Trent'anni al centralino dei pompieri. So riconoscere una voce che ha paura, e una città che tace.", pt:"Chamo-me Sol. Trinta anos na central dos bombeiros. Sei reconhecer uma voz que tem medo, e uma cidade que se cala.", ru:"Меня зовут Sol. Тридцать лет на пожарном коммутаторе. Я узнаю голос, которому страшно, и город, который замолкает.", zh:"我叫 Sol。在消防队总机前坐了三十年。我听得出一个害怕的声音，也听得出一座沉默的城市。", ar:"اسمي Sol. ثلاثون عامًا على مقسم الإطفاء. أعرف الصوت الخائف حين أسمعه، والمدينة حين تصمت."} },
-    { plate:M1_PLATES.march, who:'sol', txt:{fr:"Cette nuit, on ne paie pas. Cette nuit, on va au dépôt Halvard. Si vous lisez ce carnet, c'est que quelqu'un a tenu la radio.", en:"Tonight we do not pay. Tonight we walk to the Halvard depot. If you are reading this notebook, someone kept the radio going.", es:"Esta noche no se paga. Esta noche vamos al depósito Halvard. Si lees este cuaderno, es que alguien mantuvo la radio.", de:"Heute Nacht zahlen wir nicht. Heute Nacht gehen wir zum Halvard-Depot. Wenn du dieses Heft liest, hat jemand das Funkgerät am Laufen gehalten.", it:"Stanotte non si paga. Stanotte si va al deposito Halvard. Se leggi questo quaderno, vuol dire che qualcuno ha tenuto accesa la radio.", pt:"Esta noite não se paga. Esta noite vamos ao depósito Halvard. Se estás a ler este caderno, é porque alguém manteve a rádio ligada.", ru:"Этой ночью мы не платим. Этой ночью идём к депо Halvard. Если ты читаешь эту тетрадь, значит, кто-то удержал рацию.", zh:"今夜我们不付钱。今夜我们去 Halvard 车库。如果你正在读这本笔记，说明有人守住了电台。", ar:"الليلة لا ندفع. الليلة نمضي إلى مستودع Halvard. إن كنت تقرأ هذا الدفتر، فقد صمد أحدهم عند اللاسلكي."} },
-    { mus:null, cam:{x:g.p.x+200, t:0.1}, dur:3.6, title:{fr:"I · La nuit des compteurs", en:"I · The night of the meters", es:"I · La noche de los contadores", de:"I · Die Nacht der Zähler", it:"I · La notte dei contatori", pt:"I · A noite dos contadores", ru:"I · Ночь счётчиков", zh:"I · 电表之夜", ar:"I · ليلة العدّادات"}, sub:{fr:"Valmont, quartier des Tanneurs — octobre 2025", en:"Valmont, the Tanners' district — October 2025", es:"Valmont, barrio de los Curtidores — octubre de 2025", de:"Valmont, das Gerberviertel — Oktober 2025", it:"Valmont, quartiere dei Conciatori — ottobre 2025", pt:"Valmont, bairro dos Curtidores — outubro de 2025", ru:"Valmont, квартал Дубильщиков — октябрь 2025", zh:"Valmont，制革匠街区 — 2025年10月", ar:"Valmont، حي الدبّاغين — أكتوبر 2025"} },
-    { cam:{x:z[0].x}, who:'sol', txt:{fr:"Trois transformateurs tiennent la rue. Reprenez-les et le quartier se rallume. Dans le noir, leurs machines voient. Pas nous.", en:"Three transformers hold the street. Retake them and the district lights up again. In the dark their machines can see. We cannot.", es:"Tres transformadores sostienen la calle. Recupérenlos y el barrio se enciende. A oscuras, sus máquinas ven. Nosotros no.", de:"Drei Transformatoren halten die Straße. Holt sie zurück, und das Viertel leuchtet wieder. Im Dunkeln sehen ihre Maschinen. Wir nicht.", it:"Tre trasformatori reggono la strada. Riprendeteli e il quartiere si riaccende. Al buio, le loro macchine vedono. Noi no.", pt:"Três transformadores seguram a rua. Retome-os e o bairro volta a acender-se. No escuro, as máquinas deles veem. Nós não.", ru:"Три трансформатора держат улицу. Отбейте их — и квартал снова загорится. В темноте их машины видят. Мы — нет.", zh:"三台变压器掌控着这条街。夺回它们，街区就会重新亮起来。在黑暗里，他们的机器看得见，我们看不见。", ar:"ثلاثة محوّلات تمسك بالشارع. استعيدوها ويُضاء الحي من جديد. في الظلام، آلاتهم ترى. أما نحن فلا."} },
-    { cam:{x:g.e.x-120, t:3}, who:'sol', txt:{fr:"Au bout de la rue : le dépôt Halvard. C'est lui qui pilote les compteurs.", en:"At the end of the street: the Halvard depot. It runs the meters.", es:"Al final de la calle: el depósito Halvard. Es él quien gobierna los contadores.", de:"Am Ende der Straße: das Halvard-Depot. Von dort werden die Zähler gesteuert.", it:"In fondo alla strada: il deposito Halvard. È lui che comanda i contatori.", pt:"No fim da rua: o depósito Halvard. É ele que comanda os contadores.", ru:"В конце улицы — депо Halvard. Оно управляет счётчиками.", zh:"街的尽头：Halvard 车库。电表就是由它控制的。", ar:"في نهاية الشارع: مستودع Halvard. منه تُدار العدّادات."} },
-    { cam:{x:g.p.x+200, t:2.4}, who:'sol', txt:{fr:"Vous avez des fusées éclairantes. Bâtissez, nourrissez les nôtres, puis avancez de lampe en lampe. À vous, commandant.", en:"You have flares. Build, feed our people, then advance from lamp to lamp. Over to you, commander.", es:"Tienen bengalas. Construyan, alimenten a los nuestros y luego avancen de farol en farol. Su turno, comandante.", de:"Ihr habt Leuchtraketen. Baut, versorgt unsere Leute, dann rückt von Lampe zu Lampe vor. Sie sind dran, Kommandant.", it:"Avete dei razzi luminosi. Costruite, nutrite i nostri, poi avanzate di lampada in lampada. A voi, comandante.", pt:"Tem foguetes de sinalização. Construa, alimente os nossos e depois avance de lâmpada em lâmpada. É consigo, comandante.", ru:"У вас есть осветительные ракеты. Стройте, кормите наших, затем продвигайтесь от лампы к лампе. Слово за вами, командир.", zh:"你们有照明弹。建设、喂饱我们的人，然后一盏灯接一盏灯地推进。交给你了，指挥官。", ar:"معكم قنابل إنارة. ابنوا، وأطعموا رجالنا، ثم تقدّموا من مصباح إلى مصباح. الأمر لكم، أيها القائد."} },
+  // OUVERTURE : cinq planches (c_dread), le carton titre (m_night), puis la visite de la rue sur le terrain
+  intro(g, c){ const Z = g.zones, OB = c.objs; return [
+    { plate:M1_PLATES.tap, mus:'c_dread', who:'nar', txt:M1_TX.o1 },
+    { plate:M1_PLATES.street, who:'nar', txt:M1_TX.o2 },
+    { plate:M1_PLATES.committee, who:'nar', txt:M1_TX.o3 },
+    { plate:M1_PLATES.radio, who:'sol', txt:M1_TX.o4 },
+    { plate:M1_PLATES.halvard, who:'nar', txt:M1_TX.o5 },
+    { mus:'m_night', cam:{x:g.p.x+200, t:0.1}, dur:3.6, title:M1_TX.cardT, sub:M1_TX.cardS },
+    { cam:{x:g.p.x, t:1.6}, who:'sol', txt:M1_TX.o7 },
+    { cam:{x:Z[0].x, t:2.4}, who:'sol', txt:M1_TX.o8 },
+    { cam:{x:OB[0].x, t:2.4}, who:'sol', txt:M1_TX.o9 },
+    { cam:{x:1500, t:3}, who:'sol', txt:M1_TX.o10,                                                        // deux paires d'yeux bleus s'allument puis s'éteignent
+      fx(g, c){ c.eyes = { t0:performance.now(), list:[ {x:1420, at:0.6, dur:1.7}, {x:1585, at:1.5, dur:1.7} ] }; } },
+    { cam:{x:g.e.x-120, t:3}, dur:3, who:'sol', txt:M1_TX.o11 },
+    { cam:{x:g.p.x+200, t:2.4}, who:'sol', txt:M1_TX.o12 },
   ]; },
-  outro(g, c, win){ return win? [
-    { cam:{x:g.e.x-80, t:1.5}, dur:3.2, fx(){ for (let i=0;i<5;i++) setTimeout(()=>{ if (game===g){ explode(g.e.x-120+Math.random()*200, gY(g.e.x)-20-Math.random()*60, 1.4); sfx('boom'); } }, i*450); },
-      who:'sol', txt:{fr:"Il brûle. Commandant… il brûle, et aux étages les gens sont aux fenêtres.", en:"It is burning. Commander… it is burning, and upstairs people are at their windows.", es:"Está ardiendo. Comandante… está ardiendo, y en los pisos de arriba la gente se asoma a las ventanas.", de:"Es brennt. Kommandant … es brennt, und oben stehen die Leute an den Fenstern.", it:"Sta bruciando. Comandante… sta bruciando, e ai piani di sopra la gente è affacciata alle finestre.", pt:"Está a arder. Comandante… está a arder, e nos andares de cima as pessoas estão às janelas.", ru:"Горит. Командир… горит, а на верхних этажах люди стоят у окон.", zh:"起火了。指挥官……起火了，楼上的人都挤在窗口。", ar:"إنه يحترق. أيها القائد… يحترق، وفي الطوابق العليا الناس عند النوافذ."} },
-    { plate:M1_PLATES.shutter, mus:'carnet', who:'nar', txt:{fr:"À l'aube, quelqu'un avait peint sur le rideau de fer. Omnicorp a parlé d'un « incident logistique ».", en:"At dawn someone had painted on the shutter. Omnicorp spoke of a \"logistics incident\".", es:"Al amanecer, alguien había pintado sobre la persiana metálica. Omnicorp habló de un «incidente logístico».", de:"Im Morgengrauen hatte jemand etwas auf das Rollgitter gemalt. Omnicorp sprach von einem „Logistikvorfall“.", it:"All'alba qualcuno aveva dipinto sulla saracinesca. Omnicorp parlò di un «incidente logistico».", pt:"Ao amanhecer, alguém tinha pintado na porta de enrolar. A Omnicorp falou de um «incidente logístico».", ru:"На рассвете кто-то написал на рольставне. Omnicorp заговорила о «логистическом инциденте».", zh:"黎明时，有人在卷帘门上涂了字。Omnicorp 称之为“物流事故”。", ar:"عند الفجر كان أحدهم قد كتب على الستارة الحديدية. وتحدّثت Omnicorp عن «حادث لوجستي»."} },
-    { plate:M1_PLATES.pager, who:'sol', txt:{fr:"Trois jours plus tard, un bipeur que personne n'avait acheté a sonné sur ma table. Deux chiffres. Rien d'autre.", en:"Three days later a pager nobody had bought rang on my table. Two digits. Nothing else.", es:"Tres días después, un busca que nadie había comprado sonó sobre mi mesa. Dos cifras. Nada más.", de:"Drei Tage später klingelte auf meinem Tisch ein Pager, den niemand gekauft hatte. Zwei Ziffern. Sonst nichts.", it:"Tre giorni dopo, un cercapersone che nessuno aveva comprato squillò sul mio tavolo. Due cifre. Nient'altro.", pt:"Três dias depois, um pager que ninguém comprara tocou na minha mesa. Dois algarismos. Mais nada.", ru:"Три дня спустя на моём столе зазвонил пейджер, который никто не покупал. Две цифры. И больше ничего.", zh:"三天后，我桌上响起一只没人买过的寻呼机。两个数字，别无其他。", ar:"بعد ثلاثة أيام رنّ على طاولتي جهاز نداء لم يشتره أحد. رقمان. لا شيء غير ذلك."} },
+  // CLÔTURE : le dépôt brûle (cinq explosions espacées de 0,45 s), puis trois planches ; en cas d'échec, la rue noire
+  outro(g, c, win){
+    M1_RETRY = !win && c.D.i===0;                                                                           // Récit : la prochaine tentative est allégée
+    return win? [
+    { cam:{x:g.e.x-80, t:1.5}, dur:3.2, who:'sol', txt:M1_TX.v1,
+      fx(){ for (let i=0;i<5;i++) setTimeout(()=>{ if (game===g){ explode(g.e.x-120+Math.random()*200, gY(g.e.x)-20-Math.random()*60, 1.4); sfx('boom'); } }, i*450); } },
+    { plate:M1_PLATES.shutter, mus:'c_hope', who:'nar', txt:M1_TX.v2 },
+    { plate:M1_PLATES.water, who:'nar', txt:M1_TX.v3 },
+    { plate:M1_PLATES.pager, mus:'c_map', who:'nar', txt:M1_TX.v4 },
   ] : [
-    { plate:M1_PLATES.dark, mus:'carnet', who:'sol', txt:{fr:"On s'est dispersés dans la nuit. Les compteurs tournent toujours. Mais la rue a entendu le bruit qu'a fait le dépôt quand vous l'avez touché.", en:"We scattered into the night. The meters are still running. But the street heard the sound the depot made when you hit it.", es:"Nos dispersamos en la noche. Los contadores siguen girando. Pero la calle oyó el ruido que hizo el depósito cuando lo tocaron.", de:"Wir zerstreuten uns in die Nacht. Die Zähler laufen weiter. Aber die Straße hat den Lärm gehört, den das Depot machte, als Ihr es getroffen habt.", it:"Ci siamo dispersi nella notte. I contatori girano ancora. Ma la strada ha sentito il rumore che ha fatto il deposito quando l'avete colpito.", pt:"Dispersámo-nos na noite. Os contadores continuam a rodar. Mas a rua ouviu o barulho que o depósito fez quando o atingiram.", ru:"Мы рассеялись в ночи. Счётчики всё ещё крутятся. Но улица услышала, какой грохот издало депо, когда вы по нему ударили.", zh:"我们消散在夜色里。电表仍在转。但街上的人听见了，你们击中车库时它发出的那声巨响。", ar:"تفرّقنا في الليل. ما زالت العدّادات تدور. لكن الشارع سمع الصوت الذي أصدره المستودع حين ضربتموه."} },
+    { plate:M1_PLATES.dark, mus:'c_sorrow', who:'sol', txt:M1_TX.e1 },
+    { plate:(g, w, h, t, k)=>M1_PLATES.dark(g, w, h, t+6, k), who:'nar', txt:M1_TX.e2 },                    // même planche, la scène continue
   ]; },
 });
 // la règle affiche le malus de portée du niveau choisi (Récit −15 %, Lutte −20 %, Dernier carré −28 %)
