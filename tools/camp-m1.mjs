@@ -1,5 +1,5 @@
 /* Campagne · mission I (La nuit des compteurs) : à chaque niveau de récit, un joueur scripté simple
-   (doit GAGNER) puis un joueur passif (doit PERDRE) ; vérifie les cinématiques (ouverture, scène du
+   (doit GAGNER) puis un joueur passif (doit PERDRE ; aucune doctrine en mission I, DOC=1 rejoue à l'identique) ; vérifie les cinématiques (ouverture, scène du
    premier transformateur, clôture).   node tools/camp-m1.mjs [-v]   (DOC=1 : seconde doctrine) */
 import { open, close, check, failures } from './_camp-lib.mjs';
 import { readFileSync } from 'node:fs';
@@ -23,6 +23,7 @@ console.log('\nCAMPAGNE · MISSION I — LA NUIT DES COMPTEURS');
 for (const lvl of [0,1,2]){
   for (const bot of [true, false]){
     const { page, errs } = await open(lvl, 0); await page.evaluate('(() => { '+BOTS+'\n; window.__competent = __competent; })()');   // la CSP du jeu interdit les scripts en ligne : on passe par evaluate
+    if (bot) check(await page.evaluate((l) => cT(CAMPAIGN[0].rule).includes('−'+[15,20,28][l]), lvl), `niveau ${lvl} : la règle affiche le malus de portée du niveau`);
     const intro = await page.evaluate(() => { const n = CINE.on? CINE.script.length : 0; const played = cineRun(); return { n, played, on:CINE.on }; });
     if (bot) check(intro.n>=6 && intro.played===intro.n && !intro.on, `niveau ${lvl} : ouverture, ${intro.n} plans joués jusqu'au bout`);
     const r = await page.evaluate(play, bot);
