@@ -347,6 +347,64 @@
     #endscreen .endSheet { width:min(500px,58vw); padding-top:10px; padding-bottom:10px; }
     #endstats { font-size:12px; line-height:1.38; } .esJournal { margin-top:4px; padding-top:4px; }
     #endscreen .go { margin-top:8px; padding:7px 24px 5px; font-size:19px; } }
+  /* ---------- BRIEFING DE CAMPAGNE (v1.16) : dossier de mission plein écran, même papier que le menu ---------- */
+  #menu .campAbout { font-size:clamp(11.5px,1.9vh,14px); line-height:1.45; color:var(--ink); border-left:3px solid var(--red); padding:2px 0 2px 9px; }
+  body[dir="rtl"] #menu .campAbout { border-left:0; border-right:3px solid var(--red); padding:2px 9px 2px 0; }
+  #menu .campDiffTag { margin-top:-4px; }
+  #campBrief { --paper:#e8dfc9; --paper2:#ddd2b8; --ink:#1f1b17; --ink2:#4d453b; --red:#c42a1c; --line:rgba(31,27,23,.28);
+    position:absolute; inset:0; z-index:12; display:none; align-items:center; justify-content:center; pointer-events:auto;
+    padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+    background:radial-gradient(ellipse at 50% 35%, rgba(30,20,16,.84) 0%, rgba(8,6,6,.97) 75%); color:var(--ink); font-family:var(--f-type); touch-action:manipulation; }
+  #campBrief * { touch-action:manipulation; }
+  #campBrief .cbSheet { position:relative; width:min(1120px,100%); height:min(780px,100%); display:flex; flex-direction:column; min-height:0;
+    background:var(--grain), linear-gradient(180deg, var(--paper) 0%, var(--paper2) 100%); box-shadow:0 18px 44px rgba(0,0,0,.6), 0 2px 4px rgba(0,0,0,.4); transform:rotate(-.25deg); }
+  #campBrief .cbHead { flex:none; display:flex; align-items:center; gap:14px; padding:clamp(6px,1.6vh,14px) clamp(12px,2vw,24px) clamp(4px,1vh,8px); padding-right:58px;   /* bouton plein écran (toujours à droite) */ border-bottom:3px double var(--ink); }
+  #campBrief .cbNo { flex:none; min-width:1.6em; text-align:center; font-family:var(--f-sten); font-weight:800; font-size:clamp(24px,6vh,48px); line-height:1; color:var(--paper); background:var(--red); padding:4px 10px 2px; transform:rotate(-3deg); }
+  #campBrief .cbHT { min-width:0; }
+  #campBrief .cbKick { font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.16em; color:var(--red); text-transform:uppercase; }
+  #campBrief .cbTitle { font-family:var(--f-sten); font-weight:800; font-size:clamp(18px,4.4vh,34px); line-height:1.02; letter-spacing:.02em; text-transform:uppercase; }
+  #campBrief .cbPlace { font-size:clamp(10px,1.7vh,13px); color:var(--ink2); }
+  #campBrief .cbBody { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:clamp(6px,1.4vh,14px) clamp(14px,2.4vw,30px); padding:clamp(6px,1.4vh,14px) clamp(12px,2vw,24px); align-content:start; scrollbar-width:thin; scrollbar-color:var(--ink2) transparent; }
+  #campBrief .cbCol { display:flex; flex-direction:column; gap:clamp(6px,1.4vh,12px); min-width:0; }
+  #campBrief .cbSec h3 { font-family:var(--f-sten); font-weight:800; font-size:clamp(11.5px,2vh,15px); letter-spacing:.08em; color:var(--red); margin:0 0 3px; border-bottom:1px dashed var(--line); padding-bottom:2px; }
+  #campBrief .cbSec h4 { font-family:var(--f-sten); font-weight:800; font-size:clamp(10.5px,1.8vh,13px); letter-spacing:.06em; color:var(--ink2); margin:6px 0 1px; }
+  #campBrief .cbSec p, #campBrief .cbSec li { font-size:clamp(11.5px,1.95vh,14.5px); line-height:1.45; margin:0 0 .5em; user-select:text; -webkit-user-select:text; }
+  #campBrief .cbPrev { margin:0 0 .6em; padding:4px 9px; border-left:3px solid var(--ink2); font-style:italic; color:var(--ink2); font-size:clamp(11px,1.85vh,13.5px); line-height:1.4; }
+  #campBrief .cbPrev b { font-style:normal; color:var(--ink); }
+  #campBrief .cbWhere { font-weight:bold; }
+  #campBrief .cbGoal { border:2px solid var(--red); padding:6px 10px 2px; background:rgba(255,255,255,.16); }
+  #campBrief .cbGoalTxt { font-family:var(--f-sten); font-weight:800; font-size:clamp(13px,2.4vh,18px) !important; line-height:1.2 !important; }
+  #campBrief ul { margin:0; padding-inline-start:1.2em; }
+  #campBrief .cbPills { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 4px; }
+  #campBrief .cbPill { cursor:pointer; font-family:inherit; font-size:clamp(12px,2.1vh,15px); color:var(--ink); background:none; border:2px solid var(--ink); padding:3px 12px 2px; }
+  #campBrief .cbPill.sel { color:var(--paper); background:var(--red); border-color:var(--red); transform:rotate(-2deg); }
+  #campBrief .cbDiffTag { font-style:italic; }
+  #campBrief .cbDiffLines li { font-size:clamp(10.5px,1.75vh,13px) !important; margin:0 !important; color:var(--ink2); }
+  #campBrief .cbDocs { grid-column:1 / -1; }
+  #campBrief .cbHint { color:var(--ink2); }
+  #campBrief .cbCards { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,18px); }
+  #campBrief .cbDoc { position:relative; cursor:pointer; text-align:start; border:2px solid var(--ink); padding:8px 11px 6px; background:rgba(255,255,255,.14); transition:transform .1s; }
+  #campBrief .cbDoc:hover { transform:translateY(-1px); }
+  #campBrief .cbDoc.sel { border-color:var(--red); outline:2px solid var(--red); outline-offset:3px; background:rgba(255,255,255,.3); }
+  #campBrief .cbDoc:focus-visible { outline:3px dashed var(--red); outline-offset:3px; }
+  #campBrief .cbMark { display:none; position:absolute; top:6px; inset-inline-end:8px; font-family:var(--f-sten); font-weight:800; font-size:12px; color:var(--red); border:2px solid var(--red); padding:1px 6px 0; transform:rotate(6deg); }
+  #campBrief .cbDoc.sel .cbMark { display:block; }
+  #campBrief .cbDocName { display:block; font-family:var(--f-sten); font-weight:800; font-size:clamp(14px,2.6vh,20px); padding-inline-end:5.5em; }
+  #campBrief .cbDocShort { display:block; font-size:clamp(11px,1.85vh,13.5px); color:var(--ink2); margin:1px 0 4px; }
+  #campBrief .cbDoc h5 { font-family:var(--f-sten); font-weight:800; font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.08em; color:var(--red); margin:4px 0 1px; }
+  #campBrief .cbFx li { font-weight:bold; font-size:clamp(11px,1.85vh,13.5px) !important; margin:0 !important; }
+  #campBrief .cbDocLong { margin:5px 0 3px !important; }
+  #campBrief .cbWhy { margin:4px 0 0 !important; font-style:italic; color:var(--red); }
+  #campBrief .cbMinus li { color:var(--ink2); font-weight:bold; margin:0 !important; }
+  #campBrief .cbMinus p { color:var(--ink2); margin:0 !important; }
+  #campBrief .cbFoot { flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:clamp(5px,1.2vh,10px) clamp(12px,2vw,24px); border-top:2px solid var(--ink); }
+  #campBrief .cbBack { cursor:pointer; font-family:inherit; font-size:clamp(12px,2vh,15px); color:var(--ink2); background:none; border:0; text-decoration:underline; text-underline-offset:3px; }
+  #campBrief .cbBack:hover { color:var(--red); }
+  #campBrief .cbGo { font-size:clamp(16px,3.2vh,26px); padding:clamp(5px,1.2vh,10px) clamp(18px,3vw,34px) clamp(3px,1vh,7px); }
+  #campBrief .cbGo:focus-visible, #campBrief .cbPill:focus-visible { outline:3px dashed var(--red); outline-offset:3px; }
+  @media (max-width:700px){ #campBrief .cbBody, #campBrief .cbCards { grid-template-columns:minmax(0,1fr); } }
+  @media (max-height:460px){ #campBrief .cbSheet { transform:none; } #campBrief .cbPlace { display:none; } }
   /* ---------- sélecteur de langue (1er lancement) et bouton plein écran : même papier ---------- */
   #langPick .lpSheet { background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); color:#1f1b17; padding:18px 22px 20px;
     box-shadow:0 18px 40px rgba(0,0,0,.6); transform:rotate(-1deg); max-width:640px; display:flex; flex-direction:column; gap:14px; align-items:center; }
@@ -564,6 +622,8 @@
       <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
     </div>
   </div>
+  <!-- BRIEFING DE CAMPAGNE : dossier de mission plein écran (rempli par campBriefRender, 16b-campaign.js) -->
+  <div id="campBrief" class="panel" role="dialog" aria-modal="true"></div>
 </div>
 <button id="fsBtn" title="Plein écran" aria-label="Plein écran">⛶</button>
 <script>

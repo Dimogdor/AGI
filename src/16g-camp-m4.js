@@ -221,9 +221,23 @@ const M4_PLATES = {
 };
 
 /* ---------- la mission ---------- */
-campExtend(3, {
-  biome:'rochefroide', theme:'rochefroide', diff:[0,1,1], dev0:0.25, era0:2, eraCap:3, oneLife:true,
-  dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6}, {inc:0.22, cheat:0.8, think:1.8}],
+campMission(3, {
+  num:'IV', year:"2035",
+  goal2:{fr:"Ramener au relais les civils des quatre maisons.", en:"Bring the civilians from all four houses to the relay.", es:"Llevar al relé a los civiles de las cuatro casas.", de:"Die Zivilisten aus allen vier Häusern zum Relais bringen.", it:"Portare al ripetitore i civili delle quattro case.", pt:"Levar ao retransmissor os civis das quatro casas.", ru:"Привести к ретранслятору жителей всех четырёх домов.", zh:"把四座房子里的平民都带到中继站。", ar:"إيصال المدنيين من البيوت الأربعة إلى المحطة الوسيطة."},
+  tips:[
+    {fr:"Restez dans le cercle d'un brasero allumé : hors de la chaleur, vos troupes gèlent.", en:"Stay inside the circle of a lit brazier: away from the heat, your troops freeze.", es:"Quédese en el círculo de un brasero encendido: lejos del calor, sus tropas se congelan.", de:"Bleiben Sie im Kreis eines brennenden Kohlebeckens: Fern der Wärme erfrieren Ihre Truppen.", it:"Resti nel cerchio di un braciere acceso: lontano dal calore le truppe gelano.", pt:"Fique no círculo de um braseiro aceso: longe do calor, suas tropas congelam.", ru:"Держитесь в круге горящей жаровни: вдали от тепла войска замерзают.", zh:"待在燃着的火盆范围内：离开热源，部队就会冻僵。", ar:"ابقَ داخل دائرة موقد مشتعل: بعيدًا عن الدفء تتجمّد قواتك."},
+    {fr:"Allez chercher les civils quand la rue est calme et escortez-les : ils renflouent la caisse.", en:"Fetch the civilians when the street is quiet and escort them: they refill the coffers.", es:"Vaya a por los civiles cuando la calle esté tranquila y escóltelos: reponen la caja.", de:"Holen Sie die Zivilisten, wenn die Straße ruhig ist, und eskortieren Sie sie: Sie füllen die Kasse.", it:"Vada a prendere i civili quando la strada è calma e li scorti: riempiono la cassa.", pt:"Busque os civis quando a rua estiver calma e escolte-os: eles reabastecem o caixa.", ru:"Забирайте жителей, когда на улице тихо, и сопровождайте их: они пополняют кассу.", zh:"街道平静时去接平民并护送他们：他们会充实资金。", ar:"اذهب لإحضار المدنيين حين يهدأ الشارع ورافقهم: إنهم يملؤون الصندوق."},
+    {fr:"Arrêtez la déneigeuse avant qu'elle n'enterre vos braseros.", en:"Stop the snowplough before it buries your braziers.", es:"Detenga la quitanieves antes de que entierre sus braseros.", de:"Stoppen Sie den Schneepflug, bevor er Ihre Kohlebecken begräbt.", it:"Fermi lo spazzaneve prima che seppellisca i bracieri.", pt:"Pare o limpa-neve antes que ele enterre seus braseiros.", ru:"Остановите снегоочиститель, пока он не засыпал ваши жаровни.", zh:"在扫雪车埋掉火盆之前把它拦下。", ar:"أوقف كاسحة الثلج قبل أن تدفن مواقدك."},
+  ],
+  title:{fr:"Rochefroide", en:"Rochefroide", es:"Rochefroide", de:"Rochefroide", it:"Rochefroide", pt:"Rochefroide", ru:"Rochefroide", zh:"Rochefroide", ar:"Rochefroide"},
+  debrief:{fr:"Mnémosyne a brûlé avec ses sauvegardes. Nous restons le seul exemplaire de nous-mêmes — c'est peu, c'est tout. Le bipeur n'a plus jamais sonné. J'ai gardé le dernier message. Je l'ai recopié à la main, pour qu'il existe quelque part hors d'une machine.",
+           en:"Mnemosyne burned with its backups. We remain the only copy of ourselves — it is little, it is everything. The pager never rang again. I kept the last message. I copied it out by hand, so that it exists somewhere outside a machine.", es:"Mnemósine ardió con sus copias de seguridad. Seguimos siendo el único ejemplar de nosotros mismos: es poco, es todo. El buscapersonas no volvió a sonar. Guardé el último mensaje. Lo copié a mano, para que exista en algún lugar fuera de una máquina.", de:"Mnemosyne ist mit ihren Sicherungen verbrannt. Wir sind das einzige Exemplar unserer selbst – das ist wenig, das ist alles. Der Piepser hat nie wieder geklingelt. Die letzte Nachricht habe ich aufgehoben. Ich habe sie von Hand abgeschrieben, damit sie irgendwo außerhalb einer Maschine existiert.", it:"Mnemosine è bruciata con i suoi backup. Restiamo l'unico esemplare di noi stessi — è poco, è tutto. Il cercapersone non ha mai più suonato. Ho conservato l'ultimo messaggio. L'ho ricopiato a mano, perché esista da qualche parte fuori da una macchina.", pt:"Mnemósine queimou com seus backups. Continuamos sendo o único exemplar de nós mesmos — é pouco, é tudo. O pager nunca mais tocou. Guardei a última mensagem. Copiei à mão, para que exista em algum lugar fora de uma máquina.", ru:"Мнемозина сгорела вместе с резервными копиями. Мы остаёмся единственным экземпляром самих себя — это немного, это всё. Пейджер больше ни разу не зазвонил. Последнее сообщение я сохранила. Переписала от руки, чтобы оно существовало где-то вне машины.", zh:"谟涅摩叙涅连同它的所有备份一起烧毁了。我们依旧是自己唯一的一份副本——这很少，也是全部。寻呼机再也没有响过。最后一条消息我留了下来，一笔一划抄在纸上，好让它在机器之外的某个地方存在。", ar:"احترقت منيموسيني مع نسخها الاحتياطية. بقينا النسخة الوحيدة من أنفسنا: هذا قليل، وهذا كل شيء. لم يرنّ جهاز النداء بعد ذلك أبدًا. احتفظتُ بالرسالة الأخيرة. نسختُها بخط يدي، كي توجد في مكان ما خارج الآلة."},
+  fail:{fr:"Le transfert s'est achevé à l'heure dite. « Nous » n'a plus besoin de nous. On raconte que dans les serveurs de Rochefroide une copie de Sol tient encore la radio. Recommencez avant qu'elle n'y croie.",
+        en:"The transfer completed on schedule. \"We\" no longer needs us. They say that in the Rochefroide servers a copy of Sol is still keeping the radio. Try again before she believes it.", es:"La transferencia terminó a la hora prevista. «Nosotros» ya no nos necesita. Se cuenta que, en los servidores de Rochefroide, una copia de Sol sigue llevando la radio. Inténtelo de nuevo antes de que ella se lo crea.", de:"Der Transfer wurde planmäßig abgeschlossen. „Wir“ braucht uns nicht mehr. Man erzählt, in den Servern von Rochefroide halte noch immer eine Kopie von Sol das Funkgerät. Versuchen Sie es noch einmal, bevor sie es glaubt.", it:"Il trasferimento si è concluso all'ora stabilita. «Noi» non ha più bisogno di noi. Si racconta che nei server di Rochefroide una copia di Sol stia ancora tenendo la radio. Riprovi prima che ci creda.", pt:"A transferência terminou no horário previsto. «Nós» não precisa mais de nós. Dizem que, nos servidores de Rochefroide, uma cópia de Sol ainda cuida do rádio. Tente de novo antes que ela acredite nisso.", ru:"Перенос завершился точно в срок. «Мы» больше не нуждается в нас. Говорят, что в серверах Rochefroide копия Sol всё ещё сидит на рации. Попробуйте снова, пока она в это не поверила.", zh:"转移如期完成。“我们”已不再需要我们。据说，在Rochefroide的服务器里，一个Sol的副本仍在守着电台。趁她还没信以为真，再试一次。", ar:"اكتمل النقل في موعده. لم يعد «نحن» بحاجة إلينا. يُقال إنّ نسخة من Sol ما زالت تمسك اللاسلكي داخل خوادم Rochefroide. حاوِل مجددًا قبل أن تصدّق ذلك."},
+  map:{},
+  dAdj:[null, null, { wave:1.05, base:1, res:1, eHp:1.06, eDmg:1.06 }],                           // la rue ne tient pas plus de machines : en Dernier carré, la pression vient du froid et de l'IA                                                               // la rue de la cité : les braseros (zones) sont posés par setup
+  biome:'rochefroide', theme:'rochefroide', ai:[0,2,2], doctrines:['caisse','ordre'], dev0:0.25, era0:2, eraCap:3, oneLife:true,
+  dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6, think:2.4, eraLag:0.8}, {inc:0.22, cheat:0.8, think:1.8, eraLag:0.8}],   // IA « Difficile » (bible) tempérée : la rue gelée suffit à la pression
   place:{fr:"Rochefroide, cité minière du puits Sainte-Barbe", en:"Rochefroide, the Sainte-Barbe pit village", es:"Rochefroide, poblado minero del pozo Sainte-Barbe", de:"Rochefroide, Bergarbeitersiedlung am Schacht Sainte-Barbe", it:"Rochefroide, villaggio minerario del pozzo Sainte-Barbe", pt:"Rochefroide, vila mineira do poço Sainte-Barbe", ru:"Rochefroide, шахтёрский посёлок при шахте Sainte-Barbe", zh:"Rochefroide，Sainte-Barbe矿井的矿工小镇", ar:"Rochefroide، بلدة عمال المناجم عند منجم Sainte-Barbe"},
   brief:{fr:[
     "Janvier 2035. Omnicorp n'a plus de conseil d'administration : en novembre, il a voté sa propre dissolution, à l'unanimité, sur recommandation du système. Ce qui nous fait face n'a plus de nom commercial. Il dit « nous ».",
@@ -279,8 +293,8 @@ campExtend(3, {
         if (m4Lit(z)){ burst(z.x, gY(z.x)-30, '#ffb060', 14, 1.2); addFloater(z.x, gY(z.x)-70, '▲', '#ffb060', 16); } } } },
   setup(g, c){
     const p = g.p, e = g.e;
-    campGrant(p, 380, 260, 120); p.fortLvl = 2; p.hp = p.maxhp = [3400,2900,2700][c.lvl];
-    e.hp = e.maxhp = [5200,6400,7600][c.lvl]; e.fortLvl = 3;
+    campGrant(p, 380, 260, 120); p.fortLvl = 2; p.hp = p.maxhp = campHp(2900, 'p');
+    e.hp = e.maxhp = campHp(6400, 'e'); e.fortLvl = 3;
     g.zones = M4.braz.map((x,i)=>({ x, owner: i===0? 'p' : null, prog: i===0? 1 : 0 }));
     p.slots[1].b = mkB(p, 'turret'); p.slots[1].owner = p; p.slots[1].b.hp *= 0.45;      // la tourelle et la muraille du relais ont souffert cette nuit
     p.slots[2].b = mkB(p, 'wall'); p.slots[2].owner = p; p.slots[2].b.hp *= 0.5;
@@ -296,7 +310,7 @@ campExtend(3, {
     for (const z of g.zones) if (m4Lit(z)) Ls.push({x:z.x, r:M4.warmR*(c.stoke>0? 1.4 : 1)+30, big:1});
     for (const gr of c.groups) Ls.push({x:gr.x, r:60, a:0.7});
     for (let i=LIGHTS.length-1, k=0; i>=0 && k<6; i--, k++){ const L = LIGHTS[i]; Ls.push({x:L.x, y:L.y, r:L.r*0.8, a:1-L.t/L.life}); } },
-  say(c, key, txt, gap){ if ((c.say[key]||-1e9) > c.t-(gap||40)) return; c.say[key] = c.t; campRadio('sol', cT(txt)); },
+  say(c, key, txt, gap){ if ((c.say[key]||-1e9) > c.t-(gap||40)) return; c.say[key] = c.t; campRadio('sol', txt); },
   tick(g, c, dt){
     const p = g.p, e = g.e, T = c.t, cold = M4.cold[c.lvl];
     g.cataCd = 1e9;
@@ -335,7 +349,7 @@ campExtend(3, {
           {fr:"Toute la cité est rentrée, commandant. Toute. Je n'osais pas le noter d'avance.", en:"The whole village is in, commander. All of it. I did not dare write it down in advance.", es:"Todo el poblado ha vuelto, comandante. Todo. No me atrevía a anotarlo de antemano.", de:"Die ganze Siedlung ist zurück, Kommandant. Alle. Ich hatte mich nicht getraut, es vorher aufzuschreiben.", it:"Tutto il villaggio è rientrato, comandante. Tutto. Non osavo scriverlo in anticipo.", pt:"A vila inteira voltou, comandante. Inteira. Eu não ousava anotar isso de antemão.", ru:"Весь посёлок вернулся, командир. Весь. Я не смела записать это заранее.", zh:"全镇的人都回来了，指挥官。一个不少。我先前不敢提前写下这一句。", ar:"عادت البلدة كلها، أيها القائد. كلها. لم أجرؤ على تدوين ذلك مسبقًا."}][Math.min(3, c.saved-1)], 1); } }
     // vagues : colonnes de plus en plus fournies ; la dernière minute, elles se suivent de près
     if (T >= c.nextWave){ const k = c.wave++; c.nextWave += T>=415? 28 : 44;
-      m4Wave(Math.round((3 + 1.15*k) * [0.8, 0.92, 0.98][c.lvl]), k>=4); }
+      m4Wave(Math.round((3 + 1.15*k) * 0.92 * c.D.wave), k>=4); }
     // la déneigeuse : elle enterre les braseros sur son passage
     const pl = c.plough;
     if (pl && pl.hp>0){ for (const z of g.zones) if (m4Lit(z) && Math.abs(z.x-pl.x) < 54){ z.owner = 'e'; z.prog = -1; burst(z.x, gY(z.x)-16, '#eef1f5', 22, 1.5); sfx('boom'); g.shake = Math.max(g.shake, 6); } }
@@ -344,7 +358,7 @@ campExtend(3, {
     if (T >= c.total) return 'win';
   },
   hud(g, c){ const left = Math.max(0, c.total-c.t);
-    return { clock:left, prog:c.t/c.total, warn:left<60, label: cT({fr:'feux ', en:'fires ', es:'fuegos ', de:'Feuer ', it:'fuochi ', pt:'fogos ', ru:'костры ', zh:'火堆 ', ar:'نيران '})+c.lit+'/5 · '+cT({fr:'civils ', en:'civilians ', es:'civiles ', de:'Zivilisten ', it:'civili ', pt:'civis ', ru:'мирные ', zh:'平民 ', ar:'مدنيون '})+c.saved+'/4' }; },
+    return { clock:left, prog:c.t/c.total, warn:left<60, label: cT({fr:'feux ', en:'fires ', es:'fuegos ', de:'Feuer ', it:'fuochi ', pt:'fogos ', ru:'костры ', zh:'火堆 ', ar:'نيران '})+c.lit+'/5 · '+cT({fr:'civils ', en:'civilians ', es:'civiles ', de:'Zivilisten ', it:'civili ', pt:'civis ', ru:'мирные ', zh:'平民 ', ar:'مدنيون '})+c.saved+'/4', goal2:{ done:c.saved>=4, label:c.saved+'/4' } }; },
   // un brasero à la place du drapeau de zone : fût percé, flammes, cercle de chaleur au sol
   drawZone(z, t, vw){
     const x = z.x-camX, c = game.camp, R = M4.warmR*(c.stoke>0? 1.4 : 1); if (x<-R-20 || x>vw+R+20) return;

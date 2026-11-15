@@ -21,7 +21,7 @@ export async function campRun({ mission, bot, info, maxMin = 14, levels = (proce
     await page.goto(GAME); await page.waitForTimeout(300);
     const r = await page.evaluate(([mission, lvl, active, botSrc, infoSrc, maxMin, tstep, DOC]) => {
       let s = 20280317 + lvl*101 + (active? 7 : 0); Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };
-      CAMP_SAVE.done = 5; CAMP_SAVE.lvl = lvl; if (DOC) CAMP_SAVE.doc[mission] = 1; else delete CAMP_SAVE.doc[mission]; campLaunch(mission);   // DOC=1 : seconde doctrine
+      CAMP_SAVE.done = 5; CAMP_SAVE.diff = lvl; if (DOC) CAMP_SAVE.doc[mission] = 1; else delete CAMP_SAVE.doc[mission]; campStart(mission);   // DOC=1 : seconde doctrine
       const out = { intro:0, cines:0, shots:0, err:null };
       const play = skip => { if (skip){ cineEnd(); return; }                // déroule chaque plan (rendu compris) ou passe la scène
         let n = 0; while (CINE.on && n++ < 40){ const sh = cineShot(); CINE.t = cineDur(sh)*0.6; render(0.016); out.shots++; cineNext(); } };

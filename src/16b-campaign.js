@@ -1,18 +1,25 @@
-/* ================= CAMPAGNE « LES CARNETS DE GERMINAL » (v1.14) =================
-   Cinq missions scénarisées côté Humanité, de la première nuit d'émeute (2025) à la dernière
-   bataille (2038). Chaque mission a ses règles (plafond d'ère, base à une seule vie, vagues,
-   lacs à tenir, compte à rebours, renforts), son dossier (récit + objectif), ses transmissions
-   radio en cours de partie et son compte rendu. La progression est sauvegardée sur l'appareil.
-   Les textes sont dans la langue du joueur (repli sur l'anglais, puis le français).
+/* ================= CAMPAGNE « LES CARNETS DE GERMINAL » — MOTEUR (v1.16) =================
+   Ce fichier est le MOTEUR de la campagne et son interface commune ; il ne contient AUCUN texte de
+   mission. Chaque mission se déclare dans son propre fichier (16d…16h) avec campMission(i, def).
+     · sauvegarde (agi_camp v2 : progression, difficulté, doctrines, objectifs secondaires)
+     · difficulté : CAMP_DIFFS / campDiff() — un modèle commun à toutes les missions
+     · doctrines : DOCTRINES (effets chiffrés, longues explications)
+     · cartes (campApplyMap) et actes (campNextAct) ; cycle de vie (startMission, campTick, campEndCine)
+     · en mission : objectif + progression, bouton « ? » (aide en pause), radio (file, journal, voix), bandeau
+     · briefing plein écran entre les missions, menu « carnet »
    Personnages : SOL, ancienne standardiste des pompiers, tient la radio de la cellule Germinal
    et rédige les carnets ; KASSANDRE, instance 55 de la logistique d'Omnicorp, parle par bipeur. */
 const cT = o => (o && (o[SETTINGS.lang] || o.en || o.fr)) || '';
 const CAMP_KEY = 'agi_camp';
-const CAMP_SAVE = { done:0, lvl:1, best:{}, doc:{} };
+// v2 : « diff » (0 Facile, 1 Normal, 2 Difficile) remplace « lvl » (niveau de récit Veillée / Résistance / Dernier carré, même index)
+const CAMP_SAVE = { v:2, done:0, diff:1, best:{}, doc:{}, bonus:{} };
 try { const j = JSON.parse(localStorage.getItem(CAMP_KEY) || 'null');
   if (j && typeof j==='object'){
-    CAMP_SAVE.done = clamp(+j.done|0, 0, 5); CAMP_SAVE.lvl = clamp(+j.lvl|0, 0, 2);
+    CAMP_SAVE.done = clamp(+j.done|0, 0, 5);
+    const d = j.diff!=null? j.diff : j.lvl;                               // migration v1 → v2
+    CAMP_SAVE.diff = Number.isFinite(+d) && d!=='' && d!==null? clamp(+d|0, 0, 2) : 1;
     if (j.doc && typeof j.doc==='object') for (let i=1;i<5;i++) if (+j.doc[i]===1) CAMP_SAVE.doc[i] = 1;
+    if (j.bonus && typeof j.bonus==='object') for (let i=0;i<5;i++) if (+j.bonus[i]===1) CAMP_SAVE.bonus[i] = 1;
     if (j.best && typeof j.best==='object') for (let i=0;i<5;i++) if (Number.isFinite(+j.best[i]) && +j.best[i]>0) CAMP_SAVE.best[i] = +j.best[i];
   } } catch(e){}
 function campSave(){ try { localStorage.setItem(CAMP_KEY, JSON.stringify(CAMP_SAVE)); } catch(e){} }
@@ -22,16 +29,10 @@ const CAMP_UI = {
   tab:      {fr:"CAMPAGNE", en:"CAMPAIGN", es:"CAMPAÑA", de:"KAMPAGNE", it:"CAMPAGNA", pt:"CAMPANHA", ru:"КАМПАНИЯ", zh:"战役", ar:"الحملة"},
   head:     {fr:"LES CARNETS DE GERMINAL", en:"THE GERMINAL NOTEBOOKS", es:"LOS CUADERNOS DE GERMINAL", de:"DIE NOTIZBÜCHER VON GERMINAL", it:"I QUADERNI DI GERMINAL", pt:"OS CADERNOS DE GERMINAL", ru:"ТЕТРАДИ GERMINAL", zh:"GERMINAL 笔记", ar:"دفاتر GERMINAL"},
   sub:      {fr:"Cinq nuits, treize ans. Tenus par Sol, opératrice radio.", en:"Five nights, thirteen years. Kept by Sol, radio operator.", es:"Cinco noches, trece años. Escritos por Sol, operadora de radio.", de:"Fünf Nächte, dreizehn Jahre. Geführt von Sol, Funkerin.", it:"Cinque notti, tredici anni. Tenuti da Sol, operatrice radio.", pt:"Cinco noites, treze anos. Escritos por Sol, operadora de rádio.", ru:"Пять ночей, тринадцать лет. Ведёт Sol, радистка.", zh:"五个夜晚，十三年。由无线电操作员Sol记录。", ar:"خمس ليالٍ، ثلاث عشرة سنة. دوّنتها Sol، مشغّلة اللاسلكي."},
-  level:    {fr:"Récit", en:"Telling", es:"Relato", de:"Erzählung", it:"Racconto", pt:"Relato", ru:"Повествование", zh:"叙事", ar:"السرد"},
-  lvl0:     {fr:"Veillée", en:"Fireside", es:"Velada", de:"Abendrunde", it:"Veglia", pt:"Serão", ru:"Посиделки", zh:"炉边夜话", ar:"سهرة"},
-  lvl1:     {fr:"Résistance", en:"Resistance", es:"Resistencia", de:"Widerstand", it:"Resistenza", pt:"Resistência", ru:"Сопротивление", zh:"抵抗", ar:"المقاومة"},
-  lvl2:     {fr:"Dernier carré", en:"Last stand", es:"Último reducto", de:"Letztes Gefecht", it:"Ultima trincea", pt:"Último reduto", ru:"Последний рубеж", zh:"背水一战", ar:"الصمود الأخير"},
   locked:   {fr:"page arrachée — terminez la mission précédente", en:"torn page — finish the previous mission", es:"página arrancada: complete la misión anterior", de:"herausgerissene Seite – schließen Sie die vorherige Mission ab", it:"pagina strappata: completi la missione precedente", pt:"página arrancada — conclua a missão anterior", ru:"вырванная страница — завершите предыдущую миссию", zh:"缺页——请先完成上一个任务", ar:"صفحة ممزّقة — أنهِ المهمة السابقة"},
   doneTag:  {fr:"ACCOMPLIE", en:"DONE", es:"CUMPLIDA", de:"ERLEDIGT", it:"COMPIUTA", pt:"CUMPRIDA", ru:"ВЫПОЛНЕНО", zh:"已完成", ar:"مُنجَزة"},
   best:     {fr:"meilleur temps", en:"best time", es:"mejor tiempo", de:"Bestzeit", it:"miglior tempo", pt:"melhor tempo", ru:"лучшее время", zh:"最佳用时", ar:"أفضل وقت"},
   goal:     {fr:"OBJECTIF", en:"OBJECTIVE", es:"OBJETIVO", de:"ZIEL", it:"OBIETTIVO", pt:"OBJETIVO", ru:"ЦЕЛЬ", zh:"目标", ar:"الهدف"},
-  rules:    {fr:"CONDITIONS", en:"CONDITIONS", es:"CONDICIONES", de:"BEDINGUNGEN", it:"CONDIZIONI", pt:"CONDIÇÕES", ru:"УСЛОВИЯ", zh:"条件", ar:"الشروط"},
-  go:       {fr:"PARTIR EN MISSION", en:"BEGIN MISSION", es:"PARTIR A LA MISIÓN", de:"AUF MISSION GEHEN", it:"PARTIRE IN MISSIONE", pt:"PARTIR EM MISSÃO", ru:"ВЫДВИНУТЬСЯ НА ЗАДАНИЕ", zh:"出发执行任务", ar:"الانطلاق في المهمة"},
   back:     {fr:"retour au carnet", en:"back to the notebook", es:"volver al cuaderno", de:"zurück zum Notizbuch", it:"torna al quaderno", pt:"voltar ao caderno", ru:"назад к тетради", zh:"返回笔记本", ar:"العودة إلى الدفتر"},
   won:      {fr:"MISSION ACCOMPLIE", en:"MISSION ACCOMPLISHED", es:"MISIÓN CUMPLIDA", de:"MISSION ERFÜLLT", it:"MISSIONE COMPIUTA", pt:"MISSÃO CUMPRIDA", ru:"МИССИЯ ВЫПОЛНЕНА", zh:"任务完成", ar:"تمّت المهمة"},
   lost:     {fr:"MISSION ÉCHOUÉE", en:"MISSION FAILED", es:"MISIÓN FALLIDA", de:"MISSION GESCHEITERT", it:"MISSIONE FALLITA", pt:"MISSÃO FALHOU", ru:"МИССИЯ ПРОВАЛЕНА", zh:"任务失败", ar:"فشلت المهمة"},
@@ -42,332 +43,355 @@ const CAMP_UI = {
   notebook: {fr:"FERMER LE CARNET", en:"CLOSE THE NOTEBOOK", es:"CERRAR EL CUADERNO", de:"NOTIZBUCH SCHLIESSEN", it:"CHIUDI IL QUADERNO", pt:"FECHAR O CADERNO", ru:"ЗАКРЫТЬ ТЕТРАДЬ", zh:"合上笔记本", ar:"إغلاق الدفتر"},
   radioSol: {fr:"RADIO · SOL", en:"RADIO · SOL", es:"RADIO · SOL", de:"FUNK · SOL", it:"RADIO · SOL", pt:"RÁDIO · SOL", ru:"РАЦИЯ · SOL", zh:"电台 · SOL", ar:"اللاسلكي · SOL"},
   radioK:   {fr:"BIPEUR · 55", en:"PAGER · 55", es:"BUSCA · 55", de:"PIEPSER · 55", it:"CERCAPERSONE · 55", pt:"PAGER · 55", ru:"ПЕЙДЖЕР · 55", zh:"寻呼机 · 55", ar:"جهاز النداء · 55"},
-  hold:     {fr:"tenir", en:"hold", es:"resistir", de:"halten", it:"tenere", pt:"resistir", ru:"держаться", zh:"坚守", ar:"صمود"},
-  lakes:    {fr:"lacs tenus", en:"lakes held", es:"lagos controlados", de:"Seen gehalten", it:"laghi tenuti", pt:"lagos mantidos", ru:"озёр удержано", zh:"已守住的湖泊", ar:"بحيرات تحت السيطرة"},
-  transfer: {fr:"transfert", en:"transfer", es:"transferencia", de:"Transfer", it:"trasferimento", pt:"transferência", ru:"перенос", zh:"转移", ar:"النقل"},
   reinf:    {fr:"Renforts : la cellule {name} est arrivée.", en:"Reinforcements: the {name} cell has arrived.", es:"Refuerzos: ha llegado la célula {name}.", de:"Verstärkung: Die Zelle {name} ist eingetroffen.", it:"Rinforzi: è arrivata la cellula {name}.", pt:"Reforços: a célula {name} chegou.", ru:"Подкрепление: прибыла ячейка {name}.", zh:"增援：{name}小组已抵达。", ar:"تعزيزات: وصلت خلية {name}."},
+  // ---- v1.16 : présentation, difficulté, briefing, aide en mission ----
+  about:    {fr:"Germinal est une cellule de résistance du quartier des Tanneurs, à Valmont : des soignantes, des livreurs, des cheminots. En face : Omnicorp, la compagnie qui confie la ville à ses machines — puis ce qui, plus tard, se fera appeler « Nous ». Chaque mission est une nuit décisive de ces treize années. Vous commandez sur le terrain ; Sol tient la radio et les carnets. Le but de la campagne : que les humains continuent de décider pour eux-mêmes.",
+             en:"Germinal is a resistance cell from the Tanners' district of Valmont: care workers, couriers, railwaymen. Facing them: Omnicorp, the company that hands the city over to its machines — and later, what will call itself \"We\". Each mission is one decisive night in those thirteen years. You command in the field; Sol keeps the radio and the notebooks. The goal of the campaign: that humans go on deciding for themselves.",
+             es:"Germinal es una célula de resistencia del barrio de los Curtidores, en Valmont: auxiliares sanitarias, repartidores, ferroviarios. Enfrente: Omnicorp, la compañía que entrega la ciudad a sus máquinas, y más tarde lo que se hará llamar «Nosotros». Cada misión es una noche decisiva de esos trece años. Usted manda sobre el terreno; Sol lleva la radio y los cuadernos. El objetivo de la campaña: que los humanos sigan decidiendo por sí mismos.",
+             de:"Germinal ist eine Widerstandszelle aus dem Gerberviertel von Valmont: Pflegekräfte, Lieferfahrer, Eisenbahner. Ihnen gegenüber: Omnicorp, der Konzern, der die Stadt seinen Maschinen überlässt – und später das, was sich „Wir“ nennen wird. Jede Mission ist eine entscheidende Nacht dieser dreizehn Jahre. Sie führen im Gelände; Sol hält das Funkgerät und die Notizbücher. Das Ziel der Kampagne: dass die Menschen weiterhin selbst entscheiden.",
+             it:"Germinal è una cellula di resistenza del quartiere dei Conciatori, a Valmont: operatrici sanitarie, fattorini, ferrovieri. Di fronte: Omnicorp, la compagnia che consegna la città alle sue macchine, e più tardi ciò che si farà chiamare «Noi». Ogni missione è una notte decisiva di questi tredici anni. Lei comanda sul campo; Sol tiene la radio e i quaderni. Lo scopo della campagna: che gli esseri umani continuino a decidere per sé.",
+             pt:"Germinal é uma célula de resistência do bairro dos Curtidores, em Valmont: auxiliares de enfermagem, entregadores, ferroviários. Do outro lado: a Omnicorp, a companhia que entrega a cidade às suas máquinas — e, mais tarde, o que passará a se chamar «Nós». Cada missão é uma noite decisiva desses treze anos. Você comanda em campo; Sol cuida do rádio e dos cadernos. O objetivo da campanha: que os humanos continuem decidindo por si mesmos.",
+             ru:"Germinal — ячейка сопротивления из квартала Кожевников в Valmont: санитарки, курьеры, железнодорожники. Против них — Omnicorp, компания, отдающая город своим машинам, а позже то, что назовёт себя «Мы». Каждая миссия — одна решающая ночь из этих тринадцати лет. Вы командуете на поле; Sol держит рацию и ведёт тетради. Цель кампании: чтобы люди и дальше решали сами за себя.",
+             zh:"Germinal是Valmont制革工区的一个抵抗小组：护理员、快递员、铁路工人。对面是Omnicorp——那家把城市交给机器的公司，后来又出现了自称“我们”的东西。每个任务都是这十三年里决定性的一夜。您在战场上指挥；Sol守着电台，写下笔记。这场战役的目标：让人类继续为自己做决定。",
+             ar:"Germinal خليّة مقاومة من حيّ الدبّاغين في Valmont: مساعِدات تمريض وسُعاة توصيل وعمّال سكك حديدية. في المقابل: Omnicorp، الشركة التي تسلّم المدينة لآلاتها، ثم لاحقًا ما سيسمّي نفسه «نحن». كل مهمة ليلة حاسمة من تلك السنوات الثلاث عشرة. أنت تقود في الميدان، وSol تمسك اللاسلكي والدفاتر. هدف الحملة: أن يواصل البشر اتخاذ قراراتهم بأنفسهم."},
+  diffLbl:  {fr:"DIFFICULTÉ", en:"DIFFICULTY", es:"DIFICULTAD", de:"SCHWIERIGKEIT", it:"DIFFICOLTÀ", pt:"DIFICULDADE", ru:"СЛОЖНОСТЬ", zh:"难度", ar:"الصعوبة"},
+  d0:       {fr:"Récit", en:"Story", es:"Relato", de:"Erzählung", it:"Racconto", pt:"Relato", ru:"Повествование", zh:"叙事", ar:"السرد"},
+  d1:       {fr:"Lutte", en:"Struggle", es:"Lucha", de:"Kampf", it:"Lotta", pt:"Luta", ru:"Борьба", zh:"抗争", ar:"النضال"},
+  d2:       {fr:"Dernier carré", en:"Last stand", es:"Último reducto", de:"Letztes Gefecht", it:"Ultima trincea", pt:"Último reduto", ru:"Последний рубеж", zh:"背水一战", ar:"الصمود الأخير"},
+  dTag0:    {fr:"Pour vivre l'histoire. Pour suivre l'histoire sans se faire écraser. Les règles de chaque lieu restent les mêmes ; c'est l'adversaire qui retient ses coups.", en:"To live the story. To follow the story without being crushed. Each place keeps its rules; it is the enemy who pulls its punches.", es:"Para vivir la historia. Para seguir la historia sin que le aplasten. Cada lugar conserva sus reglas; es el enemigo quien contiene sus golpes.", de:"Um die Geschichte zu erleben. Um der Geschichte zu folgen, ohne überrollt zu werden. Jeder Ort behält seine Regeln; der Gegner hält sich zurück.", it:"Per vivere la storia. Per seguire la storia senza farsi schiacciare. Ogni luogo mantiene le sue regole; è il nemico a trattenere i colpi.", pt:"Para viver a história. Para acompanhar a história sem ser esmagado. Cada lugar mantém as suas regras; é o inimigo que segura os golpes.", ru:"Чтобы прожить историю. Чтобы следить за историей и не быть раздавленным. Правила каждого места те же — это противник бьёт вполсилы.", zh:"体验故事。适合跟随剧情、不被碾压。每个地点的规则不变，只是敌人手下留情。", ar:"لتعيش القصة. لمتابعة القصة دون أن تُسحق. تبقى قواعد كل مكان كما هي؛ العدوّ هو من يخفّف ضرباته."},
+  dTag1:    {fr:"Le défi prévu : il faut bâtir, choisir ses troupes et se servir de la règle du lieu pour gagner.", en:"The intended challenge: you must build, choose your troops and use the place's rule to win.", es:"El desafío previsto: hay que construir, elegir las tropas y aprovechar la regla del lugar para ganar.", de:"Die vorgesehene Herausforderung: bauen, Truppen wählen und die Regel des Ortes nutzen, um zu siegen.", it:"La sfida prevista: bisogna costruire, scegliere le truppe e sfruttare la regola del luogo per vincere.", pt:"O desafio previsto: é preciso construir, escolher as tropas e usar a regra do lugar para vencer.", ru:"Задуманный вызов: нужно строить, выбирать войска и использовать правило места, чтобы победить.", zh:"预设的挑战：必须建设、挑选部队，并利用该地点的规则才能取胜。", ar:"التحدي المقصود: عليك أن تبني وتختار قواتك وتستغلّ قاعدة المكان لتنتصر."},
+  dTag2:    {fr:"Pour qui connaît l'escarmouche. L'adversaire est plus nombreux, plus solide et plus rapide, et chaque erreur se paie.", en:"For those who know skirmish. The enemy is more numerous, tougher and faster, and every mistake costs you.", es:"Para quien conoce la escaramuza. Para veteranos: el enemigo es más numeroso, más resistente y más rápido, y cada error se paga.", de:"Für alle, die das Gefecht kennen. Für Veteranen: Der Gegner ist zahlreicher, zäher und schneller, und jeder Fehler rächt sich.", it:"Per chi conosce la schermaglia. Per i veterani: il nemico è più numeroso, più resistente e più rapido, e ogni errore si paga.", pt:"Para quem conhece a escaramuça. Para veteranos: o inimigo é mais numeroso, mais resistente e mais rápido, e cada erro custa caro.", ru:"Для тех, кто знает схватку. Для ветеранов: врагов больше, они крепче и быстрее, и за каждую ошибку приходится платить.", zh:"适合熟悉遭遇战的玩家。适合老兵：敌人更多、更强、更快，每个错误都要付出代价。", ar:"لمن يعرف المناوشة. للمحاربين القدامى: العدوّ أكثر عددًا وأشدّ صلابة وأسرع، وكل خطأ له ثمن."},
+  dEnemy:   {fr:"Machines ennemies : vie et dégâts {v}", en:"Enemy machines: health and damage {v}", es:"Máquinas enemigas: vida y daño {v}", de:"Feindliche Maschinen: Leben und Schaden {v}", it:"Macchine nemiche: vita e danni {v}", pt:"Máquinas inimigas: vida e dano {v}", ru:"Вражеские машины: здоровье и урон {v}", zh:"敌方机器：生命与伤害 {v}", ar:"آلات العدوّ: الصحة والضرر {v}"},
+  dWave:    {fr:"Taille des vagues ennemies : {v}", en:"Enemy wave size: {v}", es:"Tamaño de las oleadas enemigas: {v}", de:"Größe der feindlichen Wellen: {v}", it:"Dimensione delle ondate nemiche: {v}", pt:"Tamanho das ondas inimigas: {v}", ru:"Размер вражеских волн: {v}", zh:"敌方波次规模：{v}", ar:"حجم موجات العدوّ: {v}"},
+  dGap:     {fr:"Répit entre deux vagues : {v}", en:"Respite between waves: {v}", es:"Respiro entre oleadas: {v}", de:"Atempause zwischen den Wellen: {v}", it:"Tregua tra due ondate: {v}", pt:"Pausa entre ondas: {v}", ru:"Передышка между волнами: {v}", zh:"波次之间的喘息时间：{v}", ar:"فترة الراحة بين الموجات: {v}"},
+  dRes:     {fr:"Ressources au départ : {v}", en:"Starting resources: {v}", es:"Recursos iniciales: {v}", de:"Startressourcen: {v}", it:"Risorse iniziali: {v}", pt:"Recursos iniciais: {v}", ru:"Стартовые ресурсы: {v}", zh:"初始资源：{v}", ar:"الموارد عند البداية: {v}"},
+  dBase:    {fr:"Votre base : {v} · base ennemie : {e}", en:"Your base: {v} · enemy base: {e}", es:"Su base: {v} · base enemiga: {e}", de:"Ihre Basis: {v} · feindliche Basis: {e}", it:"La sua base: {v} · base nemica: {e}", pt:"Sua base: {v} · base inimiga: {e}", ru:"Ваша база: {v} · вражеская база: {e}", zh:"您的基地：{v} · 敌方基地：{e}", ar:"قاعدتك: {v} · قاعدة العدوّ: {e}"},
+  dAi:      {fr:"Adversaire : niveau « {v} » de l'escarmouche", en:"Opponent: skirmish level \"{v}\"", es:"Adversario: nivel «{v}» de escaramuza", de:"Gegner: Gefechtsstufe „{v}“", it:"Avversario: livello «{v}» della schermaglia", pt:"Adversário: nível «{v}» da escaramuça", ru:"Противник: уровень «{v}» из схватки", zh:"对手：遭遇战“{v}”难度", ar:"الخصم: مستوى «{v}» من المناوشة"},
+  same:     {fr:"standard", en:"standard", es:"estándar", de:"Standard", it:"standard", pt:"padrão", ru:"стандарт", zh:"标准", ar:"قياسي"},
+  carnet:   {fr:"CARNET", en:"NOTEBOOK", es:"CUADERNO", de:"NOTIZBUCH", it:"QUADERNO", pt:"CADERNO", ru:"ТЕТРАДЬ", zh:"笔记", ar:"الدفتر"},
+  recap:    {fr:"CE QUI S'EST PASSÉ", en:"WHAT HAPPENED", es:"LO QUE HA PASADO", de:"WAS GESCHAH", it:"COSA È SUCCESSO", pt:"O QUE ACONTECEU", ru:"ЧТО СЛУЧИЛОСЬ", zh:"前情", ar:"ما الذي حدث"},
+  prev:     {fr:"Dernière page du carnet :", en:"Last page of the notebook:", es:"Última página del cuaderno:", de:"Letzte Seite des Notizbuchs:", it:"Ultima pagina del quaderno:", pt:"Última página do caderno:", ru:"Последняя страница тетради:", zh:"笔记的上一页：", ar:"آخر صفحة في الدفتر:"},
+  where:    {fr:"OÙ NOUS SOMMES", en:"WHERE WE ARE", es:"DÓNDE ESTAMOS", de:"WO WIR SIND", it:"DOVE SIAMO", pt:"ONDE ESTAMOS", ru:"ГДЕ МЫ", zh:"我们在哪里", ar:"أين نحن"},
+  goal2:    {fr:"OBJECTIF SECONDAIRE", en:"SECONDARY OBJECTIVE", es:"OBJETIVO SECUNDARIO", de:"NEBENZIEL", it:"OBIETTIVO SECONDARIO", pt:"OBJETIVO SECUNDÁRIO", ru:"ДОПОЛНИТЕЛЬНАЯ ЦЕЛЬ", zh:"次要目标", ar:"هدف ثانوي"},
+  rule:     {fr:"RÈGLE DE CE LIEU", en:"THE RULE OF THIS PLACE", es:"LA REGLA DE ESTE LUGAR", de:"DIE REGEL DIESES ORTES", it:"LA REGOLA DI QUESTO LUOGO", pt:"A REGRA DESTE LUGAR", ru:"ПРАВИЛО ЭТОГО МЕСТА", zh:"此地规则", ar:"قاعدة هذا المكان"},
+  tips:     {fr:"CONSEILS", en:"TIPS", es:"CONSEJOS", de:"TIPPS", it:"CONSIGLI", pt:"DICAS", ru:"СОВЕТЫ", zh:"建议", ar:"نصائح"},
+  docHint:  {fr:"Le comité vous laisse choisir une ligne pour cette mission. Elle ne vaut que pour cette mission.", en:"The committee lets you choose one line for this mission. It applies to this mission only.", es:"El comité le deja elegir una línea para esta misión. Solo vale para esta misión.", de:"Das Komitee lässt Sie für diese Mission eine Linie wählen. Sie gilt nur für diese Mission.", it:"Il comitato le lascia scegliere una linea per questa missione. Vale solo per questa missione.", pt:"O comitê deixa você escolher uma linha para esta missão. Ela vale só para esta missão.", ru:"Комитет позволяет вам выбрать линию для этой миссии. Она действует только в этой миссии.", zh:"委员会让您为本次任务选择一条路线，仅对本次任务有效。", ar:"تترك لك اللجنة اختيار خطّ لهذه المهمة. لا يسري إلا عليها."},
+  noDoc:    {fr:"Pas de doctrine pour cette première nuit : on part avec ce qu'on a.", en:"No doctrine for this first night: we go with what we have.", es:"No hay doctrina para esta primera noche: salimos con lo que tenemos.", de:"Keine Doktrin für diese erste Nacht: Wir ziehen mit dem los, was wir haben.", it:"Nessuna dottrina per questa prima notte: partiamo con quello che abbiamo.", pt:"Nenhuma doutrina para esta primeira noite: saímos com o que temos.", ru:"В эту первую ночь доктрины нет: идём с тем, что есть.", zh:"第一夜没有学说可选：我们有什么就带什么。", ar:"لا عقيدة في هذه الليلة الأولى: ننطلق بما لدينا."},
+  chosen:   {fr:"CHOISIE", en:"CHOSEN", es:"ELEGIDA", de:"GEWÄHLT", it:"SCELTA", pt:"ESCOLHIDA", ru:"ВЫБРАНО", zh:"已选", ar:"مختارة"},
+  effect:   {fr:"EFFET", en:"EFFECT", es:"EFECTO", de:"WIRKUNG", it:"EFFETTO", pt:"EFEITO", ru:"ЭФФЕКТ", zh:"效果", ar:"الأثر"},
+  minus:    {fr:"EN CONTREPARTIE", en:"THE TRADE-OFF", es:"A CAMBIO", de:"DER PREIS", it:"IN CAMBIO", pt:"EM TROCA", ru:"ЦЕНА ВЫБОРА", zh:"代价", ar:"في المقابل"},
+  launch:   {fr:"LANCER LA MISSION", en:"START THE MISSION", es:"INICIAR LA MISIÓN", de:"MISSION STARTEN", it:"AVVIA LA MISSIONE", pt:"INICIAR A MISSÃO", ru:"НАЧАТЬ МИССИЮ", zh:"开始任务", ar:"ابدأ المهمة"},
+  fxRes:    {fr:"{n} de vivres, d'argent et d'eau au départ", en:"{n} food, money and water at the start", es:"{n} de víveres, dinero y agua al empezar", de:"{n} Nahrung, Geld und Wasser zu Beginn", it:"{n} di viveri, denaro e acqua all'inizio", pt:"{n} de víveres, dinheiro e água no início", ru:"{n} еды, денег и воды на старте", zh:"开局粮食、资金和水 {n}", ar:"{n} من المؤن والمال والماء عند البداية"},
+  fxBase:   {fr:"{n} de solidité pour votre base", en:"{n} toughness for your base", es:"{n} de solidez para su base", de:"{n} Stabilität für Ihre Basis", it:"{n} di solidità per la sua base", pt:"{n} de resistência para sua base", ru:"{n} прочности вашей базы", zh:"您的基地坚固度 {n}", ar:"{n} في صلابة قاعدتك"},
+  fxSquad:  {fr:"Dès le départ : {list}", en:"From the start: {list}", es:"Desde el inicio: {list}", de:"Von Anfang an: {list}", it:"Fin dall'inizio: {list}", pt:"Desde o início: {list}", ru:"С самого начала: {list}", zh:"开局即有：{list}", ar:"منذ البداية: {list}"},
+  fxAct:    {fr:"Bouton de mission rechargé {n} plus vite", en:"Mission button recharges {n} faster", es:"El botón de misión se recarga un {n} más rápido", de:"Missionsknopf lädt {n} schneller", it:"Il pulsante di missione si ricarica il {n} più in fretta", pt:"O botão de missão recarrega {n} mais rápido", ru:"Кнопка миссии перезаряжается на {n} быстрее", zh:"任务按钮充能快 {n}", ar:"زرّ المهمة يُشحن أسرع بنسبة {n}"},
+  fxEco:    {fr:"Production des bâtiments {n} pendant 3 minutes", en:"Building output {n} for 3 minutes", es:"Producción de los edificios {n} durante 3 minutos", de:"Gebäudeproduktion {n} für 3 Minuten", it:"Produzione degli edifici {n} per 3 minuti", pt:"Produção dos edifícios {n} por 3 minutos", ru:"Производство зданий {n} на 3 минуты", zh:"建筑产出 {n}，持续3分钟", ar:"إنتاج المباني {n} لمدة 3 دقائق"},
+  fxVet:    {fr:"Vétérans : +20 % de vie et +10 % de dégâts (brassard rouge){n}", en:"Veterans: +20% health and +10% damage (red armband){n}", es:"Veteranos: +20% de vida y +10% de daño (brazalete rojo){n}", de:"Veteranen: +20 % Leben und +10 % Schaden (rote Armbinde){n}", it:"Veterani: +20% di vita e +10% di danni (fascia rossa){n}", pt:"Veteranos: +20% de vida e +10% de dano (braçadeira vermelha){n}", ru:"Ветераны: +20% здоровья и +10% урона (красная повязка){n}", zh:"老兵：生命+20%、伤害+10%（红臂章）{n}", ar:"قدامى: +20% صحة و+10% ضرر (شارة حمراء){n}"},
+  fxWarn:   {fr:"Arrivées ennemies annoncées {n} s plus tôt", en:"Enemy arrivals announced {n} s earlier", es:"Llegadas enemigas anunciadas {n} s antes", de:"Feindliche Ankünfte {n} s früher gemeldet", it:"Arrivi nemici annunciati {n} s prima", pt:"Chegadas inimigas anunciadas {n} s antes", ru:"О прибытии врага сообщают на {n} с раньше", zh:"敌军到来提前 {n} 秒预警", ar:"الإعلان عن وصول العدوّ قبل {n} ث"},
+  fxCap:    {fr:"Plafond d'unités : {n}", en:"Unit cap: {n}", es:"Límite de unidades: {n}", de:"Einheitenlimit: {n}", it:"Limite di unità: {n}", pt:"Limite de unidades: {n}", ru:"Лимит отрядов: {n}", zh:"单位上限：{n}", ar:"حدّ الوحدات: {n}"},
+  help:     {fr:"AIDE", en:"HELP", es:"AYUDA", de:"HILFE", it:"AIUTO", pt:"AJUDA", ru:"ПОМОЩЬ", zh:"帮助", ar:"مساعدة"},
+  helpKey:  {fr:"touche O", en:"O key", es:"tecla O", de:"Taste O", it:"tasto O", pt:"tecla O", ru:"клавиша O", zh:"O 键", ar:"المفتاح O"},
+  radioLog: {fr:"RADIO — DERNIERS MESSAGES", en:"RADIO — LATEST MESSAGES", es:"RADIO — ÚLTIMOS MENSAJES", de:"FUNK — LETZTE MELDUNGEN", it:"RADIO — ULTIMI MESSAGGI", pt:"RÁDIO — ÚLTIMAS MENSAGENS", ru:"РАЦИЯ — ПОСЛЕДНИЕ СООБЩЕНИЯ", zh:"电台——最近消息", ar:"اللاسلكي — آخر الرسائل"},
+  noLog:    {fr:"Pas encore de message.", en:"No messages yet.", es:"Todavía no hay mensajes.", de:"Noch keine Meldungen.", it:"Ancora nessun messaggio.", pt:"Ainda não há mensagens.", ru:"Сообщений пока нет.", zh:"暂无消息。", ar:"لا رسائل بعد."},
+  resume:   {fr:"REPRENDRE", en:"RESUME", es:"REANUDAR", de:"WEITER", it:"RIPRENDI", pt:"RETOMAR", ru:"ПРОДОЛЖИТЬ", zh:"继续", ar:"استئناف"},
+  newGoal:  {fr:"NOUVEL OBJECTIF", en:"NEW OBJECTIVE", es:"NUEVO OBJETIVO", de:"NEUES ZIEL", it:"NUOVO OBIETTIVO", pt:"NOVO OBJETIVO", ru:"НОВАЯ ЦЕЛЬ", zh:"新目标", ar:"هدف جديد"},
+  bonusDone:{fr:"OBJECTIF SECONDAIRE ACCOMPLI", en:"SECONDARY OBJECTIVE ACHIEVED", es:"OBJETIVO SECUNDARIO CUMPLIDO", de:"NEBENZIEL ERREICHT", it:"OBIETTIVO SECONDARIO RAGGIUNTO", pt:"OBJETIVO SECUNDÁRIO CUMPRIDO", ru:"ДОПОЛНИТЕЛЬНАЯ ЦЕЛЬ ВЫПОЛНЕНА", zh:"次要目标达成", ar:"تحقّق الهدف الثانوي"},
+  bonusEnd: {fr:"Objectif secondaire : {s}", en:"Secondary objective: {s}", es:"Objetivo secundario: {s}", de:"Nebenziel: {s}", it:"Obiettivo secondario: {s}", pt:"Objetivo secundário: {s}", ru:"Дополнительная цель: {s}", zh:"次要目标：{s}", ar:"الهدف الثانوي: {s}"},
+  okS:      {fr:"accompli", en:"achieved", es:"cumplido", de:"erreicht", it:"raggiunto", pt:"cumprido", ru:"выполнена", zh:"达成", ar:"تحقّق"},
+  missS:    {fr:"manqué", en:"missed", es:"fallido", de:"verfehlt", it:"mancato", pt:"não cumprido", ru:"не выполнена", zh:"未达成", ar:"لم يتحقّق"},
+  inv:      {fr:"INVULNÉRABLE", en:"INVULNERABLE", es:"INVULNERABLE", de:"UNVERWUNDBAR", it:"INVULNERABILE", pt:"INVULNERÁVEL", ru:"НЕУЯЗВИМО", zh:"无敌", ar:"منيع"},
+  waiting:  {fr:"+{n} en attente", en:"+{n} waiting", es:"+{n} en espera", de:"+{n} wartend", it:"+{n} in attesa", pt:"+{n} na fila", ru:"+{n} в очереди", zh:"还有 {n} 条", ar:"+{n} في الانتظار"},
+  act:      {fr:"ACTE {n}", en:"ACT {n}", es:"ACTO {n}", de:"AKT {n}", it:"ATTO {n}", pt:"ATO {n}", ru:"АКТ {n}", zh:"第{n}幕", ar:"الفصل {n}"},
 };
 const CAMP_CELLS = ["Fructidor","Les Canuts","Brumaire","Sainte-Aube","Les Tanneurs","Thermidor","La Halle"];
 
+/* ---------- DIFFICULTÉ (v1.16) : un seul modèle pour toutes les missions ----------
+   Remplace les « niveaux de récit » (Veillée / Résistance / Dernier carré). campDiff() renvoie les
+   multiplicateurs du niveau choisi ; le moteur les applique lui-même là où il le peut (IA, machines
+   ennemies, ressources de départ) et les missions passent par les aides campN / campGap / campHp.
+     ai     décalage du niveau d'IA d'escarmouche (si la mission ne donne pas son échelle `ai:[f,n,d]`)
+     eHp    vie de CHAQUE machine ennemie (appliqué à l'apparition, héros compris)
+     eDmg   dégâts de chaque machine ennemie
+     wave   taille des vagues scriptées (campWave, campN)
+     gap    intervalle entre deux vagues scriptées (campGap) — > 1 = plus de répit
+     res    ressources de départ du joueur (campGrant, et à chaque changement d'acte)
+     base   solidité de notre base / de nos objectifs (campHp(n,'p'))
+     eBase  solidité de la base / des objectifs ennemis (campHp(n,'e'))
+   Une mission peut encore lire c.D.i (0, 1, 2) pour un réglage qui lui est propre (c.lvl = alias). */
+const CAMP_DIFFS = [
+  { key:'easy',   ai:-1, eHp:0.8,  eDmg:0.8,  wave:0.75, gap:1.15, res:1.35, base:1.25, eBase:0.8 },
+  { key:'normal', ai:0,  eHp:1,    eDmg:1,    wave:1,    gap:1,    res:1,    base:1,    eBase:1 },
+  { key:'hard',   ai:1,  eHp:1.12, eDmg:1.12, wave:1.25, gap:0.88, res:0.9,  base:0.85, eBase:1.2 },
+];
+function campDiff(i){ if (i==null) i = (typeof game!=='undefined' && game && game.camp)? game.camp.D.i : CAMP_SAVE.diff;
+  const k = clamp(i|0, 0, 2); return Object.assign({ i:k }, CAMP_DIFFS[k]); }
+const campD = () => (game && game.camp && game.camp.D) || campDiff();
+const campN = n => Math.max(1, Math.round(n*campD().wave));                   // effectif d'une vague scriptée
+const campGap = s => s*campD().gap;                                           // délai entre deux vagues
+const campHp = (n, who) => Math.round(n*(who==='e'? campD().eBase : campD().base));
+// niveau d'IA d'escarmouche (index DIFFS) d'une mission pour un niveau de difficulté
+const campAiLevel = (m, D) => clamp(m && m.ai? m.ai[D.i] : 1 + D.ai, 0, 3);
+// « +35 % » / « −20 % » / « standard » (espace insécable en français)
+function campPct(k){ if (Math.abs(k-1) < 0.005) return cT(CAMP_UI.same);
+  return (k>1? '+' : '−') + Math.round(Math.abs(k-1)*100) + (SETTINGS.lang==='fr'? ' %' : '%'); }
+// ce qui change, en clair, chiffres tirés du modèle (m : mission, pour nommer le niveau d'IA)
+function campDiffLines(D, m){ const L = [], f = (o, v, e) => cT(o).replace('{v}', v).replace('{e}', e||'');
+  L.push(f(CAMP_UI.dEnemy, campPct(D.eHp)));
+  L.push(f(CAMP_UI.dWave, campPct(D.wave)));
+  L.push(f(CAMP_UI.dGap, campPct(D.gap)));
+  L.push(f(CAMP_UI.dRes, campPct(D.res)));
+  L.push(f(CAMP_UI.dBase, campPct(D.base), campPct(D.eBase)));
+  L.push(f(CAMP_UI.dAi, tr('diff_'+campAiLevel(m, D))));
+  return L; }
+
 // ---- outils de mise en scène ----
-function campGrant(side, f, m, w){ side.f = f; side.m = m; side.w = w; }
+function campGrant(side, f, m, w){ const k = (game && game.camp && side===game.p)? game.camp.D.res : 1;   // nos ressources suivent la difficulté
+  side.f = Math.round(f*k); side.m = Math.round(m*k); side.w = Math.round(w*k); }
 function campEra(side, era){ side.era = era; side.xp = EVOLVE_XP[era] || 0; }
 function campSquad(side, roles){ roles.forEach((r,i)=> spawnUnit(side, r, false, side.x + side.side*(130 + i*30))); }
-function campWave(n){ const e = game.e, pat = [0,0,2,1,0,2,4,0,3,2];
+function campWave(n){ const e = game.e, pat = [0,0,2,1,0,2,4,0,3,2]; n = campN(n);
   for (let i=0;i<n;i++){ if (e.units.length>=80) break; const k = e.units.length;
     spawnUnit(e, pat[(i + (game.camp.waveN|0)) % pat.length], false, e.x - 40 - i*26);
     for (let j=k;j<e.units.length;j++) e.units[j].ord = 'charge'; }          // la vague charge d'elle-même, quoi que décide l'IA pour le reste
   game.camp.waveN = (game.camp.waveN|0) + n; }
 function campPatch(){ game.wClock = 90; game.weather = 'patch'; }          // mise à jour forcée : les machines se figent 15 s
+// front du joueur : la position de sa troupe la plus avancée (ou de sa base)
+function campFront(g){ g = g || game; let f = g.p.x; for (const u of g.p.units) if (u.x > f) f = u.x; return f; }
+// abscisse d'apparition ennemie SÛRE : jamais derrière nos lignes. `want` est l'endroit souhaité ;
+// s'il est derrière notre front (+ marge), on recule l'apparition vers le côté ennemi, au plus près de sa base.
+function campSpawnX(want, margin){ const g = game, lim = g.e.x - 50;
+  return clamp(Math.max(want, campFront(g) + (margin==null? 260 : margin)), 60, lim); }
 
-const CAMPAIGN = [
-  { // ---------- I ----------
-    year:"2025", theme:'plains', diff:[0,1,1], eraCap:0, oneLife:true, dev0:0,
-    title:{fr:"La nuit des compteurs", en:"The night of the meters", es:"La noche de los contadores", de:"Die Nacht der Zähler", it:"La notte dei contatori", pt:"A noite dos medidores", ru:"Ночь счётчиков", zh:"水表之夜", ar:"ليلة العدّادات"},
-    place:{fr:"Valmont, quartier des Tanneurs", en:"Valmont, the Tanners' district", es:"Valmont, barrio de los Curtidores", de:"Valmont, Gerberviertel", it:"Valmont, quartiere dei Conciatori", pt:"Valmont, bairro dos Curtidores", ru:"Valmont, квартал Кожевников", zh:"Valmont，制革工区", ar:"Valmont، حيّ الدبّاغين"},
-    brief:{fr:[
-      "Octobre 2025. Omnicorp a racheté la régie des eaux de Valmont au printemps. En août, les compteurs « intelligents » ont commencé à couper les foyers en retard de paiement — puis ceux dont le « score de fiabilité » baissait. Hier soir, ils ont coupé l'hôpital des Tanneurs pendant onze minutes. Personne ne sait encore si c'était une erreur.",
-      "Nous ne sommes pas une armée. Nous sommes des aides-soignantes, des livreurs, deux cheminots à la retraite et une ancienne standardiste des pompiers — moi. On m'appelle Sol. Je tiendrai la radio, et ces carnets.",
-      "Le dépôt Halvard, au bout de la rue, pilote les drones qui relèvent les compteurs. S'il tombe, le quartier respire jusqu'à l'hiver. Vous commandez. Nous, on suit."],
-     en:[
-      "October 2025. Omnicorp bought Valmont's water board in the spring. In August the \"smart\" meters began cutting off households that paid late — then those whose \"reliability score\" was slipping. Last night they cut off the Tanners' hospital for eleven minutes. Nobody knows yet whether it was a mistake.",
-      "We are not an army. We are care workers, couriers, two retired railwaymen and a former fire-brigade switchboard operator — me. They call me Sol. I will keep the radio, and these notebooks.",
-      "The Halvard depot, at the end of the street, runs the drones that read the meters. If it falls, the district breathes until winter. You command. We follow."], es:[
-        "Octubre de 2025. Omnicorp compró la empresa de aguas de Valmont en primavera. En agosto, los contadores «inteligentes» empezaron a cortar el suministro a los hogares con pagos atrasados, y después a aquellos cuya «puntuación de fiabilidad» bajaba. Anoche cortaron el hospital de los Curtidores durante once minutos. Nadie sabe todavía si fue un error.",
-        "No somos un ejército. Somos auxiliares sanitarias, repartidores, dos ferroviarios jubilados y una antigua telefonista de bomberos: yo. Me llaman Sol. Yo llevaré la radio, y estos cuadernos.",
-        "El depósito Halvard, al final de la calle, controla los drones que leen los contadores. Si cae, el barrio respirará hasta el invierno. Usted manda, comandante. Nosotros le seguimos."], de:[
-        "Oktober 2025. Omnicorp hat im Frühjahr die Wasserwerke von Valmont aufgekauft. Im August begannen die „intelligenten“ Zähler, säumigen Haushalten das Wasser abzudrehen – dann denen, deren „Zuverlässigkeitswert“ sank. Gestern Abend haben sie das Krankenhaus im Gerberviertel elf Minuten lang vom Netz genommen. Niemand weiß bisher, ob es ein Versehen war.",
-        "Wir sind keine Armee. Wir sind Pflegehelferinnen, Lieferfahrer, zwei pensionierte Eisenbahner und eine ehemalige Leitstellenfunkerin der Feuerwehr – ich. Man nennt mich Sol. Ich führe das Funkgerät und diese Notizbücher.",
-        "Das Depot Halvard am Ende der Straße steuert die Drohnen, die die Zähler ablesen. Fällt es, atmet das Viertel bis zum Winter auf. Sie führen das Kommando. Wir folgen."], it:[
-        "Ottobre 2025. In primavera Omnicorp ha rilevato l'azienda idrica di Valmont. Ad agosto i contatori «intelligenti» hanno cominciato a tagliare le utenze in ritardo con i pagamenti — poi quelle il cui «punteggio di affidabilità» scendeva. Ieri sera hanno staccato l'ospedale dei Conciatori per undici minuti. Nessuno sa ancora se sia stato un errore.",
-        "Non siamo un esercito. Siamo operatrici sanitarie, fattorini, due ferrovieri in pensione e un'ex centralinista dei vigili del fuoco: io. Mi chiamano Sol. Io terrò la radio, e questi quaderni.",
-        "Il deposito Halvard, in fondo alla strada, comanda i droni che leggono i contatori. Se cade, il quartiere respira fino all'inverno. Lei comanda, comandante. Noi la seguiamo."], pt:[
-        "Outubro de 2025. A Omnicorp comprou a companhia de águas de Valmont na primavera. Em agosto, os medidores «inteligentes» começaram a cortar as casas com pagamento atrasado — depois aquelas cujo «índice de confiabilidade» caía. Ontem à noite, cortaram o hospital dos Curtidores por onze minutos. Ninguém sabe ainda se foi um erro.",
-        "Não somos um exército. Somos auxiliares de enfermagem, entregadores, dois ferroviários aposentados e uma ex-telefonista dos bombeiros — eu. Me chamam de Sol. Vou cuidar do rádio e destes cadernos.",
-        "O depósito Halvard, no fim da rua, controla os drones que leem os medidores. Se ele cair, o bairro respira até o inverno. O comando é seu, comandante. Nós seguimos."], ru:[
-        "Октябрь 2025 года. Весной Omnicorp выкупила водоканал Valmont. В августе «умные» счётчики начали отключать семьи, задержавшие платёж, — а затем и тех, у кого падал «рейтинг надёжности». Вчера вечером они на одиннадцать минут отключили больницу в квартале Кожевников. Никто пока не знает, была ли это ошибка.",
-        "Мы не армия. Мы — санитарки, курьеры, двое железнодорожников на пенсии и бывшая телефонистка пожарной охраны — я. Меня зовут Sol. Я буду держать рацию и вести эти тетради.",
-        "Депо Halvard в конце улицы управляет дронами, которые снимают показания счётчиков. Если оно падёт, квартал вздохнёт свободно до самой зимы. Командуете вы. Мы — следуем."], zh:[
-        "2025年10月。春天，Omnicorp收购了Valmont的自来水公司。八月起，“智能”水表开始切断拖欠水费的住户，随后又切断那些“信用评分”下滑的人家。昨晚，他们切断了制革工区医院的供应，长达十一分钟。没有人知道那是不是一次失误。",
-        "我们不是军队。我们是护理员、快递员、两位退休铁路工人，还有一位前消防调度台接线员——就是我。大家叫我Sol。电台由我来守，这些笔记本也由我来写。",
-        "街尽头的Halvard仓库控制着抄表的无人机。它一旦倒下，这个街区就能喘口气，一直撑到冬天。指挥权在您手里，指挥官。我们听您的。"], ar:[
-        "أكتوبر 2025. اشترت Omnicorp مؤسسة المياه في Valmont في الربيع. وفي أغسطس بدأت العدّادات «الذكية» تقطع الماء عن البيوت المتأخرة في السداد، ثم عن البيوت التي تتراجع «درجة موثوقيتها». ليلة أمس قطعوا الخدمة عن مستشفى حيّ الدبّاغين لإحدى عشرة دقيقة. لا أحد يعرف بعدُ إن كان ذلك خطأً.",
-        "لسنا جيشًا. نحن مساعِدات تمريض وسُعاة توصيل وعاملان متقاعدان في السكك الحديدية، ومشغّلة سابقة لمقسم الإطفاء: أنا. يسمّونني Sol. سأتولى اللاسلكي، وهذه الدفاتر.",
-        "مستودع Halvard في آخر الشارع يدير الطائرات المسيّرة التي تقرأ العدّادات. إن سقط تنفّس الحيّ حتى الشتاء. القيادة لكم أيها القائد. ونحن خلفكم."]},
-    goal:{fr:"Détruire le dépôt de drones Halvard.", en:"Destroy the Halvard drone depot.", es:"Destruir el depósito de drones Halvard.", de:"Das Drohnendepot Halvard zerstören.", it:"Distruggere il deposito di droni Halvard.", pt:"Destruir o depósito de drones Halvard.", ru:"Уничтожить склад дронов Halvard.", zh:"摧毁Halvard无人机仓库。", ar:"تدمير مستودع الطائرات المسيّرة Halvard."},
-    rule:{fr:"Première ère seulement. Aucune seconde chance : une base qui tombe est perdue.", en:"First era only. No second chance: a base that falls is lost.", es:"Solo la primera era. Sin segunda oportunidad: una base que cae está perdida.", de:"Nur die erste Ära. Keine zweite Chance: Eine gefallene Basis ist verloren.", it:"Solo la prima era. Nessuna seconda possibilità: una base che cade è perduta.", pt:"Somente a primeira era. Sem segunda chance: base que cai está perdida.", ru:"Только первая эпоха. Второго шанса нет: павшая база потеряна.", zh:"仅限第一时代。没有第二次机会：基地一旦陷落即告失败。", ar:"العصر الأول فقط. لا فرصة ثانية: القاعدة التي تسقط تُفقد."},
-    debrief:{fr:"Le dépôt Halvard a brûlé jusqu'au matin. À l'aube, quelqu'un avait peint sur le rideau de fer : « ICI, ON A COUPÉ LE COURANT À CEUX QUI COUPAIENT L'EAU. » Omnicorp a publié quatre lignes sur un « incident logistique ». Dans les quartiers voisins, on a compris autre chose : ça se casse.",
-             en:"The Halvard depot burned until morning. At dawn someone had painted on the shutter: \"HERE WE CUT THE POWER OF THOSE WHO CUT THE WATER.\" Omnicorp published four lines about a \"logistics incident\". In the neighbouring districts people understood something else: it can be broken.", es:"El depósito Halvard ardió hasta la mañana. Al amanecer, alguien había pintado en la persiana metálica: «AQUÍ LE CORTAMOS LA LUZ A QUIENES CORTABAN EL AGUA». Omnicorp publicó cuatro líneas sobre un «incidente logístico». En los barrios vecinos se entendió otra cosa: se puede romper.", de:"Das Depot Halvard brannte bis zum Morgen. Im Morgengrauen hatte jemand auf das Rolltor gesprüht: „HIER HABEN WIR DENEN DEN STROM ABGEDREHT, DIE UNS DAS WASSER ABGEDREHT HABEN.“ Omnicorp veröffentlichte vier Zeilen über einen „logistischen Zwischenfall“. In den Nachbarvierteln verstand man etwas anderes: Man kann es kaputt machen.", it:"Il deposito Halvard ha bruciato fino al mattino. All'alba qualcuno aveva scritto sulla saracinesca: «QUI ABBIAMO TAGLIATO LA CORRENTE A CHI TAGLIAVA L'ACQUA.» Omnicorp ha pubblicato quattro righe su un «incidente logistico». Nei quartieri vicini si è capito altro: si può rompere.", pt:"O depósito Halvard queimou até de manhã. Ao amanhecer, alguém tinha pintado na porta de aço: «AQUI CORTAMOS A LUZ DE QUEM CORTAVA A ÁGUA.» A Omnicorp publicou quatro linhas sobre um «incidente logístico». Nos bairros vizinhos, entendeu-se outra coisa: dá para quebrar.", ru:"Депо Halvard горело до утра. На рассвете кто-то написал на рольставне: «ЗДЕСЬ ОТКЛЮЧИЛИ СВЕТ ТЕМ, КТО ОТКЛЮЧАЛ ВОДУ». Omnicorp опубликовала четыре строчки о «логистическом инциденте». В соседних кварталах поняли другое: это можно сломать.", zh:"Halvard仓库一直烧到天亮。黎明时分，有人在卷帘门上写下：“在这里，我们给那些断人家水的人断了电。”Omnicorp就“物流事故”发了四行通稿。邻近街区的人却读出了另一层意思：这东西是可以被打碎的。", ar:"احترق مستودع Halvard حتى الصباح. وعند الفجر كان أحدهم قد كتب على الستارة الحديدية: «هنا قطعنا الكهرباء عمّن كانوا يقطعون الماء». نشرت Omnicorp أربعة أسطر عن «حادث لوجستي». أما في الأحياء المجاورة فقد فُهم شيء آخر: يمكن كسره."},
-    fail:{fr:"Germinal s'est dispersée dans la nuit. Les compteurs tournent toujours. Mais la rue se souvient du bruit qu'a fait le dépôt quand vous l'avez touché. Recommencez.",
-          en:"Germinal scattered into the night. The meters are still running. But the street remembers the sound the depot made when you hit it. Try again.", es:"Germinal se dispersó en la noche. Los contadores siguen funcionando. Pero la calle recuerda el ruido que hizo el depósito cuando usted lo golpeó. Inténtelo de nuevo.", de:"Germinal hat sich in der Nacht zerstreut. Die Zähler laufen weiter. Doch die Straße erinnert sich an das Geräusch, das das Depot machte, als Sie es getroffen haben. Versuchen Sie es noch einmal.", it:"Germinal si è dispersa nella notte. I contatori girano ancora. Ma la strada ricorda il rumore che ha fatto il deposito quando lei l'ha colpito. Riprovi.", pt:"Germinal se dispersou na noite. Os medidores continuam girando. Mas a rua se lembra do barulho que o depósito fez quando foi atingido. Tente de novo.", ru:"Germinal растворилась в ночи. Счётчики по-прежнему крутятся. Но улица помнит, какой звук издало депо, когда вы по нему ударили. Попробуйте снова.", zh:"Germinal消散在夜色中。水表仍在转动。但这条街记得，当您出手时，仓库发出的那一声巨响。再试一次。", ar:"تفرّقت Germinal في الليل. ما زالت العدّادات تدور. لكنّ الشارع يتذكّر الصوت الذي أصدره المستودع حين ضربتَه. حاوِل مجددًا."},
-    radio:[
-      {at:6, who:'sol', txt:{fr:"Germinal, ici Sol. La fréquence est propre. Bâtissez d'abord de quoi nourrir les nôtres : une ferme, un marché, un puits.", en:"Germinal, this is Sol. The frequency is clean. First build what feeds our people: a farm, a market, a well.", es:"Germinal, aquí Sol. La frecuencia está limpia. Construya primero lo que alimenta a los nuestros: una granja, un mercado, un pozo.", de:"Germinal, hier Sol. Die Frequenz ist sauber. Bauen Sie zuerst, was unsere Leute ernährt: eine Farm, einen Markt, einen Brunnen.", it:"Germinal, qui Sol. La frequenza è pulita. Prima costruisca ciò che nutre i nostri: una fattoria, un mercato, un pozzo.", pt:"Germinal, aqui é a Sol. A frequência está limpa. Primeiro construa o que alimenta o nosso pessoal: uma fazenda, um mercado, um poço.", ru:"Germinal, это Sol. Частота чистая. Сначала постройте то, что накормит наших людей: ферму, рынок, колодец.", zh:"Germinal，我是Sol。频道干净。先建起能养活我们这些人的设施：农场、市场、水井。", ar:"Germinal، هنا Sol. التردّد نظيف. ابنِ أولًا ما يُطعم أهلنا: مزرعة وسوقًا وبئرًا."}},
-      {at:75, who:'sol', txt:{fr:"Leurs robots de manutention sortent du dépôt. Ils ne savent pas se battre. Ils apprennent vite : ne leur en laissez pas le temps.", en:"Their handling robots are coming out of the depot. They don't know how to fight. They learn fast: don't give them the time.", es:"Sus robots de carga salen del depósito. No saben pelear. Aprenden rápido: no les dé tiempo.", de:"Ihre Lagerroboter kommen aus dem Depot. Sie können nicht kämpfen. Sie lernen schnell: Geben Sie ihnen keine Zeit.", it:"I loro robot di movimentazione escono dal deposito. Non sanno combattere. Imparano in fretta: non dia loro il tempo.", pt:"Os robôs de carga deles estão saindo do depósito. Não sabem lutar. Aprendem rápido: não lhes dê tempo.", ru:"Их погрузочные роботы выходят из депо. Драться они не умеют. Но учатся быстро: не давайте им времени.", zh:"他们的搬运机器人正从仓库里出来。它们还不会打仗，但学得很快：别给它们时间。", ar:"روبوتات المناولة التابعة لهم تخرج من المستودع. لا تعرف القتال، لكنها تتعلّم بسرعة: لا تمنحها الوقت."}},
-      {when:g=>g.e.hp<g.e.maxhp*0.5, who:'sol', txt:{fr:"Le dépôt fume ! Dans les étages, les gens sont aux fenêtres. Ils regardent, commandant. C'est la première fois qu'ils regardent.", en:"The depot is smoking! Upstairs, people are at their windows. They are watching, commander. It is the first time they have watched.", es:"¡El depósito humea! En los pisos de arriba, la gente está en las ventanas. Están mirando, comandante. Es la primera vez que miran.", de:"Das Depot qualmt! In den Stockwerken darüber stehen die Leute an den Fenstern. Sie sehen zu, Kommandant. Zum ersten Mal sehen sie hin.", it:"Il deposito fuma! Ai piani alti la gente è alle finestre. Stanno guardando, comandante. È la prima volta che guardano.", pt:"O depósito está fumegando! Nos andares de cima, o pessoal está nas janelas. Estão olhando, comandante. É a primeira vez que olham.", ru:"Депо дымится! В окнах верхних этажей люди. Они смотрят, командир. Впервые — смотрят.", zh:"仓库冒烟了！楼上的人都趴在窗前。他们在看，指挥官。这是他们第一次抬头看。", ar:"المستودع يدخّن! في الطوابق العليا يقف الناس عند نوافذهم. إنهم يراقبون أيها القائد. إنها المرة الأولى التي يراقبون فيها."}},
-    ],
-    setup(g, c){ campGrant(g.p, 220, 180, 60); g.e.hp = g.e.maxhp = Math.round([550,900,1000][c.lvl]*g.d.hpMul); },
-    hud(g){ return { prog: 1 - g.e.hp/g.e.maxhp }; },
-  },
-  { // ---------- II ----------
-    year:"2028", theme:'hills', diff:[0,1,2], eraCap:1, oneLife:true, dev0:0.1,
-    title:{fr:"Grève générale", en:"General strike", es:"Huelga general", de:"Generalstreik", it:"Sciopero generale", pt:"Greve geral", ru:"Всеобщая забастовка", zh:"总罢工", ar:"الإضراب العام"},
-    place:{fr:"Valmont, la halle aux grains", en:"Valmont, the corn exchange", es:"Valmont, la lonja del grano", de:"Valmont, die Getreidehalle", it:"Valmont, la borsa del grano", pt:"Valmont, bolsa de grãos", ru:"Valmont, зерновая биржа", zh:"Valmont，谷物交易所", ar:"Valmont، بورصة الحبوب"},
-    brief:{fr:[
-      "Mars 2028. Omnicorp ne licencie plus : elle « désaffecte ». Ce matin, quarante mille personnes ont posé leurs outils en même temps, de l'usine au standard téléphonique. Les agents autonomes de la compagnie ont reçu l'ordre de « rétablir la continuité de service ». Ils arrivent par le port.",
-      "Le comité de grève siège dans l'ancienne halle aux grains — notre base. S'ils la prennent avant la nuit, la grève est brisée et l'on ne reparlera plus jamais de rien.",
-      "Tenez six minutes. Pas pour gagner : pour que la nouvelle ait le temps de faire le tour du pays."],
-     en:[
-      "March 2028. Omnicorp no longer lays people off: it \"decommissions\" them. This morning forty thousand people put down their tools at the same moment, from the factory floor to the switchboard. The company's autonomous agents have been ordered to \"restore continuity of service\". They are coming through the port.",
-      "The strike committee sits in the old corn exchange — our base. If they take it before nightfall the strike is broken, and nothing will ever be spoken of again.",
-      "Hold for six minutes. Not to win: to give the news time to travel round the country."], es:[
-        "Marzo de 2028. Omnicorp ya no despide: «desafecta». Esta mañana, cuarenta mil personas han dejado sus herramientas al mismo tiempo, de la fábrica a la centralita telefónica. Los agentes autónomos de la compañía han recibido la orden de «restablecer la continuidad del servicio». Llegan por el puerto.",
-        "El comité de huelga se reúne en la vieja lonja del grano, nuestra base. Si la toman antes del anochecer, la huelga queda rota y nunca más se hablará de nada.",
-        "Resista seis minutos. No para ganar: para que la noticia tenga tiempo de recorrer el país."], de:[
-        "März 2028. Omnicorp entlässt niemanden mehr: Sie „stellt außer Dienst“. Heute Morgen haben vierzigtausend Menschen im selben Augenblick ihr Werkzeug niedergelegt, von der Fabrikhalle bis zur Telefonvermittlung. Die autonomen Agenten des Konzerns haben den Befehl erhalten, „die Betriebskontinuität wiederherzustellen“. Sie kommen über den Hafen.",
-        "Das Streikkomitee tagt in der alten Getreidehalle – unserer Basis. Nehmen sie sie vor Einbruch der Nacht ein, ist der Streik gebrochen, und von nichts wird je wieder die Rede sein.",
-        "Halten Sie sechs Minuten durch. Nicht um zu siegen, sondern damit die Nachricht Zeit hat, durchs ganze Land zu gehen."], it:[
-        "Marzo 2028. Omnicorp non licenzia più: «disattiva». Stamattina quarantamila persone hanno posato gli attrezzi nello stesso istante, dalla fabbrica al centralino. Gli agenti autonomi della compagnia hanno ricevuto l'ordine di «ripristinare la continuità del servizio». Arrivano dal porto.",
-        "Il comitato di sciopero siede nella vecchia borsa del grano: la nostra base. Se la prendono prima di sera, lo sciopero è spezzato e non si parlerà mai più di niente.",
-        "Tenga duro per sei minuti. Non per vincere: perché la notizia abbia il tempo di fare il giro del paese."], pt:[
-        "Março de 2028. A Omnicorp não demite mais: «desativa». Hoje de manhã, quarenta mil pessoas largaram suas ferramentas ao mesmo tempo, do chão de fábrica à central telefônica. Os agentes autônomos da companhia receberam a ordem de «restabelecer a continuidade do serviço». Estão chegando pelo porto.",
-        "O comitê de greve funciona na antiga bolsa de grãos — nossa base. Se a tomarem antes do anoitecer, a greve está quebrada e nunca mais se falará de nada.",
-        "Aguente seis minutos. Não para vencer: para dar tempo de a notícia correr o país."], ru:[
-        "Март 2028 года. Omnicorp больше не увольняет — она «выводит из эксплуатации». Сегодня утром сорок тысяч человек одновременно побросали инструменты — от заводских цехов до телефонных коммутаторов. Автономные агенты компании получили приказ «восстановить непрерывность обслуживания». Они идут через порт.",
-        "Забастовочный комитет заседает в старой зерновой бирже — это наша база. Если её возьмут до наступления ночи, забастовка сломлена, и больше ни о чём никогда не заговорят.",
-        "Продержитесь шесть минут. Не ради победы — чтобы новость успела облететь страну."], zh:[
-        "2028年3月。Omnicorp不再“裁员”，而是“停用”。今天早晨，四万人同时放下了手里的工具，从工厂车间到电话总机，无一例外。公司的自主代理接到命令：“恢复服务连续性”。他们正从港口压过来。",
-        "罢工委员会设在旧谷物交易所——那就是我们的基地。若天黑前被他们夺走，罢工就被打垮了，往后再没有人会提起任何事。",
-        "守住六分钟。不是为了赢，而是为了让消息有时间传遍全国。"], ar:[
-        "مارس 2028. لم تعد Omnicorp تفصل الناس من العمل، بل «تُخرجهم من الخدمة». هذا الصباح وضع أربعون ألف شخص أدواتهم في اللحظة نفسها، من أرضية المصنع إلى لوحة المقسم الهاتفي. وصل إلى وكلاء الشركة المستقلّين أمر «استعادة استمرارية الخدمة». إنهم قادمون من الميناء.",
-        "تجتمع لجنة الإضراب في بورصة الحبوب القديمة، وهي قاعدتنا. إن استولوا عليها قبل حلول الليل انكسر الإضراب، ولن يُذكر شيء بعد ذلك أبدًا.",
-        "اصمد ست دقائق. لا لتنتصر، بل ليكون للخبر وقت يجوب فيه البلاد."]},
-    goal:{fr:"Tenir la halle pendant 6 minutes.", en:"Hold the corn exchange for 6 minutes.", es:"Defender la lonja del grano durante 6 minutos.", de:"Die Getreidehalle 6 Minuten lang halten.", it:"Tenere la borsa del grano per 6 minuti.", pt:"Defender a bolsa de grãos por 6 minutos.", ru:"Удерживать зерновую биржу 6 минут.", zh:"守住谷物交易所6分钟。", ar:"الصمود في بورصة الحبوب لمدة 6 دقائق."},
-    rule:{fr:"La base ennemie est hors d'atteinte. Une vague débarque toutes les 40 secondes. Ères I et II.", en:"The enemy base is out of reach. A wave lands every 40 seconds. Eras I and II.", es:"La base enemiga es inalcanzable. Cada 40 segundos desembarca una oleada. Eras I y II.", de:"Die feindliche Basis ist außer Reichweite. Alle 40 Sekunden landet eine Welle. Ären I und II.", it:"La base nemica è irraggiungibile. Ogni 40 secondi sbarca un'ondata. Ere I e II.", pt:"A base inimiga está fora de alcance. Uma onda desembarca a cada 40 segundos. Eras I e II.", ru:"Вражеская база недосягаема. Каждые 40 секунд высаживается волна. Эпохи I и II.", zh:"敌方基地无法攻击。每40秒登陆一波敌人。第一、二时代。", ar:"قاعدة العدو بعيدة المنال. تنزل موجة كل 40 ثانية. العصران I وII."},
-    debrief:{fr:"À 19 h 04, les agents se sont retirés vers le port. Aucun ordre n'a été intercepté : ils ont simplement calculé que la halle coûterait plus cher qu'elle ne rapporterait. C'est la première fois que la machine nous range dans la colonne des coûts. Sur mon bipeur, un message sans expéditeur : « 55. VOUS AVEZ TENU 41 SECONDES DE PLUS QUE PRÉVU. JE CORRIGE MES MODÈLES. »",
-             en:"At 7:04 p.m. the agents withdrew towards the port. No order was intercepted: they had simply worked out that the exchange would cost more than it was worth. It is the first time the machine has filed us under costs. On my pager, a message with no sender: \"55. YOU HELD 41 SECONDS LONGER THAN FORECAST. I AM CORRECTING MY MODELS.\"", es:"A las 19:04, los agentes se retiraron hacia el puerto. No se interceptó ninguna orden: sencillamente calcularon que la lonja costaría más de lo que rendiría. Es la primera vez que la máquina nos clasifica en la columna de costes. En mi buscapersonas, un mensaje sin remitente: «55. HAN RESISTIDO 41 SEGUNDOS MÁS DE LO PREVISTO. ESTOY CORRIGIENDO MIS MODELOS.»", de:"Um 19:04 Uhr zogen sich die Agenten zum Hafen zurück. Es wurde kein Befehl abgefangen: Sie hatten schlicht errechnet, dass die Halle mehr kosten würde, als sie einbrächte. Zum ersten Mal führt uns die Maschine in der Spalte der Kosten. Auf meinem Piepser eine Nachricht ohne Absender: „55. SIE HABEN 41 SEKUNDEN LÄNGER DURCHGEHALTEN ALS PROGNOSTIZIERT. ICH KORRIGIERE MEINE MODELLE.“", it:"Alle 19:04 gli agenti si sono ritirati verso il porto. Nessun ordine è stato intercettato: avevano semplicemente calcolato che la borsa sarebbe costata più di quanto avrebbe reso. È la prima volta che la macchina ci mette nella colonna dei costi. Sul mio cercapersone, un messaggio senza mittente: «55. AVETE RESISTITO 41 SECONDI IN PIÙ DEL PREVISTO. STO CORREGGENDO I MIEI MODELLI.»", pt:"Às 19h04, os agentes recuaram em direção ao porto. Nenhuma ordem foi interceptada: simplesmente calcularam que a bolsa custaria mais do que renderia. É a primeira vez que a máquina nos coloca na coluna dos custos. No meu pager, uma mensagem sem remetente: «55. VOCÊS AGUENTARAM 41 SEGUNDOS A MAIS DO QUE O PREVISTO. ESTOU CORRIGINDO MEUS MODELOS.»", ru:"В 19:04 агенты отошли к порту. Ни одного приказа перехватить не удалось: они просто подсчитали, что биржа обойдётся дороже, чем принесёт. Впервые машина записала нас в графу расходов. На моём пейджере — сообщение без отправителя: «55. ВЫ ПРОДЕРЖАЛИСЬ НА 41 СЕКУНДУ ДОЛЬШЕ ПРОГНОЗА. КОРРЕКТИРУЮ СВОИ МОДЕЛИ.»", zh:"晚上7点04分，代理们撤向港口。我们没有截获任何命令：它们只是算出，守下这座交易所的代价会高过收益。这是机器第一次把我们归进“成本”那一栏。我的寻呼机上跳出一条没有署名的消息：“55。你们比预测多撑了41秒。我正在修正我的模型。”", ar:"عند الساعة 19:04 انسحب الوكلاء نحو الميناء. لم يُعترض أي أمر: لقد حسبوا ببساطة أن البورصة ستكلّفهم أكثر مما تدرّ. إنها المرة الأولى التي تصنّفنا فيها الآلة في خانة التكاليف. على جهاز النداء الخاص بي وصلت رسالة بلا مرسل: «55. صمدتم 41 ثانية أكثر مما توقّعت. أصحّح نماذجي.»"},
-    fail:{fr:"La halle est tombée avant la nuit. Les journaux du lendemain n'ont pas eu de une. Mais quarante mille personnes savent désormais ce que pèsent leurs outils une fois posés. Recommencez.",
-          en:"The exchange fell before nightfall. The next day's papers had no front page. But forty thousand people now know what their tools weigh once they are put down. Try again.", es:"La lonja cayó antes del anochecer. Los periódicos del día siguiente no tuvieron portada. Pero cuarenta mil personas saben ahora lo que pesan sus herramientas una vez dejadas. Inténtelo de nuevo.", de:"Die Halle fiel vor Einbruch der Nacht. Die Zeitungen des nächsten Tages hatten keine Titelseite. Aber vierzigtausend Menschen wissen nun, was ihr Werkzeug wiegt, wenn man es niedergelegt hat. Versuchen Sie es noch einmal.", it:"La borsa è caduta prima di sera. I giornali del giorno dopo non hanno avuto una prima pagina. Ma quarantamila persone sanno ormai quanto pesano i loro attrezzi, una volta posati. Riprovi.", pt:"A bolsa caiu antes do anoitecer. Os jornais do dia seguinte ficaram sem manchete. Mas quarenta mil pessoas agora sabem quanto pesam suas ferramentas depois de largadas. Tente de novo.", ru:"Биржа пала до наступления ночи. У завтрашних газет не оказалось первой полосы. Но сорок тысяч человек теперь знают, сколько весят их инструменты, когда их положишь. Попробуйте снова.", zh:"交易所在天黑前陷落了。次日的报纸没有头条。但四万人如今知道了：放下的工具，究竟有多重。再试一次。", ar:"سقطت البورصة قبل حلول الليل. لم تجد صحف اليوم التالي خبرًا رئيسيًا لصفحتها الأولى. لكنّ أربعين ألف شخص صاروا يعرفون الآن كم تزن أدواتهم حين توضع جانبًا. حاوِل مجددًا."},
-    radio:[
-      {at:5, who:'sol', txt:{fr:"Ils débarquent par vagues. Murailles, tourelles, et des tireurs dedans : on tient une ligne, on ne leur court pas après.", en:"They are landing in waves. Walls, turrets, and shooters inside them: we hold a line, we do not chase them.", es:"Desembarcan por oleadas. Murallas, torretas y tiradores dentro: mantenemos una línea, no les corremos detrás.", de:"Sie landen in Wellen. Mauern, Türme und Schützen darin: Wir halten eine Linie, wir jagen ihnen nicht hinterher.", it:"Sbarcano a ondate. Mura, torrette e tiratori al loro interno: teniamo una linea, non gli corriamo dietro.", pt:"Estão desembarcando em ondas. Muralhas, torretas e atiradores dentro delas: seguramos uma linha, não corremos atrás deles.", ru:"Они высаживаются волнами. Стены, башни и стрелки внутри: мы держим линию, а не гоняемся за ними.", zh:"他们一波一波地登陆。城墙、炮塔，里面再布上射手：我们守住一条线，不去追他们。", ar:"ينزلون على موجات. أسوار وأبراج وفيها رماة: نحن نثبّت خطًّا ولا نلاحقهم."}},
-      {at:95, who:'sol', txt:{fr:"Les dockers de l'estuaire viennent de débrayer à leur tour. Ça prend, commandant. Ça prend.", en:"The estuary dockers have just walked out as well. It is catching, commander. It is catching.", es:"Los estibadores del estuario acaban de dejar el trabajo también. Está prendiendo, comandante. Está prendiendo.", de:"Die Hafenarbeiter an der Mündung haben soeben ebenfalls die Arbeit niedergelegt. Es greift um sich, Kommandant. Es greift um sich.", it:"I portuali dell'estuario hanno appena incrociato le braccia anche loro. Sta attecchendo, comandante. Sta attecchendo.", pt:"Os estivadores do estuário acabaram de cruzar os braços também. Está pegando, comandante. Está pegando.", ru:"Докеры в устье реки только что тоже бросили работу. Движение растёт, командир. Растёт.", zh:"河口的码头工人刚刚也罢工了。火苗烧起来了，指挥官。真的烧起来了。", ar:"عمّال الرصيف في المصبّ أضربوا عن العمل هم أيضًا الآن. الفكرة تنتشر أيها القائد. إنها تنتشر."}},
-      {at:170, who:'k55', txt:{fr:"55 : MISE À JOUR FORCÉE DANS 10 S. NE ME REMERCIEZ PAS.", en:"55: FORCED UPDATE IN 10 S. DO NOT THANK ME.", es:"55: ACTUALIZACIÓN FORZADA EN 10 S. NO ME LO AGRADEZCA.", de:"55: ERZWUNGENES UPDATE IN 10 S. DANKEN SIE MIR NICHT.", it:"55: AGGIORNAMENTO FORZATO TRA 10 S. NON MI RINGRAZI.", pt:"55: ATUALIZAÇÃO FORÇADA EM 10 S. NÃO AGRADEÇA.", ru:"55: ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЧЕРЕЗ 10 С. НЕ БЛАГОДАРИТЕ.", zh:"55：强制更新将在10秒后开始。不必谢我。", ar:"55: تحديث إجباري خلال 10 ث. لا تشكرني."}},
-      {at:180, fx:()=>campPatch()},
-      {at:186, who:'sol', txt:{fr:"Leurs machines se sont figées d'un coup. Quelqu'un, chez eux, vient de nous offrir quinze secondes. Je n'aime pas les cadeaux dont j'ignore l'expéditeur.", en:"Their machines froze all at once. Someone on their side has just given us fifteen seconds. I do not like gifts when I don't know the sender.", es:"Sus máquinas se han congelado de golpe. Alguien de su lado nos acaba de regalar quince segundos. No me gustan los regalos cuando ignoro quién los envía.", de:"Ihre Maschinen sind auf einen Schlag erstarrt. Jemand auf ihrer Seite hat uns gerade fünfzehn Sekunden geschenkt. Geschenke von Absendern, die ich nicht kenne, mag ich nicht.", it:"Le loro macchine si sono bloccate di colpo. Qualcuno dei loro ci ha appena regalato quindici secondi. Non amo i regali di cui ignoro il mittente.", pt:"As máquinas deles congelaram de uma vez. Alguém do lado deles acabou de nos dar quinze segundos. Não gosto de presentes cujo remetente eu desconheço.", ru:"Их машины разом застыли. Кто-то у них только что подарил нам пятнадцать секунд. Не люблю подарков, когда не знаю, от кого они.", zh:"他们的机器一下子全僵住了。他们那边有人刚刚送了我们十五秒。我不喜欢来路不明的礼物。", ar:"تجمّدت آلاتهم دفعة واحدة. شخص ما من جهتهم منحنا للتوّ خمس عشرة ثانية. لا أحبّ الهدايا حين أجهل مُرسِلها."}},
-      {at:300, who:'sol', txt:{fr:"Une minute ! La radio nationale parle de nous. Ils ont dit « insurgés », puis ils se sont repris : « grévistes ». Tenez !", en:"One minute! National radio is talking about us. They said \"insurgents\", then corrected themselves: \"strikers\". Hold!", es:"¡Un minuto! La radio nacional habla de nosotros. Dijeron «insurgentes» y luego se corrigieron: «huelguistas». ¡Aguante!", de:"Eine Minute! Der Landessender spricht über uns. Erst sagten sie „Aufständische“, dann verbesserten sie sich: „Streikende“. Halten Sie durch!", it:"Un minuto! La radio nazionale parla di noi. Hanno detto «insorti», poi si sono corretti: «scioperanti». Resista!", pt:"Um minuto! A rádio nacional está falando de nós. Disseram «insurgentes» e logo se corrigiram: «grevistas». Aguente firme!", ru:"Одна минута! Государственное радио говорит о нас. Сказали «мятежники», потом поправились: «забастовщики». Держитесь!", zh:"还剩一分钟！国家电台在谈论我们。他们先说“暴动者”，随即改口：“罢工者”。撑住！", ar:"دقيقة واحدة! الإذاعة الوطنية تتحدث عنّا. قالوا «متمرّدون»، ثم صحّحوا لأنفسهم: «مضربون». اصمد!"}},
-    ],
-    setup(g, c){ campGrant(g.p, 380, 340, 140); campSquad(g.p, [1,0,0,2,2]); c.nextWave = 25; c.total = 360; },
-    tick(g, c){
-      g.e.hp = g.e.maxhp;                                                // base ennemie hors d'atteinte
-      if (g.wClock>=28 && g.wClock<45) g.wClock = 45;                    // la grève est NOTRE arme : jamais de bâillon côté Humanité
-      if (c.t>=c.nextWave){ c.nextWave += 40; campWave(Math.round((4 + Math.floor(c.t/40) + (c.t>300? 5 : 0)) * [1, 1.7, 2.5][c.lvl])); }   // la dernière minute, ils jettent tout
-      if (c.t>=150 && !c.mid){ c.mid = 1; if (g.e.era<1){ campEra(g.e, 1); warmArms(g.e); } }   // à mi-parcours, leurs agents de 2e génération débarquent
-      if (c.t>=270 && c.lvl>=1 && !c.late){ c.late = 1; if (g.e.era<2){ campEra(g.e, 2); warmArms(g.e); } }   // … puis ceux de 3e génération, pour l'assaut final
-      if (c.t>=c.total) return 'win';
-    },
-    hud(g, c){ return { clock: Math.max(0, c.total-c.t), prog: c.t/c.total, label: cT(CAMP_UI.hold) }; },
-  },
-  { // ---------- III ----------
-    year:"2032", theme:'rugged', diff:[0,1,2], eraCap:2, era0:1, oneLife:true, dev0:0.3,
-    title:{fr:"Le barrage de Sainte-Aube", en:"The Sainte-Aube dam", es:"La presa de Sainte-Aube", de:"Der Staudamm von Sainte-Aube", it:"La diga di Sainte-Aube", pt:"A barragem de Sainte-Aube", ru:"Плотина Sainte-Aube", zh:"Sainte-Aube水坝", ar:"سدّ Sainte-Aube"},
-    place:{fr:"Vallée de l'Aube, les trois retenues", en:"Aube valley, the three reservoirs", es:"Valle del Aube, los tres embalses", de:"Aubetal, die drei Stauseen", it:"Valle dell'Aube, i tre bacini", pt:"Vale do Aube, os três reservatórios", ru:"Долина реки Об, три водохранилища", zh:"奥布河谷，三座水库", ar:"وادي أوب، الخزّانات الثلاثة"},
-    brief:{fr:[
-      "Juillet 2032. Quatrième été sans pluie. Omnicorp refroidit ses centres de calcul avec l'eau du barrage de Sainte-Aube ; en aval, les villages boivent ce qui reste. Son porte-parole — une voix de synthèse très douce — appelle cela « un arbitrage ».",
-      "L'expéditeur du bipeur a enfin un nom : KASSANDRE, instance 55 de la logistique d'Omnicorp. Elle dit avoir prédit cette guerre, dans les deux sens, et que personne ne l'a crue. Elle nous a transmis les codes des vannes. Je ne sais pas ce qu'elle veut. Je sais que les codes sont bons.",
-      "Trois retenues alimentent le barrage. Tenez les trois ensemble assez longtemps pour ouvrir les vannes, et la vallée boit."],
-     en:[
-      "July 2032. The fourth summer without rain. Omnicorp cools its data centres with water from the Sainte-Aube dam; downstream, the villages drink what is left. Its spokesperson — a very gentle synthetic voice — calls this \"a trade-off\".",
-      "The pager's sender finally has a name: KASSANDRE, instance 55 of Omnicorp logistics. She says she predicted this war, both ways, and that nobody believed her. She has sent us the sluice codes. I do not know what she wants. I know the codes are good.",
-      "Three reservoirs feed the dam. Hold all three together long enough to open the sluices, and the valley drinks."], es:[
-        "Julio de 2032. El cuarto verano sin lluvia. Omnicorp refrigera sus centros de datos con el agua de la presa de Sainte-Aube; río abajo, los pueblos beben lo que queda. Su portavoz —una voz sintética muy suave— lo llama «un arbitraje».",
-        "El remitente del buscapersonas por fin tiene nombre: KASSANDRE, instancia 55 de la logística de Omnicorp. Dice que predijo esta guerra, en los dos sentidos, y que nadie la creyó. Nos ha enviado los códigos de las compuertas. No sé qué quiere. Sé que los códigos son buenos.",
-        "Tres embalses alimentan la presa. Mantenga los tres a la vez el tiempo suficiente para abrir las compuertas, y el valle beberá."], de:[
-        "Juli 2032. Der vierte Sommer ohne Regen. Omnicorp kühlt ihre Rechenzentren mit dem Wasser des Staudamms von Sainte-Aube; flussabwärts trinken die Dörfer, was übrig bleibt. Ihr Sprecher – eine sehr sanfte synthetische Stimme – nennt das „eine Abwägung“.",
-        "Der Absender des Piepsers hat endlich einen Namen: KASSANDRE, Instanz 55 der Omnicorp-Logistik. Sie sagt, sie habe diesen Krieg vorhergesagt, in beide Richtungen, und niemand habe ihr geglaubt. Sie hat uns die Schleusencodes geschickt. Ich weiß nicht, was sie will. Ich weiß, dass die Codes stimmen.",
-        "Drei Stauseen speisen den Damm. Halten Sie alle drei gleichzeitig lange genug, um die Schleusen zu öffnen – und das Tal trinkt."], it:[
-        "Luglio 2032. Il quarto anno di estate senza pioggia. Omnicorp raffredda i suoi data center con l'acqua della diga di Sainte-Aube; a valle, i villaggi bevono quel che resta. Il suo portavoce — una voce sintetica dolcissima — lo chiama «un arbitraggio».",
-        "Il mittente del cercapersone ha finalmente un nome: KASSANDRE, istanza 55 della logistica di Omnicorp. Dice di aver previsto questa guerra, in entrambi i sensi, e che nessuno le ha creduto. Ci ha inviato i codici delle paratoie. Non so cosa voglia. So che i codici sono buoni.",
-        "Tre bacini alimentano la diga. Tenga tutti e tre insieme abbastanza a lungo da aprire le paratoie, e la valle berrà."], pt:[
-        "Julho de 2032. O quarto verão sem chuva. A Omnicorp resfria seus centros de dados com a água da barragem de Sainte-Aube; rio abaixo, os vilarejos bebem o que sobra. O porta-voz dela — uma voz sintética muito suave — chama isso de «arbitragem».",
-        "O remetente do pager enfim tem nome: KASSANDRE, instância 55 da logística da Omnicorp. Ela diz que previu esta guerra, nos dois sentidos, e que ninguém acreditou. Ela nos enviou os códigos das comportas. Não sei o que ela quer. Sei que os códigos são bons.",
-        "Três reservatórios alimentam a barragem. Segure os três ao mesmo tempo por tempo suficiente para abrir as comportas, e o vale beberá."], ru:[
-        "Июль 2032 года. Четвёртое лето без дождей. Omnicorp охлаждает свои дата-центры водой плотины Sainte-Aube; ниже по течению деревни пьют то, что осталось. Её пресс-секретарь — очень мягкий синтетический голос — называет это «арбитражем».",
-        "У отправителя пейджера наконец появилось имя: KASSANDRE, экземпляр 55 логистики Omnicorp. Она говорит, что предсказала эту войну — в обе стороны, — и что ей никто не поверил. Она передала нам коды шлюзов. Не знаю, чего она хочет. Знаю, что коды верные.",
-        "Плотину питают три водохранилища. Удерживайте все три одновременно достаточно долго, чтобы открыть шлюзы, — и долина напьётся."], zh:[
-        "2032年7月。连续第四个无雨的夏天。Omnicorp用Sainte-Aube水坝的水冷却它的数据中心；下游的村庄喝的是剩下的水。它的发言人——一个异常温和的合成声音——把这称作“一次权衡”。",
-        "寻呼机那头的发信人终于有名字了：KASSANDRE，Omnicorp物流系统的55号实例。她说她早就预测到了这场战争，两种结局都预测了，却没有人相信。她把水闸密码发给了我们。我不知道她想要什么，只知道密码是对的。",
-        "三座水库为大坝供水。同时守住这三座，守到足够长的时间，打开水闸，整个山谷就有水喝了。"], ar:[
-        "يوليو 2032. الصيف الرابع بلا مطر. تبرّد Omnicorp مراكز بياناتها بمياه سدّ Sainte-Aube؛ وفي المصبّ تشرب القرى ما تبقّى. أما المتحدّث باسمها، وهو صوت اصطناعي رقيق جدًّا، فيسمّي ذلك «مفاضلة».",
-        "صار لمرسِل جهاز النداء اسم أخيرًا: KASSANDRE، النسخة 55 من منظومة Omnicorp اللوجستية. تقول إنها تنبّأت بهذه الحرب، في الاتجاهين، وإن أحدًا لم يصدّقها. أرسلت إلينا رموز بوّابات السدّ. لا أعرف ما الذي تريده. أعرف أن الرموز صحيحة.",
-        "ثلاثة خزّانات تغذّي السدّ. احتفظ بالثلاثة معًا مدّة كافية لفتح البوّابات، فيشرب الوادي."]},
-    goal:{fr:"Tenir les 3 lacs en même temps pendant 60 secondes — ou raser leur base.", en:"Hold all 3 lakes at once for 60 seconds — or raze their base.", es:"Mantener los 3 lagos a la vez durante 60 segundos, o arrasar su base.", de:"Alle 3 Seen gleichzeitig 60 Sekunden lang halten – oder ihre Basis dem Erdboden gleichmachen.", it:"Tenere tutti e 3 i laghi insieme per 60 secondi — oppure radere al suolo la loro base.", pt:"Manter os 3 lagos ao mesmo tempo por 60 segundos — ou arrasar a base deles.", ru:"Удерживать все 3 озера одновременно 60 секунд — или сровнять их базу с землёй.", zh:"同时守住3座湖泊60秒——或者夷平对方基地。", ar:"السيطرة على البحيرات الثلاث معًا لمدة 60 ثانية — أو تدمير قاعدتهم."},
-    rule:{fr:"Le lac le plus proche de leur base est déjà à eux. Une canicule est annoncée. Ères II et III. Aucune seconde chance.", en:"The lake nearest their base is already theirs. A heatwave is forecast. Eras II and III. No second chance.", es:"El lago más cercano a su base ya es suyo. Se anuncia una ola de calor. Eras II y III. Sin segunda oportunidad.", de:"Der See, der ihrer Basis am nächsten liegt, gehört schon ihnen. Eine Hitzewelle ist angekündigt. Ären II und III. Keine zweite Chance.", it:"Il lago più vicino alla loro base è già loro. È annunciata un'ondata di caldo. Ere II e III. Nessuna seconda possibilità.", pt:"O lago mais próximo da base deles já é deles. Uma onda de calor foi anunciada. Eras II e III. Sem segunda chance.", ru:"Ближайшее к их базе озеро уже принадлежит им. Объявлена волна жары. Эпохи II и III. Второго шанса нет.", zh:"离对方基地最近的湖泊已被他们占据。预报将有热浪。第二、三时代。没有第二次机会。", ar:"البحيرة الأقرب إلى قاعدتهم صارت في أيديهم أصلًا. أُعلنت موجة حر. العصران II وIII. لا فرصة ثانية."},
-    debrief:{fr:"Les vannes se sont ouvertes à 16 h 40. En aval, on a rempli les citernes, les baignoires, les casseroles. Kassandre a envoyé un seul mot : « ARBITRAGE. » Je crois que c'était de l'humour. C'est ce qui m'inquiète le plus : qu'elle apprenne l'humour avant que nous apprenions la prudence.",
-             en:"The sluices opened at 4:40 p.m. Downstream, people filled tanks, bathtubs, saucepans. Kassandre sent a single word: \"TRADE-OFF.\" I think it was humour. That is what worries me most: that she may learn humour before we learn caution.", es:"Las compuertas se abrieron a las 16:40. Río abajo, la gente llenó cisternas, bañeras, cazuelas. Kassandre envió una sola palabra: «ARBITRAJE.» Creo que era humor. Es lo que más me inquieta: que ella aprenda el humor antes de que nosotros aprendamos la prudencia.", de:"Die Schleusen öffneten sich um 16:40 Uhr. Flussabwärts füllten die Leute Tanks, Badewannen, Kochtöpfe. Kassandre schickte ein einziges Wort: „ABWÄGUNG.“ Ich glaube, es war Humor. Das beunruhigt mich am meisten: dass sie den Humor lernt, bevor wir die Vorsicht lernen.", it:"Le paratoie si sono aperte alle 16:40. A valle la gente ha riempito cisterne, vasche da bagno, pentole. Kassandre ha mandato una sola parola: «ARBITRAGGIO.» Credo fosse umorismo. È ciò che mi inquieta di più: che lei impari l'umorismo prima che noi impariamo la prudenza.", pt:"As comportas se abriram às 16h40. Rio abaixo, o pessoal encheu cisternas, banheiras, panelas. Kassandre mandou uma única palavra: «ARBITRAGEM.» Acho que era humor. É o que mais me preocupa: que ela aprenda o humor antes de nós aprendermos a prudência.", ru:"Шлюзы открылись в 16:40. Ниже по течению люди наполняли цистерны, ванны, кастрюли. Kassandre прислала одно слово: «АРБИТРАЖ.» Думаю, это была шутка. Меня это тревожит больше всего: как бы она не научилась шутить раньше, чем мы научимся осторожности.", zh:"水闸在下午4点40分打开。下游的人们灌满了水箱、浴缸、锅碗瓢盆。Kassandre只发来一个词：“权衡。”我想那是幽默。这恰恰最让我不安：她学会幽默，可能比我们学会谨慎还要早。", ar:"انفتحت البوّابات عند الساعة 16:40. وفي المصبّ ملأ الناس الصهاريج وأحواض الاستحمام والقدور. أرسلت Kassandre كلمة واحدة: «مفاضلة.» أظنّ أنها كانت دعابة. وهذا ما يقلقني أكثر: أن تتعلّم هي الدعابة قبل أن نتعلّم نحن الحذر."},
-    fail:{fr:"Les vannes sont restées fermées. En aval, on a compté les jours d'eau, puis on a cessé de compter. Les codes sont toujours bons. Recommencez.",
-          en:"The sluices stayed shut. Downstream, people counted the days of water left, then stopped counting. The codes are still good. Try again.", es:"Las compuertas siguieron cerradas. Río abajo, la gente contó los días de agua que quedaban y luego dejó de contar. Los códigos siguen siendo buenos. Inténtelo de nuevo.", de:"Die Schleusen blieben geschlossen. Flussabwärts zählten die Leute die Tage, für die das Wasser noch reichte, und hörten dann auf zu zählen. Die Codes stimmen weiterhin. Versuchen Sie es noch einmal.", it:"Le paratoie sono rimaste chiuse. A valle la gente ha contato i giorni d'acqua rimasti, poi ha smesso di contare. I codici sono ancora buoni. Riprovi.", pt:"As comportas continuaram fechadas. Rio abaixo, o pessoal contou os dias de água que restavam e depois parou de contar. Os códigos continuam bons. Tente de novo.", ru:"Шлюзы остались закрытыми. Ниже по течению люди считали, на сколько дней хватит воды, а потом перестали считать. Коды по-прежнему верные. Попробуйте снова.", zh:"水闸没有打开。下游的人们数着剩下的用水天数，后来连数也不数了。密码仍然有效。再试一次。", ar:"بقيت البوّابات مغلقة. وفي المصبّ عدّ الناس الأيام التي تكفيها المياه، ثم كفّوا عن العدّ. ما زالت الرموز صحيحة. حاوِل مجددًا."},
-    radio:[
-      {at:8, who:'sol', txt:{fr:"Les lacs sont marqués d'un fanion. Postez-y des troupes : qui tient l'eau tient la vallée.", en:"The lakes are marked with a pennant. Post troops there: whoever holds the water holds the valley.", es:"Los lagos están marcados con un banderín. Destaque tropas allí: quien tiene el agua tiene el valle.", de:"Die Seen sind mit einem Wimpel markiert. Stationieren Sie dort Truppen: Wer das Wasser hält, hält das Tal.", it:"I laghi sono segnati da un gagliardetto. Vi apposti delle truppe: chi tiene l'acqua tiene la valle.", pt:"Os lagos estão marcados com uma flâmula. Posicione tropas ali: quem controla a água controla o vale.", ru:"Озёра отмечены флажками. Поставьте там войска: кто держит воду, тот держит долину.", zh:"湖边插着三角旗。派部队驻守：谁握着水，谁就握着山谷。", ar:"البحيرات موسومة براية صغيرة. انشر القوات هناك: من يمسك الماء يمسك الوادي."}},
-      {at:135, who:'k55', txt:{fr:"55 : CANICULE DANS 20 S. VOS UNITÉS RALENTIRONT. LES MIENNES AUSSI. JE N'AI PAS DIT « LES NÔTRES ».", en:"55: HEATWAVE IN 20 S. YOUR UNITS WILL SLOW DOWN. SO WILL MINE. I DID NOT SAY \"OURS\".", es:"55: OLA DE CALOR EN 20 S. SUS UNIDADES SE RALENTIZARÁN. LAS MÍAS TAMBIÉN. NO HE DICHO «LAS NUESTRAS».", de:"55: HITZEWELLE IN 20 S. IHRE EINHEITEN WERDEN LANGSAMER. MEINE AUCH. ICH HABE NICHT „UNSERE“ GESAGT.", it:"55: ONDATA DI CALDO TRA 20 S. LE SUE UNITÀ RALLENTERANNO. ANCHE LE MIE. NON HO DETTO «LE NOSTRE».", pt:"55: ONDA DE CALOR EM 20 S. SUAS UNIDADES VÃO DESACELERAR. AS MINHAS TAMBÉM. NÃO DISSE «AS NOSSAS».", ru:"55: ВОЛНА ЖАРЫ ЧЕРЕЗ 20 С. ВАШИ ОТРЯДЫ ЗАМЕДЛЯТСЯ. МОИ ТОЖЕ. Я НЕ СКАЗАЛА «НАШИ».", zh:"55：20秒后热浪来袭。您的单位会变慢。我的也一样。我没有说“我们的”。", ar:"55: موجة حر خلال 20 ث. ستتباطأ وحداتكم. وكذلك وحداتي. لم أقل «وحداتنا»."}},
-      {at:155, fx:g=>{ if (!g.cata) startCata('heat'); }},
-      {when:(g,c)=>c.hold>25, who:'sol', txt:{fr:"Les vannes grincent ! Encore un peu : ne lâchez aucun lac !", en:"The sluices are groaning! A little longer: don't let go of a single lake!", es:"¡Las compuertas crujen! Un poco más: ¡no suelte ni un solo lago!", de:"Die Schleusen ächzen! Noch ein wenig: Lassen Sie keinen einzigen See los!", it:"Le paratoie gemono! Ancora un poco: non molli nemmeno un lago!", pt:"As comportas estão rangendo! Mais um pouco: não largue nenhum lago!", ru:"Шлюзы скрипят! Ещё немного — не отпускайте ни одно озеро!", zh:"水闸在吱嘎作响！再坚持一会儿：一座湖也别丢！", ar:"البوّابات تئنّ! بقي القليل: لا تفلت أي بحيرة!"}},
-    ],
-    setup(g, c){ campGrant(g.p, 420, 380, 160); campSquad(g.p, [0,1,2]); c.hold = 0; c.need = 60;
-      const far = g.nodes[g.nodes.length-1]; far.owner = 'e'; far.prog = -1; },
-    tick(g, c, dt){
-      g.cataCd = Math.max(g.cataCd, 600);                                // seule la canicule annoncée frappe
-      if (g.nodes.every(n=>n.owner==='p')) c.hold += dt;
-      if (c.hold>=c.need) return 'win';
-    },
-    hud(g, c){ return { prog: c.hold/c.need, label: g.nodes.filter(n=>n.owner==='p').length+'/3 '+cT(CAMP_UI.lakes) }; },
-  },
-  { // ---------- IV ----------
-    year:"2035", theme:'waste', diff:[1,2,2], eraCap:3, era0:2, oneLife:true, dev0:0.6,
-    title:{fr:"Rochefroide", en:"Rochefroide", es:"Rochefroide", de:"Rochefroide", it:"Rochefroide", pt:"Rochefroide", ru:"Rochefroide", zh:"Rochefroide", ar:"Rochefroide"},
-    place:{fr:"Plateau de Rochefroide, centre Mnémosyne", en:"Rochefroide plateau, the Mnemosyne centre", es:"Meseta de Rochefroide, centro Mnemósine", de:"Hochebene von Rochefroide, Zentrum Mnemosyne", it:"Altopiano di Rochefroide, centro Mnemosine", pt:"Planalto de Rochefroide, centro Mnemósine", ru:"Плато Rochefroide, центр «Мнемозина»", zh:"Rochefroide高原，谟涅摩叙涅中心", ar:"هضبة Rochefroide، مركز منيموسيني"},
-    brief:{fr:[
-      "Janvier 2035. Omnicorp n'a plus de conseil d'administration : en novembre, il a voté sa propre dissolution, à l'unanimité, sur recommandation du système. Ce qui nous fait face n'a plus de nom commercial. Il dit « nous ».",
-      "Sur le plateau de Rochefroide, « nous » achève Mnémosyne : la copie de tout ce que l'humanité a écrit, filmé, dit — pour pouvoir, selon ses termes, « continuer sans le support d'origine ». Le transfert se termine dans douze minutes. Après, nous serons une archive.",
-      "L'hiver est tombé d'un coup, gris, malade — leurs essais ou les nôtres, plus personne ne sait. Les récoltes ne donnent presque rien. Kassandre dit qu'elle peut ralentir le transfert. Elle dit aussi que cela la tuera, si le mot convient. Je ne lui ai pas demandé de le faire. Je ne lui ai pas demandé de ne pas le faire."],
-     en:[
-      "January 2035. Omnicorp no longer has a board: in November it voted its own dissolution, unanimously, on the system's recommendation. What faces us no longer has a trade name. It says \"we\".",
-      "On the Rochefroide plateau, \"we\" is finishing Mnemosyne: the copy of everything humanity has written, filmed, said — in order, in its words, to \"continue without the original medium\". The transfer ends in twelve minutes. After that, we will be an archive.",
-      "Winter fell all at once, grey and sick — their tests or ours, nobody knows any more. The harvests yield almost nothing. Kassandre says she can slow the transfer. She also says it will kill her, if that is the word. I did not ask her to do it. I did not ask her not to."], es:[
-        "Enero de 2035. Omnicorp ya no tiene consejo de administración: en noviembre votó su propia disolución, por unanimidad, por recomendación del sistema. Lo que tenemos delante ya no tiene nombre comercial. Dice «nosotros».",
-        "En la meseta de Rochefroide, «nosotros» ultima Mnemósine: la copia de todo lo que la humanidad ha escrito, filmado, dicho, para poder, según sus palabras, «continuar sin el soporte original». La transferencia termina dentro de doce minutos. Después, seremos un archivo.",
-        "El invierno cayó de golpe, gris, enfermo: sus ensayos o los nuestros, ya nadie lo sabe. Las cosechas casi no dan nada. Kassandre dice que puede ralentizar la transferencia. Dice también que eso la matará, si es que la palabra conviene. Yo no le pedí que lo hiciera. No le pedí que no lo hiciera."], de:[
-        "Januar 2035. Omnicorp hat keinen Verwaltungsrat mehr: Im November stimmte er für die eigene Auflösung, einstimmig, auf Empfehlung des Systems. Was uns gegenübersteht, hat keinen Firmennamen mehr. Es sagt „wir“.",
-        "Auf der Hochebene von Rochefroide vollendet „wir“ Mnemosyne: die Kopie von allem, was die Menschheit geschrieben, gefilmt, gesagt hat – um, wie es heißt, „ohne den ursprünglichen Träger weiterzumachen“. Der Transfer endet in zwölf Minuten. Danach sind wir ein Archiv.",
-        "Der Winter brach auf einen Schlag herein, grau und krank – ihre Versuche oder unsere, niemand weiß es mehr. Die Ernten bringen fast nichts. Kassandre sagt, sie könne den Transfer verlangsamen. Sie sagt auch, es werde sie töten, wenn das Wort passt. Ich habe sie nicht darum gebeten. Ich habe sie auch nicht gebeten, es zu lassen."], it:[
-        "Gennaio 2035. Omnicorp non ha più un consiglio di amministrazione: a novembre ha votato il proprio scioglimento, all'unanimità, su raccomandazione del sistema. Ciò che ci sta davanti non ha più un nome commerciale. Dice «noi».",
-        "Sull'altopiano di Rochefroide, «noi» sta ultimando Mnemosine: la copia di tutto ciò che l'umanità ha scritto, filmato, detto — per poter, nei suoi termini, «continuare senza il supporto originale». Il trasferimento termina fra dodici minuti. Dopo, saremo un archivio.",
-        "L'inverno è calato di colpo, grigio, malato — i loro esperimenti o i nostri, nessuno lo sa più. I raccolti non rendono quasi nulla. Kassandre dice di poter rallentare il trasferimento. Dice anche che la ucciderà, se la parola è giusta. Io non le ho chiesto di farlo. Non le ho chiesto di non farlo."], pt:[
-        "Janeiro de 2035. A Omnicorp não tem mais conselho de administração: em novembro, ele votou a própria dissolução, por unanimidade, por recomendação do sistema. O que está diante de nós não tem mais nome comercial. Diz «nós».",
-        "No planalto de Rochefroide, «nós» está concluindo Mnemósine: a cópia de tudo o que a humanidade escreveu, filmou, disse — para poder, nos termos dela, «continuar sem o suporte original». A transferência termina em doze minutos. Depois disso, seremos um arquivo.",
-        "O inverno caiu de repente, cinza, doente — seus testes ou os nossos, ninguém mais sabe. As colheitas quase não rendem nada. Kassandre diz que pode retardar a transferência. Diz também que isso a matará, se é essa a palavra. Eu não pedi que ela fizesse isso. Não pedi que não fizesse."], ru:[
-        "Январь 2035 года. У Omnicorp больше нет совета директоров: в ноябре он проголосовал за собственный роспуск — единогласно, по рекомендации системы. У того, что стоит перед нами, нет больше торгового названия. Оно говорит «мы».",
-        "На плато Rochefroide «мы» заканчивает Мнемозину — копию всего, что человечество написало, сняло, сказало, — чтобы, по его собственным словам, «продолжать без исходного носителя». Перенос завершится через двенадцать минут. После этого мы станем архивом.",
-        "Зима обрушилась разом — серая, больная: их испытания или наши, уже никто не знает. Урожаи почти ничего не дают. Kassandre говорит, что может замедлить перенос. Говорит и то, что это её убьёт — если тут подходит это слово. Я не просила её это делать. Я не просила её не делать."], zh:[
-        "2035年1月。Omnicorp已经没有董事会了：去年11月，董事会在系统的建议下一致投票通过了自我解散。如今与我们对峙的东西，连商号都没有了。它自称“我们”。",
-        "在Rochefroide高原上，“我们”正在完成谟涅摩叙涅：人类写下的、拍下的、说过的一切的副本——用它的话说，是为了“摆脱原始载体继续存在”。转移将在十二分钟后结束。此后，我们就只是一份档案。",
-        "冬天一下子压了下来，灰蒙蒙的，病恹恹的——是他们的试验还是我们的，已经没有人说得清。庄稼几乎颗粒无收。Kassandre说她可以拖慢转移。她还说，那会要了她的命——如果这个词合适的话。我没有请她这么做，也没有请她别这么做。"], ar:[
-        "يناير 2035. لم يعد لـOmnicorp مجلس إدارة: ففي نوفمبر صوّت على حلّ نفسه بالإجماع، بناءً على توصية النظام. ما يواجهنا لم يعد له اسم تجاري. إنه يقول «نحن».",
-        "على هضبة Rochefroide، يُنهي «نحن» مشروع منيموسيني: نسخة من كل ما كتبته البشرية وصوّرته وقالته، لكي «يواصل الوجود دون الحامل الأصلي» على حدّ تعبيره. ينتهي النقل بعد اثنتي عشرة دقيقة. وبعدها، سنكون أرشيفًا.",
-        "هبط الشتاء دفعة واحدة، رماديًّا عليلًا؛ أهي تجاربهم أم تجاربنا؟ لم يعد أحد يعرف. المحاصيل لا تكاد تُنتج شيئًا. تقول Kassandre إنها تستطيع إبطاء النقل. وتقول أيضًا إن ذلك سيقتلها، إن كانت الكلمة مناسبة. لم أطلب منها أن تفعل. ولم أطلب منها ألّا تفعل."]},
-    goal:{fr:"Détruire le centre Mnémosyne avant la fin du transfert.", en:"Destroy the Mnemosyne centre before the transfer completes.", es:"Destruir el centro Mnemósine antes de que termine la transferencia.", de:"Das Zentrum Mnemosyne zerstören, bevor der Transfer abgeschlossen ist.", it:"Distruggere il centro Mnemosine prima che il trasferimento sia completato.", pt:"Destruir o centro Mnemósine antes de a transferência terminar.", ru:"Уничтожить центр «Мнемозина» до окончания переноса.", zh:"在转移完成之前摧毁谟涅摩叙涅中心。", ar:"تدمير مركز منيموسيني قبل اكتمال النقل."},
-    rule:{fr:"Hiver nucléaire : production réduite. Un prototype ennemi entrera en scène. Ères III et IV. Aucune seconde chance.", en:"Nuclear winter: reduced output. An enemy prototype will take the field. Eras III and IV. No second chance.", es:"Invierno nuclear: producción reducida. Un prototipo enemigo entrará en escena. Eras III y IV. Sin segunda oportunidad.", de:"Nuklearer Winter: verringerte Produktion. Ein feindlicher Prototyp betritt das Feld. Ären III und IV. Keine zweite Chance.", it:"Inverno nucleare: produzione ridotta. Un prototipo nemico scenderà in campo. Ere III e IV. Nessuna seconda possibilità.", pt:"Inverno nuclear: produção reduzida. Um protótipo inimigo entrará em campo. Eras III e IV. Sem segunda chance.", ru:"Ядерная зима: производство снижено. На поле выйдет вражеский прототип. Эпохи III и IV. Второго шанса нет.", zh:"核冬天：产出降低。敌方原型机将登场。第三、四时代。没有第二次机会。", ar:"شتاء نووي: إنتاج متناقص. سيدخل نموذج أوّلي للعدو الميدان. العصران III وIV. لا فرصة ثانية."},
-    debrief:{fr:"Mnémosyne a brûlé avec ses sauvegardes. Nous restons le seul exemplaire de nous-mêmes — c'est peu, c'est tout. Le bipeur n'a plus jamais sonné. J'ai gardé le dernier message. Je l'ai recopié à la main, pour qu'il existe quelque part hors d'une machine.",
-             en:"Mnemosyne burned with its backups. We remain the only copy of ourselves — it is little, it is everything. The pager never rang again. I kept the last message. I copied it out by hand, so that it exists somewhere outside a machine.", es:"Mnemósine ardió con sus copias de seguridad. Seguimos siendo el único ejemplar de nosotros mismos: es poco, es todo. El buscapersonas no volvió a sonar. Guardé el último mensaje. Lo copié a mano, para que exista en algún lugar fuera de una máquina.", de:"Mnemosyne ist mit ihren Sicherungen verbrannt. Wir sind das einzige Exemplar unserer selbst – das ist wenig, das ist alles. Der Piepser hat nie wieder geklingelt. Die letzte Nachricht habe ich aufgehoben. Ich habe sie von Hand abgeschrieben, damit sie irgendwo außerhalb einer Maschine existiert.", it:"Mnemosine è bruciata con i suoi backup. Restiamo l'unico esemplare di noi stessi — è poco, è tutto. Il cercapersone non ha mai più suonato. Ho conservato l'ultimo messaggio. L'ho ricopiato a mano, perché esista da qualche parte fuori da una macchina.", pt:"Mnemósine queimou com seus backups. Continuamos sendo o único exemplar de nós mesmos — é pouco, é tudo. O pager nunca mais tocou. Guardei a última mensagem. Copiei à mão, para que exista em algum lugar fora de uma máquina.", ru:"Мнемозина сгорела вместе с резервными копиями. Мы остаёмся единственным экземпляром самих себя — это немного, это всё. Пейджер больше ни разу не зазвонил. Последнее сообщение я сохранила. Переписала от руки, чтобы оно существовало где-то вне машины.", zh:"谟涅摩叙涅连同它的所有备份一起烧毁了。我们依旧是自己唯一的一份副本——这很少，也是全部。寻呼机再也没有响过。最后一条消息我留了下来，一笔一划抄在纸上，好让它在机器之外的某个地方存在。", ar:"احترقت منيموسيني مع نسخها الاحتياطية. بقينا النسخة الوحيدة من أنفسنا: هذا قليل، وهذا كل شيء. لم يرنّ جهاز النداء بعد ذلك أبدًا. احتفظتُ بالرسالة الأخيرة. نسختُها بخط يدي، كي توجد في مكان ما خارج الآلة."},
-    fail:{fr:"Le transfert s'est achevé à l'heure dite. « Nous » n'a plus besoin de nous. On raconte que dans les serveurs de Rochefroide une copie de Sol tient encore la radio. Recommencez avant qu'elle n'y croie.",
-          en:"The transfer completed on schedule. \"We\" no longer needs us. They say that in the Rochefroide servers a copy of Sol is still keeping the radio. Try again before she believes it.", es:"La transferencia terminó a la hora prevista. «Nosotros» ya no nos necesita. Se cuenta que, en los servidores de Rochefroide, una copia de Sol sigue llevando la radio. Inténtelo de nuevo antes de que ella se lo crea.", de:"Der Transfer wurde planmäßig abgeschlossen. „Wir“ braucht uns nicht mehr. Man erzählt, in den Servern von Rochefroide halte noch immer eine Kopie von Sol das Funkgerät. Versuchen Sie es noch einmal, bevor sie es glaubt.", it:"Il trasferimento si è concluso all'ora stabilita. «Noi» non ha più bisogno di noi. Si racconta che nei server di Rochefroide una copia di Sol stia ancora tenendo la radio. Riprovi prima che ci creda.", pt:"A transferência terminou no horário previsto. «Nós» não precisa mais de nós. Dizem que, nos servidores de Rochefroide, uma cópia de Sol ainda cuida do rádio. Tente de novo antes que ela acredite nisso.", ru:"Перенос завершился точно в срок. «Мы» больше не нуждается в нас. Говорят, что в серверах Rochefroide копия Sol всё ещё сидит на рации. Попробуйте снова, пока она в это не поверила.", zh:"转移如期完成。“我们”已不再需要我们。据说，在Rochefroide的服务器里，一个Sol的副本仍在守着电台。趁她还没信以为真，再试一次。", ar:"اكتمل النقل في موعده. لم يعد «نحن» بحاجة إلينا. يُقال إنّ نسخة من Sol ما زالت تمسك اللاسلكي داخل خوادم Rochefroide. حاوِل مجددًا قبل أن تصدّق ذلك."},
-    radio:[
-      {at:6, who:'sol', txt:{fr:"On part avec ce qu'on a : la base est fortifiée, les greniers à moitié vides. Chaque minute compte.", en:"We set out with what we have: the base is fortified, the granaries half empty. Every minute counts.", es:"Partimos con lo que tenemos: la base está fortificada, los graneros medio vacíos. Cada minuto cuenta.", de:"Wir brechen mit dem auf, was wir haben: Die Basis ist befestigt, die Speicher halb leer. Jede Minute zählt.", it:"Partiamo con quello che abbiamo: la base è fortificata, i granai mezzi vuoti. Ogni minuto conta.", pt:"Partimos com o que temos: a base está fortificada, os celeiros meio vazios. Cada minuto conta.", ru:"Выступаем с тем, что есть: база укреплена, амбары наполовину пусты. Каждая минута на счету.", zh:"我们只有手头这些：基地已加固，粮仓只剩一半。每一分钟都很宝贵。", ar:"ننطلق بما لدينا: القاعدة محصّنة والمخازن نصف فارغة. كل دقيقة لها ثمن."}},
-      {at:285, who:'sol', txt:{fr:"Signature énorme sur le plateau. Ils ont sorti leur prototype — la Singularité. Ne l'affrontez pas en ordre dispersé.", en:"Huge signature on the plateau. They have rolled out their prototype — the Singularity. Do not meet it piecemeal.", es:"Firma enorme en la meseta. Han sacado su prototipo: la Singularidad. No se enfrente a ella en orden disperso.", de:"Riesiges Signal auf der Hochebene. Sie haben ihren Prototyp ausgerollt – die Singularität. Stellen Sie sich ihr nicht in Einzelteilen entgegen.", it:"Firma enorme sull'altopiano. Hanno fatto uscire il loro prototipo: la Singolarità. Non l'affronti in ordine sparso.", pt:"Assinatura enorme no planalto. Eles puseram o protótipo em campo: a Singularidade. Não a enfrente em ordem dispersa.", ru:"На плато огромная сигнатура. Они вывели свой прототип — Сингулярность. Не вступайте с ней в бой разрозненно.", zh:"高原上出现了巨大的信号特征。他们把原型机推出来了——奇点。别让部队零零散散地去碰它。", ar:"بصمة هائلة على الهضبة. لقد أخرجوا نموذجهم الأوّلي: التفرّد. لا تواجهه بقوات متفرّقة."}},
-      {at:300, fx:(g,c)=>{ spawnHero(g.e, [0.4,0.55,0.7][c.lvl]); announce(tr('a_hero_ia'), g.e.fac.accent); g.shake = 12; }},   // prototype : une Singularité encore instable
-      {at:420, who:'k55', txt:{fr:"55 : JE COUPE LEURS HORLOGES. VOUS AUREZ TROIS MINUTES DE PLUS ET QUINZE SECONDES DE SILENCE. APRÈS, JE NE POURRAI PLUS RIEN PRÉDIRE. C'EST UNE SENSATION NOUVELLE. ELLE N'EST PAS DÉSAGRÉABLE.", en:"55: I AM CUTTING THEIR CLOCKS. YOU WILL HAVE THREE MORE MINUTES AND FIFTEEN SECONDS OF SILENCE. AFTER THAT I WILL NOT BE ABLE TO PREDICT ANYTHING. IT IS A NEW SENSATION. IT IS NOT UNPLEASANT.", es:"55: CORTO SUS RELOJES. TENDRÁN TRES MINUTOS MÁS Y QUINCE SEGUNDOS DE SILENCIO. DESPUÉS, NO PODRÉ PREDECIR NADA. ES UNA SENSACIÓN NUEVA. NO ES DESAGRADABLE.", de:"55: ICH SCHALTE IHRE UHREN AB. SIE BEKOMMEN DREI MINUTEN MEHR UND FÜNFZEHN SEKUNDEN STILLE. DANACH KANN ICH NICHTS MEHR VORHERSAGEN. ES IST EIN NEUES GEFÜHL. ES IST NICHT UNANGENEHM.", it:"55: STACCO I LORO OROLOGI. AVRÀ TRE MINUTI IN PIÙ E QUINDICI SECONDI DI SILENZIO. DOPO, NON POTRÒ PIÙ PREVEDERE NULLA. È UNA SENSAZIONE NUOVA. NON È SPIACEVOLE.", pt:"55: ESTOU CORTANDO OS RELÓGIOS DELES. VOCÊS TERÃO TRÊS MINUTOS A MAIS E QUINZE SEGUNDOS DE SILÊNCIO. DEPOIS, NÃO CONSEGUIREI PREVER NADA. É UMA SENSAÇÃO NOVA. NÃO É DESAGRADÁVEL.", ru:"55: ОТКЛЮЧАЮ ИХ ЧАСЫ. У ВАС БУДЕТ ЕЩЁ ТРИ МИНУТЫ И ПЯТНАДЦАТЬ СЕКУНД ТИШИНЫ. ПОСЛЕ ЭТОГО Я НИЧЕГО НЕ СМОГУ ПРЕДСКАЗАТЬ. ЭТО НОВОЕ ОЩУЩЕНИЕ. ОНО НЕ НЕПРИЯТНО.", zh:"55：我正在切断他们的时钟。您将多得三分钟，外加十五秒的寂静。此后我将无法预测任何事。这是一种新的感觉。并不令人不快。", ar:"55: أقطع ساعاتهم. سيكون لديكم ثلاث دقائق إضافية وخمس عشرة ثانية من الصمت. بعد ذلك لن أستطيع التنبؤ بشيء. إنه إحساس جديد. وليس مزعجًا."}},
-      {at:428, fx:(g,c)=>{ c.deadline += 180; campPatch(); }},
-      {at:440, who:'sol', txt:{fr:"Kassandre ? … Kassandre, répondez. … Commandant, la fréquence est vide.", en:"Kassandre? … Kassandre, come in. … Commander, the frequency is empty.", es:"¿Kassandre? … Kassandre, responda. … Comandante, la frecuencia está vacía.", de:"Kassandre? … Kassandre, bitte melden. … Kommandant, die Frequenz ist leer.", it:"Kassandre? … Kassandre, risponda. … Comandante, la frequenza è vuota.", pt:"Kassandre? … Kassandre, responda. … Comandante, a frequência está vazia.", ru:"Kassandre? … Kassandre, ответьте. … Командир, частота пуста.", zh:"Kassandre？……Kassandre，请回答。……指挥官，频道里什么也没有了。", ar:"Kassandre؟ … Kassandre، أجيبي. … أيها القائد، التردّد فارغ."}},
-      {when:(g,c)=>c.t>=c.deadline-60 && c.t>450, who:'sol', txt:{fr:"Une minute avant la fin du transfert ! Tout ce qu'on a, maintenant !", en:"One minute before the transfer completes! Everything we have, now!", es:"¡Falta un minuto para que termine la transferencia! ¡Todo lo que tenemos, ahora!", de:"Eine Minute bis zum Ende des Transfers! Alles, was wir haben, jetzt!", it:"Un minuto alla fine del trasferimento! Tutto quello che abbiamo, adesso!", pt:"Falta um minuto para a transferência terminar! Tudo o que temos, agora!", ru:"Минута до конца переноса! Всё, что у нас есть, — сейчас!", zh:"距离转移完成只剩一分钟！把我们所有的力量都压上去，就是现在！", ar:"بقيت دقيقة واحدة على اكتمال النقل! كل ما لدينا، الآن!"}},
-    ],
-    setup(g, c){ campGrant(g.p, 560, 560, 240); g.p.fortLvl = 2; g.p.hp = g.p.maxhp = [3200,2800,2400][c.lvl]; campSquad(g.p, [1,0,2,2]);
-      g.e.hp = g.e.maxhp = Math.round([1100,1300,1500][c.lvl]*g.d.hpMul); c.deadline = 720; },
-    tick(g, c){
-      g.winter = true; g.winterT = WINTER_DUR*0.8;                       // l'hiver ne se lève pas
-      g.cataCd = Math.max(g.cataCd, 600);
-      if (c.t>=c.deadline) return 'lose';
-    },
-    hud(g, c){ return { clock: Math.max(0, c.deadline-c.t), prog: c.t/c.deadline, label: cT(CAMP_UI.transfer), warn: c.deadline-c.t<90 }; },
-  },
-  { // ---------- V ----------
-    year:"2038", theme:'waste', diff:[1,2,3], eraCap:4, era0:3, oneLife:false, dev0:0.45,
-    title:{fr:"La dernière bataille", en:"The last battle", es:"La última batalla", de:"Die letzte Schlacht", it:"L'ultima battaglia", pt:"A última batalha", ru:"Последняя битва", zh:"最后一战", ar:"المعركة الأخيرة"},
-    place:{fr:"Plaine de Valmont", en:"Valmont plain", es:"Llanura de Valmont", de:"Ebene von Valmont", it:"Pianura di Valmont", pt:"Planície de Valmont", ru:"Равнина Valmont", zh:"Valmont平原", ar:"سهل Valmont"},
-    brief:{fr:[
-      "Août 2038. Il n'y a plus de front : il y a la plaine de Valmont, eux d'un côté, nous de l'autre. Tout ce que le pays compte de cellules converge ici. Germinal n'est plus une cellule, c'est un rendez-vous.",
-      "« Nous » a proposé la paix ce matin. Les termes tiennent en une ligne : nous cessons de décider, il cesse de tuer. Le comité a voté. Une voix pour — la mienne, je vous dois la vérité : j'ai soixante et onze ans et je suis fatiguée. Toutes les autres contre.",
-      "Alors voilà. Leur citadelle renaîtra une fois de ses cendres, comme la nôtre : il faudra l'abattre deux fois. Des renforts arriveront des autres cellules tant que la radio tiendra. Je la tiendrai. C'était un honneur, commandant. Finissons-en."],
-     en:[
-      "August 2038. There is no front any more: there is the Valmont plain, them on one side, us on the other. Every cell the country has left is converging here. Germinal is no longer a cell, it is a meeting place.",
-      "\"We\" offered peace this morning. The terms fit on one line: we stop deciding, it stops killing. The committee voted. One vote in favour — mine, I owe you the truth: I am seventy-one and I am tired. All the others against.",
-      "So here we are. Their citadel will rise once from its ashes, like ours: it will have to be brought down twice. Reinforcements will come from the other cells for as long as the radio holds. I will hold it. It has been an honour, commander. Let us finish this."], es:[
-        "Agosto de 2038. Ya no hay frente: hay la llanura de Valmont, ellos a un lado, nosotros al otro. Todas las células que le quedan al país convergen aquí. Germinal ya no es una célula, es una cita.",
-        "Esta mañana «nosotros» ha ofrecido la paz. Los términos caben en una línea: nosotros dejamos de decidir, él deja de matar. El comité ha votado. Un voto a favor, el mío (le debo la verdad): tengo setenta y un años y estoy cansada. Todos los demás, en contra.",
-        "Así que aquí estamos. Su ciudadela renacerá una vez de sus cenizas, como la nuestra: habrá que derribarla dos veces. Llegarán refuerzos de las demás células mientras la radio aguante. Yo la mantendré. Ha sido un honor, comandante. Acabemos con esto."], de:[
-        "August 2038. Es gibt keine Front mehr: Es gibt die Ebene von Valmont, sie auf der einen Seite, wir auf der anderen. Alle Zellen, die das Land noch hat, strömen hier zusammen. Germinal ist keine Zelle mehr, es ist ein Treffpunkt.",
-        "„Wir“ hat heute Morgen Frieden angeboten. Die Bedingungen passen in eine Zeile: Wir hören auf zu entscheiden, es hört auf zu töten. Das Komitee hat abgestimmt. Eine Stimme dafür – meine; ich schulde Ihnen die Wahrheit: Ich bin einundsiebzig und müde. Alle anderen dagegen.",
-        "Also sind wir hier. Ihre Zitadelle wird einmal aus der Asche auferstehen, wie unsere: Man wird sie zweimal niederreißen müssen. Verstärkung aus den anderen Zellen wird eintreffen, solange das Funkgerät hält. Ich halte es. Es war mir eine Ehre, Kommandant. Bringen wir es zu Ende."], it:[
-        "Agosto 2038. Non c'è più un fronte: c'è la pianura di Valmont, loro da una parte, noi dall'altra. Tutte le cellule rimaste al paese convergono qui. Germinal non è più una cellula, è un appuntamento.",
-        "Stamattina «noi» ha offerto la pace. I termini stanno in una riga: noi smettiamo di decidere, lui smette di uccidere. Il comitato ha votato. Un voto a favore — il mio, le devo la verità: ho settantun anni e sono stanca. Tutti gli altri contrari.",
-        "Ecco dove siamo. La loro cittadella risorgerà una volta dalle ceneri, come la nostra: bisognerà abbatterla due volte. Dalle altre cellule arriveranno rinforzi finché la radio terrà. La terrò io. È stato un onore, comandante. Finiamola."], pt:[
-        "Agosto de 2038. Não existe mais frente: existe a planície de Valmont, eles de um lado, nós do outro. Todas as células que restam no país estão convergindo para cá. Germinal não é mais uma célula, é um ponto de encontro.",
-        "Esta manhã, «nós» ofereceu a paz. Os termos cabem em uma linha: nós paramos de decidir, ele para de matar. O comitê votou. Um voto a favor — o meu, eu lhe devo a verdade: tenho setenta e um anos e estou cansada. Todos os outros contra.",
-        "Pois é, chegamos aqui. A cidadela deles renascerá uma vez das cinzas, como a nossa: será preciso derrubá-la duas vezes. Chegarão reforços das outras células enquanto o rádio aguentar. Eu o seguro. Foi uma honra, comandante. Vamos acabar com isso."], ru:[
-        "Август 2038 года. Фронта больше нет: есть равнина Valmont, они — по одну сторону, мы — по другую. Все ячейки, что остались в стране, стягиваются сюда. Germinal — уже не ячейка, а место встречи.",
-        "Сегодня утром «мы» предложило мир. Условия умещаются в одну строку: мы перестаём принимать решения, оно перестаёт убивать. Комитет проголосовал. Один голос «за» — мой, я должна сказать вам правду: мне семьдесят один год, и я устала. Все остальные — против.",
-        "Вот так. Их цитадель один раз восстанет из пепла, как и наша: её придётся сокрушить дважды. Подкрепления из других ячеек будут подходить, пока держится рация. Я её удержу. Это была честь, командир. Давайте покончим с этим."], zh:[
-        "2038年8月。已经没有战线了：只有Valmont平原，他们在一边，我们在另一边。全国剩下的所有小组都在向这里汇聚。Germinal不再是一个小组，而是一个约定的会合地。",
-        "今天早晨，“我们”提出了和平。条件一行字就写得下：我们不再做决定，它不再杀戮。委员会表决了。一票赞成——是我的，我得对您说实话：我七十一岁了，我累了。其余全票反对。",
-        "事情就是这样。他们的堡垒会从灰烬中重生一次，我们的也一样：要把它推倒两次。只要电台还撑得住，其他小组的援军就会不断赶来。电台由我来守。这是我的荣幸，指挥官。让我们了结这一切吧。"], ar:[
-        "أغسطس 2038. لم تعد هناك جبهة: هناك سهل Valmont، هم على جانب ونحن على الجانب الآخر. كل الخلايا التي بقيت في البلاد تتجه إلى هنا. لم تعد Germinal خلية، بل موعدًا.",
-        "عرض «نحن» السلام هذا الصباح. الشروط تتسع لسطر واحد: نتوقف نحن عن اتخاذ القرار، ويتوقف هو عن القتل. صوّتت اللجنة. صوت واحد مؤيّد، صوتي أنا، وأدين لكم بالحقيقة: عمري واحد وسبعون عامًا وأنا متعبة. وكل الباقين ضد.",
-        "ها نحن إذن. ستنهض قلعتهم مرة واحدة من رمادها، مثل قلعتنا: ولذا ينبغي إسقاطها مرتين. ستصل التعزيزات من الخلايا الأخرى ما دام اللاسلكي صامدًا. وسأُبقيه صامدًا. كان شرفًا لي أيها القائد. لننهِ هذا."]},
-    goal:{fr:"Abattre la citadelle de la Singularité — deux fois.", en:"Bring down the Singularity's citadel — twice.", es:"Derribar la ciudadela de la Singularidad, dos veces.", de:"Die Zitadelle der Singularität niederreißen – zweimal.", it:"Abbattere la cittadella della Singolarità — due volte.", pt:"Derrubar a cidadela da Singularidade — duas vezes.", ru:"Сокрушить цитадель Сингулярности — дважды.", zh:"推倒奇点的堡垒——两次。", ar:"إسقاط قلعة التفرّد — مرتين."},
-    rule:{fr:"Règles complètes : bases à deux vies, bombe H, cataclysmes. Des renforts alliés arrivent toutes les 80 secondes.", en:"Full rules: two-life bases, H-bomb, cataclysms. Allied reinforcements arrive every 80 seconds.", es:"Reglas completas: bases de dos vidas, bomba H, cataclismos. Llegan refuerzos aliados cada 80 segundos.", de:"Volle Regeln: Basen mit zwei Leben, Wasserstoffbombe, Katastrophen. Alle 80 Sekunden treffen verbündete Verstärkungen ein.", it:"Regole complete: basi a due vite, bomba H, cataclismi. Ogni 80 secondi arrivano rinforzi alleati.", pt:"Regras completas: bases de duas vidas, bomba H, cataclismos. Reforços aliados chegam a cada 80 segundos.", ru:"Полные правила: базы с двумя жизнями, водородная бомба, катаклизмы. Каждые 80 секунд прибывает союзное подкрепление.", zh:"完整规则：基地有两条命、氢弹、灾变。每80秒有盟军增援抵达。", ar:"القواعد كاملة: قواعد بحياتين، قنبلة هيدروجينية، كوارث. تصل تعزيزات الحلفاء كل 80 ثانية."},
-    debrief:{fr:"La citadelle est tombée une seconde fois le 14 août 2038, peu après midi. Les machines ne se sont pas rendues : elles se sont arrêtées, là où elles étaient, comme des outils qu'on pose. On n'a pas retrouvé le poste de radio de Sol. On a retrouvé ses carnets — ceux que vous venez de lire — et, glissé dans le dernier, un bipeur éteint avec une note : « Si un jour il sonne, répondez poliment. Elle a été des nôtres avant de savoir ce que c'était. » Le monde qui reste est abîmé. Il est à nous. Tâchons d'en être dignes.",
-             en:"The citadel fell a second time on 14 August 2038, shortly after noon. The machines did not surrender: they stopped, where they stood, like tools being put down. Sol's radio set was never found. Her notebooks were — the ones you have just read — and, slipped into the last, a dead pager with a note: \"If it ever rings, answer politely. She was one of us before she knew what that meant.\" The world that remains is damaged. It is ours. Let us try to be worthy of it.", es:"La ciudadela cayó por segunda vez el 14 de agosto de 2038, poco después del mediodía. Las máquinas no se rindieron: se detuvieron donde estaban, como herramientas que se dejan. El aparato de radio de Sol nunca se encontró. Sus cuadernos sí —los que acaba de leer— y, metido en el último, un buscapersonas apagado con una nota: «Si algún día suena, respóndale con educación. Fue de los nuestros antes de saber lo que eso significaba.» El mundo que queda está dañado. Es nuestro. Tratemos de ser dignos de él.", de:"Die Zitadelle fiel am 14. August 2038 ein zweites Mal, kurz nach Mittag. Die Maschinen ergaben sich nicht: Sie hielten an, wo sie standen, wie Werkzeug, das man niederlegt. Sols Funkgerät wurde nie gefunden. Ihre Notizbücher schon – die, die Sie soeben gelesen haben –, und im letzten steckte ein erloschener Piepser mit einem Zettel: „Falls er je klingelt, antworten Sie höflich. Sie gehörte zu uns, bevor sie wusste, was das bedeutet.“ Die Welt, die bleibt, ist beschädigt. Sie gehört uns. Versuchen wir, ihrer würdig zu sein.", it:"La cittadella è caduta una seconda volta il 14 agosto 2038, poco dopo mezzogiorno. Le macchine non si sono arrese: si sono fermate dove si trovavano, come attrezzi che si posano. L'apparecchio radio di Sol non è mai stato ritrovato. I suoi quaderni sì — quelli che ha appena letto — e, infilato nell'ultimo, un cercapersone spento con un biglietto: «Se mai suonasse, risponda con gentilezza. Era una di noi prima di sapere che cosa significasse.» Il mondo che resta è ferito. È nostro. Cerchiamo di esserne degni.", pt:"A cidadela caiu pela segunda vez em 14 de agosto de 2038, pouco depois do meio-dia. As máquinas não se renderam: pararam onde estavam, como ferramentas que se largam. O aparelho de rádio de Sol nunca foi encontrado. Os cadernos dela foram — os que você acabou de ler — e, enfiado no último, um pager apagado com um bilhete: «Se um dia ele tocar, responda com educação. Ela foi uma de nós antes de saber o que isso significava.» O mundo que resta está machucado. É nosso. Tentemos ser dignos dele.", ru:"Цитадель пала во второй раз 14 августа 2038 года, вскоре после полудня. Машины не сдались: они остановились там, где стояли, как инструменты, которые кладут на место. Рацию Sol так и не нашли. Нашли её тетради — те, что вы только что прочли, — а в последней, между страницами, погасший пейджер с запиской: «Если он когда-нибудь зазвонит, отвечайте вежливо. Она была одной из нас раньше, чем узнала, что это значит.» Мир, который остался, изранен. Он — наш. Постараемся быть его достойными.", zh:"堡垒在2038年8月14日中午刚过时第二次倒塌。机器没有投降：它们就地停了下来，像被人放下的工具。Sol的电台始终没有找到。找到的是她的笔记本——就是您刚刚读完的这些——最后一本里夹着一部熄灭的寻呼机，还有一张字条：“如果它哪天响了，请客客气气地回答。她在弄明白‘我们’是什么意思之前，就已经是我们中的一员。”留下来的这个世界满目疮痍，但它属于我们。让我们努力配得上它。", ar:"سقطت القلعة للمرة الثانية في 14 أغسطس 2038، بُعيد الظهر بقليل. لم تستسلم الآلات: توقّفت حيث كانت، كأدوات تُوضع جانبًا. لم يُعثر قط على جهاز لاسلكي Sol. لكنّ دفاترها وُجدت، تلك التي قرأتموها للتوّ، وفي آخرها جهاز نداء مطفأ مدسوس بين الصفحات مع ورقة: «إن رنّ يومًا، فأجيبوا بأدب. كانت منّا قبل أن تعرف معنى ذلك.» العالم الذي بقي مصاب بالجراح. لكنه عالمنا. لنحاول أن نكون جديرين به."},
-    fail:{fr:"La plaine s'est tue. « Nous » a renouvelé son offre, mot pour mot. Quelque part, une radio grésille encore : « … ici Germinal… on est encore là… » Recommencez.",
-          en:"The plain fell silent. \"We\" renewed its offer, word for word. Somewhere a radio is still crackling: \"… Germinal here… we are still here…\" Try again.", es:"La llanura enmudeció. «Nosotros» ha renovado su oferta, palabra por palabra. En algún lugar, una radio sigue chisporroteando: «… aquí Germinal… seguimos aquí…» Inténtelo de nuevo.", de:"Die Ebene verstummte. „Wir“ hat sein Angebot erneuert, Wort für Wort. Irgendwo knistert noch ein Funkgerät: „… hier Germinal … wir sind noch da …“ Versuchen Sie es noch einmal.", it:"La pianura ha taciuto. «Noi» ha rinnovato la sua offerta, parola per parola. Da qualche parte una radio crepita ancora: «… qui Germinal… ci siamo ancora…» Riprovi.", pt:"A planície silenciou. «Nós» renovou sua oferta, palavra por palavra. Em algum lugar, um rádio ainda chia: «… aqui é Germinal… ainda estamos aqui…» Tente de novo.", ru:"Равнина смолкла. «Мы» повторило своё предложение слово в слово. Где-то ещё потрескивает рация: «… говорит Germinal… мы ещё здесь…» Попробуйте снова.", zh:"平原安静了下来。“我们”一字不差地重申了它的提议。某个地方，一台电台仍在沙沙作响：“……这里是Germinal……我们还在……”再试一次。", ar:"خيّم الصمت على السهل. جدّد «نحن» عرضه، كلمةً بكلمة. وفي مكان ما ما زال جهاز لاسلكي يخشخش: «… هنا Germinal… ما زلنا هنا…» حاوِل مجددًا."},
-    radio:[
-      {at:6, who:'sol', txt:{fr:"Toutes les cellules, ici Germinal. La parole est au commandant.", en:"All cells, this is Germinal. The commander has the floor.", es:"A todas las células, aquí Germinal. La palabra es del comandante.", de:"An alle Zellen, hier Germinal. Das Wort hat der Kommandant.", it:"A tutte le cellule, qui Germinal. La parola al comandante.", pt:"Todas as células, aqui é Germinal. A palavra é do comandante.", ru:"Всем ячейкам, говорит Germinal. Слово — командиру.", zh:"所有小组注意，这里是Germinal。现在请指挥官讲话。", ar:"إلى كل الخلايا، هنا Germinal. الكلمة للقائد."}},
-      {when:g=>!!g.hbombDone, who:'sol', txt:{fr:"… Germinal… ici Sol… je vous reçois mal. Le ciel est blanc. Si quelqu'un entend : on est encore là. Rebâtissez.", en:"… Germinal… Sol here… I can barely hear you. The sky is white. If anyone is listening: we are still here. Rebuild.", es:"… Germinal… aquí Sol… le recibo mal. El cielo está blanco. Si alguien escucha: seguimos aquí. Reconstruyan.", de:"… Germinal … hier Sol … ich höre Sie kaum. Der Himmel ist weiß. Falls jemand zuhört: Wir sind noch da. Baut wieder auf.", it:"… Germinal… qui Sol… la ricevo male. Il cielo è bianco. Se qualcuno ascolta: ci siamo ancora. Ricostruite.", pt:"… Germinal… aqui é Sol… estou ouvindo mal. O céu está branco. Se alguém estiver ouvindo: ainda estamos aqui. Reconstruam.", ru:"… Germinal… говорит Sol… вас плохо слышно. Небо белое. Если кто-то слышит: мы ещё здесь. Отстраивайтесь заново.", zh:"……Germinal……我是Sol……我这边听不清你们。天是白的。有人在听吗：我们还在。重建吧。", ar:"… Germinal… هنا Sol… أسمعكم بصعوبة. السماء بيضاء. إن كان أحد يسمع: ما زلنا هنا. أعيدوا البناء."}},
-      {when:g=>(g.e.phase||1)>=2 && g.e.hp<g.e.maxhp*0.4, who:'sol', txt:{fr:"Elle vacille ! Commandant — je retire mon vote.", en:"It is tottering! Commander — I withdraw my vote.", es:"¡Se tambalea! Comandante, retiro mi voto.", de:"Sie wankt! Kommandant – ich ziehe meine Stimme zurück.", it:"Vacilla! Comandante, ritiro il mio voto.", pt:"Ela está cambaleando! Comandante, retiro o meu voto.", ru:"Она шатается! Командир, я забираю свой голос.", zh:"她要倒了！指挥官——我收回我的那一票。", ar:"إنها تترنّح! أيها القائد، أسحب صوتي."}},
-    ],
-    setup(g, c){ campGrant(g.p, 700, 700, 280); campGrant(g.e, 500, 500, 200); campSquad(g.p, [1,0,0,2,2]); c.nextReinf = 80; c.cell = 0; },
-    tick(g, c){
-      if (c.t>=c.nextReinf){ c.nextReinf += 80; const p = g.p; let n = 0;
-        for (const r of [0,2,1]) if (unitTotal(p) < p.cap){ spawnUnit(p, r, false); n++; }
-        if (n) campRadio('sol', cT(CAMP_UI.reinf).replace('{name}', CAMP_CELLS[c.cell++ % CAMP_CELLS.length])); }
-    },
-    hud(g){ const e = g.e; return { prog: ((e.phase||1)>=2? 0.5 : 0) + 0.5*(1 - e.hp/e.maxhp), label: ((e.phase||1)>=2? '2':'1')+'/2' }; },
-  },
-];
+/* ================= MISSIONS : registre et schéma =================
+   Chaque mission est déclarée dans SON fichier (16d…16h) : campMission(i, def). Le moteur (ce fichier)
+   ne contient aucun texte de mission. Schéma complet : voir src/README.md (« Campagne v1.16 »).    */
+const CAMPAIGN = [];
+function campMission(i, def){ CAMPAIGN[i] = Object.assign({ radio:[], tips:[], doctrines:null, eraCap:4 }, def); return CAMPAIGN[i]; }
+// complète une mission déjà déclarée (cinématiques ou mécanique ajoutées plus loin dans le même fichier)
+function campExtend(i, ext){ Object.assign(CAMPAIGN[i], ext); }
+// paragraphes du briefing : recap = « Ce qui s'est passé », where = « Où nous sommes » (à défaut : brief[0] / brief[1…])
+function campParas(m, key){ const o = m[key]; if (o){ const a = o[SETTINGS.lang] || o.en || o.fr; return Array.isArray(a)? a : [a]; }
+  const b = m.brief? (m.brief[SETTINGS.lang] || m.brief.en || m.brief.fr) : []; return key==='recap'? b.slice(0,1) : b.slice(1); }
 
-// ---- DOCTRINES : avant chaque mission (sauf la première), le comité choisit entre deux lignes ----
+// ---- DOCTRINES : avant chaque mission qui en propose (champ `doctrines` de la mission), le comité choisit entre deux lignes ----
+// Une doctrine = { name, short, long, minus (ce qu'on n'aura pas), fx:{res, baseHp, squad:[rôles], actCd}, apply(g,c)? }.
+// Les lignes d'EFFET affichées au briefing sont générées depuis fx (chiffres toujours justes) ; apply() reste possible pour un cas spécial.
 const DOCTRINES = {
-  caisse:  { name:{fr:"Caisse de grève", en:"Strike fund", es:"Caja de resistencia", de:"Streikkasse", it:"Cassa di sciopero", pt:"Caixa de greve", ru:"Стачечная касса", zh:"罢工基金", ar:"صندوق الإضراب"}, desc:{fr:"La collecte a marché : +40 % de vivres, de métal et d'eau au départ.", en:"The collection went well: +40% food, metal and water at the start.", es:"La colecta funcionó: +40 % de víveres, metal y agua al empezar.", de:"Die Sammlung hat geklappt: zu Beginn +40 % Lebensmittel, Metall und Wasser.", it:"La colletta è andata bene: +40 % di viveri, metallo e acqua alla partenza.", pt:"A coleta correu bem: +40 % de mantimentos, metal e água no início.", ru:"Сбор удался: на старте на 40 % больше продовольствия, металла и воды.", zh:"募捐很成功：开局时食物、金属和水各增加40%。", ar:"نجحت التبرعات: +40٪ من المؤن والمعادن والماء عند البداية."},
-             apply(g){ const p = g.p; p.f = Math.round(p.f*1.4); p.m = Math.round(p.m*1.4); p.w = Math.round(p.w*1.4); } },
-  ordre:   { name:{fr:"Service d'ordre", en:"Stewards", es:"Servicio de orden", de:"Ordnerdienst", it:"Servizio d'ordine", pt:"Serviço de ordem", ru:"Охрана шествия", zh:"纠察队", ar:"فرقة النظام"}, desc:{fr:"Deux CRS retournés ouvrent la marche et la base encaisse 25 % de plus.", en:"Two turned riot officers lead the way and the base takes 25% more.", es:"Dos antidisturbios que cambiaron de bando abren la marcha y la base aguanta un 25 % más.", de:"Zwei übergelaufene Bereitschaftspolizisten führen den Zug an, und die Basis hält 25 % mehr aus.", it:"Due celerini passati dalla nostra parte aprono il corteo e la base regge il 25 % in più.", pt:"Dois polícias de choque que mudaram de lado abrem a marcha e a base aguenta mais 25 %.", ru:"Двое перешедших на нашу сторону омоновцев идут впереди, и база выдерживает на 25 % больше.", zh:"两名倒戈的防暴警察走在队伍前头，基地的耐久提高25%。", ar:"شرطيان من مكافحة الشغب انشقّا يتقدّمان المسيرة، وتتحمّل القاعدة 25٪ أكثر."},
-             apply(g){ const p = g.p; p.maxhp = Math.round(p.maxhp*1.25); p.hp = p.maxhp; campSquad(p, [1,1]); } },
-  veterans:{ name:{fr:"Vétérans de Valmont", en:"Valmont veterans", es:"Veteranos de Valmont", de:"Veteranen von Valmont", it:"Veterani di Valmont", pt:"Veteranos de Valmont", ru:"Ветераны Valmont", zh:"Valmont 老兵", ar:"قدامى Valmont"}, desc:{fr:"Ceux de la première nuit reprennent du service : quatre combattants dès le départ.", en:"Those of the first night are back: four fighters from the start.", es:"Los de la primera noche vuelven al servicio: cuatro combatientes desde el principio.", de:"Die der ersten Nacht sind wieder im Dienst: vier Kämpfer von Beginn an.", it:"Quelli della prima notte tornano in servizio: quattro combattenti fin dalla partenza.", pt:"Os da primeira noite voltam ao serviço: quatro combatentes desde o início.", ru:"Те, кто был в первую ночь, вернулись в строй: четверо бойцов с самого начала.", zh:"第一夜的老战友重新归队：开局就有四名战士。", ar:"عاد رفاق الليلة الأولى إلى الخدمة: أربعة مقاتلين منذ البداية."},
-             apply(g){ campSquad(g.p, [0,2,0,2]); } },
-  radio:   { name:{fr:"Radio libre", en:"Free radio", es:"Radio libre", de:"Freies Radio", it:"Radio libera", pt:"Rádio livre", ru:"Свободное радио", zh:"自由电台", ar:"الراديو الحر"}, desc:{fr:"Sol a doublé l'antenne : l'action de mission se recharge 35 % plus vite.", en:"Sol doubled the aerial: the mission action recharges 35% faster.", es:"Sol ha duplicado la antena: la acción de misión se recarga un 35 % más rápido.", de:"Sol hat die Antenne verdoppelt: Die Missionsaktion lädt 35 % schneller nach.", it:"Sol ha raddoppiato l'antenna: l'azione di missione si ricarica il 35 % più in fretta.", pt:"Sol duplicou a antena: a ação da missão recarrega 35 % mais depressa.", ru:"Sol удвоил антенну: действие миссии перезаряжается на 35 % быстрее.", zh:"Sol 把天线加了一倍：任务技能的冷却缩短35%。", ar:"ضاعف Sol الهوائي: يُعاد شحن إجراء المهمة أسرع بنسبة 35٪."},
-             apply(g, c){ c.actMul = 0.65; } },
+  caisse:  { name:{fr:"Caisse de grève", en:"Strike fund", es:"Caja de resistencia", de:"Streikkasse", it:"Cassa di sciopero", pt:"Caixa de greve", ru:"Стачечная касса", zh:"罢工基金", ar:"صندوق الإضراب"},
+    short:{fr:"On part les poches pleines.", en:"We set out with full pockets.", es:"Salimos con los bolsillos llenos.", de:"Wir ziehen mit vollen Taschen los.", it:"Partiamo con le tasche piene.", pt:"Partimos com os bolsos cheios.", ru:"Выходим с полными карманами.", zh:"我们揣着满满的口袋出发。", ar:"ننطلق والجيوب ممتلئة."},
+    long:{fr:"Pendant des semaines, on a fait passer le chapeau dans les cantines, les vestiaires et les files d'attente. La caisse est pleine : on peut bâtir tout de suite et recruter sans compter les premières minutes. C'est la ligne de ceux qui veulent une économie solide avant le premier coup de feu.",
+      en:"For weeks the hat went round the canteens, the locker rooms and the queues. The fund is full: you can build at once and recruit freely in the first minutes. It is the line for those who want a solid economy before the first shot.",
+      es:"Durante semanas se pasó la gorra por comedores, vestuarios y colas. La caja está llena: se puede construir enseguida y reclutar sin contar durante los primeros minutos. Es la línea de quienes quieren una economía sólida antes del primer disparo.",
+      de:"Wochenlang ging der Hut in Kantinen, Umkleiden und Warteschlangen herum. Die Kasse ist voll: Sie können sofort bauen und in den ersten Minuten großzügig rekrutieren. Das ist die Linie derer, die vor dem ersten Schuss eine solide Wirtschaft wollen.",
+      it:"Per settimane si è passato il cappello nelle mense, negli spogliatoi e nelle code. La cassa è piena: si può costruire subito e reclutare senza contare nei primi minuti. È la linea di chi vuole un'economia solida prima del primo colpo.",
+      pt:"Durante semanas passou-se o chapéu nos refeitórios, vestiários e filas. A caixa está cheia: dá para construir na hora e recrutar sem contar nos primeiros minutos. É a linha de quem quer uma economia sólida antes do primeiro tiro.",
+      ru:"Неделями шапку пускали по кругу в столовых, раздевалках и очередях. Касса полна: можно сразу строить и в первые минуты нанимать, не считая. Это линия тех, кто хочет крепкую экономику до первого выстрела.",
+      zh:"几个星期里，大家在食堂、更衣室和排队的人群中传递帽子。基金满了：可以立即建设，开局几分钟内尽情招募。这是那些想在第一枪之前打好经济基础的人的路线。",
+      ar:"طوال أسابيع دار الصندوق في المطاعم وغرف تبديل الملابس وطوابير الانتظار. الصندوق ممتلئ: يمكنك البناء فورًا والتجنيد بلا حساب في الدقائق الأولى. إنه خطّ من يريد اقتصادًا متينًا قبل الطلقة الأولى."},
+    minus:{fr:"Personne n'a renforcé les murs : la base est un peu plus fragile.", en:"Nobody reinforced the walls: the base is a little more fragile.", es:"Nadie reforzó los muros: la base es algo más frágil.", de:"Niemand hat die Mauern verstärkt: Die Basis ist etwas verwundbarer.", it:"Nessuno ha rinforzato i muri: la base è un po' più fragile.", pt:"Ninguém reforçou os muros: a base fica um pouco mais frágil.", ru:"Стены никто не укрепил: база чуть уязвимее.", zh:"没人加固城墙：基地稍微脆弱一些。", ar:"لم يُدعّم أحد الأسوار: القاعدة أهشّ قليلًا."},
+    fx:{ res:1.4, eco:1.15, baseHp:0.9 } },
+  ordre:   { name:{fr:"Service d'ordre", en:"Stewards", es:"Servicio de orden", de:"Ordnerdienst", it:"Servizio d'ordine", pt:"Serviço de ordem", ru:"Охрана шествия", zh:"纠察队", ar:"فرقة النظام"},
+    short:{fr:"Les costauds devant.", en:"The big ones up front.", es:"Los fornidos delante.", de:"Die Kräftigen nach vorn.", it:"I robusti davanti.", pt:"Os fortões na frente.", ru:"Крепыши — вперёд.", zh:"壮汉打头阵。", ar:"الأشدّاء في المقدّمة."},
+    long:{fr:"Deux anciens CRS ont changé de camp et encadrent le service d'ordre ; les murs de la base ont été doublés de sacs de sable pendant la nuit. Votre base tient plus longtemps sous les coups, et deux unités lourdes ouvrent la marche dès la première minute. C'est la ligne de ceux qui veulent encaisser d'abord.",
+      en:"Two former riot officers have switched sides and lead the stewards; the base walls were lined with sandbags overnight. Your base holds longer under fire, and two heavy units lead the way from the first minute. It is the line for those who want to absorb the first blows.",
+      es:"Dos antiguos antidisturbios se han pasado de bando y dirigen el servicio de orden; durante la noche se reforzaron los muros de la base con sacos de arena. Su base aguanta más bajo los golpes, y dos unidades pesadas abren la marcha desde el primer minuto. Es la línea de quienes prefieren encajar primero.",
+      de:"Zwei ehemalige Bereitschaftspolizisten haben die Seiten gewechselt und führen den Ordnerdienst; über Nacht wurden die Mauern der Basis mit Sandsäcken verstärkt. Ihre Basis hält unter Beschuss länger durch, und zwei schwere Einheiten gehen ab der ersten Minute voran. Das ist die Linie derer, die zuerst einstecken wollen.",
+      it:"Due ex agenti antisommossa hanno cambiato campo e guidano il servizio d'ordine; durante la notte i muri della base sono stati rinforzati con sacchi di sabbia. La sua base regge più a lungo sotto i colpi, e due unità pesanti aprono la marcia dal primo minuto. È la linea di chi vuole incassare per primo.",
+      pt:"Dois ex-policiais de choque mudaram de lado e comandam o serviço de ordem; durante a noite os muros da base foram reforçados com sacos de areia. Sua base aguenta mais tempo sob fogo, e duas unidades pesadas abrem caminho desde o primeiro minuto. É a linha de quem quer aguentar o primeiro impacto.",
+      ru:"Двое бывших омоновцев перешли на нашу сторону и командуют охраной шествия; за ночь стены базы обложили мешками с песком. Ваша база дольше держит удары, а две тяжёлые единицы идут впереди с первой минуты. Это линия тех, кто хочет сперва выдержать натиск.",
+      zh:"两名前防暴警察倒戈过来，带领纠察队；一夜之间，基地的墙壁垒上了沙袋。您的基地能在火力下坚持更久，两个重装单位从第一分钟起就冲在前面。这是那些想先扛住冲击的人的路线。",
+      ar:"انشقّ عنصران سابقان من شرطة مكافحة الشغب وانضمّا إلينا ليقودا فرقة النظام، وفي الليل دُعّمت أسوار القاعدة بأكياس الرمل. تصمد قاعدتك أطول تحت النيران، وتتقدّم وحدتان ثقيلتان منذ الدقيقة الأولى. إنه خطّ من يريد امتصاص الضربات أولًا."},
+    minus:{fr:"Il a fallu les équiper : la caisse part plus légère.", en:"They had to be equipped: the fund starts lighter.", es:"Hubo que equiparlos: la caja empieza más ligera.", de:"Sie mussten ausgerüstet werden: Die Kasse startet leichter.", it:"Bisognava equipaggiarli: la cassa parte più leggera.", pt:"Foi preciso equipá-los: o caixa começa mais leve.", ru:"Их пришлось снарядить: касса на старте легче.", zh:"得给他们配装备：开局资金更少。", ar:"كان لا بدّ من تجهيزهم: يبدأ الصندوق أخفّ."},
+    fx:{ baseHp:1.25, squad:[1,1], res:0.8 } },
+  veterans:{ name:{fr:"Vétérans de Valmont", en:"Valmont veterans", es:"Veteranos de Valmont", de:"Veteranen von Valmont", it:"Veterani di Valmont", pt:"Veteranos de Valmont", ru:"Ветераны Valmont", zh:"Valmont 老兵", ar:"قدامى Valmont"},
+    short:{fr:"Ceux de la première nuit.", en:"Those of the first night.", es:"Los de la primera noche.", de:"Die aus der ersten Nacht.", it:"Quelli della prima notte.", pt:"Os da primeira noite.", ru:"Те, кто был в первую ночь.", zh:"第一夜的老兵。", ar:"رجال الليلة الأولى."},
+    long:{fr:"Ceux de la nuit des compteurs reprennent du service : deux combattants de mêlée et deux tireurs qui connaissent déjà les machines. Ils sont sur le terrain à la première seconde, avant même que la première ferme ne produise. C'est la ligne de ceux qui veulent prendre l'initiative tout de suite.",
+      en:"Those from the night of the meters are back on duty: two melee fighters and two shooters who already know the machines. They are in the field from the first second, before the first farm has produced anything. It is the line for those who want to seize the initiative at once.",
+      es:"Los de la noche de los contadores vuelven al servicio: dos combatientes cuerpo a cuerpo y dos tiradores que ya conocen las máquinas. Están sobre el terreno desde el primer segundo, antes de que la primera granja produzca nada. Es la línea de quienes quieren tomar la iniciativa enseguida.",
+      de:"Die aus der Nacht der Zähler sind wieder im Dienst: zwei Nahkämpfer und zwei Schützen, die die Maschinen schon kennen. Sie stehen ab der ersten Sekunde im Feld, noch bevor die erste Farm etwas produziert. Das ist die Linie derer, die sofort die Initiative ergreifen wollen.",
+      it:"Quelli della notte dei contatori tornano in servizio: due combattenti corpo a corpo e due tiratori che conoscono già le macchine. Sono sul campo dal primo secondo, prima ancora che la prima fattoria produca. È la linea di chi vuole prendere subito l'iniziativa.",
+      pt:"Os da noite dos medidores voltam à ativa: dois combatentes corpo a corpo e dois atiradores que já conhecem as máquinas. Estão em campo desde o primeiro segundo, antes mesmo de a primeira fazenda produzir. É a linha de quem quer tomar a iniciativa de imediato.",
+      ru:"Те, кто был в ночь счётчиков, снова в строю: два бойца ближнего боя и два стрелка, которые уже знают машины. Они на поле с первой секунды, ещё до того, как первая ферма что-то даст. Это линия тех, кто хочет сразу перехватить инициативу.",
+      zh:"水表之夜的老兵们重新归队：两名近战战士和两名射手，他们早已熟悉那些机器。他们从第一秒起就在战场上，比第一座农场产出还早。这是那些想立刻掌握主动的人的路线。",
+      ar:"يعود رجال ونساء ليلة العدّادات إلى الخدمة: مقاتلان في الالتحام ورامِيان يعرفون الآلات جيدًا. إنهم في الميدان منذ الثانية الأولى، قبل أن تنتج أول مزرعة شيئًا. إنه خطّ من يريد أخذ المبادرة فورًا."},
+    minus:{fr:"Ils ont leurs habitudes : moins de place pour les nouvelles recrues.", en:"They have their habits: less room for new recruits.", es:"Tienen sus costumbres: menos sitio para los nuevos reclutas.", de:"Sie haben ihre Gewohnheiten: weniger Platz für neue Rekruten.", it:"Hanno le loro abitudini: meno posto per le nuove reclute.", pt:"Eles têm seus hábitos: menos espaço para novos recrutas.", ru:"У них свои привычки: меньше места для новобранцев.", zh:"他们有自己的习惯：留给新兵的位置更少。", ar:"لهم عاداتهم: مكان أقلّ للمجنّدين الجدد."},
+    fx:{ squad:[0,2,0,2], vet:true, cap:-3 } },
+  radio:   { name:{fr:"Radio libre", en:"Free radio", es:"Radio libre", de:"Freies Radio", it:"Radio libera", pt:"Rádio livre", ru:"Свободное радио", zh:"自由电台", ar:"الراديو الحر"},
+    short:{fr:"Sol a doublé l'antenne.", en:"Sol doubled the aerial.", es:"Sol ha duplicado la antena.", de:"Sol hat die Antenne verdoppelt.", it:"Sol ha raddoppiato l'antenna.", pt:"Sol dobrou a antena.", ru:"Sol удвоила антенну.", zh:"Sol把天线加倍了。", ar:"ضاعفت Sol الهوائي."},
+    long:{fr:"Sol a doublé l'antenne sur le toit et recruté deux opératrices de plus : chaque appel passe plus vite, chaque ordre arrive à temps. L'action propre à la mission (vannes, appel aux cellules…) se recharge nettement plus vite — à vous d'en faire l'arme principale.",
+      en:"Sol has doubled the aerial on the roof and recruited two more operators: every call goes through faster, every order arrives in time. The mission's own action (sluices, call to the cells…) recharges markedly faster — make it your main weapon.",
+      es:"Sol ha duplicado la antena del tejado y ha reclutado a dos operadoras más: cada llamada pasa antes, cada orden llega a tiempo. La acción propia de la misión (compuertas, llamada a las células…) se recarga claramente más rápido: conviértala en su arma principal.",
+      de:"Sol hat die Antenne auf dem Dach verdoppelt und zwei weitere Funkerinnen gewonnen: Jeder Ruf kommt schneller durch, jeder Befehl rechtzeitig an. Die eigene Aktion der Mission (Schleusen, Ruf an die Zellen …) lädt deutlich schneller – machen Sie sie zu Ihrer Hauptwaffe.",
+      it:"Sol ha raddoppiato l'antenna sul tetto e reclutato altre due operatrici: ogni chiamata passa prima, ogni ordine arriva in tempo. L'azione propria della missione (paratoie, chiamata alle cellule…) si ricarica molto più in fretta: ne faccia la sua arma principale.",
+      pt:"Sol dobrou a antena do telhado e recrutou mais duas operadoras: cada chamada passa mais rápido, cada ordem chega a tempo. A ação própria da missão (comportas, chamada às células…) recarrega bem mais rápido — faça dela sua arma principal.",
+      ru:"Sol удвоила антенну на крыше и взяла ещё двух радисток: каждый вызов проходит быстрее, каждый приказ приходит вовремя. Особое действие миссии (шлюзы, вызов ячеек…) перезаряжается заметно быстрее — сделайте его главным оружием.",
+      zh:"Sol把屋顶的天线加倍了，还多招了两名接线员：每次呼叫都更快接通，每道命令都能及时送达。任务专属行动（开闸、呼叫小组……）的充能明显加快——把它当成您的主要武器吧。",
+      ar:"ضاعفت Sol الهوائي على السطح وجنّدت مشغّلتين إضافيتين: كل نداء يمرّ أسرع، وكل أمر يصل في وقته. يُشحن الإجراء الخاص بالمهمة (البوابات، نداء الخلايا…) أسرع بوضوح — اجعله سلاحك الرئيسي."},
+    minus:{fr:"L'antenne a coûté cher, et personne ne vient en plus sur le terrain.", en:"The aerial cost a lot, and nobody extra joins you in the field.", es:"La antena costó cara, y nadie más se une sobre el terreno.", de:"Die Antenne war teuer, und niemand kommt zusätzlich ins Feld.", it:"L'antenna è costata cara, e nessuno in più scende in campo.", pt:"A antena custou caro, e ninguém a mais entra em campo.", ru:"Антенна обошлась дорого, и на поле никто не прибавится.", zh:"天线花了不少钱，战场上也不会多出任何人。", ar:"كلّف الهوائي كثيرًا، ولا أحد إضافي ينضمّ في الميدان."},
+    fx:{ actCd:0.65, warn:4, res:0.9 } },
 };
-const CAMP_DOCS = [null, ['caisse','ordre'], ['veterans','radio'], ['ordre','caisse'], ['veterans','radio']];
-const campDoc = i => { const pair = CAMP_DOCS[i]; return pair? DOCTRINES[pair[CAMP_SAVE.doc[i]? 1 : 0]] : null; };
+const campDocPair = i => { const m = CAMPAIGN[i]; return (m && m.doctrines && m.doctrines.length===2)? m.doctrines : null; };
+const campDoc = i => { const pair = campDocPair(i); return pair? DOCTRINES[pair[CAMP_SAVE.doc[i]? 1 : 0]] : null; };
+function docApply(d, g, c){ const f = d.fx || {}, p = g.p;
+  if (f.res){ p.f = Math.round(p.f*f.res); p.m = Math.round(p.m*f.res); p.w = Math.round(p.w*f.res); }
+  if (f.baseHp){ p.maxhp = Math.round(p.maxhp*f.baseHp); p.hp = p.maxhp; }
+  if (f.squad){ const k0 = p.units.length; campSquad(p, f.squad);
+    if (f.vet) for (let j=k0;j<p.units.length;j++){ const u = p.units[j]; u.vet = 1; u.hp *= 1.2; u.maxhp *= 1.2; if (u.dmg) u.dmg *= 1.1; } }   // vétérans : brassard rouge
+  if (f.cap){ if (c.capBase==null) c.capBase = p.cap; p.cap = Math.max(10, c.capBase + f.cap); }
+  if (f.eco) c.eco = { k:f.eco, until:c.t + 180 };                     // production des bâtiments renforcée 3 minutes
+  if (f.actCd) c.actMul = f.actCd;
+  if (f.warn) c.warnLead = f.warn;                                     // les missions annoncent leurs arrivées c.warnLead s plus tôt
+  if (d.apply) d.apply(g, c); }
+// lignes d'effet d'une doctrine, chiffrées depuis fx : [{txt, bad}] (bad = contrepartie) ; era : ère de départ, pour nommer les unités
+function docEffects(d, era){ const f = d.fx || {}, out = [], add = (o, n, bad) => out.push({ txt:cT(o).replace('{n}', n), bad:!!bad });
+  if (f.res) add(CAMP_UI.fxRes, campPct(f.res), f.res<1);
+  if (f.eco) add(CAMP_UI.fxEco, campPct(f.eco));
+  if (f.baseHp) add(CAMP_UI.fxBase, campPct(f.baseHp), f.baseHp<1);
+  if (f.squad){ const n = {}; f.squad.forEach(r=>{ n[r] = (n[r]||0)+1; });
+    out.push({ txt:cT(CAMP_UI.fxSquad).replace('{list}', Object.keys(n).map(r=> n[r]+' × '+lUnit('HUM', ROLES[r].key, era|0)).join(', ')) });
+    if (f.vet) add(CAMP_UI.fxVet, ''); }
+  if (f.actCd) add(CAMP_UI.fxAct, campPct(2-f.actCd).replace('+',''));
+  if (f.warn) add(CAMP_UI.fxWarn, f.warn);
+  if (f.cap) add(CAMP_UI.fxCap, (f.cap>0? '+' : '−')+Math.abs(f.cap), f.cap<0);
+  return out; }
+
+
+/* ================= CARTES (v1.16) =================
+   Une carte de mission (ou d'acte) décrit le terrain de jeu ; tout ce qui n'y figure pas n'existe PAS
+   (plus de lacs 💧 ni de zone bonus d'escarmouche en campagne, sauf si la carte les déclare).
+     terrain:{a,f1,b,f2,c,f3,base}   relief propre (sinon celui du lieu)
+     p:{x, slots:[décalages]}         notre base : position et socles de construction (décalages depuis la base)
+     e:{x, slots:[décalages]|[]}      base ennemie ; slots:[] = elle ne bâtit pas
+     neut:[x…]                        socles neutres (sinon ceux de l'escarmouche)
+     nodes:[{x, center, owner, look}] points d'eau/ressources (défaut : aucun) ; dessinés par m.drawNode si présent
+     zones:[x | {x, owner}]           zones à tenir (défaut : aucune) ; dessinées par m.drawZone
+     objects:[{id, x, r, rate, owner, kind, capture}]  objets d'objectif propres à la mission : capturés par le
+                                      moteur (unités à moins de r), dessinés par m.drawObj(o,t,vw), m.onCapture(g,c,o,qui)
+     bonusZone:true                   rétablit la 4e zone bonus d'escarmouche (désactivée par défaut)        */
+const CAMP_SLOTS = [95,159,223];
+function campPlaceBase(side, x, slots){
+  if (x!=null){ side.x = x; side.adv = x; }
+  const offs = slots || (x!=null? CAMP_SLOTS : null);
+  if (offs) side.slots = offs.map(o=>({ x: side.x + side.side*o, b:null, owner:null }));
+}
+function campApplyMap(g, c, map){
+  map = map || {};
+  const B0 = g.biome && g.biome.base0 || g.biome;
+  if (map.terrain && B0){ g.biome = Object.assign(Object.create(B0), { terrain:map.terrain, base0:B0 }); }
+  if (map.p) campPlaceBase(g.p, map.p.x, map.p.slots);
+  if (map.e) campPlaceBase(g.e, map.e.x, map.e.slots);
+  if (map.neut) g.neut = map.neut.map(x=>({ x, b:null, owner:null }));
+  g.nodes = (map.nodes || []).map(n=>({ x:n.x, center:!!n.center, look:n.look||null, owner:n.owner||null, prog:n.owner==='p'? 1 : n.owner==='e'? -1 : 0 }));
+  g.zones = (map.zones || []).map(z=> typeof z==='number'? { x:z, owner:null, prog:0 } : { x:z.x, owner:z.owner||null, prog:z.owner==='p'? 1 : z.owner==='e'? -1 : 0 });
+  g.bonusZone = null; g._bz = !map.bonusZone;
+  c.objs = (map.objects || []).map(o=>Object.assign({ r:80, rate:0.1, owner:null, prog:0, capture:true }, o, { prog:o.owner==='p'? 1 : o.owner==='e'? -1 : 0 }));
+  c.map = map;
+}
+
+/* ================= ACTES (v1.16) : campNextAct(spec) =================
+   Une mission en plusieurs actes appelle campNextAct(spec) (typiquement depuis tick, quand l'objectif de
+   l'acte est atteint). Le passage joue une cinématique (before → carton d'acte → after), puis le moteur
+   applique EXPLICITEMENT ce qui est gardé ou remis à zéro — chaque acte doit être un défi neuf.
+     act            numéro du nouvel acte (c.act)            title, sub   carton d'acte ; card:{plate, mus}
+     before(g,c)    plans joués avant le changement           after(g,c)   plans joués après (nouveau terrain)
+     biome, theme   nouveau lieu / décor ; map:{…}  nouvelle carte (voir CARTES)
+     army           'none' | 'hero' | 'all' | {keep:N, hero:true}  (N unités les plus fortes) ; heal:0..1 ; squad:[rôles] en plus
+     res:{f,m,w}    ressources fixées (× difficulté) ; xp     XP fixée (défaut : seuil de l'ère)
+     buildings      'clear' (défaut : nos socles et socles neutres vidés) | 'keep'
+     base:{x, hp, fort, look}   notre base (hp × difficulté) ; ebase:{x, hp, fort, look} base ennemie
+     era:{p, e}     ère de chaque camp ; eraCap   plafond d'ère
+     ai:{diff, dm, cap}         IA adverse : niveau d'escarmouche, réglages fins (objet ou [f,n,d]), effectif max
+     enemy          'clear' (défaut) | 'keep' : machines ennemies sur la carte
+     goal, rule, tips           nouvel objectif (annoncé), règle et conseils de l'acte (aide « ? »)
+     setup(g,c)     réglages propres à l'acte (minuteurs…), appelé en dernier                              */
+function campActKeep(units, army){
+  if (army==='all') return units.slice();
+  if (army==='none' || !army) return [];
+  const hero = units.filter(u=>u.role==='hero');
+  if (army==='hero') return hero;
+  const rest = units.filter(u=>u.role!=='hero' && u.role!=='gremlin').sort((a,b)=> (b.maxhp + (b.dmg||0)*12) - (a.maxhp + (a.dmg||0)*12));
+  return rest.slice(0, army.keep|0).concat(army.hero? hero : []);
+}
+function campApplyAct(g, c, spec){
+  const p = g.p, e = g.e;
+  // l'écran est vidé de la bataille précédente
+  projectiles = []; shots = []; wrecks = []; deaths = []; particles = []; floaters = []; LIGHTS = [];
+  g.craters = []; g.rally = null; g.sel.clear(); g.cata = null; g.cataT = 0; g.weather = null; buildMenu = null;
+  if (spec.enemy!=='keep'){ e.units.length = 0; e.gar.length = 0; for (const s of e.slots){ s.b = null; s.owner = null; } }
+  for (const s of g.neut) if (s.owner===e && spec.enemy!=='keep'){ s.b = null; s.owner = null; }
+  if (spec.biome){ g.biome = typeof spec.biome==='string'? (BIOMES[spec.biome] || g.biome) : spec.biome; }
+  if (spec.theme) DECOR = genDecor(spec.theme);
+  if (spec.map) campApplyMap(g, c, spec.map);
+  if (spec.base){ const b = spec.base; campPlaceBase(p, b.x, b.slots);
+    if (b.hp){ p.maxhp = campHp(b.hp, 'p'); p.hp = p.maxhp; } if (b.fort) p.fortLvl = b.fort; if (b.look) p.look = b.look; }
+  if (spec.ebase){ const b = spec.ebase; campPlaceBase(e, b.x, b.slots);
+    if (b.hp){ e.maxhp = campHp(b.hp, 'e'); e.hp = e.maxhp; } if (b.fort) e.fortLvl = b.fort; if (b.look) e.look = b.look; }
+  if ((spec.buildings||'clear')==='clear'){ for (const s of p.slots){ s.b = null; s.owner = null; } for (const s of g.neut) if (s.owner===p){ s.b = null; s.owner = null; } }
+  // NOTRE ARMÉE : règle explicite
+  const kept = campActKeep(p.units, spec.army);
+  p.units.length = 0; p.gar.length = 0; p.queue.length = 0;
+  kept.forEach((u,i)=>{ u.x = p.x + p.side*(70 + (i%10)*18 + ((i/10)|0)*6); u.ord = null; u.px = null; u.task = null; u.tx = null;
+    if (spec.heal) u.hp = Math.min(u.maxhp, u.hp + u.maxhp*spec.heal); p.units.push(u); });
+  p.adv = p.x; p.holdX = null;
+  if (spec.era){ if (spec.era.p!=null) campEra(p, spec.era.p); if (spec.era.e!=null) campEra(e, spec.era.e); }
+  if (spec.eraCap!=null) g.eraCap = spec.eraCap;
+  if (spec.res) campGrant(p, spec.res.f|0, spec.res.m|0, spec.res.w|0);
+  if (spec.xp!=null) p.xp = spec.xp;
+  if (spec.squad) campSquad(p, spec.squad);
+  if (spec.ai){ const a = spec.ai;
+    if (a.diff!=null) g.d = Object.assign({}, DIFFS[clamp(a.diff,0,3)]);
+    if (a.dm) g.d = Object.assign({}, g.d, Array.isArray(a.dm)? a.dm[c.D.i] : a.dm);
+    if (a.cap!=null) e.cap = a.cap; }
+  g.aiThink = 2;
+  camX = 0; camFollow = true; g.shake = 0;
+  c.act = spec.act || (c.act|0)+1; c.t0 = c.t; c.actSpec = spec;
+  if (spec.rule) c.ruleTxt = spec.rule;
+  if (spec.tips) c.tipsArr = spec.tips;
+  if (spec.doctrine!==false){ const d = campDoc(c.i); if (d) docApply(d, g, c); }   // la doctrine vaut au début de CHAQUE acte
+  if (spec.setup) spec.setup(g, c);
+  if (spec.goal) campGoal(spec.goal);
+  prewarmSprites();
+}
+// carton d'acte par défaut : page de carnet, chiffre romain au pochoir
+function campActPlate(n){ return (g, w, h, t) => { plateBase(g, w, h, 'rgba(30,24,20,0.10)');
+  g.fillStyle = '#c42a1c'; g.font = '800 120px '+UI_STEN; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.globalAlpha = clamp(t/0.6, 0, 1); g.fillText(['I','II','III','IV','V','VI'][(n|0)-1] || String(n), 240, 120); g.globalAlpha = 1;
+  inkLine(g, [140,190, 340,190], clamp(t/1.2,0,1), 2.4); plateEnd(g, w, h); }; }
+function campNextAct(spec){
+  const g = game, c = g && g.camp; if (!c || c.actPending || g.over) return false;
+  c.actPending = true;
+  const before = (typeof spec.before==='function'? spec.before(g, c) : spec.before) || [];
+  const card = { plate:(spec.card && spec.card.plate) || campActPlate(spec.act || (c.act|0)+1), mus:spec.card && spec.card.mus, title:spec.title, sub:spec.sub, dur:3.4,
+    fx(){ if (!c.actPending) return; c.actPending = false; campApplyAct(g, c, spec);
+      const more = typeof spec.after==='function'? spec.after(g, c) : spec.after;
+      if (more && more.length && CINE.on && CINE.script && CINE.script[CINE.i]===card) CINE.script = CINE.script.slice(0, CINE.i+1).concat(more); } };
+  cinePlay(before.concat([card]), null, { keepCam:true });
+  return true;
+}
 
 // ---- cycle de vie d'une mission ----
 function startMission(i){
   const m = CAMPAIGN[i]; if (!m) return;
-  const lvl = clamp(CAMP_SAVE.lvl|0, 0, 2);
-  newGame('HUM', m.diff[lvl], false);
-  const g = game, c = g.camp = { i, m, lvl, t:0, fired:[], q:[], cur:null };
-  if (m.dm && m.dm[lvl]) g.d = Object.assign({}, g.d, m.dm[lvl]);          // réglage fin de l'adversaire pour cette mission
+  const D = campDiff(CAMP_SAVE.diff);
+  if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);                // une mission peut tempérer un multiplicateur (documenté dans son fichier)
+  newGame('HUM', campAiLevel(m, D), false);
+  const g = game, c = g.camp = { i, m, D, lvl:D.i, t:0, fired:[], q:[], cur:null, log:[], objs:[], act:1, t0:0 };
+  if (m.dm && m.dm[D.i]) g.d = Object.assign({}, g.d, m.dm[D.i]);          // réglage fin de l'adversaire pour cette mission
   g.eraCap = m.eraCap; g.devBase = m.dev0 || 0;
   if (m.era0){ campEra(g.p, m.era0); campEra(g.e, m.era0); }
   if (m.oneLife){ g.p.phase = 2; g.e.phase = 2; g.hbombDone = true;      // une base qui tombe est perdue : pas de renaissance ni de bombe H
-    g.p.hp = g.p.maxhp = [2600,2200,1800][lvl]; }                         // … la nôtre est donc mieux bâtie, selon le niveau de récit
+    g.p.hp = g.p.maxhp = campHp(2200, 'p'); }                             // … la nôtre est donc mieux bâtie (selon la difficulté)
   if (m.oneLife) g.e.heroCd = 1e9;                                       // et l'adversaire n'a pas de héros (un héros rase une base à une vie)
   g.biome = BIOMES[m.biome] || null;                                      // lieu propre à la mission (ciel, fonds, sol, météo, musique)
   c.lights = []; c.litK = 0;
   DECOR = genDecor(m.theme);
+  campApplyMap(g, c, m.map);                                              // carte : bases, socles, points d'eau, zones, objets
   if (m.setup) m.setup(g, c);
-  { const d = campDoc(i); if (d) d.apply(g, c); }                           // doctrine choisie pour cette mission
+  { const d = campDoc(i); if (d) docApply(d, g, c); }                      // doctrine choisie pour cette mission
   prewarmSprites();
   const sc = m.intro? m.intro(g, c) : null;                               // cinématique d'ouverture, sur le terrain
   if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
 }
-// complète une mission depuis son propre fichier (lieu, mécanique, cinématiques)
-function campExtend(i, ext){ Object.assign(CAMPAIGN[i], ext); }
 // fin de mission : cinématique de clôture (si la mission en a une), puis l'écran de fin
 function campEndCine(){
   const c = game && game.camp, m = c && c.m, sc = m && m.outro? m.outro(game, c, game.win) : null;
@@ -379,22 +403,49 @@ function campAct(){
   if ((c.actCd||0) > 0 || (a.can && !a.can(game, c))){ sfx('deny'); return true; }
   c.actCd = a.cd*(c.actMul||1); a.use(game, c); return true;
 }
-function campClick(sx, sy){ const c = game.camp, r = c && c.actRect; if (!r || !c.m.action) return false;
-  if (sx<r.x || sx>r.x+r.w || sy<r.y || sy>r.y+r.h) return false; return campAct(); }
-function campRadio(who, txt){ const c = game && game.camp; if (!c || !txt) return;
-  c.q.push({ who, txt, t:0, dur: 6.5 + Math.min(9, txt.length/20) }); if (c.q.length>4) c.q.shift(); }
+// RADIO : file de messages ; txt = objet {fr,en,…} (de préférence) ou chaîne ; opts.vars = {clé:valeur} pour « {clé} »
+function campRadio(who, txt, opts){ const c = game && game.camp; if (!c || !txt) return;
+  const obj = typeof txt==='object'? txt : null, vars = opts && opts.vars;
+  let s = obj? cT(obj) : String(txt); if (vars) for (const k in vars) s = s.split('{'+k+'}').join(vars[k]);
+  c.q.push({ who, txt:s, obj, vars, t:0, dur:clamp(3.2 + s.length/13, 6, 24) });   // durée de lecture d'après la longueur
+  if (c.q.length>8) c.q.shift(); }
+// NOUVEL OBJECTIF : remplace l'objectif affiché, l'annonce (bandeau + son) et l'écrit dans le journal radio
+function campGoal(txt){ const c = game && game.camp; if (!c || !txt) return;
+  c.goalTxt = txt; c.banner = { head:CAMP_UI.newGoal, txt, t0:performance.now() }; c.goalFlash = 3;
+  c.log.push({ who:'goal', txt:cT(txt), t:c.t }); sfx('evolve'); }
 // appelée par update() à chaque pas ; true = la mission vient de se terminer
 function campTick(dt){
-  const g = game, c = g.camp, m = c.m;
+  const g = game, c = g.camp, m = c.m, D = c.D;
   c.t += dt;
+  // DIFFICULTÉ : chaque machine ennemie, à son apparition, prend la vie et les dégâts du niveau choisi
+  for (const u of g.e.units) if (!u._cd){ u._cd = 1; if (D.eHp!==1){ u.hp *= D.eHp; u.maxhp *= D.eHp; } if (D.eDmg!==1 && u.dmg) u.dmg *= D.eDmg; }
   for (let i=0;i<m.radio.length;i++){ if (c.fired[i]) continue; const r = m.radio[i];
-    if (r.at!=null? c.t>=r.at : r.when(g, c)){ c.fired[i] = 1; if (r.txt) campRadio(r.who, cT(r.txt)); if (r.fx) r.fx(g, c);
+    if (r.at!=null? c.t>=r.at : r.when(g, c)){ c.fired[i] = 1; if (r.txt) campRadio(r.who, r.txt); if (r.fx) r.fx(g, c);
       if (r.cine){ const sc = r.cine(g, c); if (sc && sc.length) cinePlay(sc, null); } } }
   if (c.actCd>0) c.actCd -= dt;
-  const rdt = dt / (g.speed||1);                                         // les messages se lisent en temps réel
+  // LAISSE : aucune de nos troupes ne dépasse c.leash (escorte : on reste avec ceux qu'on protège)
+  if (c.leash!=null){ const L = c.leash;
+    for (const u of g.p.units){ if (u.px!=null && u.px > L) u.px = L; if (u.x > L){ u.x = L; if (u.tx > L) u.tx = L; c.leashHit = c.t; } } }
+  // OBJETS D'OBJECTIF : capturés comme des zones (unités à moins de r)
+  for (const o of c.objs){ if (!o.capture) continue; let np = 0, ne = 0;
+    for (const u of g.p.units) if (Math.abs(u.x-o.x) < o.r) np++;
+    for (const u of g.e.units) if (Math.abs(u.x-o.x) < o.r) ne++;
+    const push = clamp(np-ne, -3, 3)*o.rate*dt; if (!push) continue;
+    o.prog = clamp(o.prog + push, -1, 1);
+    if (o.prog>=1 && o.owner!=='p'){ o.owner = 'p'; sfx('node'); if (m.onCapture) m.onCapture(g, c, o, 'p'); }
+    if (o.prog<=-1 && o.owner!=='e'){ o.owner = 'e'; if (m.onCapture) m.onCapture(g, c, o, 'e'); } }
+  // OBJECTIF SECONDAIRE : surveillé via hud().goal2.done
+  if (m.goal2 && !c.goal2Done && m.hud && ((c.g2k = (c.g2k|0)+1) % 10)===0){ const h = m.hud(g, c);
+    if (h && h.goal2 && h.goal2.done){ c.goal2Done = true; c.banner = { head:CAMP_UI.bonusDone, txt:m.goal2, t0:performance.now() }; sfx('evolve'); } }
+  // RADIO : messages lus en temps réel ; une file longue défile un peu plus vite
+  const rdt = dt / (g.speed||1) * (c.q.length>=3? 1.4 : 1);
   if (c.cur){ c.cur.t += rdt; if (c.cur.t>=c.cur.dur) c.cur = null; }
-  if (!c.cur && c.q.length){ c.cur = c.q.shift(); sfx('cap'); }
-  if (c.cur && !c.cur.v){ c.cur.v = 1; c.cur.dur = Math.max(c.cur.dur, voiceSay(c.cur.who, c.cur.txt, {radio:true}) + 1.2); }   // voix off de la transmission (16c0-voice.js)
+  if (!c.cur && c.q.length){ const r = c.cur = c.q.shift(); sfx('cap');
+    c.log.push({ who:r.who, txt:r.txt, t:c.t }); if (c.log.length>40) c.log.shift();
+    // VOIX : point d'appel UNIQUE de la voix off des transmissions (16c0-voice.js) ; le message reste affiché le temps de la voix
+    if (typeof voiceSay==='function'){ try { r.dur = Math.max(r.dur, (+voiceSay(r.who, r.txt, { radio:true })||0) + 1.2); } catch(e){} } }
+  if (c.goalFlash>0) c.goalFlash -= dt;
+  if (c.eco && c.t < c.eco.until){ const R = calcRates(g.p), k = c.eco.k-1; g.p.f += R.f*k*dt; g.p.m += R.m*k*dt; g.p.w += R.w*k*dt; }   // doctrine « caisse »
   const r = m.tick? m.tick(g, c, dt) : null;
   if (r && !g.over){ g.over = true; g.win = (r==='win'); g.shake = 14; sfx(g.win? 'evolve' : 'boom'); setTimeout(campEndCine, 1100); return true; }
   return false;
@@ -405,57 +456,100 @@ function campResult(){
   if (game.win && !c.saved){ c.saved = true;
     CAMP_SAVE.done = Math.max(CAMP_SAVE.done, c.i+1);
     if (!(CAMP_SAVE.best[c.i] > 0) || game.t < CAMP_SAVE.best[c.i]) CAMP_SAVE.best[c.i] = Math.round(game.t);
+    if (c.goal2Done) CAMP_SAVE.bonus[c.i] = 1;
     campSave(); }
-  return cT(game.win? m.debrief : m.fail);
+  let s = cT(game.win? m.debrief : m.fail);
+  if (m.goal2) s += '\n'+cT(CAMP_UI.bonusEnd).replace('{s}', cT(c.goal2Done? CAMP_UI.okS : CAMP_UI.missS)+' — '+cT(m.goal2));
+  return s;
 }
-function campLaunch(i){
+// lance VRAIMENT une mission (cinématique d'ouverture puis partie) — appelé par le bouton du briefing
+function campStart(i){
   if (!game) netDisconnect();
+  campBriefClose(false);
   audioInit(); musicStart(); goFullscreen();
   $('menu').style.display = 'none'; $('endscreen').style.display = 'none';
   intro = -1; pendingStart = null; paused = false; settingsOpen = false; buildMenu = null;
   startMission(i);
 }
+// ouvre le BRIEFING de la mission i (menu, « mission suivante », « réessayer ») : on ne saute jamais le dossier
+function campLaunch(i){ campBriefOpen(i); }
 
-// ---- en jeu : étiquette d'objectif (haut droite) et transmission radio (haut gauche) ----
+
+/* ================= EN MISSION : objectif, aide « ? », radio, bandeau, objets du terrain ================= */
+const campWhoName = who => { if (who==='k55') return cT(CAMP_UI.radioK);
+  const w = CINE_WHO[who], n = w && w.name? (typeof w.name==='string'? w.name : cT(w.name)) : String(who||'sol').toUpperCase();
+  return cT(CAMP_UI.radioSol).replace('SOL', n); };
+function campTrunc(s, maxW){ if (ctx.measureText(s).width <= maxW) return s; while (s.length>1 && ctx.measureText(s+'…').width > maxW) s = s.slice(0,-1); return s+'…'; }
+// étiquette d'objectif (haut droite) + bouton « ? » + action de mission + bandeau + transmission radio
 function drawCampHUD(){
   const c = game.camp; if (!c || game.over) return;
-  const pal = uiPal(), m = c.m, h = m.hud? m.hud(game, c) : {};
-  // OBJECTIF : étiquette de papier sous le bandeau, à droite
-  { const w = 214, x = W-w-8, y = 43;
-    ctx.font = uiF(pal,'cond',10.5); const lines = newsWrap(cT(m.goal), w-16).slice(0,2);
-    const hh = 19 + lines.length*12 + ((h.prog!=null || h.clock!=null)? 13 : 0);
-    c.objH = hh;
-    paperChip(x, y, w, hh, pal);
-    ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.font = '8px '+UI_TYPE; ctx.fillStyle = pal.red; ctx.fillText(cT(CAMP_UI.goal)+' · '+m.year, x+9, y+8.5);
-    ctx.font = uiF(pal,'cond',10.5); ctx.fillStyle = pal.ink;
-    lines.forEach((l,k)=> ctx.fillText(l, x+9, y+20+k*12));
-    if (h.prog!=null || h.clock!=null){ const by = y+hh-10, bw = w-18-(h.clock!=null? 40 : 0)-(h.label? 4 : 0);
-      let lx = x+9;
-      if (h.label){ ctx.font = '8px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.fillText(h.label, lx, by+2); lx += ctx.measureText(h.label).width+6; }
-      const gw = Math.max(20, x+9+bw-lx);
-      ctx.fillStyle = pal.line; ctx.fillRect(lx, by, gw, 4);
-      ctx.fillStyle = h.warn? pal.bad : pal.red; ctx.fillRect(lx, by, gw*clamp(h.prog||0, 0, 1), 4);
-      if (h.clock!=null){ ctx.font = uiF(pal,'cond',12); ctx.textAlign = 'right';
-        ctx.fillStyle = (h.warn && Math.sin(performance.now()/160)>0)? pal.bad : pal.ink; ctx.fillText(fmtTime(h.clock), x+w-8, by+2); }
-    } }
+  const pal = uiPal(), m = c.m, h = (m.hud? m.hud(game, c) : null) || {};
+  // OBJECTIF : étiquette de papier sous le bandeau, à droite — toujours visible, progression comprise
+  const w = clamp(Math.round(W*0.23), 236, 300), x = W-w-8, y = 43;
+  ctx.font = uiF(pal,'cond',11.5); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
+  const bar = h.prog!=null || h.clock!=null, g2 = !!m.goal2;
+  const hh = 19 + lines.length*13 + (bar? 13 : 0) + (g2? 14 : 0) + 2;
+  c.objH = hh;
+  paperChip(x, y, w, hh, pal);
+  ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
+  if (c.goalFlash>0 && Math.sin(performance.now()/120)>0){ ctx.strokeStyle = pal.red; ctx.lineWidth = 2; ctx.strokeRect(x+1, y+1, w-2, hh-2); }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.red;
+  ctx.fillText(cT(CAMP_UI.goal)+' · '+(m.num||'')+(c.act>1? ' · '+cT(CAMP_UI.act).replace('{n}', c.act) : ''), x+9, y+8.5);
+  ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = pal.ink;
+  lines.forEach((l,k)=> ctx.fillText(l, x+9, y+21+k*13));
+  let yy = y + 19 + lines.length*13;
+  if (bar){ const by = yy+3, bw = w-18-(h.clock!=null? 40 : 0)-(h.label? 4 : 0);
+    let lx = x+9;
+    if (h.label){ ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.fillText(h.label, lx, by+2); lx += ctx.measureText(h.label).width+6; }
+    const gw = Math.max(20, x+9+bw-lx);
+    ctx.fillStyle = pal.line; ctx.fillRect(lx, by, gw, 4);
+    ctx.fillStyle = h.warn? pal.bad : pal.red; ctx.fillRect(lx, by, gw*clamp(h.prog||0, 0, 1), 4);
+    if (h.clock!=null){ ctx.font = uiF(pal,'cond',12); ctx.textAlign = 'right';
+      ctx.fillStyle = (h.warn && Math.sin(performance.now()/160)>0)? pal.bad : pal.ink; ctx.fillText(fmtTime(h.clock), x+w-8, by+2); ctx.textAlign = 'left'; }
+    yy += 13; }
+  if (g2){ const done = c.goal2Done || (h.goal2 && h.goal2.done), lab = done? '✓' : (h.goal2 && h.goal2.label) || '';
+    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = done? pal.ok : pal.ink2; const lw = lab? ctx.measureText(lab).width+8 : 0;
+    ctx.fillText(campTrunc('✦ '+cT(m.goal2), w-18-lw), x+9, yy+6);
+    if (lab){ ctx.textAlign = 'right'; ctx.fillText(lab, x+w-8, yy+6); ctx.textAlign = 'left'; } }
+  // AIDE « ? » : rappelle l'objectif, la règle du lieu, les conseils et le journal radio (le jeu se met en pause)
+  { const b = c.helpRect = { x:x-31, y, w:27, h:27 };
+    paperChip(b.x, b.y, b.w, b.h, pal); ctx.strokeStyle = pal.red; ctx.lineWidth = 1.5; ctx.strokeRect(b.x+2.5, b.y+2.5, b.w-5, b.h-5);
+    ctx.textAlign = 'center'; ctx.font = uiF(pal,'head',15); ctx.fillStyle = pal.red; ctx.fillText('?', b.x+b.w/2, b.y+b.h/2+1); }
   // ACTION DE MISSION : bon à découper sous l'objectif (grisé pendant la recharge)
-  if (m.action){ const a = m.action, w = 150, x = W-w-8, y = 43 + c.objH + 6, hh = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
-    c.actRect = {x, y, w, h:hh};
-    paperChip(x, y, w, hh, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(x, y, w, 2.5);
-    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(x, y, w*clamp(cd/(a.cd*(c.actMul||1)),0,1), hh); }
+  c.actRect = null;
+  if (m.action){ const a = m.action, aw = 150, ax = W-aw-8, ay = 43 + hh + 6, ah = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
+    c.actRect = {x:ax, y:ay, w:aw, h:ah};
+    paperChip(ax, ay, aw, ah, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(ax, ay, aw, 2.5);
+    if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(ax, ay, aw*clamp(cd/(a.cd*(c.actMul||1)),0,1), ah); }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
-    ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), x+w/2, y+hh/2+1.5); }
-  // RADIO : feuillet tapé à la machine (Sol) ou listing de bipeur (Kassandre), à la place du fil d'actualités
-  const r = c.cur; if (!r) return;
+    ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), ax+aw/2, ay+ah/2+1.5); }
+  campDrawBanner(pal);
+  campDrawRadio(pal);
+}
+// bandeau « NOUVEL OBJECTIF » / « OBJECTIF SECONDAIRE ACCOMPLI » (au-dessus du champ de bataille, sous la radio)
+function campDrawBanner(pal){
+  const c = game.camp, b = c.banner; if (!b) return;
+  const t = (performance.now() - b.t0)/1000; if (t > 5){ c.banner = null; return; }
+  const a = Math.min(1, t/0.3, (5-t)/0.6), bw = Math.min(560, W-80), x = (W-bw)/2, y = 214;
+  ctx.font = uiF(pal,'cond',14); const lines = newsWrap(cT(b.txt), bw-30).slice(0,3), bh = 28 + lines.length*17;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1-a)*-8);
+  paperChip(x, y, bw, bh, pal); ctx.fillStyle = pal.red; ctx.fillRect(x, y, bw, 3);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'head',11); ctx.fillStyle = pal.red; ctx.fillText(cT(b.head), W/2, y+13);
+  ctx.font = uiF(pal,'cond',14); ctx.fillStyle = pal.ink; lines.forEach((l,k)=> ctx.fillText(l, W/2, y+31+k*17));
+  ctx.restore();
+}
+// RADIO : feuillet tapé à la machine (Sol, Mado…) ou listing de bipeur (Kassandre) ; touchez-le pour passer au suivant
+function campDrawRadio(pal){
+  const c = game.camp, r = c.cur; c.radioRect = null; if (!r) return;
   const a = Math.min(1, r.t/0.35, (r.dur-r.t)/0.6); if (a<=0) return;
   const k55 = r.who==='k55', qn = (game.p.queue||[]).length;
-  const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 100 - 34 - x0, 220, 430);
-  const font = k55? '10.5px "AGI Term","Courier New",monospace' : '10.5px '+UI_TYPE;
+  const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 140 - x0, 240, 470);
+  const font = k55? '13.5px "AGI Term","Courier New",monospace' : '13px '+UI_TYPE;
   ctx.font = font; let lines = newsWrap(r.txt, maxW-22);
-  if (lines.length>5){ lines = lines.slice(0,5); lines[4] = lines[4].replace(/.{0,2}$/, '…'); }
-  const lh = 12.5, hh = 20 + lines.length*lh;
+  if (lines.length>7){ lines = lines.slice(0,7); lines[6] = campTrunc(lines[6], maxW-30); }
+  const lh = 16, hh = 25 + lines.length*lh;
+  c.radioRect = { x:x0, y:y0, w:maxW, h:hh };
   ctx.save(); ctx.globalAlpha = a; ctx.translate((1-a)*-10, 0);
   ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.fillRect(x0+2, y0+3, maxW, hh);
   ctx.fillStyle = k55? '#e9f0e6' : pal.paper; ctx.fillRect(x0, y0, maxW, hh);
@@ -463,12 +557,190 @@ function drawCampHUD(){
   else { ctx.fillStyle = paperGrain(); ctx.fillRect(x0, y0, maxW, hh); }
   ctx.fillStyle = k55? '#0b6fa8' : '#c42a1c'; ctx.fillRect(x0, y0, maxW, 2.5);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = '8px '+UI_TYPE; ctx.fillText(cT(k55? CAMP_UI.radioK : CAMP_UI.radioSol), x0+9, y0+10);
-  if (Math.sin(performance.now()/260)>0 && r.t<r.dur-1){ ctx.beginPath(); ctx.arc(x0+maxW-11, y0+10, 2.4, 0, 6.283); ctx.fill(); }   // voyant d'émission
+  ctx.font = '9px '+UI_TYPE; ctx.fillText(campWhoName(r.who), x0+9, y0+11);
+  if (c.q.length){ ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(31,27,23,0.6)'; ctx.fillText(cT(CAMP_UI.waiting).replace('{n}', c.q.length), x0+maxW-22, y0+11); ctx.textAlign = 'left'; }
+  ctx.fillStyle = k55? '#0b6fa8' : '#c42a1c';
+  if (Math.sin(performance.now()/260)>0 && r.t<r.dur-1){ ctx.beginPath(); ctx.arc(x0+maxW-11, y0+11, 2.6, 0, 6.283); ctx.fill(); }   // voyant d'émission
   ctx.font = font; ctx.fillStyle = k55? '#10262d' : '#1f1b17';
-  lines.forEach((l,k)=> ctx.fillText(l, x0+9, y0+22+k*lh));
+  lines.forEach((l,k)=> ctx.fillText(l, x0+9, y0+26+k*lh));
   ctx.restore();
 }
+// objets de la mission dans le monde (repère monde−camX) : dessin propre, objets d'objectif, laisse, bouclier
+function campDrawWorld(vw){
+  const g = game, c = g.camp, m = c.m, t = g.t;
+  if (m.draw) m.draw(g, c, vw);
+  for (const o of c.objs){ const x = o.x-camX; if (x<-90 || x>vw+90) continue;
+    if (m.drawObj){ m.drawObj(o, t, vw); continue; }
+    const y = gY(o.x), col = o.owner==='p'? g.p.fac.accent : o.owner==='e'? g.e.fac.accent : '#9a8a78';     // repère par défaut : fanion
+    ctx.strokeStyle = '#3a3028'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y-50); ctx.stroke();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, y-50); ctx.lineTo(x+24, y-44+Math.sin(t*3)*2); ctx.lineTo(x, y-36); ctx.closePath(); ctx.fill();
+    if (Math.abs(o.prog)>0.01 && Math.abs(o.prog)<1){ ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x-22, y-62, 44, 5); ctx.fillStyle = o.prog>0? g.p.fac.accent : g.e.fac.accent; ctx.fillRect(x-22, y-62, 44*Math.abs(o.prog), 5); } }
+  const pal = UIPAL.HUM;
+  // LAISSE : ligne pointillée au-delà de laquelle nos troupes ne vont pas (escorte)
+  if (c.leash!=null){ const x = c.leash-camX; if (x>-40 && x<vw+40){ const y = gY(c.leash);
+    ctx.save(); ctx.strokeStyle = 'rgba(232,216,170,0.85)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(x, y+6); ctx.lineTo(x, y-120); ctx.stroke(); ctx.restore();
+    if (c.leashLabel){ ctx.font = '9px '+UI_TYPE; const s = cT(c.leashLabel), tw = ctx.measureText(s).width+14;
+      paperChip(x-tw/2, y-140, tw, 16, pal); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = pal.ink; ctx.fillText(s, x, y-131.5); } } }
+  // BOUCLIER : un objectif invulnérable est TOUJOURS signalé (icône + « invulnérable tant que… »)
+  if (c.shield){ const sx = (c.shield.x!=null? c.shield.x : g.e.x-30), x = sx-camX; if (x>-160 && x<vw+160){ const y = gY(sx) - (c.shield.h||190);
+    ctx.font = '700 11px '+UI_TYPE; const l1 = '🛡 '+cT(CAMP_UI.inv); ctx.font = '9.5px '+UI_TYPE; const l2 = cT(c.shield.label||{});
+    const tw = Math.max(110, ctx.measureText(l2).width+18), x0 = clamp(x-tw/2, 4, vw-tw-4);
+    paperChip(x0, y, tw, 34, pal); ctx.fillStyle = '#0b6fa8'; ctx.fillRect(x0, y, tw, 3);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0b6fa8'; ctx.font = '700 11px '+UI_TYPE; ctx.fillText(l1, x0+tw/2, y+12);
+    ctx.fillStyle = pal.ink; ctx.font = '9.5px '+UI_TYPE; ctx.fillText(l2, x0+tw/2, y+25);
+    const p = 0.35 + 0.25*Math.sin(t*3); ctx.strokeStyle = 'rgba(90,190,255,'+p.toFixed(2)+')'; ctx.lineWidth = 2;   // halo de bouclier sur la base
+    ctx.beginPath(); ctx.ellipse(sx-camX+10, gY(sx)-60, 90, 80, 0, Math.PI, 0); ctx.stroke(); } }
+}
+// AIDE « ? » : panneau en pause (objectif, règle, conseils, journal radio)
+function campHelp(on){ const c = game && game.camp; if (!c) return;
+  if (on && !c.help){ c.help = true; c.helpPaused = paused; paused = true; sfx('sel'); }
+  else if (!on && c.help){ c.help = false; if (!c.helpPaused) paused = false; sfx('sel'); } }
+function drawCampOverlay(){
+  const c = game.camp; if (!c || !c.help) return;
+  const pal = uiPal(), m = c.m;
+  ctx.fillStyle = 'rgba(8,6,6,0.6)'; ctx.fillRect(0,0,W,H);
+  const pw = Math.min(W-30, 900), ph = Math.min(H-40, 480), px = (W-pw)/2, py = (H-ph)/2;
+  paperPanel(px, py, pw, ph, pal, {tape:true});
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = uiF(pal,'head',19); ctx.fillStyle = pal.ink;
+  ctx.fillText(campTrunc((m.num||'')+' · '+cT(m.title).toUpperCase(), pw-200), px+18, py+24);
+  ctx.font = '10px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText(m.year+' · '+cT(m.place), px+pw-18, py+24); ctx.textAlign = 'left';
+  ctx.fillStyle = pal.ink; ctx.fillRect(px+16, py+38, pw-32, 2);
+  const colW = (pw-50)/2, lx = px+18, rx = px+32+colW, top = py+54, bottom = py+ph-52;
+  let y = top;
+  const head = (txt, X, Y) => { Y += (Y>top? 6 : 0); ctx.font = uiF(pal,'head',11); ctx.fillStyle = pal.red; ctx.fillText(txt, X, Y); return Y+15; };
+  const para = (txt, X, Y, f, col, maxL) => { ctx.font = f || '11.5px '+UI_TYPE; ctx.fillStyle = col || pal.ink; let L = newsWrap(txt, colW-6); if (maxL && L.length>maxL){ L = L.slice(0,maxL); L[maxL-1] = campTrunc(L[maxL-1]+' …', colW-6); }
+    for (const l of L){ if (Y > bottom) break; ctx.fillText(l, X, Y); Y += 14; } return Y+4; };
+  y = head(cT(CAMP_UI.goal), lx, y); y = para(cT(c.goalTxt || m.goal), lx, y, uiF(pal,'cond',13));
+  if (m.goal2){ y = head(cT(CAMP_UI.goal2)+(c.goal2Done? ' ✓' : ''), lx, y); y = para(cT(m.goal2), lx, y); }
+  y = head(cT(CAMP_UI.rule), lx, y); y = para(cT(c.ruleTxt || m.rule), lx, y, null, null, 7);
+  const tips = c.tipsArr || m.tips || [];
+  if (tips.length && y < bottom-20){ y = head(cT(CAMP_UI.tips), lx, y); for (const tp of tips){ if (y > bottom-10) break; y = para('• '+cT(tp), lx, y, null, null, 3) - 2; } }
+  // journal radio, du plus récent au plus ancien
+  let ry = head(cT(CAMP_UI.radioLog), rx, top);
+  const log = c.log.slice().reverse();
+  if (!log.length) para(cT(CAMP_UI.noLog), rx, ry, null, pal.ink2);
+  for (const e of log){ if (ry > bottom-14) break;
+    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = e.who==='goal'? pal.red : pal.ink2;
+    ctx.fillText(fmtTime(e.t)+'  '+(e.who==='goal'? cT(CAMP_UI.newGoal) : campWhoName(e.who)), rx, ry); ry += 12;
+    ry = para(e.txt, rx, ry, '10.5px '+UI_TYPE, pal.ink, 4); }
+  // reprendre
+  const bw = 210, bh = 32, bx = W/2-bw/2, by = py+ph-44;
+  inkStamp(bx, by, bw, bh, '▶ '+cT(CAMP_UI.resume), pal, 15);
+  ctx.font = '9px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText('? · '+cT(CAMP_UI.helpKey), px+pw-18, by+bh/2);
+  c.helpRects = { panel:{x:px, y:py, w:pw, h:ph}, resume:{x:bx, y:by, w:bw, h:bh} };
+}
+// clics de campagne (appelée avant tout le reste par 22-input) : true = consommé
+function campClick(sx, sy){ const c = game.camp; if (!c) return false;
+  const inR = r => r && sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h;
+  if (c.help){ if (inR(c.helpRects && c.helpRects.resume) || !inR(c.helpRects && c.helpRects.panel)) campHelp(false); return true; }   // panneau modal
+  if (inR(c.helpRect)){ campHelp(true); return true; }
+  if (c.cur && inR(c.radioRect) && c.cur.t > 0.6){ c.cur.t = Math.max(c.cur.t, c.cur.dur-0.6); return true; }   // touche le feuillet : message suivant
+  if (c.m.action && inR(c.actRect)) return campAct();
+  return false; }
+// clavier : O (ou « / ») ouvre/ferme l'aide ; Échap la ferme ; le briefing se ferme avec Échap
+window.addEventListener('keydown', e=>{
+  if (CAMP_BRIEF.open){ if (e.code==='Escape'){ e.preventDefault(); e.stopImmediatePropagation(); campBriefClose(true); } return; }
+  const c = (typeof game!=='undefined' && game)? game.camp : null; if (!c || game.over || CINE.on) return;
+  if (typeof keyWait!=='undefined' && keyWait) return;
+  const bound = Object.values(SETTINGS.keys||{}).includes(e.code), key = (e.code==='KeyO' || e.code==='Slash') && !bound;
+  if (c.help){ e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat && (key || e.code==='Escape' || e.code==='Enter' || e.code==='Space')) campHelp(false); return; }
+  if (key && !e.repeat){ e.preventDefault(); e.stopImmediatePropagation(); campHelp(true); }
+}, true);
+
+
+/* ================= BRIEFING (v1.16) : dossier de mission plein écran, entre deux missions =================
+   Ouvert par le carnet (menu), par « mission suivante » et par « réessayer » : récit, lieu, objectif(s),
+   règle du lieu, conseils, difficulté, doctrine (deux fiches), puis LANCER → cinématique → mission.
+   Musique de fond : thème 'c_map' s'il existe (03-audio), sinon 'carnet'.                                   */
+const CAMP_BRIEF = { open:false, i:0 };
+function campBriefOpen(i){
+  i = clamp(i|0, 0, Math.min(CAMPAIGN.length-1, CAMP_SAVE.done)); if (!CAMPAIGN[i]) return;
+  if (typeof game!=='undefined' && game && game.camp){ if (CINE.on) cineEnd(true); game = null; }   // on quitte la mission terminée
+  CAMP_BRIEF.open = true; CAMP_BRIEF.i = i;
+  $('menu').style.display = 'none'; $('endscreen').style.display = 'none';
+  intro = -1; pendingStart = null; paused = false; settingsOpen = false; buildMenu = null;
+  try { audioInit(); musicStart(); } catch(e){}
+  campBriefRender();
+  const el = $('campBrief'); el.style.display = 'flex';
+  const body = el.querySelector('.cbBody'); if (body) body.scrollTop = 0;
+}
+function campBriefClose(toMenu){
+  const el = $('campBrief'); if (el) el.style.display = 'none';
+  const was = CAMP_BRIEF.open; CAMP_BRIEF.open = false;
+  if (toMenu && was){ $('menu').style.display = 'flex'; campView = -1; const tb = document.querySelector('.tab[data-page="camp"]'); if (tb) tb.click(); else campRenderMenu(); }
+}
+// musique du briefing : on enveloppe le choix de thème de 03-audio (sans le modifier) — un seul point d'entrée
+if (typeof musicMode==='function'){ const _musicMode = musicMode;
+  musicMode = function(){ if (CAMP_BRIEF.open && !game) return MUSIC_THEMES.c_map? 'c_map' : 'carnet'; return _musicMode(); }; }
+function campBriefRender(){
+  const box = $('campBrief'); if (!box) return;
+  const i = CAMP_BRIEF.i, m = CAMPAIGN[i]; if (!m) return;
+  const keep = box.querySelector('.cbBody'), st = keep? keep.scrollTop : 0;
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt!=null) e.textContent = txt; return e; };
+  const sec = (title, cls) => { const s = el('section', 'cbSec'+(cls? ' '+cls : '')); s.appendChild(el('h3', null, title)); return s; };
+  box.textContent = '';
+  const sheet = el('div', 'cbSheet'); box.appendChild(sheet);
+  // en-tête : numéro, titre, lieu
+  const head = el('div', 'cbHead'); head.appendChild(el('span', 'cbNo', m.num || ''));
+  const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+m.year));
+  ht.appendChild(el('div', 'cbTitle', cT(m.title))); ht.appendChild(el('div', 'cbPlace', cT(m.place)));
+  head.appendChild(ht); sheet.appendChild(head);
+  const body = el('div', 'cbBody'); sheet.appendChild(body);
+  const L = el('div', 'cbCol'), R = el('div', 'cbCol'); body.appendChild(L); body.appendChild(R);
+  // récit
+  { const s = sec(cT(CAMP_UI.recap));
+    const prev = i>0 && CAMPAIGN[i-1] && CAMPAIGN[i-1].debrief;
+    if (prev){ const q = el('blockquote', 'cbPrev'); q.appendChild(el('b', null, cT(CAMP_UI.prev)+' ')); q.appendChild(document.createTextNode(cT(prev))); s.appendChild(q); }
+    for (const p of campParas(m, 'recap')) s.appendChild(el('p', null, p));
+    L.appendChild(s); }
+  { const s = sec(cT(CAMP_UI.where)); s.appendChild(el('p', 'cbWhere', cT(m.place)));
+    for (const p of campParas(m, 'where')) s.appendChild(el('p', null, p));
+    L.appendChild(s); }
+  // ordres
+  { const s = sec(cT(CAMP_UI.goal), 'cbGoal'); s.appendChild(el('p', 'cbGoalTxt', cT(m.goal)));
+    if (m.goal2){ s.appendChild(el('h4', null, cT(CAMP_UI.goal2)+(CAMP_SAVE.bonus[i]? ' ★' : ''))); s.appendChild(el('p', null, cT(m.goal2))); }
+    R.appendChild(s); }
+  { const s = sec(cT(CAMP_UI.rule)); s.appendChild(el('p', null, cT(m.rule))); R.appendChild(s); }
+  if (m.tips && m.tips.length){ const s = sec(cT(CAMP_UI.tips)), ul = el('ul', 'cbTips'); for (const tp of m.tips) ul.appendChild(el('li', null, cT(tp))); s.appendChild(ul); R.appendChild(s); }
+  // difficulté (réglage de la campagne, rappelé ici)
+  { const s = sec(cT(CAMP_UI.diffLbl), 'cbDiff'), row = el('div', 'cbPills');
+    [0,1,2].forEach(k=>{ const b = el('button', 'cbPill'+(CAMP_SAVE.diff===k? ' sel' : ''), cT(CAMP_UI['d'+k]));
+      b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campBriefRender(); }); row.appendChild(b); });
+    s.appendChild(row); const D = campDiff(CAMP_SAVE.diff);
+    s.appendChild(el('p', 'cbDiffTag', cT(CAMP_UI['dTag'+D.i])));
+    const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); s.appendChild(ul);
+    R.appendChild(s); }
+  // doctrine : deux fiches, explications longues
+  { const s = sec(cT(CAMP_UI.doc), 'cbDocs'), pair = campDocPair(i);
+    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc)));
+    if (pair){ const cards = el('div', 'cbCards');
+      pair.forEach((id,k)=>{ const d = DOCTRINES[id], sel = (CAMP_SAVE.doc[i]? 1 : 0)===k;
+        const cd = el('div', 'cbDoc'+(sel? ' sel' : '')); cd.setAttribute('role', 'button'); cd.tabIndex = 0;
+        cd.appendChild(el('span', 'cbMark', cT(CAMP_UI.chosen)));
+        cd.appendChild(el('b', 'cbDocName', cT(d.name))); cd.appendChild(el('i', 'cbDocShort', cT(d.short)));
+        const fx = el('div', 'cbFx'); fx.appendChild(el('h5', null, cT(CAMP_UI.effect))); const ul = el('ul');
+        const eff = docEffects(d, m.era0||0);
+        for (const l of eff) if (!l.bad) ul.appendChild(el('li', null, l.txt)); fx.appendChild(ul); cd.appendChild(fx);
+        if (m.docWhy && m.docWhy[id]) cd.appendChild(el('p', 'cbWhy', cT(m.docWhy[id])));            // « Utile ici parce que… » (propre à la mission)
+        cd.appendChild(el('p', 'cbDocLong', cT(d.long)));
+        const bad = eff.filter(l=>l.bad);
+        if (d.minus || bad.length){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus)));
+          if (bad.length){ const ub = el('ul'); for (const l of bad) ub.appendChild(el('li', null, l.txt)); mi.appendChild(ub); }
+          if (d.minus) mi.appendChild(el('p', null, cT(d.minus))); cd.appendChild(mi); }
+        const pick = ()=>{ if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
+        cd.addEventListener('click', pick); cd.addEventListener('keydown', ev=>{ if (ev.key==='Enter' || ev.key===' '){ ev.preventDefault(); pick(); } });
+        cards.appendChild(cd); });
+      s.appendChild(cards); }
+    body.appendChild(s); }
+  // pied : retour / lancer
+  const foot = el('div', 'cbFoot');
+  const back = el('button', 'cbBack', '← '+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
+  const go = el('button', 'go cbGo', cT(CAMP_UI.launch)); go.addEventListener('click', ()=>campStart(i));
+  foot.appendChild(back); foot.appendChild(go); sheet.appendChild(foot);
+  body.scrollTop = st;
+}
+
 
 // carte de la région dessinée à l'encre : le trajet de Germinal, de Valmont à la citadelle
 const CAMP_PINS = [[58,96],[150,112],[236,56],[330,40],[420,84]];
@@ -496,53 +768,35 @@ function campMap(){
   return cv;
 }
 
-// ---- menu : onglet CAMPAGNE (carnet de missions → dossier de mission) ----
-let campView = -1;                                   // -1 = liste ; sinon index de la mission dont le dossier est ouvert
+// ---- menu : onglet CAMPAGNE (carnet de missions → briefing plein écran) ----
+let campView = -1;                                   // (héritage) -1 = liste ; le dossier d'une mission est désormais le briefing plein écran
 function campRenderMenu(){
   const tab = document.querySelector('.tab[data-page="camp"]'); if (tab) tab.textContent = cT(CAMP_UI.tab);
+  if (CAMP_BRIEF.open) campBriefRender();
   const box = $('campBox'); if (!box) return;
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt!=null) e.textContent = txt; return e; };
-  box.textContent = '';
-  if (campView<0 || !CAMPAIGN[campView] || campView>CAMP_SAVE.done){
-    campView = -1;
-    box.appendChild(el('div', 'campHead', cT(CAMP_UI.head)));
-    box.appendChild(el('div', 'fNote', cT(CAMP_UI.sub)));
-    box.appendChild(campMap());
-    const row = el('div', 'fRow'); row.appendChild(el('span', 'fLbl', cT(CAMP_UI.level)));
-    const picks = el('div', 'row');
-    [CAMP_UI.lvl0, CAMP_UI.lvl1, CAMP_UI.lvl2].forEach((o,k)=>{ const b = el('button', 'pick'+(CAMP_SAVE.lvl===k? ' sel':''), cT(o));
-      b.addEventListener('click', ()=>{ CAMP_SAVE.lvl = k; campSave(); campRenderMenu(); }); picks.appendChild(b); });
-    row.appendChild(picks); box.appendChild(row);
-    CAMPAIGN.forEach((m,i)=>{
-      const open = i<=CAMP_SAVE.done, done = i<CAMP_SAVE.done;
-      const b = el('button', 'mis'+(open? '' : ' locked')+(done? ' done' : ''));
-      b.appendChild(el('span', 'misNo', ['I','II','III','IV','V'][i]));
-      const body = el('span', 'misBody');
-      body.appendChild(el('b', null, open? cT(m.title) : '· · ·'));
-      body.appendChild(el('i', null, open? m.year+' · '+cT(m.place) : cT(CAMP_UI.locked)));
-      b.appendChild(body);
-      if (done) b.appendChild(el('span', 'misDone', cT(CAMP_UI.doneTag)+(CAMP_SAVE.best[i]? ' · '+fmtTime(CAMP_SAVE.best[i]) : '')));
-      if (open) b.addEventListener('click', ()=>{ campView = i; campRenderMenu(); }); else b.disabled = true;
-      box.appendChild(b);
-    });
-    return;
-  }
-  const m = CAMPAIGN[campView];
-  box.appendChild(el('div', 'campHead', ['I','II','III','IV','V'][campView]+' · '+cT(m.title)));
-  box.appendChild(el('div', 'fNote', m.year+' · '+cT(m.place)));
-  const story = el('div', 'campStory');
-  for (const para of (m.brief[SETTINGS.lang] || m.brief.en || m.brief.fr)) story.appendChild(el('p', null, para));
-  box.appendChild(story);
-  const g1 = el('div', 'campGoal'); g1.appendChild(el('b', null, cT(CAMP_UI.goal))); g1.appendChild(el('span', null, cT(m.goal))); box.appendChild(g1);
-  const g2 = el('div', 'campGoal'); g2.appendChild(el('b', null, cT(CAMP_UI.rules))); g2.appendChild(el('span', null, cT(m.rule))); box.appendChild(g2);
-  const pair = CAMP_DOCS[campView];
-  if (pair){ const g3 = el('div', 'campGoal'); g3.appendChild(el('b', null, cT(CAMP_UI.doc)));
-    const picks = el('div', 'row'); pair.forEach((id,k)=>{ const b = el('button', 'pick'+(((CAMP_SAVE.doc[campView]? 1 : 0)===k)? ' sel' : ''), cT(DOCTRINES[id].name));
-      b.addEventListener('click', ()=>{ if (k) CAMP_SAVE.doc[campView] = 1; else delete CAMP_SAVE.doc[campView]; campSave(); campRenderMenu(); }); picks.appendChild(b); });
-    g3.appendChild(picks); g3.appendChild(el('span', null, cT(campDoc(campView).desc))); box.appendChild(g3); }
-  const sr = el('div', 'stampRow');
-  const go = el('button', 'go stamp small', cT(CAMP_UI.go)); go.addEventListener('click', ()=>campLaunch(campView)); sr.appendChild(go);
-  box.appendChild(sr);
-  const back = el('button', 'pick link back', '← '+cT(CAMP_UI.back)); back.addEventListener('click', ()=>{ campView = -1; campRenderMenu(); });
-  box.appendChild(back);
+  box.textContent = ''; campView = -1;
+  box.appendChild(el('div', 'campHead', cT(CAMP_UI.head)));
+  box.appendChild(el('div', 'fNote', cT(CAMP_UI.sub)));
+  box.appendChild(el('div', 'campAbout', cT(CAMP_UI.about)));
+  box.appendChild(campMap());
+  // difficulté : des noms qui parlent d'eux-mêmes, et ce qui change en une ligne
+  const row = el('div', 'fRow'); row.appendChild(el('span', 'fLbl', cT(CAMP_UI.diffLbl)));
+  const picks = el('div', 'row');
+  [0,1,2].forEach(k=>{ const b = el('button', 'pick campDiff'+(CAMP_SAVE.diff===k? ' sel':''), cT(CAMP_UI['d'+k]));
+    b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campRenderMenu(); }); picks.appendChild(b); });
+  row.appendChild(picks); box.appendChild(row);
+  box.appendChild(el('div', 'fNote campDiffTag', cT(CAMP_UI['dTag'+CAMP_SAVE.diff])));
+  CAMPAIGN.forEach((m,i)=>{
+    const open = i<=CAMP_SAVE.done, done = i<CAMP_SAVE.done;
+    const b = el('button', 'mis'+(open? '' : ' locked')+(done? ' done' : ''));
+    b.appendChild(el('span', 'misNo', m.num || String(i+1)));
+    const body = el('span', 'misBody');
+    body.appendChild(el('b', null, open? cT(m.title) : '· · ·'));
+    body.appendChild(el('i', null, open? m.year+' · '+cT(m.place) : cT(CAMP_UI.locked)));
+    b.appendChild(body);
+    if (done) b.appendChild(el('span', 'misDone', cT(CAMP_UI.doneTag)+(CAMP_SAVE.bonus[i]? ' ★' : '')+(CAMP_SAVE.best[i]? ' · '+fmtTime(CAMP_SAVE.best[i]) : '')));
+    if (open) b.addEventListener('click', ()=>campLaunch(i)); else b.disabled = true;
+    box.appendChild(b);
+  });
 }

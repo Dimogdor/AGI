@@ -45,7 +45,7 @@ for (const lvl of LVLS){
     const r = await page.evaluate(play, bot);
     if (V) console.log('    ', JSON.stringify(r));
     if (bot){ check(r.over && r.win && r.act===3, `niveau ${lvl} : joueur scripté GAGNE (${r.t} s ; fin des actes à ${r.acts.join(' / ')} s ; base ${r.hp} %, ère ${r.era+1})`);
-      check(r.t>=330 && r.t<=960, `niveau ${lvl} : durée raisonnable (${(r.t/60).toFixed(1)} min)`);
+      check(r.t>=(lvl? 330 : 240) && r.t<=(lvl===2? 1100 : 960), `niveau ${lvl} : durée raisonnable (${(r.t/60).toFixed(1)} min)`);
       check(r.cines>=3, `niveau ${lvl} : scènes en mission (renforts + 2 changements d'acte) : ${r.cines}`); }
     else check(r.over && !r.win, `niveau ${lvl} : joueur passif PERD (${r.t} s, acte ${r.act})`);
     await page.waitForTimeout(1400);

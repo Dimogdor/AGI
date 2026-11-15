@@ -40,7 +40,7 @@ const r = await page.evaluate(() => {
       camX = game.p.x; R(); out.bld += 3; } catch(e){ out.thrown.push('bâtiment ère '+era+' niv '+lvl+' : '+e.message); } }
   }
   // nuit de campagne (voile sombre + lueurs des bases)
-  try { CAMP_SAVE.done = 5; campLaunch(0); cineEnd(); for (let i=0;i<5;i++){ update(0.05); R(); } } catch(e){ out.thrown.push('nuit : '+e.message); }
+  try { CAMP_SAVE.done = 5; campStart(0); cineEnd(); for (let i=0;i<5;i++){ update(0.05); R(); } } catch(e){ out.thrown.push('nuit : '+e.message); }
   return out;
 });
 await browser.close();
