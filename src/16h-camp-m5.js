@@ -24,11 +24,11 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.2], aura:[0.6,0.8,1], avK:3.5, armor:[1,0.3,0.2],                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,1.2], aura:[0.6,0.7,0.8], avK:3, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
   hp:{ base:2200, gate:[2600,7000,14000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.6,1.2,1.5],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  eMul:[0.5,1.0,1.2],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -471,7 +471,7 @@ function m5Sortie(g, c){
 /* ---------- acte I : les sapeurs, les charges, les batteries, la porte ---------- */
 function m5Sapper(g, c){
   const id = ++c.sapId, s = { id, x:g.p.x + 64, hp:0, maxhp:0, plant:0, k:id%5, step:0 };
-  s.hp = s.maxhp = unitStats(g.p, 1).hp;                                                                 // PV d'un Tank de l'ère
+  s.hp = s.maxhp = unitStats(g.p, 1).hp*1.6;                                                                 // PV d'un Tank de l'ère
   c.saps.push(s); c.sapOut++;
 }
 function m5Plant(g, c, s){
@@ -496,7 +496,7 @@ function m5Saps(g, c, dt){
     if (c.t >= c.resT){ c.resT = null; c.reserve++; m5Sapper(g, c); campRadio('malik', M5_L.res); } }
 }
 function m5Batts(g, c, dt){
-  const k = [0.85,1,1.15][c.D.i];
+  const k = [0.85,1,1.0][c.D.i];
   for (const b of c.batt){ if (b.dead) continue;
     if (b.hp <= 0){ b.dead = true; explode(b.x, gY(b.x)-70, 1.7, '#ffb060'); burst(b.x, gY(b.x)-70, '#3a3028', 16, 1.4); sfx('boom'); g.shake = Math.max(g.shake, 8); c.battDown++; continue; }
     b.atkT -= dt; if (b.atkT > 0) continue;
@@ -1229,7 +1229,7 @@ campMission(4, {
   debrief:M5_TX.debrief, fail:M5_TX.fail,
   biome:'citadel', theme:'citadel1', ai:[0,2,3], doctrines:['veterans','radio'], dev0:0.1, era0:2, eraCap:4, oneLife:false,
   dm:[{ inc:0.2, cheat:0.55 }, { inc:0.28, cheat:0.65 }, { inc:0.31, cheat:0.7, eraLag:0.75, think:1.3 }],
-  dAdj:[{ res:1.2 }, null, { res:0.85 }],                                                                  // dotations × 1,2 / × 1 / × 0,85 (fiche § 3)
+  dAdj:[{ res:1.2 }, null, { res:0.85, wave:1, eHp:1.05, eDmg:1.05, base:1.1 }],   // Dernier carré : dotations x 0,85 ; sorties et machines moins gonflées que le modèle commun (le bench à l'acte I s'enlisait)                                                                  // dotations × 1,2 / × 1 / × 0,85 (fiche § 3)
   map:M5_MAPS[0],
   action:{ label:M5_TX.call, cd:60,
     can(g, c){ return c.cellsLeft > 0 && !CINE.on; },
