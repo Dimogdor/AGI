@@ -14,7 +14,7 @@ await campRun({
     const n = r => p.units.filter(u=>u.role===r).length;
     if (p.queue.length < 3){ const pick = n('tank') < n('ranged')/2+1? 1 : n('siege') < n('ranged')/2? 3 : 2; tryBuy(p, pick); }
     const lowFoes = e.units.filter(u=>!u.fly && m3Low(u.x)).length, lowMine = p.units.filter(u=>!u.fly && m3Low(u.x)).length;
-    if (c.water >= 60 && lowFoes >= 3 && lowMine <= 1) campAct();
+    if (c.water >= 60 && lowFoes >= 3 && lowMine <= 1 && (c.t >= 310 || g.p.hp < g.p.maxhp*0.5)) campAct();   // joueur patient : la Voix (5:00) est entendue avant la grande crue
     const army = p.units.length;
     if (!c._go && army >= 18 + 2*c.lvl) c._go = true; else if (c._go && army < 9) c._go = false;
     if (c._go){ if (p.stance!=='charge' || p.units.some(u=>u.ord==='point')) setStance(p, 'charge'); }
