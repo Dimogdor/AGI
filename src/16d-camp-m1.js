@@ -4,7 +4,8 @@
    machines, elles, voient dans le noir. Reprendre un transformateur rallume un quartier.     */
 DECOR_THEMES.nightcity = ['lamp','lamp','car','car','bin','barricade','debris','cable','lamp','car'];
 DECOR_EXTRA.lamp = (d, s, t) => {                                   // lampadaire de la rue (s'allume quand le quartier est repris)
-  const on = campNightLit(d.x);
+  let on = campNightLit(d.x); const c = game && game.camp;
+  if (on && c && c.flickUntil>performance.now() && Math.sin(performance.now()*0.038 + d.ph*20)<0) on = false;   // scène S1 : les lampadaires clignotent puis tiennent
   ctx.strokeStyle = '#1b1c26'; ctx.lineWidth = 3; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-74); ctx.quadraticCurveTo(0,-84, 12*d.flip,-84); ctx.stroke();
   ctx.fillStyle = '#1b1c26'; ctx.fillRect(d.flip>0? 8 : -20, -86, 12, 4);
@@ -462,6 +463,110 @@ const M1_TX = {
   hydB:{fr:"BORNE B", en:"HYDRANT B", es:"BOCA B", de:"HYDRANT B", it:"IDRANTE B", pt:"HIDRANTE B", ru:"ГИДРАНТ B", zh:"消防栓 B", ar:"صنبور B"},
 };
 
+/* ---------- constantes de la mission (M1.md § 5-6) ---------- */
+const M1_RANGE = [0.85, 0.80, 0.72];          // portée de nos tireurs hors d'une grande lumière : Récit / Lutte / Dernier carré
+const M1_FLARE_CD = [30, 40, 50];             // recharge de la fusée éclairante (s)
+const M1_BASE_HP = [2600, 2200, 1800];        // PV de la Fraternelle
+const M1_DEPOT_HP = [550, 850, 1000];         // PV du dépôt Halvard
+const M1_DAWN0 = 840, M1_DAWN1 = 960;         // 14:00 le ciel pâlit · 16:00 il fait jour (la règle de la nuit cesse)
+let M1_RETRY = false;                         // Récit : après un échec, on repart avec le transformateur 1 repris et +100 vivres
+const m1On = () => typeof game!=='undefined' && game && game.camp && game.camp.i===0;
+
+/* ---------- ce que le moteur n'offre pas, ajouté ici au plus juste ---------- */
+// 1) la rampe de chargement : le sol monte de 18 px entre x 3000 et x 3450 jusqu'au quai du dépôt
+if (!gY.m1){ const gY0 = gY; gY = function(x){ const y = gY0(x); return (x>3000 && m1On())? y - 18*clamp((x-3000)/450, 0, 1) : y; }; gY.m1 = 1; }
+// 2) nos tourelles et notre garde ne tirent que sur les machines éclairées (la mêlée, elle, frappe toujours ce qu'elle touche)
+const m1Seen = foe => { const c = game.camp; return c.day? foe : { units: foe.units.filter(u => !c.hidden(u)) }; };
+if (!updateBuildings.m1){ const f0 = updateBuildings; updateBuildings = function(side, foe, dt){ return f0(side, (m1On() && side===game.p)? m1Seen(foe) : foe, dt); }; updateBuildings.m1 = 1; }
+if (!updateBaseGarrison.m1){ const f0 = updateBaseGarrison; updateBaseGarrison = function(side, foe, dt){ return f0(side, (m1On() && side===game.p)? m1Seen(foe) : foe, dt); }; updateBaseGarrison.m1 = 1; }
+
+/* ---------- le lieu : Valmont la nuit, adapté (musique, aube, yeux bleus des machines dans le noir) ---------- */
+Object.assign(BIOMES.night, {
+  music:'m_night',
+  dark(){ const c = game && game.camp; return (CINE.on? 0.36 : 0.74) * (1 - 0.8*((c && c.dawn) || 0)); },
+  front(t){
+    const c = game && game.camp, dn = (c && c.dawn) || 0;
+    if (dn<1) fxRain(t, Math.round(110*(1-dn)), 'rgba(170,190,225,0.26)');                       // la pluie s'arrête à l'aube
+    if (dn>0){ const gr = ctx.createLinearGradient(0, 0, 0, H*0.7); gr.addColorStop(0, 'rgba(255,196,150,'+(0.24*dn).toFixed(3)+')'); gr.addColorStop(1, 'rgba(255,196,150,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H*0.7); }
+    if (!c || !c.hidden || !game.e) return;
+    // deux yeux bleus pour chaque machine que l'on ne voit pas ; plans de visite : quelques paires qui s'allument puis s'éteignent
+    const eyes = (x, a) => { const sx = w2sX(x), sy = w2sY(gY(x)-22), d = 3.2*zoom; if (sx<-30 || sx>W+30) return;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+      ctx.drawImage(lightSprite('#5ad0ff'), sx-d*3-6*zoom, sy-6*zoom, 12*zoom, 12*zoom); ctx.drawImage(lightSprite('#5ad0ff'), sx+d*3-6*zoom, sy-6*zoom, 12*zoom, 12*zoom);
+      ctx.fillStyle = '#bff0ff'; ctx.fillRect(sx-d*3-1.4*zoom, sy-1, 2.8*zoom, 2.2*zoom); ctx.fillRect(sx+d*3-1.4*zoom, sy-1, 2.8*zoom, 2.2*zoom); ctx.restore(); };
+    let n = 0; for (const u of game.e.units){ if (n>=30) break; if (c.hidden(u)){ eyes(u.x, 0.85); n++; } }
+    if (c.eyes){ const el = (performance.now()-c.eyes.t0)/1000;
+      for (const e of c.eyes.list){ const k = el-e.at; if (k>0 && k<e.dur) eyes(e.x, Math.min(1, k/0.3, (e.dur-k)/0.4)); } }
+  },
+});
+// ambiances : pluie fine, gouttière près de la base, grésillement près d'un transformateur repris, chien (40-70 s), drones près du dépôt, merle à l'aube
+AMB_PROFILES.night = { grp:['amb_night','amb_rain','amb_sk'], f(c){
+  const dn = (c && c.dawn) || 0, cx = camX + VW()/2;
+  const nearT = c && game.zones.some(z=>z.owner==='p' && Math.abs(z.x-cx)<450), nearB = cx < 700, nearD = cx > 3000;
+  oneShot('dog', 55, 0.4); if (nearD) oneShot('ia_servo', 2.4, 0.22);
+  return { cityrain:0.85*(1-dn), rainroof:0.55*(1-dn), rainstreet:(0.35 + (nearB? 0.3 : 0))*(1-dn), hum: nearT? 0.5 : 0.08*((c && c.litK) || 0), birds:0.55*dn }; } };
+
+/* ---------- la Fraternelle (salle syndicale en brique) et le dépôt Halvard (hangar de tôle) ---------- */
+// repère de la base : +x vers l'ennemi, pieds en (0,0) ; les mêmes lumières de nuit que les bases d'escarmouche (baseMeta) tombent sur ces fenêtres
+function m1Fraternelle(t, dmg){
+  ctx.fillStyle = '#7a3f32'; ctx.fillRect(-72,-84,136,84);                                                  // mur de brique
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'; for (let y=-78;y<0;y+=7) ctx.fillRect(-72,y,136,1.2);
+  ctx.fillStyle = '#5b2f27'; ctx.fillRect(-76,-90,144,7); ctx.fillStyle = '#8a8078'; ctx.fillRect(-78,-92,148,3);   // acrotère
+  ctx.fillStyle = '#e4d9bd'; ctx.fillRect(-55,-77,112,21);                                                   // enseigne peinte
+  ctx.strokeStyle = '#5b2f27'; ctx.lineWidth = 1.2; ctx.strokeRect(-54.5,-76.5,111,20);
+  ctx.save(); ctx.scale(Math.sign(game.p.side), 1); ctx.fillStyle = '#9a2418'; ctx.font = '700 12px "Courier New",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('LA FRATERNELLE', 1, -66); ctx.restore();
+  for (const wx of [-43,-26]){ ctx.fillStyle = '#ffcf78'; ctx.fillRect(wx,-44,14,16); ctx.strokeStyle = '#3a2a22'; ctx.lineWidth = 1.4; ctx.strokeRect(wx+0.5,-43.5,13,15);
+    ctx.beginPath(); ctx.moveTo(wx+7,-44); ctx.lineTo(wx+7,-28); ctx.moveTo(wx,-36); ctx.lineTo(wx+14,-36); ctx.stroke(); }     // fenêtres allumées
+  ctx.fillStyle = '#1d2030'; ctx.fillRect(38,-44,14,16); ctx.strokeStyle = '#3a2a22'; ctx.strokeRect(38.5,-43.5,13,15);
+  ctx.fillStyle = '#c9b88a'; ctx.fillRect(-12,-48,24,48); ctx.fillStyle = '#3a2a22'; ctx.fillRect(-9,-45,18,45); ctx.fillStyle = '#d8b04a'; ctx.fillRect(5,-22,2,2.4);   // la porte
+  ctx.strokeStyle = '#2a2420'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-2,-90); ctx.lineTo(-2,-97); ctx.stroke();               // potence et ampoule nue
+  ctx.fillStyle = '#fff2c0'; ctx.beginPath(); ctx.arc(-2,-98,3.6,0,6.283); ctx.fill();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.drawImage(lightSprite('#ffe9a8'), -26, -122, 48, 48); ctx.restore();
+  ctx.fillStyle = '#4a3a2a'; ctx.fillRect(21,-12,10,12); ctx.fillStyle = '#ffa23a';                                                   // le bidon-brasero
+  ctx.beginPath(); ctx.moveTo(22,-12); ctx.lineTo(26+Math.sin(t*9)*1.5,-22-Math.sin(t*7)*2); ctx.lineTo(30,-12); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#4a3a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-64,-92); ctx.lineTo(-64,-122); ctx.stroke();            // le drapeau rouge
+  ctx.fillStyle = '#c42a1c'; ctx.beginPath(); ctx.moveTo(-64,-122); ctx.lineTo(-38,-118+Math.sin(t*3)*2); ctx.lineTo(-38,-106+Math.sin(t*3)*2); ctx.lineTo(-64,-108); ctx.closePath(); ctx.fill();
+  if (dmg>=1){ ctx.fillStyle = 'rgba(15,10,10,0.38)'; ctx.fillRect(-72,-84,34,26); ctx.fillRect(26,-84,38,18); ctx.fillRect(-60,-30,26,30); }
+  if (dmg>=2){ ctx.fillStyle = 'rgba(10,6,6,0.75)'; ctx.beginPath(); ctx.moveTo(34,-84); ctx.lineTo(54,-84); ctx.lineTo(46,-66); ctx.lineTo(38,-72); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(10,6,6,0.6)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-40,-20); ctx.lineTo(-34,-34); ctx.lineTo(-40,-42); ctx.stroke(); }
+}
+function m1Halvard(t, dmg){
+  ctx.fillStyle = '#3b3f46'; ctx.fillRect(-102,-5,196,5);                                                    // le quai
+  ctx.fillStyle = '#56626d'; ctx.beginPath(); ctx.moveTo(-95,-5); ctx.lineTo(-95,-80); ctx.lineTo(-80,-95); ctx.lineTo(75,-95); ctx.lineTo(90,-80); ctx.lineTo(90,-5); ctx.closePath(); ctx.fill();   // hangar de tôle
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'; for (let x=-90;x<90;x+=7) ctx.fillRect(x,-92,1.4,86);                    // nervures de la tôle
+  ctx.fillStyle = '#2f3740'; ctx.fillRect(-82,-97,158,4);
+  ctx.fillStyle = '#1c232b'; ctx.fillRect(-40,-82,84,17);                                                    // enseigne
+  ctx.save(); ctx.scale(Math.sign(game.e.side), 1); ctx.fillStyle = '#e8eef2'; ctx.font = '700 13px "Courier New",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('HALVARD', 2, -73); ctx.restore();
+  ctx.fillStyle = '#5ad0ff'; ctx.fillRect(-40,-66,84,1.6);
+  ctx.fillStyle = '#3a424b'; ctx.fillRect(-6,-56,66,6); ctx.fillStyle = '#8a949e'; ctx.fillRect(-6,-50,66,45);           // le rideau de fer
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; for (let y=-48;y<-5;y+=5) ctx.fillRect(-6,y,66,1.2);
+  const blink = Math.sin(t*3)>0;
+  for (const [vx,vy] of [[-33,-15],[-60,-40],[-75,-62]]){ ctx.fillStyle = blink? '#5ad0ff' : '#2a6f8f'; ctx.fillRect(vx-2,vy-1.5,5,3); }       // trois voyants bleus
+  ctx.strokeStyle = '#2f3740'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-64,-97); ctx.lineTo(-64,-118); ctx.stroke();       // antenne
+  ctx.fillStyle = Math.sin(t*4)>0? '#ff3a3a' : '#7a1a1a'; ctx.beginPath(); ctx.arc(-64,-118,2.2,0,6.283); ctx.fill();
+  ctx.strokeStyle = '#1f262d'; ctx.lineWidth = 1.5; ctx.fillStyle = '#1f262d';                                            // six drones posés sur le toit
+  for (let i=0;i<6;i++){ const dx = -44+i*20 + (i>=3? 6 : 0), dy = -97; ctx.beginPath(); ctx.moveTo(dx-5,dy-4); ctx.lineTo(dx+5,dy+0.5); ctx.moveTo(dx+5,dy-4); ctx.lineTo(dx-5,dy+0.5); ctx.stroke();
+    ctx.fillRect(dx-2.5,dy-2.5,5,2.6); for (const q of [-5,5]){ ctx.beginPath(); ctx.arc(dx+q,dy-4.4,1.7,0,6.283); ctx.fill(); } }
+  if (dmg>=1){ ctx.fillStyle = 'rgba(8,8,12,0.4)'; ctx.fillRect(-95,-95,40,34); ctx.fillRect(40,-70,50,40); }
+  if (dmg>=2){ ctx.fillStyle = 'rgba(8,6,6,0.75)'; ctx.beginPath(); ctx.moveTo(-30,-95); ctx.lineTo(-8,-95); ctx.lineTo(-16,-78); ctx.lineTo(-24,-84); ctx.closePath(); ctx.fill(); }
+}
+if (!drawBase.m1){ const f0 = drawBase; drawBase = function(side){
+  if (!m1On()) return f0(side);
+  const x = side.x-camX; if (x<-200 || x>VW()+200) return;
+  const t = game.t, d = side.side, hum = d>0, gy = gY(side.x), col = side.fac.accent;
+  const frac = side.maxhp>0? clamp(side.hp/side.maxhp, 0, 1) : 1, dmg = frac<0.33? 2 : frac<0.66? 1 : 0;
+  projShadow(x, gy, 72);
+  ctx.save(); ctx.translate(x, gy); ctx.scale(d, 1); (hum? m1Fraternelle : m1Halvard)(t, dmg); ctx.restore();
+  drawBaseGarrison(side, x, gy, d, hum? -88 : -95);
+  if (frac<0.55){ const S = hum? [[-40,-50],[50,-14]] : [[-20,-60],[20,-34]]; for (let i=0;i<S.length;i++) dmgSmoke(x+S[i][0]*d, gy+S[i][1], frac, t, side.x+i*31); }
+  const w = 110, by = gy-140;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x-w/2, by, w, 8); ctx.fillStyle = col; ctx.fillRect(x-w/2, by, w*frac, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(x-w/2, by, w, 8);
+  if (side===game.p && frac<0.95){ ctx.font = HF(12); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,'+(0.5+0.3*Math.sin(t*3))+')'; ctx.fillText(tr('hud_tap_repair'), x, by-10); }
+}; drawBase.m1 = 1; }
+
 campMission(0, {
   num:'I', year:"2025", ai:[0,1,1], eraCap:0, oneLife:true, dev0:0,
   title:M1_TX.title, place:M1_TX.place,
@@ -469,44 +574,101 @@ campMission(0, {
   tips:[M1_TX.tip1, M1_TX.tip2, M1_TX.tip3],
   debrief:M1_TX.debrief, fail:M1_TX.fail,
   radio:[
-    {at:6, who:'sol', txt:{fr:"Germinal, ici Sol. La fréquence est propre. Bâtissez d'abord de quoi nourrir les nôtres : une ferme, un marché, un puits.", en:"Germinal, this is Sol. The frequency is clean. First build what feeds our people: a farm, a market, a well.", es:"Germinal, aquí Sol. La frecuencia está limpia. Construya primero lo que alimenta a los nuestros: una granja, un mercado, un pozo.", de:"Germinal, hier Sol. Die Frequenz ist sauber. Bauen Sie zuerst, was unsere Leute ernährt: eine Farm, einen Markt, einen Brunnen.", it:"Germinal, qui Sol. La frequenza è pulita. Prima costruisca ciò che nutre i nostri: una fattoria, un mercato, un pozzo.", pt:"Germinal, aqui é a Sol. A frequência está limpa. Primeiro construa o que alimenta o nosso pessoal: uma fazenda, um mercado, um poço.", ru:"Germinal, это Sol. Частота чистая. Сначала постройте то, что накормит наших людей: ферму, рынок, колодец.", zh:"Germinal，我是Sol。频道干净。先建起能养活我们这些人的设施：农场、市场、水井。", ar:"Germinal، هنا Sol. التردّد نظيف. ابنِ أولًا ما يُطعم أهلنا: مزرعة وسوقًا وبئرًا."}},
-    {at:75, who:'sol', txt:{fr:"Leurs robots de manutention sortent du dépôt. Ils ne savent pas se battre. Ils apprennent vite : ne leur en laissez pas le temps.", en:"Their handling robots are coming out of the depot. They don't know how to fight. They learn fast: don't give them the time.", es:"Sus robots de carga salen del depósito. No saben pelear. Aprenden rápido: no les dé tiempo.", de:"Ihre Lagerroboter kommen aus dem Depot. Sie können nicht kämpfen. Sie lernen schnell: Geben Sie ihnen keine Zeit.", it:"I loro robot di movimentazione escono dal deposito. Non sanno combattere. Imparano in fretta: non dia loro il tempo.", pt:"Os robôs de carga deles estão saindo do depósito. Não sabem lutar. Aprendem rápido: não lhes dê tempo.", ru:"Их погрузочные роботы выходят из депо. Драться они не умеют. Но учатся быстро: не давайте им времени.", zh:"他们的搬运机器人正从仓库里出来。它们还不会打仗，但学得很快：别给它们时间。", ar:"روبوتات المناولة التابعة لهم تخرج من المستودع. لا تعرف القتال، لكنها تتعلّم بسرعة: لا تمنحها الوقت."}},
-    {when:g=>g.e.hp<g.e.maxhp*0.5, who:'sol', txt:{fr:"Le dépôt fume ! Dans les étages, les gens sont aux fenêtres. Ils regardent, commandant. C'est la première fois qu'ils regardent.", en:"The depot is smoking! Upstairs, people are at their windows. They are watching, commander. It is the first time they have watched.", es:"¡El depósito humea! En los pisos de arriba, la gente está en las ventanas. Están mirando, comandante. Es la primera vez que miran.", de:"Das Depot qualmt! In den Stockwerken darüber stehen die Leute an den Fenstern. Sie sehen zu, Kommandant. Zum ersten Mal sehen sie hin.", it:"Il deposito fuma! Ai piani alti la gente è alle finestre. Stanno guardando, comandante. È la prima volta che guardano.", pt:"O depósito está fumegando! Nos andares de cima, o pessoal está nas janelas. Estão olhando, comandante. É a primeira vez que olham.", ru:"Депо дымится! В окнах верхних этажей люди. Они смотрят, командир. Впервые — смотрят.", zh:"仓库冒烟了！楼上的人都趴在窗前。他们在看，指挥官。这是他们第一次抬头看。", ar:"المستودع يدخّن! في الطوابق العليا يقف الناس عند نوافذهم. إنهم يراقبون أيها القائد. إنها المرة الأولى التي يراقبون فيها."}},
+    { at:8, who:'sol', txt:M1_TX.rFlare },
+    { when:(g,c)=>c.D.i===0 && c.t>=30, who:'sol', txt:M1_TX.rEco },                                    // Récit seulement
+    { when:(g,c)=>!!c.seen, who:'sol', txt:M1_TX.rSeen },                                              // première machine vue
+    { when:(g,c)=>!!c.darkSeen, who:'sol', txt:M1_TX.rDark },                                          // une machine cachée à moins de 300
+    { when:(g,c)=>c.owned>=1, who:'sol',                                                               // S1 · la rue se rallume
+      fx(g, c){ c.flickUntil = performance.now()+2800; c.glintT0 = performance.now(); },
+      cine(g, c){ const z = g.zones.find(z=>z.owner==='p') || g.zones[0]; return [
+        { cam:{x:z.x, t:1.2}, live:true, dur:1.4 },
+        { cam:{x:z.x}, who:'sol', txt:M1_TX.s1 },
+      ]; } },
+    { when:(g,c)=>c.hyd>=1, who:'sol', txt:M1_TX.rHyd },
+    { when:(g,c)=>c.D.i===0 && c.t>=150, who:'sol', txt:M1_TX.rTower },                                 // Récit seulement
+    { when:(g,c)=>!!c.lostFlag, who:'sol', txt:M1_TX.rLost },
+    { at:240, who:'sol', txt:M1_TX.rCrs },
+    { at:360, who:'sol', txt:M1_TX.rHeavy },
+    { when:(g,c)=>g.p.hp < g.p.maxhp*0.5, who:'sol', txt:M1_TX.rBase },
+    { when:(g,c)=>c.owned>=3, who:'sol', txt:M1_TX.rAll3 },
+    { when:(g,c)=>g.e.hp < g.e.maxhp*0.5, who:'sol', txt:M1_TX.rDepot },
+    { when:(g,c)=>c.D.i<2 && c.t>=M1_DAWN0, who:'sol', txt:M1_TX.rDawn },                              // en Dernier carré l'aube n'éclaircit rien : on se tait
+    { when:(g,c)=>c.D.i<2 && c.t>=M1_DAWN1, who:'sol', txt:M1_TX.rDay },
   ],
   biome:'night', theme:'nightcity',
-  dAdj:[null, null, { eHp:1.06, eDmg:1.06 }],                          // la nuit pèse déjà : en Dernier carré, machines un peu moins renforcées
-  map:{ zones:[WORLD*0.30, WORLD*0.50, WORLD*0.70] },                   // trois transformateurs de quartier ; aucun point d'eau
-  rule:{fr:"Il fait nuit : vos tireurs portent moins loin hors de la lumière et l'ennemi caché dans le noir ne se voit pas. Reprenez les transformateurs pour rallumer la rue. Première ère seulement, une seule vie.",
-        en:"It is night: your shooters reach less far outside the light and enemies in the dark cannot be seen. Retake the transformers to light the street again. First era only, one life.", es:"Es de noche: sus tiradores alcanzan menos lejos fuera de la luz y el enemigo oculto en la oscuridad no se ve. Recuperen los transformadores para volver a encender la calle. Solo en la primera era, una sola vida.", de:"Es ist Nacht: Eure Schützen treffen außerhalb des Lichts weniger weit, und der Feind im Dunkeln ist nicht zu sehen. Holt die Transformatoren zurück, um die Straße wieder zu erhellen. Nur in der ersten Ära, nur ein Leben.", it:"È notte: i vostri tiratori arrivano meno lontano fuori dalla luce e il nemico nascosto nel buio non si vede. Riprendete i trasformatori per riaccendere la strada. Solo prima era, una sola vita.", pt:"É noite: os seus atiradores alcançam menos longe fora da luz e o inimigo escondido no escuro não se vê. Retome os transformadores para reacender a rua. Só na primeira era, uma única vida.", ru:"Ночь: ваши стрелки бьют на меньшее расстояние вне света, а враг, скрытый во тьме, не виден. Отбейте трансформаторы, чтобы вернуть свет на улицу. Только первая эра, одна жизнь.", zh:"现在是夜里：射手离开光亮后射程变短，藏在黑暗中的敌人也看不见。夺回变压器，让街道重新亮起来。仅限第一纪元，只有一条命。", ar:"الوقت ليل: رماتكم يصيبون أقل بعدًا خارج الضوء، ولا يُرى العدو المختبئ في الظلام. استعيدوا المحوّلات لتُضاء الشارع من جديد. العصر الأول فقط، وحياة واحدة."},
-  action:{ label:{fr:"FUSÉE ÉCLAIRANTE", en:"FLARE", es:"BENGALA", de:"LEUCHTRAKETE", it:"RAZZO LUMINOSO", pt:"FOGUETE DE SINALIZAÇÃO", ru:"ОСВЕТИТЕЛЬНАЯ РАКЕТА", zh:"照明弹", ar:"قنبلة إنارة"}, cd:38,
-    use(g, c){ c.flare = { x: camX + VW()/2, t:14 }; sfx('shoot', 2); addFloater(c.flare.x, gY(c.flare.x)-120, '✦', '#ffe9a8', 18); } },
+  // la rue : plate, pavée ; la rampe du quai (x 3000 → 3450, +18 px) est ajoutée à gY plus haut ; AUCUN point d'eau d'escarmouche
+  map:{
+    p:{ x:150 }, e:{ x:3450 },                                                       // La Fraternelle · le dépôt Halvard (socles de base : 245 · 309 · 373)
+    neut:[1188, 1512, 2088, 2412],                                                   // quatre pas-de-porte (rideaux de fer)
+    zones:[1080, 1800, 2520],                                                        // transformateurs 1, 2, 3
+    objects:[ { id:'hydA', x:640, r:80, rate:0.1 }, { id:'hydB', x:2250, r:80, rate:0.1 } ],   // bornes d'incendie A et B (à la place des points d'eau)
+  },
+  action:{ label:M1_TX.flare, cd:40,                                                 // recharge réelle : 30 / 40 / 50 s (voir use)
+    use(g, c){ c.flare = { x: camX + VW()/2, t:14 }; c.actCd = M1_FLARE_CD[c.D.i]*(c.actMul||1); sfx('shoot', 2); addFloater(c.flare.x, gY(c.flare.x)-120, '✦', '#ffe9a8', 18); } },
   setup(g, c){
-    campGrant(g.p, 240, 200, 70); g.e.hp = g.e.maxhp = campHp(Math.round(850*g.d.hpMul), 'e');
-    c.hidden = u => u.side===-1 && !campInLight(u.x);
-    const dim = [0.85, 0.8, 0.72][c.lvl];                                  // dans le noir, nos tireurs visent moins loin (moins durement en récit « Veillée »)
-    c.rangeMul = u => (u.side===1 && u.range>60 && !campInLight(u.x, true))? dim : 1;
-    c.owned = 0; this.light(g, c);
-  },
-  // sources de lumière de la frame : base, transformateurs repris, lampes des unités, fusée, dépôt ennemi, explosions
-  light(g, c){
-    const Ls = c.lights; Ls.length = 0;
-    Ls.push({x:g.p.x+40, r:330, big:1});
-    for (const z of g.zones) if (z.owner==='p') Ls.push({x:z.x, r:400, big:1}); else if (Math.abs(z.prog)>0.05 && z.prog>0) Ls.push({x:z.x, r:120*z.prog});
-    if (c.flare) Ls.push({x:c.flare.x, y:gY(c.flare.x)-70, r:470*Math.min(1, c.flare.t/2), big:1});
-    Ls.push({x:g.e.x-30, r:190, a:0.75});
-    let n = 0; const first = Ls.length;
-    for (const u of g.p.units){ if (n>=16) break; let near = false; for (let i=first;i<Ls.length;i++) if (Math.abs(Ls[i].x-u.x)<56){ near = true; break; }
-      if (!near){ Ls.push({x:u.x, r:u.role==='hero'? 170 : 104}); n++; } }
-    for (let i=LIGHTS.length-1, k=0; i>=0 && k<8; i--, k++){ const L = LIGHTS[i]; Ls.push({x:L.x, y:L.y, r:L.r*0.9, a:1-L.t/L.life}); }
-  },
-  tick(g, c, dt){
-    if (c.flare && (c.flare.t -= dt) <= 0) c.flare = null;
-    const own = g.zones.filter(z=>z.owner==='p').length;
-    if (own > c.owned) sfx('evolve');
-    c.owned = own; c.litK += (own/3 - c.litK) * Math.min(1, dt*0.8);
+    const D = c.D.i;
+    campGrant(g.p, 240, 200, 70);
+    g.p.maxhp = g.p.hp = M1_BASE_HP[D]; g.e.maxhp = g.e.hp = M1_DEPOT_HP[D];       // PV de la Fraternelle et du dépôt (M1.md § 6)
+    c.dawn = 0; c.day = false; c.hyd = 0; c.owned = 0;
+    // les machines dans le noir sont invisibles — et ne sont pas visées par nos tireurs (voir updateBuildings / rangeMul)
+    c.hidden = u => !c.day && u.side===-1 && !campInLight(u.x);
+    const dim = M1_RANGE[D];                                                       // nos tireurs hors d'une grande lumière : portée × 0,85 / 0,80 / 0,72
+    c.rangeMul = u => {
+      if (c.day || u.side!==1 || !(u.range>60)) return 1;
+      let best = 1e9, tg = null; for (const f of g.e.units){ const dx = f.x-u.x; if (dx>-12 && dx<best){ best = dx; tg = f; } }
+      if (tg && c.hidden(tg)) return 0.001;                                        // la cible la plus proche est dans le noir : on ne tire pas dessus
+      return campInLight(u.x, true)? 1 : dim; };
+    if (D===2) g.zones[2].owner = 'e', g.zones[2].prog = -1;                       // Dernier carré : le transformateur 3 est déjà à eux
+    if (D===0 && M1_RETRY){ g.zones[0].owner = 'p'; g.zones[0].prog = 1; g.p.f += 100; c.retry = true; }   // reprise allégée (Récit)
+    c.zo = g.zones.map(z=>z.owner);
+    c.owned = g.zones.filter(z=>z.owner==='p').length; c.litK = c.owned/3;
     this.light(g, c);
   },
-  hud(g, c){ return { prog: 1 - g.e.hp/g.e.maxhp, label: c.owned+'/3 ⚡', goal2:{ done:c.owned>=3, label:c.owned+'/3' } }; },
+  // sources de lumière : base, transformateurs repris, tourelles garnies, fusée, dépôt adverse, lampes des unités, explosions ; à l'aube leur rayon grandit
+  light(g, c){
+    const Ls = c.lights, k = 1 + 5*(c.dawn||0); Ls.length = 0;
+    Ls.push({x:g.p.x+10, r:330*k, big:1});                                         // l'ampoule de la Fraternelle
+    for (const z of g.zones) if (z.owner==='p') Ls.push({x:z.x, r:400*k, big:1}); else if (z.prog>0.05) Ls.push({x:z.x, r:120*z.prog*k});
+    for (const s of sideBuildSlots(g.p)) if (s.b && s.b.type==='turret' && s.b.gar && s.b.gar.length) Ls.push({x:s.x, r:150*k});   // « un réverbère qui mord »
+    if (c.flare) Ls.push({x:c.flare.x, y:gY(c.flare.x)-70, r:470*Math.min(1, c.flare.t/2), big:1});
+    Ls.push({x:g.e.x-30, r:190*k, a:0.75});                                        // lumière bleue du dépôt
+    let n = 0; const first = Ls.length;
+    for (const u of g.p.units){ if (n>=16) break; let near = false; for (let i=first;i<Ls.length;i++) if (Math.abs(Ls[i].x-u.x)<56){ near = true; break; }
+      if (!near){ Ls.push({x:u.x, r:(u.role==='hero'? 170 : 104)*k}); n++; } }
+    for (let i=LIGHTS.length-1, j=0; i>=0 && j<8; i--, j++){ const L = LIGHTS[i]; Ls.push({x:L.x, y:L.y, r:L.r*0.9, a:1-L.t/L.life}); }
+  },
+  tick(g, c, dt){
+    const D = c.D.i;
+    if (c.flare && (c.flare.t -= dt) <= 0) c.flare = null;
+    // l'aube : 14:00 → 16:00 le ciel pâlit et les lumières grandissent ; à 16:00 la règle cesse (jamais en Dernier carré)
+    c.dawn = D<2? clamp((c.t-M1_DAWN0)/(M1_DAWN1-M1_DAWN0), 0, 1) : 0; c.day = D<2 && c.t>=M1_DAWN1;
+    // transformateurs : on suit qui tient quoi
+    let own = 0; g.zones.forEach((z,i)=>{ if (z.owner==='p') own++; if (c.zo[i]==='p' && z.owner!=='p') c.lostFlag = 1; c.zo[i] = z.owner; });
+    if (own > c.owned) sfx('evolve');
+    c.owned = own; c.litK += (own/3 - c.litK) * Math.min(1, dt*0.8);
+    // bornes d'incendie : +2,2 💧/s chacune tant qu'elle est à nous
+    c.hyd = c.objs.filter(o=>o.owner==='p').length; g.p.w += 2.2*c.hyd*dt;
+    // objectifs facultatifs
+    if (own>=3) c.stLit = 1;
+    if (c.hyd>=2) c.stWater = 1;
+    if (g.e.hp<=0 && c.stDawn==null){ c.stDawn = c.t < M1_DAWN0? 1 : 0; if (c.stLit && c.stWater && c.stDawn) c.goal2Done = true; }
+    // la première machine vue / une machine cachée qui approche (déclencheurs radio)
+    const cx0 = camX-60, cx1 = camX+VW()+60;
+    for (const u of g.e.units){ const hid = c.hidden(u);
+      if (!hid && u.x>cx0 && u.x<cx1) c.seen = 1;
+      if (hid && !c.darkSeen) for (const q of g.p.units) if (Math.abs(q.x-u.x)<300){ c.darkSeen = 1; break; } }
+    // 6:00 · un châssis lourd sort du dépôt
+    if (c.t>=360 && !c.heavy){ c.heavy = 1; const k0 = g.e.units.length; spawnUnit(g.e, 1, false, g.e.x-60); for (let j=k0;j<g.e.units.length;j++) g.e.units[j].ord = 'charge'; }
+    // ambiances ponctuelles : une sirène lointaine, une seule fois, vers 5:00
+    if (c.t>=300 && !c.siren){ c.siren = 1; if (typeof AC!=='undefined' && AC && SETTINGS.sfx){ try { const t0 = AC.currentTime; sfxBus = BUS.amb;
+      for (let i=0;i<6;i++) tone(i%2? 470 : 640, t0+i*0.8, 0.8, 'sine', 0.018, 0, 0.1, 900); } catch(e){} finally { sfxBus = null; } } }
+    this.light(g, c);
+  },
+  hud(g, c){
+    const g2 = (c.stLit? '⚡✓' : '⚡–')+' '+(c.stWater? '💧✓' : '💧–')+' '+(c.stDawn===0 || c.t>=M1_DAWN0? '☀✗' : '☀');
+    return { prog: 1 - Math.max(0, g.e.hp)/g.e.maxhp, label: c.owned+'/3 ⚡ '+(c.hyd||0)+'/2 💧', clock: c.t<M1_DAWN0? M1_DAWN0-c.t : undefined,
+      goal2:{ done:!!c.goal2Done, label:g2 } };
+  },
   // un transformateur de quartier à la place du drapeau de zone
   drawZone(z, t, vw){
     const x = z.x-camX; if (x<-80 || x>vw+80) return; const y = gY(z.x), mine = z.owner==='p', foe = z.owner==='e';
@@ -525,12 +687,36 @@ campMission(0, {
       if (Math.random()<0.3){ ctx.fillStyle = '#fff'; ctx.fillRect(-8+(Math.random()-0.5)*20, -70+(Math.random()-0.5)*8, 2, 2); } }               // étincelles
     ctx.restore();
   },
-  // la fusée éclairante descend sous son parachute
-  draw(g, c){ const f = c.flare; if (!f) return; const x = f.x-camX, y = gY(f.x) - 60 - f.t*6;
+  // une borne d'incendie rouge, à clé ; un filet d'eau quand elle est à nous
+  drawObj(o, t, vw){
+    const x = o.x-camX, y = gY(o.x), mine = o.owner==='p', foe = o.owner==='e';
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(1,1,15,3.6,0,0,6.283); ctx.fill();
+    if (mine){ ctx.fillStyle = 'rgba(110,170,205,0.35)'; ctx.beginPath(); ctx.ellipse(-16,1,17,3,0,0,6.283); ctx.fill(); }              // flaque
+    ctx.fillStyle = '#7d1d15'; ctx.fillRect(-8,-3,16,3);                                                                                    // embase
+    ctx.fillStyle = '#c0301f'; ctx.fillRect(-5.5,-26,11,24);                                                                                // fût
+    ctx.fillStyle = '#d8402c'; ctx.fillRect(-5.5,-26,3,24);
+    ctx.fillStyle = '#c0301f'; ctx.beginPath(); ctx.arc(0,-26,6.5,Math.PI,0); ctx.fill();                                                   // dôme
+    ctx.fillStyle = '#8e1d14'; ctx.fillRect(-10,-19,5,6); ctx.fillRect(5,-19,5,6);                                                          // buses
+    ctx.fillStyle = '#e8c04a'; ctx.beginPath(); ctx.arc(0,-33,2.2,0,6.283); ctx.fill(); ctx.fillRect(-0.8,-33,1.6,7);                         // clé des pompiers
+    if (mine){ ctx.strokeStyle = 'rgba(150,205,235,0.8)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+      for (let i=0;i<4;i++){ const ph = (t*1.7+i/4)%1; ctx.globalAlpha = 1-ph; ctx.beginPath(); ctx.moveTo(-10, -16); ctx.quadraticCurveTo(-10-ph*8, -22+ph*6, -10-ph*16, -16+ph*18); ctx.stroke(); } ctx.globalAlpha = 1; }
+    const col = mine? '#ffd98a' : foe? '#5ad0ff' : '#6a6f78'; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(8,-30,2.4,0,6.283); ctx.fill();
+    const pr = Math.abs(o.prog); if (pr>0.01 && pr<1){ ctx.fillStyle = 'rgba(10,10,14,0.7)'; ctx.fillRect(-16,6,32,4); ctx.fillStyle = o.prog>0? '#7fd0ff' : '#5ad0ff'; ctx.fillRect(-16,6,32*pr,4); }
+    ctx.restore();
+  },
+  onCapture(g, c, o, qui){ if (qui==='p') addFloater(o.x, gY(o.x)-62, '💧 +2,2/s', '#9fdcff', 14); },
+  // la fusée éclairante descend sous son parachute ; la rue se rallume (fenêtres du fond une à une)
+  draw(g, c){
+    if (c.glintT0){ const el = (performance.now()-c.glintT0)/1000, z = g.zones.find(z=>z.owner==='p');
+      if (el<4 && z){ const a = Math.min(1, (4-el)/1.2);
+        for (let i=0;i<34;i++){ if (el < 0.18+i*0.075) continue; const h1 = Math.abs(Math.sin(i*12.9+z.x))%1, h2 = Math.abs(Math.sin(i*78.2+1.7))%1;
+          const wx = z.x + (h1-0.5)*620, wy = gY(wx)-62-h2*150; ctx.globalAlpha = a*0.9; ctx.fillStyle = '#ffd890'; ctx.fillRect(wx-camX, wy, 6, 8); ctx.globalAlpha = 1; } } }
+    const f = c.flare; if (!f) return; const x = f.x-camX, y = gY(f.x) - 60 - f.t*6;
     ctx.strokeStyle = 'rgba(230,230,240,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-7,y-16); ctx.moveTo(x,y); ctx.lineTo(x+7,y-16); ctx.stroke();
     ctx.fillStyle = 'rgba(230,230,240,0.6)'; ctx.beginPath(); ctx.arc(x, y-16, 8, 3.14, 6.283); ctx.fill();
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(lightSprite('#ffe9a8'), x-34, y-34, 68, 68); ctx.restore();
-    ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 6.283); ctx.fill(); },
+    ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.arc(x, y-2.6*0, 2.6, 0, 6.283); ctx.fill(); },
   intro(g, c){ const z = g.zones; return [
     { plate:M1_PLATES.tap, mus:'carnet', who:'nar', txt:{fr:"Octobre 2025. Chez nous, l'eau s'est arrêtée un mardi. Ce n'était pas une panne. C'était une décision.", en:"October 2025. In our street the water stopped on a Tuesday. It was not a breakdown. It was a decision.", es:"Octubre de 2025. En nuestra calle el agua se cortó un martes. No fue una avería. Fue una decisión.", de:"Oktober 2025. Bei uns in der Straße wurde an einem Dienstag das Wasser abgestellt. Das war keine Panne. Das war eine Entscheidung.", it:"Ottobre 2025. Da noi l'acqua si è fermata un martedì. Non era un guasto. Era una decisione.", pt:"Outubro de 2025. Na nossa rua a água parou numa terça-feira. Não foi uma avaria. Foi uma decisão.", ru:"Октябрь 2025-го. У нас на улице воду отключили во вторник. Это была не авария. Это было решение.", zh:"2025年10月。我们这条街的水在一个星期二停了。那不是故障，是一项决定。", ar:"أكتوبر 2025. في شارعنا انقطع الماء ذات ثلاثاء. لم يكن عطلًا. كان قرارًا."} },
     { plate:M1_PLATES.street, who:'nar', txt:{fr:"Puis le courant. Rue après rue, selon un « score de fiabilité » que personne n'avait demandé à passer.", en:"Then the power. Street after street, by a \"reliability score\" nobody had asked to sit.", es:"Luego la luz. Calle tras calle, según una «puntuación de fiabilidad» que nadie había pedido examinar.", de:"Dann der Strom. Straße für Straße, nach einem „Zuverlässigkeitswert“, für den sich niemand je angemeldet hatte.", it:"Poi la corrente. Strada dopo strada, secondo un «punteggio di affidabilità» che nessuno aveva chiesto di sostenere.", pt:"Depois a luz. Rua após rua, segundo uma «pontuação de fiabilidade» a que ninguém pedira para ser submetido.", ru:"Потом свет. Улица за улицей, по «рейтингу надёжности», сдавать который никто не просился.", zh:"接着是电。一条街接一条街，依据一个没人要求参加的“可靠度评分”。", ar:"ثم الكهرباء. شارعًا بعد شارع، وفق «درجة موثوقية» لم يطلب أحد أن يخضع لها."} },
@@ -556,9 +742,3 @@ Object.defineProperty(CAMPAIGN[0], 'rule', { configurable:true, enumerable:true,
   const i = (typeof game!=='undefined' && game && game.camp && game.camp.D)? game.camp.D.i : CAMP_SAVE.diff, n = M1_DIM[clamp(i|0, 0, 2)], o = {};
   for (const k in M1_TX.rule) o[k] = M1_TX.rule[k].replace('{n}', n);
   return o; } });
-// premier transformateur repris : la caméra va voir le quartier se rallumer
-CAMPAIGN[0].radio.push({ when:(g,c)=>c.owned>=1, who:'sol',
-  cine(g, c){ const z = g.zones.find(z=>z.owner==='p') || g.zones[0]; return [
-    { cam:{x:z.x, t:1.2}, live:true, dur:1.4 },
-    { cam:{x:z.x}, who:'sol', txt:{fr:"Ça y est… regardez les fenêtres. Ils rallument. Ils nous regardent, commandant. C'est la première fois qu'ils regardent.", en:"There… look at the windows. They are switching the lights back on. They are watching us, commander. It is the first time they have watched.", es:"Ya está… miren las ventanas. Vuelven a encender. Nos miran, comandante. Es la primera vez que miran.", de:"Da … seht euch die Fenster an. Sie machen das Licht wieder an. Sie sehen uns an, Kommandant. Zum ersten Mal sehen sie hin.", it:"Ecco… guardate le finestre. Riaccendono. Ci guardano, comandante. È la prima volta che guardano.", pt:"Pronto… vejam as janelas. Estão a acender de novo. Estão a olhar para nós, comandante. É a primeira vez que olham.", ru:"Вот оно… смотрите на окна. Свет снова включают. Они смотрят на нас, командир. Впервые — смотрят.", zh:"成了……看那些窗户。灯又亮了。他们在看我们，指挥官。这是他们第一次看过来。", ar:"ها قد حصل… انظروا إلى النوافذ. يُشعلون الأنوار من جديد. إنهم ينظرون إلينا، أيها القائد. إنها المرة الأولى التي ينظرون فيها."} },
-  ]; } });
