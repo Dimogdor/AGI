@@ -110,7 +110,7 @@ console.log('\nACTES : le passage d’acte remet à zéro ce qu’il doit (missi
   await page.close();
 }
 
-console.log('\nESCORTE (mission II) : jamais de machines dans notre dos, laisse, bouclier');
+console.log('\nESCORTE (mission II) : jamais de machines dans notre dos, grilles fermées, pas de base invulnérable');
 { const { page, errs } = await open();
   const r = await page.evaluate(() => { CAMP_SAVE.done = 5; CAMP_SAVE.diff = 2;
     campStart(1); cineEnd(); const g = game, c = g.camp, p = g.p;
@@ -123,13 +123,13 @@ console.log('\nESCORTE (mission II) : jamais de machines dans notre dos, laisse,
       if (CINE.on) cineEnd();
       if (k%20===0){ tryBuy(p, 1); tryBuy(p, 2); setStance(p, 'charge'); }                   // le joueur fonce droit devant
       update(0.05);
-      for (const u of p.units) if (c.leash!=null && u.x > c.leash + 1) over++; }
+      for (const u of p.units) if (u.x > m2Lim(c) + 1) over++; }
     window.spawnUnit = spawn0;
     R();
-    return { spawns:all.length, bad, over, shield:!!c.shield, leash:c.leash, mx:Math.round(c.mx), eAlive:g.e.hp===g.e.maxhp }; });
+    return { spawns:all.length, bad, over, shield:!!c.shield, seg:c.seg, mx:Math.round(c.mx), eAlive:g.e.hp===g.e.maxhp && !c.term.active }; });
   check(r.spawns>10 && !r.bad.length, `${r.spawns} machines apparues, aucune derrière notre front`+(r.bad.length? ' — '+r.bad.length+' en arrière (jusqu’à '+Math.max(...r.bad)+' px)' : ''));
-  check(r.over===0, 'la laisse tient : aucune de nos troupes au-delà de la ligne du cortège');
-  check(r.shield && r.eAlive, 'le terminal invulnérable est signalé (bouclier + « invulnérable tant que… »)');
+  check(r.over===0, 'les grilles tiennent : aucune de nos troupes au-delà de la grille fermée');
+  check(!r.shield && r.eAlive, 'plus de base invulnérable : le terminal est un décor inactif et hors de portée avant le tronçon 4');
   check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
   await page.close();
 }

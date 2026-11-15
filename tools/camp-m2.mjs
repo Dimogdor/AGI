@@ -1,21 +1,23 @@
-// Mission II « Grève générale » : simulation aux 3 niveaux de récit (voir _camp-run.mjs).
-//   npm run dev && node tools/camp-m2.mjs        (TRACE=1 pour suivre la partie minute par minute)
+// Mission II « Grève générale » : joueur scripté (doit GAGNER en ESCORTANT, pas en fonçant) et joueur passif (doit PERDRE),
+// aux 3 niveaux et avec les 2 doctrines.   npm run dev && node tools/camp-m2.mjs      (DOC=1 : Caisse de grève · TRACE=1 · LEVELS=0,1)
 import { campRun } from './_camp-run.mjs';
 await campRun({
   mission: 1,
-  // joueur scripté simple : fermes/marché/puits, escorte en « Tenir » (charge sur les canons), tanks devant et tireurs derrière, évolution dès que
-  // possible (petite armée en attendant), +10 de cap, améliorations, barricades dès que possible
+  // joueur scripté : ferme/marché/puits, tourelles aux emplacements ouverts, armée en « Tenir » (« Charger » seulement pour couler les
+  // canonnières), lourds devant, tireurs derrière, évolution, barricade quand une barge accoste, jamais loin du cortège
   bot(g, c, st){
-    const p = g.p;
-    const guns = g.e.units.some(u=>u.role==='siege' && u.x < c.mx+480);       // des canons pilonnent la tête : on va les chercher
-    if (guns && p.stance!=='charge') setStance(p, 'charge'); else if (!guns && p.stance!=='hold') setStance(p, 'hold');
+    const p = g.p, n = r => p.units.filter(u=>u.role===r).length;
+    const boats = c.seg>=2 && c.boats.some(b=>!b.dead) && Math.abs(c.boats.find(b=>!b.dead).x - c.mx) < 760;
+    const want = boats? 'charge' : 'hold'; if (p.stance!==want) setStance(p, want);
     if (p.era<1 && p.xp >= EVOLVE_XP[1]) tryEvolve(p);
     p.slots.forEach((s,i)=>{ if (!s.b) tryBuild(p, s, ['farmF','farmM','well'][i]); });
-    const n = r => p.units.filter(u=>u.role===r).length, air = g.e.units.some(u=>u.fly);
-    if (!p.capUp && unitTotal(p) >= 28) tryCapUp(p);
+    for (const s of g.neut) if (!s.b && p.m > 200) tryBuild(p, s, 'turret');
+    if (!p.capUp && unitTotal(p) >= 24) tryCapUp(p);
     if (p.era>=1 && p.m > 260){ tryUpgRole(p, 1); tryUpgRole(p, 2); }
-    if (p.queue.length < 3 && (p.era>=1 || p.units.length < 14)){ const pick = n('tank')*2 < n('ranged')+1? 1 : (air || Math.random()<0.6)? 2 : (n('siege')<2? 3 : 0); tryBuy(p, pick); }
-    if (st%100===0) campAct();
+    const air = g.e.units.some(u=>u.fly);
+    if (p.queue.length < 3){ const pick = n('tank') < 4? 1 : (n('ranged') < 2*n('tank') || air)? 2 : (n('siege') < 3? 3 : 0); tryBuy(p, pick); }
+    const near = g.e.units.some(u=>!u.fly && u.x > c.mx && u.x < c.mx+420) || c.barges.some(b=>!b.done && b.x < c.mx+500);
+    if (near) campAct();
   },
-  info(g, c){ return 'cortège '+Math.round((c.mx-430)/25)+' %, ère '+g.p.era+'/'+g.e.era+', '+Math.ceil(c.hp/10)+' grévistes, '+g.e.units.length+' machines, '+g.p.units.length+' des nôtres ('+['melee','tank','ranged','siege','air','support'].map(r=>g.p.units.filter(u=>u.role===r).length).join('·')+')'; },
+  info(g, c){ return 'cortège '+Math.round(100*(c.mx-430)/2720)+' %, tronçon '+(c.seg+1)+', force '+Math.ceil(c.hp)+'/'+Math.ceil(c.cap)+', ère '+g.p.era+', '+g.e.units.length+' machines, '+g.p.units.length+' des nôtres, canonnières coulées '+c.sunk+', terminal '+(c.term.dead? 'fermé' : c.term.active? 'actif' : 'en veille'); },
 });
