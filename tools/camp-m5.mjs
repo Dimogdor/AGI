@@ -12,12 +12,13 @@ const play = ({ bot, trace }) => {
     if (CINE.on){ cines++; let k = 0; while (CINE.on && k++ < 14){ CINE.t = 0.5; render(1/60); CINE.t = 99; cineTick(0.05); } }
     update(0.05); if (steps%40===0) render(1/60);
     acts[c.act] = c.t;
-    if (trace && steps%1200===0) tr.push([Math.round(c.t), 'a'+c.act, p.units.length+'/'+e.units.length, Math.round(100*e.hp/e.maxhp)+'%', Math.round(100*p.hp/p.maxhp)+'%', 'era'+p.era+'/'+e.era, Math.round(p.f)+'/'+Math.round(p.m)+'/'+Math.round(p.w),
+    if (trace && steps%(c.act===3? 160 : 1200)===0) tr.push([Math.round(c.t), 'a'+c.act, p.units.length+'/'+e.units.length, Math.round(100*e.hp/e.maxhp)+'%', Math.round(100*p.hp/p.maxhp)+'%', 'era'+p.era+'/'+e.era, Math.round(p.f)+'/'+Math.round(p.m)+'/'+Math.round(p.w),
       'sap'+c.saps.length+'+'+c.charges+'-'+c.sapLost, 'cl'+c.cellsLeft, 'z'+c.owned, mode, c.avatar? 'av'+Math.round(100*c.avatar.hp/c.avatar.maxhp) : ''].join(' '));
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;
     game.sel.clear();
     ['farmM','turret','farmF'].forEach((ty,i)=>{ if (!p.slots[i].b) tryBuild(p, p.slots[i], ty); });
     for (const s of p.slots) if (s.b && s.b.type!=='site' && s.b.hp < s.b.maxhp*0.6) tryRepair(p, s);
+    for (const s of g.neut) if (!s.b && p.units.some(u=>Math.abs(u.x-s.x)<100)) tryBuild(p, s, s.x<1500? 'farmF' : 'farmM');
     if (p.hp < p.maxhp*0.55) tryRepairBase(p);
     if (p.era < g.eraCap && p.xp >= EVOLVE_XP[p.era+1]) tryEvolve(p);
     if (!p.capUp && unitTotal(p) >= 24) tryCapUp(p);
@@ -29,8 +30,9 @@ const play = ({ bot, trace }) => {
     const n = p.units.length, hero = p.units.find(u=>u.role==='hero'); let tx = null;
     if (c.act===1){
       if (c.saps.length && !c.gateOpen){ setStance(p, 'hold'); mode = 'escort'; }                               // Tenir : l'armée se place devant le sapeur
-      else if (!c.gateOpen && c.charges < M5.need[c.D.i]){ setStance(p, 'hold'); for (const u of p.units) if (!u.ord) u.ord = null; tx = p.x + 420; mode = 'wait'; }
-      else { for (const u of p.units) if (u._m5f){ u.ord = null; u.px = null; u._m5f = 0; } setStance(p, 'charge'); mode = 'assault'; }
+      else if (!c.gateOpen && c.charges < M5.need[c.D.i]){ setStance(p, 'hold'); tx = p.x + 450; mode = 'wait'; }
+      else if (n >= 14 || mode==='assault' && n >= 6){ for (const u of p.units) if (u._m5f || u.ord==='point'){ u.ord = null; u.px = null; u._m5f = 0; } setStance(p, 'charge'); mode = 'assault'; }
+      else { tx = p.x + 700; mode = 'gather'; }
     } else if (c.act===2){
       const z = g.zones.find(z=>z.owner!=='p'); const low = n < 7;
       if (z && !low){ tx = z.x + 20; mode = 'bay'+g.zones.indexOf(z); }

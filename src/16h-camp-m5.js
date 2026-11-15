@@ -24,11 +24,11 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.2], aura:[0.25,0.35,0.45],                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,1.2], aura:[0.6,0.8,1], avK:2.5,                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
-  hp:{ base:2200, gate:[2600,3000,3400] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.62,0.66,0.7],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  hp:{ base:2200, gate:[2600,4500,7000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
+  eMul:[0.5,0.8,1.0],                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -457,9 +457,9 @@ function m5Cell(g, c){
   return true;
 }
 // les sorties : une colonne quitte la base adverse et fonce sur notre camp ; plus on attend, plus elle grossit
-function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [4,6,8][a-1] + Math.floor(at/150);
+function m5SortieN(c){ const a = c.act, at = c.t - c.t0; let n = [3,5,8][a-1] + Math.floor(at/200);
   if (c.dry!=null) n += Math.floor((c.t - c.dry)/60)*2;                                                  // cellules épuisées : +2 machines par minute
-  return Math.min(n, 20); }
+  return Math.min(n, 14); }
 function m5Scale(g, c){ const k = M5.eMul[c.act-1];                                                      // des machines montées à la hâte, sans rodage
   for (const u of g.e.units) if (!u.m5 && u.role!=='hero'){ u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
 function m5Sortie(g, c){
@@ -490,8 +490,8 @@ function m5Saps(g, c, dt){
     if (s.x >= lim-0.5) s.plant = M5.sapPlant;
   }
   // plus de cellule en route et trop peu de sapeurs pour les charges restantes : Malik envoie son dernier sapeur
-  if (c.cellsLeft<=0 && !c.gateOpen && !c.firing && c.charges + c.saps.length < M5.need[c.D.i] && c.reserve < 2){
-    if (c.resT==null) c.resT = c.t + 40;
+  if (c.cellsLeft<=0 && !c.gateOpen && !c.firing && c.charges + c.saps.length < M5.need[c.D.i] && c.reserve < 12){
+    if (c.resT==null) c.resT = c.t + 40 + 15*c.reserve;
     if (c.t >= c.resT){ c.resT = null; c.reserve++; m5Sapper(g, c); campRadio('malik', M5_L.res); } }
 }
 function m5Batts(g, c, dt){
@@ -570,7 +570,7 @@ function m5Hidden(g, c){ for (const u of g.e.units) if (c.hidden(u) && Math.abs(
 function m5Avatar(g, c, frac){
   const e = g.e, D = c.D.i; spawnHero(e, 1);
   const u = e.units[e.units.length-1]; if (!u || u.role!=='hero') return null;
-  u.maxhp *= M5.av[D]; u.hp = u.maxhp*(frac||1); if (c.D.eDmg) u.dmg *= c.D.eDmg;
+  u.maxhp *= M5.av[D]*M5.avK; u.hp = u.maxhp*(frac||1); if (c.D.eDmg) u.dmg *= c.D.eDmg;
   u._cd = 1; u.m5 = 1; u.heroPow = M5.aura[D]; u.x = e.x - 40; u.era = e.era;
   e.heroCd = 1e9; e.heroStance = 'offensive'; c.avatar = u; c.avHalf = false; c.avDown = false;
   return u;
@@ -606,7 +606,7 @@ const M5_MAPS = [
   { terrain:{ a:0, f1:0.0042, b:3, f2:0.0113, c:1.5, f3:0.021, base:3 }, p:{ x:150 }, e:{ x:M5.gateX, slots:[] }, neut:[1300,2300], nodes:[], zones:[] },              // le noyau : le sol qui luit
 ];
 function m5Guard(g, c){                                    // la garde de la porte : quelques machines qui tiennent le pied du mur
-  const e = g.e, n = campN([3,4,4][c.act-1]), k0 = e.units.length;
+  const e = g.e, n = campN([3,6,8][c.act-1]), k0 = e.units.length;
   for (let i=0;i<n;i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x - 70 - i*22);
   for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.ord = 'hold'; u.holdX = u.x; }
 }
