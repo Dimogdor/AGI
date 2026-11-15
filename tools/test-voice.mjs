@@ -91,7 +91,7 @@ if (L0){
     check(persisted, 'le réglage est enregistré');
     // radio en mission : effet radio, durée renvoyée
     const rd = await page.evaluate(() => { voiceToggle(true); cineEnd(true); const l = (window.__l = null);
-      const m = CAMPAIGN[0].radio.find(x => x.txt && voiceDur(x.who, x.txt)>0); return m? voiceSay(m.who, cT(m.txt), {radio:true}) : -1; });
+      const m = CAMPAIGN.flatMap(c => c.radio||[]).find(x => x.txt && voiceDur(x.who||'sol', x.txt)>0); return m? voiceSay(m.who, cT(m.txt), {radio:true}) : -1; });
     check(rd>0, 'transmission radio en mission : voiceSay() renvoie la durée ('+rd+' s)');
   }
   check(!errs.length, 'aucune erreur JS / console'+(errs.length? ' — '+errs.slice(0,3).join(' | ') : ''));
