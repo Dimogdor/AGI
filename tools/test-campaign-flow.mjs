@@ -98,12 +98,12 @@ console.log('\nACTES : le passage d’acte remet à zéro ce qu’il doit (missi
     campStart(4); cineEnd(); const g = game, c = g.camp, p = g.p;
     for (let k=0;k<24;k++) spawnUnit(p, k%3, false); p.f = p.m = p.w = 9999; tryBuild(p, p.slots[0], 'farmM');
     const y0 = gY(1800), n0 = p.units.length;
-    c.sap = 99; g.e.hp = 0; let k = 0; while (!CINE.on && k++ < 20) update(0.05);
+    c.gateOpen = true; g.e.hp = 0; let k = 0; while (!CINE.on && k++ < 60) update(0.05);
     const cine = CINE.on; playCine();
-    return { cine, act:c.act, n0, n:p.units.length, f:Math.round(p.f), wantF:Math.round(450*c.D.res*(DOCTRINES.veterans.fx.res||1)), slots:p.slots.every(s=>!s.b),
-      ehp:g.e.maxhp, want:M5.gate[1][c.lvl], terrain:Math.round(gY(1800)) !== Math.round(y0), zones:g.zones.length, goal:!!c.goalTxt, eUnits:g.e.units.every(u=>u.m5) }; });
+    return { cine, act:c.act, n0, n:p.units.length, f:Math.round(p.f), wantF:Math.round(600*c.D.res*(DOCTRINES.veterans.fx.res||1)) + (c.refund? c.refund.f : 0), slots:p.slots.every(s=>!s.b),
+      ehp:g.e.maxhp, want:Math.round(M5.hp.gate[1]*c.D.eBase), terrain:Math.round(gY(1800)) !== Math.round(y0), zones:g.zones.length, goal:!!c.goalTxt }; });
   check(r.cine && r.act===2, 'la porte tombe → cinématique → acte II');
-  check(r.n < r.n0 && r.n <= 5+3+4+1, `armée : ${r.n0} unités → ${r.n} (5 plus fortes + héros + escouade + doctrine)`);
+  check(r.n < r.n0 && r.n <= 5+3+4+1, `armée : ${r.n0} unités → ${r.n} (l'armée reste à la brèche ; héros + escouade de la doctrine)`);
   check(r.f===r.wantF && r.slots, `ressources remises à ${r.f} (fiche × difficulté), socles vidés`);
   check(r.ehp===r.want && r.terrain && r.zones===3 && r.goal, `nouvelle porte (${r.ehp} PV), nouveau relief, 3 baies, nouvel objectif annoncé`);
   check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
