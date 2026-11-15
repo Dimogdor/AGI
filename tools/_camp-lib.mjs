@@ -16,6 +16,7 @@ export async function open(lvl, mis){
     try { localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1');
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'high', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(400);
+  if (process.env.OVERRIDE) await page.evaluate(process.env.OVERRIDE);       // essai d'équilibrage : ex. OVERRIDE='M5.avK=6' (constantes de mission, avant campStart)
   await page.evaluate(([lvl, mis, doc]) => {
     let s = 20251031 + lvl*977; Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };   // reproductible
     CAMP_SAVE.done = 5; CAMP_SAVE.diff = lvl; if (doc) CAMP_SAVE.doc[mis] = 1; else delete CAMP_SAVE.doc[mis]; campStart(mis);   // DOC=1 : seconde doctrine
