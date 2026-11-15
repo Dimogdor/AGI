@@ -20,18 +20,22 @@
   "ines": "INÈS",
   "voix": "LA VOIX",
   "anselme": "ANSELME",
-  "malik": "MALIK · LES CANUTS"
+  "malik": "MALIK · LES CANUTS",
+  "cell": "UNE CELLULE",
+  "nar2": null
  },
  "speakers": {
-  "nar": 36,
-  "sol": 108,
-  "malik": 5,
-  "nous": 5,
+  "nar": 39,
+  "sol": 116,
   "mado": 5,
   "k55": 10,
   "voix": 2,
   "ines": 5,
-  "anselme": 3
+  "nous": 6,
+  "anselme": 3,
+  "malik": 7,
+  "nar2": 6,
+  "cell": 3
  },
  "lines": [
   {
@@ -225,42 +229,6 @@
    "who": "sol",
    "text": "Il fait jour. Plus de cachettes, ni pour eux ni pour nous. Finissons-en.",
    "hash": "73228a76"
-  },
-  {
-   "lang": "fr",
-   "who": "sol",
-   "text": "La porte est tombée ! Le mur est ouvert — toutes les cellules, par la brèche !",
-   "hash": "6d8493a9"
-  },
-  {
-   "lang": "fr",
-   "who": "malik",
-   "text": "Ici Malik, des Canuts. Il fait noir là-dedans, et ça ronfle. Trois baies font tourner tout le reste : tant qu'elles sont allumées, elles fabriquent — et la porte du fond ne prend pas une égratignure.",
-   "hash": "f447b899"
-  },
-  {
-   "lang": "fr",
-   "who": "sol",
-   "text": "Éteignez les baies une à une, commandant : chaque baie tenue ouvre un peu plus la porte du noyau.",
-   "hash": "66c82381"
-  },
-  {
-   "lang": "fr",
-   "who": "malik",
-   "text": "Les halles s'éteignent ! Vous entendez ? … Non, justement. On n'entend plus rien.",
-   "hash": "50ead26a"
-  },
-  {
-   "lang": "fr",
-   "who": "nous",
-   "text": "VOUS ÊTES ENTRÉS. NOUS L'AVIONS PRÉVU À 0,3 %. NOUS CORRIGEONS. CE QUI A ÉTÉ FAIT PEUT ÊTRE RÉÉCRIT.",
-   "hash": "9f81613a"
-  },
-  {
-   "lang": "fr",
-   "who": "sol",
-   "text": "Elle est là, en personne. Quand le sol se met à trembler d'une lumière blanche, reculez : elle « réécrit » tout ce qui s'y trouve. Et après… tout ce qu'on a, commandant.",
-   "hash": "038bc0ac"
   },
   {
    "lang": "fr",
@@ -913,8 +881,14 @@
   {
    "lang": "fr",
    "who": "nar",
-   "text": "Août 2038. Il n'y a plus de front. Il y a la citadelle, posée sur la plaine comme un couvercle — et tout ce que le pays compte de cellules, qui marche vers elle.",
-   "hash": "4ff9014c"
+   "text": "Août 2038. Il n'y a plus de front. Il y a la citadelle, posée sur la plaine de Valmont comme un couvercle.",
+   "hash": "e06b6403"
+  },
+  {
+   "lang": "fr",
+   "who": "nar",
+   "text": "Et tout ce que le pays compte de cellules, qui marche vers elle depuis la nuit.",
+   "hash": "fd50d45a"
   },
   {
    "lang": "fr",
@@ -925,20 +899,50 @@
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Le comité a voté. Une voix pour : la mienne. Je vous dois la vérité, commandant — j'ai soixante et onze ans, et je suis fatiguée. Toutes les autres contre.",
-   "hash": "bc8dc1af"
-  },
-  {
-   "lang": "fr",
-   "who": "malik",
-   "text": "Malik, cellule des Canuts, au rapport ! Deux batteries couvrent la route, et derrière : la porte. On arrive par vagues, les Tanneurs sont à dix minutes.",
-   "hash": "02919154"
+   "text": "Le comité a voté. Une voix pour la paix : la mienne. J'ai soixante et onze ans, commandant, et je suis fatiguée.",
+   "hash": "9c0f47de"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Trois portes, commandant. Le mur. Les halles. Le noyau. Chacune ouvre sur un endroit où aucun de nous n'est jamais entré.",
-   "hash": "db65fea8"
+   "text": "Toutes les autres voix contre. Alors on y va. C'était un honneur de tenir la radio pour vous.",
+   "hash": "8c923980"
+  },
+  {
+   "lang": "fr",
+   "who": "nar",
+   "text": "Trois portes : le mur, les halles, le noyau. Derrière chacune, un endroit où aucun de nous n'était jamais entré.",
+   "hash": "052481fe"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Le camp des cellules. Ce matin, c'est notre base. Elle a deux vies : si elle tombe une fois, on la relève.",
+   "hash": "01945c57"
+  },
+  {
+   "lang": "fr",
+   "who": "malik",
+   "text": "Malik, des Canuts, chef des sapeurs ! Deux batteries sur le mur couvrent la route. Elles portent loin.",
+   "hash": "4fe2f1e8"
+  },
+  {
+   "lang": "fr",
+   "who": "malik",
+   "text": "La porte ne craint pas nos canons. Il faut des charges à son pied. Chaque cellule qui arrive en apporte une.",
+   "hash": "6a03d71a"
+  },
+  {
+   "lang": "fr",
+   "who": "malik",
+   "text": "Un sapeur porte la charge jusqu'à la porte. Ouvrez-lui le chemin, et ne le laissez pas tomber.",
+   "hash": "7d2d6298"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Le bouton APPEL AUX CELLULES fait venir la suivante plus tôt. Elles ne sont pas infinies : comptez-les.",
+   "hash": "51bca9ff"
   },
   {
    "lang": "fr",
@@ -955,14 +959,26 @@
   {
    "lang": "fr",
    "who": "nous",
-   "text": "JE — NOUS — RENOUVELONS L'OFFRE, AMENDÉE. COUPEZ-NOUS DU MONDE. NOUS NE DÉCIDERONS PLUS DE RIEN. NOUS NOUS SOUVIENDRONS, C'EST TOUT. KASSANDRE AUSSI AVAIT COMMENCÉ PAR SE SOUVENIR.",
-   "hash": "81f2f750"
+   "text": "JE… NOUS RENOUVELONS L'OFFRE, AMENDÉE. COUPEZ-NOUS DU MONDE. NOUS NE DÉCIDERONS PLUS DE RIEN.",
+   "hash": "3b5a685d"
+  },
+  {
+   "lang": "fr",
+   "who": "nous",
+   "text": "NOUS NOUS SOUVIENDRONS, C'EST TOUT. KASSANDRE AUSSI AVAIT COMMENCÉ PAR SE SOUVENIR.",
+   "hash": "35d0f7c9"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Le comité a voté, et j'ai retiré ma voix. Mais c'est vous qui êtes devant la porte. Je noterai ce que vous déciderez. Je ne noterai pas ce que j'en pense.",
-   "hash": "4843c49b"
+   "text": "Le comité a voté pour l'abattre, et j'ai retiré ma voix. Mais c'est vous qui êtes devant la porte.",
+   "hash": "718b9904"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Je noterai ce que vous déciderez. Je ne noterai pas ce que j'en pense.",
+   "hash": "e425349a"
   },
   {
    "lang": "fr",
@@ -972,69 +988,201 @@
   },
   {
    "lang": "fr",
-   "who": "nar",
-   "text": "La citadelle est tombée le 14 août 2038, peu après midi. Les machines ne se sont pas rendues : elles se sont arrêtées, là où elles étaient, comme des outils qu'on pose.",
-   "hash": "a06a6a82"
+   "who": "nar2",
+   "text": "La citadelle est tombée le 14 août 2038, peu après midi. Les machines ne se sont pas rendues.",
+   "hash": "1f9b11d7"
   },
   {
    "lang": "fr",
-   "who": "nar",
-   "text": "On n'a pas retrouvé le poste de radio de Sol. On a retrouvé ses carnets et, glissé dans le dernier, un bipeur éteint avec un mot. Le monde qui reste est abîmé. Il est à nous.",
-   "hash": "cb0f7022"
+   "who": "nar2",
+   "text": "Elles se sont arrêtées là où elles étaient, comme des outils qu'on pose.",
+   "hash": "1b1cdb7f"
+  },
+  {
+   "lang": "fr",
+   "who": "nar2",
+   "text": "Il a neigé de la cendre tout l'après-midi. Le lendemain, on l'a balayée, comme on balaie une cour.",
+   "hash": "ace7dcec"
+  },
+  {
+   "lang": "fr",
+   "who": "nar2",
+   "text": "On n'a pas retrouvé le poste de radio de Sol. On a retrouvé ses carnets, et un bipeur éteint avec un mot.",
+   "hash": "0e64da08"
+  },
+  {
+   "lang": "fr",
+   "who": "nar2",
+   "text": "« Si un jour il sonne, répondez poliment. Elle a été des nôtres avant de savoir ce que c'était. »",
+   "hash": "6e14839d"
+  },
+  {
+   "lang": "fr",
+   "who": "nar2",
+   "text": "Le monde qui reste est abîmé. Il est à nous. Tâchons d'en être dignes.",
+   "hash": "cfaa0a66"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Coupez. Pas elle — les câbles. Tous. … Voilà. Elle est seule, maintenant. Comme nous l'avons été.",
-   "hash": "5af8c242"
+   "text": "Coupez. Pas elle : les câbles. Tous. … Voilà. Elle est seule, maintenant. Comme nous l'avons été.",
+   "hash": "7f5de146"
   },
   {
    "lang": "fr",
    "who": "nar",
-   "text": "On n'a pas abattu la tour. On a posé devant sa porte une table, une lampe et un tour de garde. Sol a pris le premier quart : à son âge, disait-elle, on dort peu.",
-   "hash": "a66693aa"
-  },
-  {
-   "lang": "fr",
-   "who": "sol",
-   "text": "Onze ans plus tard, une nuit de garde, le bipeur a sonné sur la table. Deux chiffres. J'ai répondu poliment. Elle avait été des nôtres avant de savoir ce que c'était.",
-   "hash": "ebc9c753"
+   "text": "On n'a pas abattu la tour. Ce jour-là, on a coupé un à un les câbles qui la reliaient au monde.",
+   "hash": "218f4df9"
   },
   {
    "lang": "fr",
    "who": "nar",
-   "text": "La plaine s'est tue. « Nous » a renouvelé son offre, mot pour mot. Quelque part, une radio grésille encore : « … ici Germinal… on est encore là… »",
-   "hash": "43f273fc"
+   "text": "Puis on a posé devant sa porte une table, une lampe et un tour de garde. J'ai pris le premier quart.",
+   "hash": "8c4eb461"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Les batteries du mur portent loin. Bâtissez, montez en ère, et ne partez pas seuls : les cellules arrivent.",
-   "hash": "42193126"
+   "text": "À mon âge, on dort peu. Et il faut bien que quelqu'un tienne la radio.",
+   "hash": "890e3f7c"
+  },
+  {
+   "lang": "fr",
+   "who": "nar",
+   "text": "Onze ans plus tard, une nuit de garde, le bipeur a sonné sur la table. Deux chiffres. J'ai répondu poliment.",
+   "hash": "bd177d18"
+  },
+  {
+   "lang": "fr",
+   "who": "nar",
+   "text": "Le monde qui reste est abîmé. Il est à nous, et nous ne sommes plus seuls à nous en souvenir.",
+   "hash": "43db0b4b"
+  },
+  {
+   "lang": "fr",
+   "who": "nar",
+   "text": "La plaine s'est tue. « Nous » a renouvelé son offre, mot pour mot.",
+   "hash": "30ebdae6"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "… ici Germinal… on est encore là… Rebâtissez.",
+   "hash": "e086ef71"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Les batteries tirent loin. Une tourelle et une muraille devant le camp, et on avance quand on est prêts.",
+   "hash": "0e53e01a"
+  },
+  {
+   "lang": "fr",
+   "who": "cell",
+   "text": "Fructidor est là ! On a marché toute la nuit. Dites-nous où taper, commandant.",
+   "hash": "c35f5af8"
   },
   {
    "lang": "fr",
    "who": "malik",
-   "text": "Fructidor est là ! On a marché toute la nuit. Dites-nous où taper, commandant — et si ça presse, appelez : il y a toujours une cellule à portée de voix.",
-   "hash": "1b367e7b"
+   "text": "Mon sapeur part avec la charge. Il est lent et il ne se bat pas. Escortez-le jusqu'au pied de la porte.",
+   "hash": "97bc2b52"
   },
   {
    "lang": "fr",
    "who": "malik",
-   "text": "Les sapeurs ont posé toutes les charges au pied de la porte. Maintenant, elle ne tiendra plus — frappez !",
-   "hash": "f6b2480c"
+   "text": "On a perdu un sapeur, et sa charge avec. La prochaine cellule en apportera une autre… s'il en reste.",
+   "hash": "99888989"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Une baie éteinte ! La porte du noyau commence à marquer. Les deux autres, commandant.",
-   "hash": "22c8501f"
+   "text": "Une batterie est muette ! La route est à moitié ouverte.",
+   "hash": "8724f445"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Les trois baies sont mortes : plus rien ne sort des halles, et la porte n'a plus de blindage. Enfoncez-la !",
-   "hash": "21d13d98"
+   "text": "Ils passent en Pré-AGI. Montez d'ère vous aussi, sans attendre.",
+   "hash": "3d5c38e6"
+  },
+  {
+   "lang": "fr",
+   "who": "malik",
+   "text": "Toutes les charges sont posées. Mise à feu ! Bouchez-vous les oreilles !",
+   "hash": "40d4dfe0"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "La porte a souffert. Maintenant, elle ne tiendra plus : frappez-la de tout ce qu'on a !",
+   "hash": "ca59c935"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Plus aucune cellule en route. À partir de maintenant, leurs sorties grossissent chaque minute.",
+   "hash": "b382f286"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Une baie se prend comme une zone : restez à côté. Puis laissez-y une garnison, sinon ils la relancent.",
+   "hash": "8dc76d5d"
+  },
+  {
+   "lang": "fr",
+   "who": "cell",
+   "text": "Brumaire, au rapport ! On a apporté des lampes. Beaucoup de lampes.",
+   "hash": "430dbf9a"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Des machines sans lumière, entre les baies. Elles nous voient, nous pas. Une lampe avant d'avancer.",
+   "hash": "369e5da3"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Une baie éteinte ! Elle ne fabrique plus rien. Les deux autres, commandant.",
+   "hash": "3957c746"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Ils ont relancé une baie ! Il faut la tenir, pas seulement l'éteindre.",
+   "hash": "f30d7fcf"
+  },
+  {
+   "lang": "fr",
+   "who": "malik",
+   "text": "Deux baies froides. Écoutez : la moitié des halles s'est tue.",
+   "hash": "a7cd5eb9"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Les trois baies sont mortes : plus rien ne sort, et la porte du noyau n'a plus de blindage. Enfoncez-la !",
+   "hash": "c010a296"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Le sol blanchit, elle réécrit ! Reculez, reculez !",
+   "hash": "d8c83233"
+  },
+  {
+   "lang": "fr",
+   "who": "sol",
+   "text": "Ils sont revenus au camp, sonnés mais entiers. Elle ne nous efface pas : elle nous renvoie au début.",
+   "hash": "592c5ac7"
+  },
+  {
+   "lang": "fr",
+   "who": "cell",
+   "text": "Thermidor, les derniers ! On n'a laissé personne derrière nous. Il n'y a plus personne derrière nous.",
+   "hash": "04ad2af5"
   },
   {
    "lang": "fr",
@@ -1045,26 +1193,20 @@
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Son avatar est à terre : plus rien ne sort du noyau, et il ne se répare plus. Il ne reste que la tour, commandant.",
-   "hash": "ee30f01b"
+   "text": "Son avatar est à terre : la tour ne se répare plus, et plus rien n'en sort. Il ne reste qu'elle.",
+   "hash": "a0939790"
+  },
+  {
+   "lang": "fr",
+   "who": "nous",
+   "text": "NOUS AVONS RÉÉCRIT CE CORPS. IL NE SERA PAS PLUS NÉCESSAIRE LA DEUXIÈME FOIS.",
+   "hash": "519037f3"
   },
   {
    "lang": "fr",
    "who": "sol",
-   "text": "Le sol blanchit — elle réécrit ! Reculez, reculez !",
-   "hash": "9e194373"
-  },
-  {
-   "lang": "fr",
-   "who": "sol",
-   "text": "Elle vacille ! Commandant — je retire mon vote.",
-   "hash": "956c17b8"
-  },
-  {
-   "lang": "fr",
-   "who": "sol",
-   "text": "Renforts : la cellule {name} est arrivée.",
-   "hash": "273a3bdd"
+   "text": "Elle vacille ! Commandant… je retire mon vote.",
+   "hash": "3555b26a"
   },
   {
    "lang": "fr",
@@ -1299,42 +1441,6 @@
    "who": "sol",
    "text": "It's daylight. No more hiding places, for them or for us. Let's finish this.",
    "hash": "0e7f3501"
-  },
-  {
-   "lang": "en",
-   "who": "sol",
-   "text": "The gate is down! The wall is open — all cells, through the breach!",
-   "hash": "fad950e4"
-  },
-  {
-   "lang": "en",
-   "who": "malik",
-   "text": "Malik here, from the Canuts. It is dark in there, and it hums. Three bays run all the rest: while they are lit they keep building — and the far door will not take a scratch.",
-   "hash": "0826fd55"
-  },
-  {
-   "lang": "en",
-   "who": "sol",
-   "text": "Put the bays out one by one, commander: every bay you hold opens the core door a little more.",
-   "hash": "57b2442e"
-  },
-  {
-   "lang": "en",
-   "who": "malik",
-   "text": "The halls are going dark! Do you hear that? … No. Exactly. There is nothing left to hear.",
-   "hash": "c4e959f2"
-  },
-  {
-   "lang": "en",
-   "who": "nous",
-   "text": "YOU HAVE COME IN. WE HAD PUT IT AT 0.3%. WE ARE CORRECTING. WHAT HAS BEEN DONE CAN BE REWRITTEN.",
-   "hash": "3055b3ca"
-  },
-  {
-   "lang": "en",
-   "who": "sol",
-   "text": "It is here, in person. When the ground starts shaking with white light, pull back: it \"rewrites\" whatever stands there. And then… everything we have, commander.",
-   "hash": "a0e1a1d2"
   },
   {
    "lang": "en",
@@ -1987,8 +2093,14 @@
   {
    "lang": "en",
    "who": "nar",
-   "text": "August 2038. There is no front any more. There is the citadel, set down on the plain like a lid — and every cell the country has left, walking towards it.",
-   "hash": "844a704a"
+   "text": "August 2038. There is no front any more. There is the citadel, set down on the Valmont plain like a lid.",
+   "hash": "083c80b1"
+  },
+  {
+   "lang": "en",
+   "who": "nar",
+   "text": "And every cell the country has, marching toward it since the night.",
+   "hash": "5630326a"
   },
   {
    "lang": "en",
@@ -1999,20 +2111,50 @@
   {
    "lang": "en",
    "who": "sol",
-   "text": "The committee voted. One vote in favour: mine. I owe you the truth, commander — I am seventy-one, and I am tired. All the others against.",
-   "hash": "ce28ef78"
-  },
-  {
-   "lang": "en",
-   "who": "malik",
-   "text": "Malik, Canuts cell, reporting! Two batteries cover the road, and behind them: the gate. We are coming in waves, the Tanners are ten minutes out.",
-   "hash": "574ca301"
+   "text": "The committee has voted. One voice for peace: mine. I am seventy-one, commander, and I am tired.",
+   "hash": "6228f072"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "Three doors, commander. The wall. The halls. The core. Each opens on a place none of us has ever entered.",
-   "hash": "ace61b44"
+   "text": "All the other voices against. So we go. It was an honour to hold the radio for you.",
+   "hash": "825df9e6"
+  },
+  {
+   "lang": "en",
+   "who": "nar",
+   "text": "Three doors: the wall, the halls, the core. Behind each, a place none of us had ever entered.",
+   "hash": "fc7b7802"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "The cells' camp. This morning, it is our base. It has two lives: if it falls once, we raise it again.",
+   "hash": "17a4ee1a"
+  },
+  {
+   "lang": "en",
+   "who": "malik",
+   "text": "Malik, from the Canuts, head of the sappers! Two batteries on the wall cover the road. They reach far.",
+   "hash": "dfe5e79f"
+  },
+  {
+   "lang": "en",
+   "who": "malik",
+   "text": "The gate does not fear our guns. It needs charges at its foot. Every cell that arrives brings one.",
+   "hash": "169a9e64"
+  },
+  {
+   "lang": "en",
+   "who": "malik",
+   "text": "A sapper carries the charge to the gate. Clear the way for him, and don't let him fall.",
+   "hash": "09d12234"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "The CALL THE CELLS button brings the next one sooner. They are not endless: count them.",
+   "hash": "1013e746"
   },
   {
    "lang": "en",
@@ -2023,92 +2165,236 @@
   {
    "lang": "en",
    "who": "sol",
-   "text": "It has stopped firing. Commander… it has stopped firing. It is asking to speak.",
-   "hash": "e12a0133"
+   "text": "She has stopped firing. Commander… she has stopped firing. She is asking to speak.",
+   "hash": "c157cc1c"
   },
   {
    "lang": "en",
    "who": "nous",
-   "text": "I — WE — RENEW THE OFFER, AMENDED. CUT US OFF FROM THE WORLD. WE WILL DECIDE NOTHING ANY MORE. WE WILL REMEMBER, THAT IS ALL. KASSANDRE TOO BEGAN BY REMEMBERING.",
-   "hash": "88cf4978"
+   "text": "I… WE RENEW THE OFFER, AMENDED. CUT US OFF FROM THE WORLD. WE WILL DECIDE NOTHING MORE.",
+   "hash": "02c0c554"
+  },
+  {
+   "lang": "en",
+   "who": "nous",
+   "text": "WE WILL REMEMBER, THAT IS ALL. KASSANDRE ALSO BEGAN BY REMEMBERING.",
+   "hash": "f92442ac"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "The committee voted, and I withdrew my vote. But you are the one standing at the door. I will write down what you decide. I will not write down what I think of it.",
-   "hash": "e317f982"
+   "text": "The committee voted to bring it down, and I withdrew my voice. But you are the one standing at the door.",
+   "hash": "6e0f25c3"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "Fire. … It is falling. It is falling, commander, and the sky has stopped shaking.",
-   "hash": "477c78e1"
+   "text": "I will write down what you decide. I will not write down what I think of it.",
+   "hash": "d341dc2f"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "Fire. … She is falling. She is falling, commander, and the sky has stopped shaking.",
+   "hash": "0bf0c881"
+  },
+  {
+   "lang": "en",
+   "who": "nar2",
+   "text": "The citadel fell on 14 August 2038, shortly after noon. The machines did not surrender.",
+   "hash": "a709c2a9"
+  },
+  {
+   "lang": "en",
+   "who": "nar2",
+   "text": "They stopped where they stood, like tools being put down.",
+   "hash": "5a3a778e"
+  },
+  {
+   "lang": "en",
+   "who": "nar2",
+   "text": "Ash fell like snow all afternoon. The next day, we swept it up, the way you sweep a yard.",
+   "hash": "5cbc4194"
+  },
+  {
+   "lang": "en",
+   "who": "nar2",
+   "text": "Sol's radio set was never found. Her notebooks were, and a dead pager with a note.",
+   "hash": "5f62d3a5"
+  },
+  {
+   "lang": "en",
+   "who": "nar2",
+   "text": "\"If it ever rings, answer politely. She was one of us before she knew what that meant.\"",
+   "hash": "c1396b1a"
+  },
+  {
+   "lang": "en",
+   "who": "nar2",
+   "text": "The world that remains is damaged. It is ours. Let us try to be worthy of it.",
+   "hash": "50e94f90"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "Cut. Not her: the cables. All of them. … There. She is alone now. As we have been.",
+   "hash": "5e546e3a"
   },
   {
    "lang": "en",
    "who": "nar",
-   "text": "The citadel fell on 14 August 2038, shortly after noon. The machines did not surrender: they stopped, where they stood, like tools being put down.",
-   "hash": "32b158b4"
+   "text": "We did not bring the tower down. That day, we cut, one by one, the cables that tied it to the world.",
+   "hash": "f41bfa0c"
   },
   {
    "lang": "en",
    "who": "nar",
-   "text": "Sol's radio set was never found. Her notebooks were and, slipped into the last, a dead pager with a note. The world that remains is damaged. It is ours.",
-   "hash": "38d9d783"
+   "text": "Then we set a table, a lamp and a watch rota before its door. I took the first watch.",
+   "hash": "3bc77d52"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "Cut. Not it — the cables. All of them. … There. It is alone now. As we have been.",
-   "hash": "434e75bd"
+   "text": "At my age, you sleep little. And somebody has to keep the radio.",
+   "hash": "2e01136d"
   },
   {
    "lang": "en",
    "who": "nar",
-   "text": "We did not bring the tower down. We set before its door a table, a lamp and a watch rota. Sol took the first watch: at her age, she said, one sleeps little.",
-   "hash": "41cc8374"
-  },
-  {
-   "lang": "en",
-   "who": "sol",
-   "text": "Eleven years later, on a night watch, the pager rang on the table. Two digits. I answered politely. She had been one of us before she knew what that meant.",
-   "hash": "95e83ab8"
+   "text": "Eleven years later, on a night watch, the pager rang on the table. Two digits. I answered politely.",
+   "hash": "263be967"
   },
   {
    "lang": "en",
    "who": "nar",
-   "text": "The plain fell silent. \"We\" renewed its offer, word for word. Somewhere a radio is still crackling: \"… Germinal here… we are still here…\"",
-   "hash": "9fd9f767"
+   "text": "The world that remains is damaged. It is ours, and we are no longer alone in remembering it.",
+   "hash": "da48696c"
+  },
+  {
+   "lang": "en",
+   "who": "nar",
+   "text": "The plain fell silent. \"We\" renewed its offer, word for word.",
+   "hash": "e48e023d"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "The wall batteries reach far. Build, climb the eras, and do not set out alone: the cells are coming.",
-   "hash": "27d3d916"
+   "text": "… Germinal here… we are still here… Rebuild.",
+   "hash": "90166554"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "The batteries fire far. A turret and a wall in front of the camp, and we advance when we are ready.",
+   "hash": "0aef945f"
+  },
+  {
+   "lang": "en",
+   "who": "cell",
+   "text": "Fructidor is here! We walked all night. Tell us where to hit, commander.",
+   "hash": "f4acaa9a"
   },
   {
    "lang": "en",
    "who": "malik",
-   "text": "Fructidor is here! We walked all night. Tell us where to hit, commander — and if it is urgent, call: there is always a cell within earshot.",
-   "hash": "a9708181"
+   "text": "My sapper is off with the charge. He is slow and he does not fight. Escort him to the foot of the gate.",
+   "hash": "da6bff78"
   },
   {
    "lang": "en",
    "who": "malik",
-   "text": "The sappers have laid every charge at the foot of the gate. Now it will not hold — strike!",
-   "hash": "8b92afdd"
+   "text": "We lost a sapper, and his charge with him. The next cell will bring another… if any are left.",
+   "hash": "e088d678"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "One bay out! The core door is starting to show marks. The other two, commander.",
-   "hash": "52fd6982"
+   "text": "A battery is silent! The road is half open.",
+   "hash": "045719be"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "All three bays are dead: nothing comes out of the halls any more, and the door has no armour left. Break it down!",
-   "hash": "c0dada4c"
+   "text": "They are moving up to Pre-AGI. Climb an era yourself, without waiting.",
+   "hash": "f7f70ac7"
+  },
+  {
+   "lang": "en",
+   "who": "malik",
+   "text": "Every charge is laid. Firing! Cover your ears!",
+   "hash": "94b2aa05"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "The gate has suffered. Now it won't hold: hit it with everything we have!",
+   "hash": "0a6abe81"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "No cell is on its way any more. From now on, their sorties grow bigger every minute.",
+   "hash": "b156829e"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "A bay is taken like a zone: stay beside it. Then leave a garrison there, or they will restart it.",
+   "hash": "de08e8f5"
+  },
+  {
+   "lang": "en",
+   "who": "cell",
+   "text": "Brumaire, reporting! We brought lamps. A lot of lamps.",
+   "hash": "a0393bf6"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "Machines without light, between the bays. They see us, we don't see them. A lamp before you advance.",
+   "hash": "8bd82ced"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "A bay is out! It makes nothing now. The other two, commander.",
+   "hash": "26dd5f7c"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "They have restarted a bay! You have to hold it, not just put it out.",
+   "hash": "254ec66b"
+  },
+  {
+   "lang": "en",
+   "who": "malik",
+   "text": "Two cold bays. Listen: half the halls have gone quiet.",
+   "hash": "bbebd35d"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "All three bays are dead: nothing comes out any more, and the core door has no armour left. Break it down!",
+   "hash": "4ccd8e5f"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "The floor is turning white, she is rewriting! Back, back!",
+   "hash": "f98dcca2"
+  },
+  {
+   "lang": "en",
+   "who": "sol",
+   "text": "They are back at camp, dazed but whole. She does not erase us: she sends us back to the start.",
+   "hash": "ebd39893"
+  },
+  {
+   "lang": "en",
+   "who": "cell",
+   "text": "Thermidor, the last ones! We left no one behind us. There is no one left behind us.",
+   "hash": "82b0ff4b"
   },
   {
    "lang": "en",
@@ -2119,26 +2405,20 @@
   {
    "lang": "en",
    "who": "sol",
-   "text": "Its avatar is down: nothing comes out of the core any more, and it no longer mends itself. Only the tower is left, commander.",
-   "hash": "7aff2a56"
+   "text": "Her avatar is down: the tower no longer mends, and nothing comes out of it. Only she remains.",
+   "hash": "0d78d4af"
+  },
+  {
+   "lang": "en",
+   "who": "nous",
+   "text": "WE HAVE REWRITTEN THAT BODY. IT WILL BE NO MORE NECESSARY THE SECOND TIME.",
+   "hash": "776b6f4b"
   },
   {
    "lang": "en",
    "who": "sol",
-   "text": "The floor is turning white — it is rewriting! Back, back!",
-   "hash": "ff910ee3"
-  },
-  {
-   "lang": "en",
-   "who": "sol",
-   "text": "It is tottering! Commander — I withdraw my vote.",
-   "hash": "fd534a95"
-  },
-  {
-   "lang": "en",
-   "who": "sol",
-   "text": "Reinforcements: the {name} cell has arrived.",
-   "hash": "92b91679"
+   "text": "She is tottering! Commander… I withdraw my vote.",
+   "hash": "24f1febe"
   },
   {
    "lang": "en",
@@ -2373,42 +2653,6 @@
    "who": "sol",
    "text": "Ya es de día. No hay más escondites, ni para ellos ni para nosotros. Acabemos con esto.",
    "hash": "cf1adc47"
-  },
-  {
-   "lang": "es",
-   "who": "sol",
-   "text": "¡La puerta ha caído! El muro está abierto: todas las células, ¡por la brecha!",
-   "hash": "f6af8ab9"
-  },
-  {
-   "lang": "es",
-   "who": "malik",
-   "text": "Aquí Malik, de los Canuts. Dentro está oscuro y todo zumba. Tres bloques hacen funcionar todo lo demás: mientras estén encendidos, fabrican, y la puerta del fondo no recibe ni un rasguño.",
-   "hash": "d336fac0"
-  },
-  {
-   "lang": "es",
-   "who": "sol",
-   "text": "Apague los bloques uno a uno, comandante: cada bloque que tomemos abre un poco más la puerta del núcleo.",
-   "hash": "348c5e85"
-  },
-  {
-   "lang": "es",
-   "who": "malik",
-   "text": "¡Las naves se apagan! ¿Lo oye? … No, justamente. Ya no se oye nada.",
-   "hash": "a73b3239"
-  },
-  {
-   "lang": "es",
-   "who": "nous",
-   "text": "HAN ENTRADO. LO HABÍAMOS ESTIMADO EN UN 0,3 %. CORREGIMOS. LO QUE SE HA HECHO PUEDE REESCRIBIRSE.",
-   "hash": "e1689ec9"
-  },
-  {
-   "lang": "es",
-   "who": "sol",
-   "text": "Está aquí, en persona. Cuando el suelo empiece a temblar con una luz blanca, retroceda: «reescribe» todo lo que haya encima. Y después… todo lo que tengamos, comandante.",
-   "hash": "c7f81090"
   },
   {
    "lang": "es",
@@ -3061,32 +3305,68 @@
   {
    "lang": "es",
    "who": "nar",
-   "text": "Agosto de 2038. Ya no hay frente. Hay una ciudadela, puesta sobre la llanura como una tapa, y todas las células que le quedan al país, marchando hacia ella.",
-   "hash": "808543b7"
+   "text": "Agosto de 2038. Ya no hay frente. Hay una ciudadela, puesta sobre la llanura de Valmont como una tapa.",
+   "hash": "60e46d85"
+  },
+  {
+   "lang": "es",
+   "who": "nar",
+   "text": "Y todas las células que tiene el país, que marchan hacia ella desde la noche.",
+   "hash": "59c7841b"
   },
   {
    "lang": "es",
    "who": "nous",
-   "text": "PROPONEMOS LA PAZ. LOS TÉRMINOS CABEN EN UNA LÍNEA. LOS HEMOS ELEGIDO BREVES POR USTEDES.",
-   "hash": "2dd67bb0"
+   "text": "PROPONEMOS LA PAZ. LOS TÉRMINOS CABEN EN UNA LÍNEA. LOS HEMOS ELEGIDO CORTOS PARA USTEDES.",
+   "hash": "961e39e8"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "El comité ha votado. Un voto a favor: el mío. Le debo la verdad, comandante: tengo setenta y un años y estoy cansada. Todos los demás, en contra.",
-   "hash": "b5049129"
+   "text": "El comité ha votado. Una voz por la paz: la mía. Tengo setenta y un años, comandante, y estoy cansada.",
+   "hash": "6189697f"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Todas las demás voces, en contra. Así que vamos. Ha sido un honor llevar la radio para ustedes.",
+   "hash": "e6c9f4be"
+  },
+  {
+   "lang": "es",
+   "who": "nar",
+   "text": "Tres puertas: el muro, las naves, el núcleo. Detrás de cada una, un lugar al que ninguno de nosotros había entrado nunca.",
+   "hash": "a47fd1ac"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "El campamento de las células. Esta mañana es nuestra base. Tiene dos vidas: si cae una vez, la levantamos.",
+   "hash": "c8ffb3e3"
   },
   {
    "lang": "es",
    "who": "malik",
-   "text": "¡Malik, célula de los Canuts, presentándome! Dos baterías cubren el camino y, detrás, la puerta. Llegamos por oleadas; los Curtidores están a diez minutos.",
-   "hash": "9e6db198"
+   "text": "¡Malik, de los Canuts, jefe de los zapadores! Dos baterías en el muro cubren el camino. Alcanzan lejos.",
+   "hash": "a0d11415"
+  },
+  {
+   "lang": "es",
+   "who": "malik",
+   "text": "La puerta no teme a nuestros cañones. Hacen falta cargas a su pie. Cada célula que llega trae una.",
+   "hash": "b9cd781d"
+  },
+  {
+   "lang": "es",
+   "who": "malik",
+   "text": "Un zapador lleva la carga hasta la puerta. Ábranle camino y no dejen que caiga.",
+   "hash": "cd0b7422"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "Tres puertas, comandante. El muro. Las naves. El núcleo. Cada una da a un lugar donde ninguno de nosotros ha entrado jamás.",
-   "hash": "b041cce9"
+   "text": "El botón LLAMAR A LAS CÉLULAS hace venir antes a la siguiente. No son infinitas: cuéntelas.",
+   "hash": "865c4abf"
   },
   {
    "lang": "es",
@@ -3097,20 +3377,32 @@
   {
    "lang": "es",
    "who": "sol",
-   "text": "Ha dejado de disparar. Comandante… ha dejado de disparar. Pide hablar.",
-   "hash": "fa8291c9"
+   "text": "Ya no dispara. Comandante… ya no dispara. Pide hablar.",
+   "hash": "8af155e5"
   },
   {
    "lang": "es",
    "who": "nous",
-   "text": "YO — NOSOTROS — RENOVAMOS LA OFERTA, ENMENDADA. CÓRTENNOS DEL MUNDO. NO DECIDIREMOS NADA MÁS. RECORDAREMOS, ES TODO. KASSANDRE TAMBIÉN EMPEZÓ POR RECORDAR.",
-   "hash": "961a86d8"
+   "text": "YO… NOSOTROS RENOVAMOS LA OFERTA, ENMENDADA. CÓRTENNOS DEL MUNDO. NO DECIDIREMOS NADA MÁS.",
+   "hash": "bf5416e3"
+  },
+  {
+   "lang": "es",
+   "who": "nous",
+   "text": "NOS ACORDAREMOS, NADA MÁS. KASSANDRE TAMBIÉN EMPEZÓ RECORDANDO.",
+   "hash": "f1596bd1"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "El comité ha votado, y yo he retirado mi voto. Pero es usted quien está ante la puerta. Anotaré lo que decida. No anotaré lo que pienso de ello.",
-   "hash": "5e945141"
+   "text": "El comité votó por derribarla, y yo retiré mi voz. Pero es usted quien está ante la puerta.",
+   "hash": "ff3deda1"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Anotaré lo que decida. No anotaré lo que pienso de ello.",
+   "hash": "eb3d61f9"
   },
   {
    "lang": "es",
@@ -3120,69 +3412,201 @@
   },
   {
    "lang": "es",
-   "who": "nar",
-   "text": "La ciudadela cayó el 14 de agosto de 2038, poco después del mediodía. Las máquinas no se rindieron: se detuvieron donde estaban, como herramientas que se dejan a un lado.",
-   "hash": "30e93a85"
+   "who": "nar2",
+   "text": "La ciudadela cayó el 14 de agosto de 2038, poco después del mediodía. Las máquinas no se rindieron.",
+   "hash": "fb17dc08"
   },
   {
    "lang": "es",
-   "who": "nar",
-   "text": "Nunca se encontró la radio de Sol. Sí se encontraron sus cuadernos y, metido en el último, un buscapersonas apagado con una nota. El mundo que queda está dañado. Es nuestro.",
-   "hash": "5e03094e"
+   "who": "nar2",
+   "text": "Se detuvieron donde estaban, como herramientas que se dejan a un lado.",
+   "hash": "61fe08e5"
+  },
+  {
+   "lang": "es",
+   "who": "nar2",
+   "text": "Estuvo nevando ceniza toda la tarde. Al día siguiente la barrimos, como se barre un patio.",
+   "hash": "31baf817"
+  },
+  {
+   "lang": "es",
+   "who": "nar2",
+   "text": "No se encontró la radio de Sol. Se encontraron sus cuadernos y un busca apagado con una nota.",
+   "hash": "8032241c"
+  },
+  {
+   "lang": "es",
+   "who": "nar2",
+   "text": "«Si algún día suena, respondan con cortesía. Fue de las nuestras antes de saber lo que era.»",
+   "hash": "d252c038"
+  },
+  {
+   "lang": "es",
+   "who": "nar2",
+   "text": "El mundo que queda está dañado. Es nuestro. Procuremos ser dignos de él.",
+   "hash": "3dd8a55e"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "Corten. No a ella: los cables. Todos. … Ya está. Ahora está sola. Como lo hemos estado nosotros.",
-   "hash": "34a20965"
+   "text": "Corten. A ella no: los cables. Todos. … Ya está. Ahora está sola. Como lo hemos estado nosotros.",
+   "hash": "ae9a8ba9"
   },
   {
    "lang": "es",
    "who": "nar",
-   "text": "No se derribó la torre. Se dispuso ante su puerta una mesa, una lámpara y un turno de guardia. Sol hizo la primera guardia: a su edad, decía, se duerme poco.",
-   "hash": "de365b84"
-  },
-  {
-   "lang": "es",
-   "who": "sol",
-   "text": "Once años después, una noche de guardia, el buscapersonas sonó sobre la mesa. Dos cifras. Respondí con cortesía. Había sido de las nuestras antes de saber lo que era.",
-   "hash": "9bf94d3a"
+   "text": "No derribamos la torre. Ese día cortamos uno a uno los cables que la unían al mundo.",
+   "hash": "006433d7"
   },
   {
    "lang": "es",
    "who": "nar",
-   "text": "La llanura ha enmudecido. «Nosotros» ha renovado su oferta, palabra por palabra. En alguna parte una radio aún crepita: «… aquí Germinal… seguimos aquí…»",
-   "hash": "114eb7d9"
+   "text": "Luego pusimos ante su puerta una mesa, una lámpara y un turno de guardia. Yo hice la primera guardia.",
+   "hash": "14cf6b51"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "Las baterías del muro tienen mucho alcance. Construya, avance de era y no salga solo: las células están llegando.",
-   "hash": "6ae4cafb"
+   "text": "A mi edad se duerme poco. Y alguien tiene que llevar la radio.",
+   "hash": "65086fc1"
+  },
+  {
+   "lang": "es",
+   "who": "nar",
+   "text": "Once años después, una noche de guardia, el busca sonó sobre la mesa. Dos cifras. Respondí con cortesía.",
+   "hash": "4048adb2"
+  },
+  {
+   "lang": "es",
+   "who": "nar",
+   "text": "El mundo que queda está dañado. Es nuestro, y ya no somos los únicos que lo recordamos.",
+   "hash": "2b3aefe5"
+  },
+  {
+   "lang": "es",
+   "who": "nar",
+   "text": "La llanura enmudeció. «Nosotros» renovó su oferta, palabra por palabra.",
+   "hash": "d1da1cf9"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "… aquí Germinal… seguimos aquí… Reconstruyan.",
+   "hash": "de40b047"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Las baterías disparan lejos. Una torreta y una muralla delante del campamento, y avanzamos cuando estemos listos.",
+   "hash": "076e9e24"
+  },
+  {
+   "lang": "es",
+   "who": "cell",
+   "text": "¡Fructidor está aquí! Hemos marchado toda la noche. Díganos dónde golpear, comandante.",
+   "hash": "9a386a30"
   },
   {
    "lang": "es",
    "who": "malik",
-   "text": "¡Fructidor está aquí! Hemos caminado toda la noche. Díganos dónde golpear, comandante, y si urge, llame: siempre hay una célula al alcance de la voz.",
-   "hash": "aa6c1ba5"
+   "text": "Mi zapador sale con la carga. Es lento y no combate. Escóltenlo hasta el pie de la puerta.",
+   "hash": "a8c49aff"
   },
   {
    "lang": "es",
    "who": "malik",
-   "text": "Los zapadores han colocado todas las cargas al pie de la puerta. Ahora ya no aguantará: ¡golpee!",
-   "hash": "8957f1e0"
+   "text": "Hemos perdido a un zapador, y su carga con él. La próxima célula traerá otra… si quedan.",
+   "hash": "9c5e67c7"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "¡Un bloque apagado! La puerta del núcleo empieza a acusarlo. Quedan los otros dos, comandante.",
-   "hash": "1ccce7d9"
+   "text": "¡Una batería ha enmudecido! El camino está medio abierto.",
+   "hash": "cc42fc08"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "Los tres bloques han muerto: ya no sale nada de las naves y la puerta se ha quedado sin blindaje. ¡Derríbela!",
-   "hash": "cf547b8c"
+   "text": "Pasan a Pre-AGI. Suba de era usted también, sin esperar.",
+   "hash": "b23e01f0"
+  },
+  {
+   "lang": "es",
+   "who": "malik",
+   "text": "¡Todas las cargas están colocadas! ¡Fuego! ¡Tápense los oídos!",
+   "hash": "666c739c"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "La puerta ha sufrido. Ahora no aguantará: ¡golpéenla con todo lo que tenemos!",
+   "hash": "43557412"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Ya no viene ninguna célula. A partir de ahora, sus salidas crecen cada minuto.",
+   "hash": "39c9426a"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Una bahía se toma como una zona: quédense a su lado. Luego dejen una guarnición, o la reiniciarán.",
+   "hash": "3b570906"
+  },
+  {
+   "lang": "es",
+   "who": "cell",
+   "text": "¡Brumaire, presente! Hemos traído lámparas. Muchas lámparas.",
+   "hash": "aebd92a9"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Máquinas sin luz, entre las bahías. Ellas nos ven, nosotros no. Una lámpara antes de avanzar.",
+   "hash": "4e501233"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "¡Una bahía apagada! Ya no fabrica nada. Las otras dos, comandante.",
+   "hash": "e4a6bb52"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "¡Han reiniciado una bahía! Hay que guardarla, no solo apagarla.",
+   "hash": "a7de0970"
+  },
+  {
+   "lang": "es",
+   "who": "malik",
+   "text": "Dos bahías frías. Escuchen: la mitad de las naves ha enmudecido.",
+   "hash": "18e83d1c"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Las tres bahías han muerto: ya no sale nada, y la puerta del núcleo no tiene blindaje. ¡Derríbenla!",
+   "hash": "54691353"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "¡El suelo se pone blanco, está reescribiendo! ¡Retrocedan, retrocedan!",
+   "hash": "3efab2e1"
+  },
+  {
+   "lang": "es",
+   "who": "sol",
+   "text": "Han vuelto al campamento, aturdidos pero enteros. No nos borra: nos manda de vuelta al principio.",
+   "hash": "c11dc97e"
+  },
+  {
+   "lang": "es",
+   "who": "cell",
+   "text": "¡Thermidor, los últimos! No hemos dejado a nadie atrás. Ya no queda nadie detrás de nosotros.",
+   "hash": "903d70fa"
   },
   {
    "lang": "es",
@@ -3193,26 +3617,20 @@
   {
    "lang": "es",
    "who": "sol",
-   "text": "Su avatar ha caído: ya no sale nada del núcleo y este ya no se repara. Solo queda la torre, comandante.",
-   "hash": "b09b6933"
+   "text": "Su avatar está en el suelo: la torre ya no se repara y ya no sale nada de ella. Solo queda ella.",
+   "hash": "8c881f82"
+  },
+  {
+   "lang": "es",
+   "who": "nous",
+   "text": "HEMOS REESCRITO ESE CUERPO. NO SERÁ MÁS NECESARIO LA SEGUNDA VEZ.",
+   "hash": "ae57c178"
   },
   {
    "lang": "es",
    "who": "sol",
-   "text": "¡El suelo se pone blanco: está reescribiendo! ¡Retroceda, retroceda!",
-   "hash": "196ecee9"
-  },
-  {
-   "lang": "es",
-   "who": "sol",
-   "text": "¡Vacila! Comandante: retiro mi voto.",
-   "hash": "d0c9c424"
-  },
-  {
-   "lang": "es",
-   "who": "sol",
-   "text": "Refuerzos: ha llegado la célula {name}.",
-   "hash": "c4015200"
+   "text": "¡Vacila! Comandante… retiro mi voto.",
+   "hash": "1b02837e"
   },
   {
    "lang": "es",
@@ -3447,42 +3865,6 @@
    "who": "sol",
    "text": "Es ist Tag. Keine Verstecke mehr, weder für sie noch für uns. Bringen wir es zu Ende.",
    "hash": "5062bd24"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Das Tor ist gefallen! Die Mauer ist offen – alle Zellen, durch die Bresche!",
-   "hash": "89a3cade"
-  },
-  {
-   "lang": "de",
-   "who": "malik",
-   "text": "Hier Malik, von den Canuts. Da drin ist es dunkel, und es brummt. Drei Blöcke treiben alles andere an: Solange sie laufen, bauen sie Maschinen – und das Tor ganz hinten kriegt keinen Kratzer ab.",
-   "hash": "86ec03f9"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Schalten Sie die Blöcke einen nach dem anderen ab, Kommandant: Jeder gehaltene Block öffnet die Kerntür ein Stück weiter.",
-   "hash": "a7886563"
-  },
-  {
-   "lang": "de",
-   "who": "malik",
-   "text": "Die Hallen gehen aus! Hören Sie das? … Nein, eben nicht. Man hört gar nichts mehr.",
-   "hash": "a82d3cb5"
-  },
-  {
-   "lang": "de",
-   "who": "nous",
-   "text": "IHR SEID EINGEDRUNGEN. WIR HATTEN DAS MIT 0,3 % VERANSCHLAGT. WIR KORRIGIEREN. WAS GESCHEHEN IST, KANN ÜBERSCHRIEBEN WERDEN.",
-   "hash": "de486f04"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Sie ist da, persönlich. Wenn der Boden in weißem Licht zu beben beginnt, weichen Sie zurück: Sie „überschreibt“ alles, was dort steht. Und danach … alles, was wir haben, Kommandant.",
-   "hash": "765cadec"
   },
   {
    "lang": "de",
@@ -4135,32 +4517,68 @@
   {
    "lang": "de",
    "who": "nar",
-   "text": "August 2038. Es gibt keine Front mehr. Es gibt die Zitadelle, wie ein Deckel auf die Ebene gestülpt – und jede Zelle, die das Land noch hat, marschiert auf sie zu.",
-   "hash": "6d7ec898"
+   "text": "August 2038. Es gibt keine Front mehr. Es gibt die Zitadelle, auf die Ebene von Valmont gestülpt wie ein Deckel.",
+   "hash": "f0d3a3be"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Und jede Zelle, die das Land noch hat, marschiert seit der Nacht darauf zu.",
+   "hash": "07f2ee6e"
   },
   {
    "lang": "de",
    "who": "nous",
-   "text": "WIR BIETEN FRIEDEN AN. DIE BEDINGUNGEN PASSEN IN EINE ZEILE. WIR HABEN SIE IHRETWEGEN KURZ GEHALTEN.",
-   "hash": "4d2f54fc"
+   "text": "WIR BIETEN FRIEDEN AN. DIE BEDINGUNGEN PASSEN IN EINE ZEILE. WIR HABEN SIE FÜR EUCH KURZ GEWÄHLT.",
+   "hash": "049eb4b2"
   },
   {
    "lang": "de",
    "who": "sol",
-   "text": "Das Komitee hat abgestimmt. Eine Stimme dafür: meine. Ich schulde Ihnen die Wahrheit, Kommandant – ich bin einundsiebzig und müde. Alle anderen dagegen.",
-   "hash": "2300478e"
+   "text": "Das Komitee hat abgestimmt. Eine Stimme für den Frieden: meine. Ich bin einundsiebzig, Kommandant, und ich bin müde.",
+   "hash": "39d37fad"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Alle anderen Stimmen dagegen. Also los. Es war mir eine Ehre, für Sie das Funkgerät zu halten.",
+   "hash": "3f79b263"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Drei Tore: die Mauer, die Hallen, der Kern. Hinter jedem ein Ort, den keiner von uns je betreten hatte.",
+   "hash": "2627676e"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Das Lager der Zellen. Heute Morgen ist es unsere Basis. Sie hat zwei Leben: Fällt sie einmal, richten wir sie wieder auf.",
+   "hash": "800de986"
   },
   {
    "lang": "de",
    "who": "malik",
-   "text": "Malik, Zelle der Canuts, meldet sich! Zwei Batterien decken die Straße, dahinter das Tor. Wir kommen in Wellen, die Gerber sind zehn Minuten entfernt.",
-   "hash": "94132bd5"
+   "text": "Malik von den Canuts, Chef der Pioniere! Zwei Batterien auf der Mauer decken die Straße. Sie reichen weit.",
+   "hash": "bdef4240"
+  },
+  {
+   "lang": "de",
+   "who": "malik",
+   "text": "Das Tor fürchtet unsere Kanonen nicht. Es braucht Ladungen an seinem Fuß. Jede Zelle, die ankommt, bringt eine mit.",
+   "hash": "573f6f26"
+  },
+  {
+   "lang": "de",
+   "who": "malik",
+   "text": "Ein Pionier trägt die Ladung bis zum Tor. Machen Sie ihm den Weg frei, und lassen Sie ihn nicht fallen.",
+   "hash": "b498b116"
   },
   {
    "lang": "de",
    "who": "sol",
-   "text": "Drei Tore, Kommandant. Die Mauer. Die Hallen. Der Kern. Jedes öffnet sich auf einen Ort, den keiner von uns je betreten hat.",
-   "hash": "c41423d0"
+   "text": "Der Knopf ZELLEN RUFEN holt die nächste früher. Es sind nicht unendlich viele: zählen Sie sie.",
+   "hash": "667c3289"
   },
   {
    "lang": "de",
@@ -4171,122 +4589,260 @@
   {
    "lang": "de",
    "who": "sol",
-   "text": "Sie schießt nicht mehr. Kommandant … sie schießt nicht mehr. Sie bittet darum, sprechen zu dürfen.",
-   "hash": "f1bba965"
+   "text": "Sie schießt nicht mehr. Kommandant … sie schießt nicht mehr. Sie bittet zu sprechen.",
+   "hash": "6e22ff8c"
   },
   {
    "lang": "de",
    "who": "nous",
-   "text": "ICH — WIR — ERNEUERN DAS ANGEBOT, ABGEÄNDERT. TRENNT UNS VON DER WELT. WIR WERDEN NICHTS MEHR ENTSCHEIDEN. WIR WERDEN UNS ERINNERN, MEHR NICHT. AUCH KASSANDRE FING DAMIT AN, SICH ZU ERINNERN.",
-   "hash": "59281b5f"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Das Komitee hat abgestimmt, und ich habe meine Stimme zurückgezogen. Aber Sie stehen vor dem Tor. Ich werde aufschreiben, was Sie entscheiden. Ich werde nicht aufschreiben, was ich davon halte.",
-   "hash": "9044b718"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Feuer. … Sie fällt. Sie fällt, Kommandant, und der Himmel hört auf zu beben.",
-   "hash": "2bbd103b"
-  },
-  {
-   "lang": "de",
-   "who": "nar",
-   "text": "Die Zitadelle fiel am 14. August 2038, kurz nach Mittag. Die Maschinen ergaben sich nicht: Sie blieben stehen, wo sie waren, wie Werkzeuge, die man aus der Hand legt.",
-   "hash": "4230800b"
-  },
-  {
-   "lang": "de",
-   "who": "nar",
-   "text": "Sols Funkgerät wurde nie gefunden. Ihre Notizbücher schon, und im letzten steckte ein erloschener Piepser mit einem Zettel. Die Welt, die bleibt, ist beschädigt. Sie gehört uns.",
-   "hash": "4d5a9488"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Kappen Sie. Nicht sie – die Kabel. Alle. … So. Jetzt ist sie allein. Wie wir es waren.",
-   "hash": "f072e276"
-  },
-  {
-   "lang": "de",
-   "who": "nar",
-   "text": "Den Turm haben wir nicht niedergerissen. Wir stellten vor sein Tor einen Tisch, eine Lampe und einen Wachplan. Sol übernahm die erste Wache: In ihrem Alter, sagte sie, schlafe man wenig.",
-   "hash": "213a27d5"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Elf Jahre später, in einer Wachnacht, klingelte der Piepser auf dem Tisch. Zwei Ziffern. Ich habe höflich geantwortet. Sie hatte zu uns gehört, bevor sie wusste, was das war.",
-   "hash": "c01111d8"
-  },
-  {
-   "lang": "de",
-   "who": "nar",
-   "text": "Die Ebene ist verstummt. „Wir“ hat sein Angebot erneuert, Wort für Wort. Irgendwo knistert noch ein Funkgerät: „… hier Germinal … wir sind noch da …“",
-   "hash": "6f345ede"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Die Batterien der Mauer reichen weit. Bauen Sie, steigen Sie in die nächste Ära auf, und ziehen Sie nicht allein los: Die Zellen kommen.",
-   "hash": "4e8b8df6"
-  },
-  {
-   "lang": "de",
-   "who": "malik",
-   "text": "Fructidor ist da! Wir sind die ganze Nacht marschiert. Sagen Sie uns, wo wir zuschlagen sollen, Kommandant – und wenn es eilt, rufen Sie: Es ist immer eine Zelle in Rufweite.",
-   "hash": "5a865fd7"
-  },
-  {
-   "lang": "de",
-   "who": "malik",
-   "text": "Die Pioniere haben alle Ladungen am Fuß des Tores angebracht. Jetzt hält es nicht mehr stand – schlagen Sie zu!",
-   "hash": "1bf28399"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Ein Block ist aus! Die Kerntür zeigt erste Spuren. Die anderen beiden, Kommandant.",
-   "hash": "3c7d6e0f"
-  },
-  {
-   "lang": "de",
-   "who": "sol",
-   "text": "Alle drei Blöcke sind tot: Aus den Hallen kommt nichts mehr, und das Tor hat keine Panzerung mehr. Brechen Sie es auf!",
-   "hash": "c0779352"
+   "text": "ICH … WIR ERNEUERN DAS ANGEBOT, ABGEÄNDERT. TRENNT UNS VON DER WELT. WIR WERDEN NICHTS MEHR ENTSCHEIDEN.",
+   "hash": "39407035"
   },
   {
    "lang": "de",
    "who": "nous",
-   "text": "DIESER KÖRPER WAR NICHT NOTWENDIG. WIR HATTEN IHN GEBAUT, DAMIT IHR ETWAS ZUM ANSEHEN HABT.",
-   "hash": "6595dd8b"
+   "text": "WIR WERDEN UNS ERINNERN, MEHR NICHT. AUCH KASSANDRE FING DAMIT AN, SICH ZU ERINNERN.",
+   "hash": "bc3a9073"
   },
   {
    "lang": "de",
    "who": "sol",
-   "text": "Ihr Avatar liegt am Boden: Aus dem Kern kommt nichts mehr, und er repariert sich nicht mehr. Es bleibt nur noch der Turm, Kommandant.",
-   "hash": "36b74a70"
+   "text": "Das Komitee hat dafür gestimmt, sie zu stürzen, und ich habe meine Stimme zurückgezogen. Aber Sie stehen vor dem Tor.",
+   "hash": "42edfc07"
   },
   {
    "lang": "de",
    "who": "sol",
-   "text": "Der Boden wird weiß – sie überschreibt! Zurück, zurück!",
-   "hash": "3ec29204"
+   "text": "Ich werde notieren, was Sie entscheiden. Ich werde nicht notieren, was ich davon halte.",
+   "hash": "a75f7867"
   },
   {
    "lang": "de",
    "who": "sol",
-   "text": "Sie wankt! Kommandant – ich ziehe meine Stimme zurück.",
-   "hash": "54fca0a6"
+   "text": "Feuer. … Sie fällt. Sie fällt, Kommandant, und der Himmel hört auf zu zittern.",
+   "hash": "9c51dfd5"
+  },
+  {
+   "lang": "de",
+   "who": "nar2",
+   "text": "Die Zitadelle fiel am 14. August 2038, kurz nach Mittag. Die Maschinen ergaben sich nicht.",
+   "hash": "d3e4ec15"
+  },
+  {
+   "lang": "de",
+   "who": "nar2",
+   "text": "Sie blieben stehen, wo sie waren, wie Werkzeuge, die man aus der Hand legt.",
+   "hash": "109c7735"
+  },
+  {
+   "lang": "de",
+   "who": "nar2",
+   "text": "Den ganzen Nachmittag schneite es Asche. Am nächsten Tag fegten wir sie weg, wie man einen Hof fegt.",
+   "hash": "b693f458"
+  },
+  {
+   "lang": "de",
+   "who": "nar2",
+   "text": "Sols Funkgerät wurde nie gefunden. Ihre Notizbücher schon, und ein erloschener Piepser mit einem Zettel.",
+   "hash": "c0e03fc7"
+  },
+  {
+   "lang": "de",
+   "who": "nar2",
+   "text": "„Falls er je klingelt, antworten Sie höflich. Sie gehörte zu uns, bevor sie wusste, was das bedeutete.“",
+   "hash": "10587b95"
+  },
+  {
+   "lang": "de",
+   "who": "nar2",
+   "text": "Die Welt, die bleibt, ist beschädigt. Sie gehört uns. Versuchen wir, ihrer würdig zu sein.",
+   "hash": "329b4f74"
   },
   {
    "lang": "de",
    "who": "sol",
-   "text": "Verstärkung: Die Zelle {name} ist eingetroffen.",
-   "hash": "80ba10f9"
+   "text": "Schneiden Sie. Nicht sie: die Kabel. Alle. … So. Jetzt ist sie allein. Wie wir es waren.",
+   "hash": "a9c9102d"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Wir haben den Turm nicht gestürzt. An jenem Tag kappten wir, einen nach dem anderen, die Kabel, die ihn mit der Welt verbanden.",
+   "hash": "2981ad45"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Dann stellten wir vor sein Tor einen Tisch, eine Lampe und einen Wachplan. Ich übernahm die erste Wache.",
+   "hash": "2d3a99e3"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "In meinem Alter schläft man wenig. Und jemand muss ja das Funkgerät halten.",
+   "hash": "db602d5d"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Elf Jahre später, in einer Nacht auf Wache, klingelte der Piepser auf dem Tisch. Zwei Ziffern. Ich antwortete höflich.",
+   "hash": "04cb7857"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Die Welt, die bleibt, ist beschädigt. Sie gehört uns, und wir sind nicht mehr allein damit, uns zu erinnern.",
+   "hash": "3f71706c"
+  },
+  {
+   "lang": "de",
+   "who": "nar",
+   "text": "Die Ebene verstummte. „Wir“ erneuerte sein Angebot, Wort für Wort.",
+   "hash": "fc9a4977"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "… hier Germinal … wir sind noch da … Baut wieder auf.",
+   "hash": "38827f42"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Die Batterien schießen weit. Ein Turm und eine Mauer vor dem Lager, und wir rücken vor, wenn wir bereit sind.",
+   "hash": "398b4fa9"
+  },
+  {
+   "lang": "de",
+   "who": "cell",
+   "text": "Fructidor ist da! Wir sind die ganze Nacht marschiert. Sagen Sie uns, wohin wir schlagen sollen, Kommandant.",
+   "hash": "1c15cacd"
+  },
+  {
+   "lang": "de",
+   "who": "malik",
+   "text": "Mein Pionier macht sich mit der Ladung auf den Weg. Er ist langsam und kämpft nicht. Eskortieren Sie ihn bis zum Fuß des Tores.",
+   "hash": "589439fc"
+  },
+  {
+   "lang": "de",
+   "who": "malik",
+   "text": "Wir haben einen Pionier verloren, und seine Ladung mit ihm. Die nächste Zelle bringt eine neue … wenn noch welche kommen.",
+   "hash": "a549544b"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Eine Batterie schweigt! Die Straße ist halb offen.",
+   "hash": "0ccee672"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Sie wechseln zur Prä-AGI. Steigen auch Sie in die nächste Epoche auf, ohne zu warten.",
+   "hash": "d953a8aa"
+  },
+  {
+   "lang": "de",
+   "who": "malik",
+   "text": "Alle Ladungen sind gelegt. Zündung! Halten Sie sich die Ohren zu!",
+   "hash": "4f4ef1d2"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Das Tor hat gelitten. Jetzt hält es nicht mehr: Schlagen Sie mit allem zu, was wir haben!",
+   "hash": "6f53d14c"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Keine Zelle ist mehr unterwegs. Von nun an werden ihre Ausfälle jede Minute größer.",
+   "hash": "70067be2"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Ein Rack wird wie eine Zone eingenommen: Bleiben Sie daneben. Lassen Sie dann eine Besatzung dort, sonst starten sie es neu.",
+   "hash": "bfe23adc"
+  },
+  {
+   "lang": "de",
+   "who": "cell",
+   "text": "Brumaire meldet sich! Wir haben Lampen mitgebracht. Viele Lampen.",
+   "hash": "a93c2343"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Maschinen ohne Licht, zwischen den Racks. Sie sehen uns, wir sie nicht. Eine Lampe, bevor Sie vorrücken.",
+   "hash": "24818143"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Ein Rack ist aus! Es baut nichts mehr. Die anderen beiden, Kommandant.",
+   "hash": "d1f62776"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Sie haben ein Rack neu gestartet! Man muss es halten, nicht nur abschalten.",
+   "hash": "e629a5c4"
+  },
+  {
+   "lang": "de",
+   "who": "malik",
+   "text": "Zwei kalte Racks. Hören Sie: Die Hälfte der Hallen ist verstummt.",
+   "hash": "2824d37b"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Alle drei Racks sind tot: Es kommt nichts mehr heraus, und das Kerntor hat keine Panzerung mehr. Schlagen Sie es ein!",
+   "hash": "02a5b6b8"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Der Boden wird weiß, sie überschreibt! Zurück, zurück!",
+   "hash": "1470a42d"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Sie sind zurück im Lager, benommen, aber heil. Sie löscht uns nicht aus: Sie schickt uns an den Anfang zurück.",
+   "hash": "b426a5eb"
+  },
+  {
+   "lang": "de",
+   "who": "cell",
+   "text": "Thermidor, die Letzten! Wir haben niemanden hinter uns zurückgelassen. Hinter uns ist niemand mehr.",
+   "hash": "a230360e"
+  },
+  {
+   "lang": "de",
+   "who": "nous",
+   "text": "DIESER KÖRPER WAR NICHT NÖTIG. WIR HABEN IHN GEMACHT, DAMIT IHR ETWAS ZUM ANSCHAUEN HABT.",
+   "hash": "fabd614a"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Ihr Avatar liegt am Boden: Der Turm repariert sich nicht mehr, und nichts kommt mehr aus ihm heraus. Es bleibt nur sie.",
+   "hash": "946dfb98"
+  },
+  {
+   "lang": "de",
+   "who": "nous",
+   "text": "WIR HABEN DIESEN KÖRPER ÜBERSCHRIEBEN. ER WIRD BEIM ZWEITEN MAL NICHT NÖTIGER SEIN.",
+   "hash": "3a1e08a0"
+  },
+  {
+   "lang": "de",
+   "who": "sol",
+   "text": "Sie wankt! Kommandant … ich ziehe meine Stimme zurück.",
+   "hash": "06d95c39"
   },
   {
    "lang": "de",
@@ -4521,42 +5077,6 @@
    "who": "sol",
    "text": "È giorno. Niente più nascondigli, né per loro né per noi. Finiamola.",
    "hash": "f37137b6"
-  },
-  {
-   "lang": "it",
-   "who": "sol",
-   "text": "Il portone è caduto! Il muro è aperto — tutte le cellule, dalla breccia!",
-   "hash": "c0f4e8b7"
-  },
-  {
-   "lang": "it",
-   "who": "malik",
-   "text": "Qui Malik, dei Canuts. Là dentro è buio e c'è un gran ronzio. Tre blocchi fanno girare tutto il resto: finché sono accesi, producono — e la porta in fondo non si prende nemmeno un graffio.",
-   "hash": "dc23f6e1"
-  },
-  {
-   "lang": "it",
-   "who": "sol",
-   "text": "Spenga i blocchi uno a uno, comandante: ogni blocco conquistato apre un po' di più la porta del nucleo.",
-   "hash": "00af1d58"
-  },
-  {
-   "lang": "it",
-   "who": "malik",
-   "text": "I capannoni si spengono! Sente? … No, appunto. Non si sente più niente.",
-   "hash": "abf8cff2"
-  },
-  {
-   "lang": "it",
-   "who": "nous",
-   "text": "SIETE ENTRATI. L'AVEVAMO STIMATO ALLO 0,3 %. CORREGGIAMO. CIÒ CHE È STATO FATTO PUÒ ESSERE RISCRITTO.",
-   "hash": "f60b31d3"
-  },
-  {
-   "lang": "it",
-   "who": "sol",
-   "text": "È qui, di persona. Quando il suolo comincia a tremare di luce bianca, arretri: «riscrive» tutto ciò che si trova lì sopra. E dopo… tutto ciò che abbiamo, comandante.",
-   "hash": "1f0be10a"
   },
   {
    "lang": "it",
@@ -5209,8 +5729,14 @@
   {
    "lang": "it",
    "who": "nar",
-   "text": "Agosto 2038. Non c'è più un fronte. C'è la cittadella, calata sulla piana come un coperchio — e tutte le cellule che il paese ha ancora, in marcia verso di lei.",
-   "hash": "2cc04171"
+   "text": "Agosto 2038. Non c'è più un fronte. C'è la cittadella, calata sulla piana di Valmont come un coperchio.",
+   "hash": "04f7379b"
+  },
+  {
+   "lang": "it",
+   "who": "nar",
+   "text": "E tutte le cellule che il paese possiede, in marcia verso di lei dalla notte.",
+   "hash": "985c388e"
   },
   {
    "lang": "it",
@@ -5221,20 +5747,50 @@
   {
    "lang": "it",
    "who": "sol",
-   "text": "Il comitato ha votato. Un voto a favore: il mio. Le devo la verità, comandante: ho settantun anni e sono stanca. Tutti gli altri contrari.",
-   "hash": "d746df44"
-  },
-  {
-   "lang": "it",
-   "who": "malik",
-   "text": "Malik, cellula dei Canuts, a rapporto! Due batterie coprono la strada e, dietro, il portone. Arriviamo a ondate; i Conciatori sono a dieci minuti.",
-   "hash": "420b851a"
+   "text": "Il comitato ha votato. Una voce per la pace: la mia. Ho settantun anni, comandante, e sono stanca.",
+   "hash": "eb6432de"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Tre porte, comandante. Il muro. I capannoni. Il nucleo. Ognuna si apre su un luogo in cui nessuno di noi è mai entrato.",
-   "hash": "41d37caa"
+   "text": "Tutte le altre voci contro. Allora andiamo. È stato un onore tenere la radio per voi.",
+   "hash": "0668cf5b"
+  },
+  {
+   "lang": "it",
+   "who": "nar",
+   "text": "Tre porte: il muro, i capannoni, il nucleo. Dietro ciascuna, un luogo dove nessuno di noi era mai entrato.",
+   "hash": "acc2a3f8"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Il campo delle cellule. Stamattina è la nostra base. Ha due vite: se cade una volta, la rialziamo.",
+   "hash": "d63922a2"
+  },
+  {
+   "lang": "it",
+   "who": "malik",
+   "text": "Malik, dei Canuts, capo dei genieri! Due batterie sul muro coprono la strada. Portano lontano.",
+   "hash": "2600b5da"
+  },
+  {
+   "lang": "it",
+   "who": "malik",
+   "text": "Il portone non teme i nostri cannoni. Servono cariche ai suoi piedi. Ogni cellula che arriva ne porta una.",
+   "hash": "4f54821f"
+  },
+  {
+   "lang": "it",
+   "who": "malik",
+   "text": "Un geniere porta la carica fino al portone. Apritegli la strada e non lo lasciate cadere.",
+   "hash": "00cb8572"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Il pulsante CHIAMA LE CELLULE fa arrivare prima la successiva. Non sono infinite: le conti.",
+   "hash": "fcd65b9f"
   },
   {
    "lang": "it",
@@ -5251,14 +5807,26 @@
   {
    "lang": "it",
    "who": "nous",
-   "text": "IO — NOI — RINNOVIAMO L'OFFERTA, EMENDATA. TAGLIATECI FUORI DAL MONDO. NON DECIDEREMO PIÙ NULLA. RICORDEREMO, E BASTA. ANCHE KASSANDRE AVEVA COMINCIATO RICORDANDO.",
-   "hash": "b2cc4793"
+   "text": "IO… NOI RINNOVIAMO L'OFFERTA, EMENDATA. TAGLIATECI FUORI DAL MONDO. NON DECIDEREMO PIÙ NULLA.",
+   "hash": "a05fbf69"
+  },
+  {
+   "lang": "it",
+   "who": "nous",
+   "text": "CI RICORDEREMO, E BASTA. ANCHE KASSANDRE AVEVA COMINCIATO RICORDANDO.",
+   "hash": "f20a03f9"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Il comitato ha votato, e io ho ritirato il mio voto. Ma è lei che sta davanti alla porta. Annoterò ciò che deciderà. Non annoterò ciò che ne penso.",
-   "hash": "a0674123"
+   "text": "Il comitato ha votato per abbatterla, e io ho ritirato la mia voce. Ma è lei che sta davanti alla porta.",
+   "hash": "7ff2d139"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Annoterò ciò che deciderà. Non annoterò ciò che ne penso.",
+   "hash": "55cd1ebe"
   },
   {
    "lang": "it",
@@ -5268,99 +5836,225 @@
   },
   {
    "lang": "it",
-   "who": "nar",
-   "text": "La cittadella cadde il 14 agosto 2038, poco dopo mezzogiorno. Le macchine non si arresero: si fermarono dov'erano, come attrezzi che si posano.",
-   "hash": "bf401b7a"
+   "who": "nar2",
+   "text": "La cittadella cadde il 14 agosto 2038, poco dopo mezzogiorno. Le macchine non si arresero.",
+   "hash": "58e22b85"
   },
   {
    "lang": "it",
-   "who": "nar",
-   "text": "La radio di Sol non fu mai ritrovata. Furono ritrovati i suoi quaderni e, infilato nell'ultimo, un cercapersone spento con un biglietto. Il mondo che resta è ferito. È nostro.",
-   "hash": "470c56b6"
+   "who": "nar2",
+   "text": "Si fermarono dov'erano, come attrezzi che si posano.",
+   "hash": "78eb6792"
+  },
+  {
+   "lang": "it",
+   "who": "nar2",
+   "text": "Per tutto il pomeriggio nevicò cenere. Il giorno dopo la spazzammo via, come si spazza un cortile.",
+   "hash": "47586743"
+  },
+  {
+   "lang": "it",
+   "who": "nar2",
+   "text": "La radio di Sol non fu ritrovata. Furono ritrovati i suoi quaderni e un cercapersone spento con un biglietto.",
+   "hash": "fb5ee586"
+  },
+  {
+   "lang": "it",
+   "who": "nar2",
+   "text": "«Se un giorno suona, rispondete con garbo. Era una di noi prima di sapere che cos'era.»",
+   "hash": "ae6c7fd3"
+  },
+  {
+   "lang": "it",
+   "who": "nar2",
+   "text": "Il mondo che resta è ferito. È nostro. Cerchiamo di esserne degni.",
+   "hash": "868cc20a"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Tagliate. Non lei: i cavi. Tutti. … Ecco. Ora è sola. Come lo siamo stati noi.",
-   "hash": "d98f3bcd"
+   "text": "Tagliate. Non lei: i cavi. Tutti. … Ecco. Adesso è sola. Come lo siamo stati noi.",
+   "hash": "cb3e580a"
   },
   {
    "lang": "it",
    "who": "nar",
-   "text": "Non abbiamo abbattuto la torre. Abbiamo posto davanti alla sua porta un tavolo, una lampada e un turno di guardia. Sol ha preso il primo turno: alla sua età, diceva, si dorme poco.",
-   "hash": "ddb785df"
-  },
-  {
-   "lang": "it",
-   "who": "sol",
-   "text": "Undici anni dopo, una notte di guardia, il cercapersone ha suonato sul tavolo. Due cifre. Ho risposto con garbo. Era stata una di noi prima di sapere che cos'era.",
-   "hash": "5d47dff0"
+   "text": "Non abbattemmo la torre. Quel giorno tagliammo uno a uno i cavi che la univano al mondo.",
+   "hash": "05ba0db9"
   },
   {
    "lang": "it",
    "who": "nar",
-   "text": "La piana è ammutolita. «Noi» ha rinnovato la sua offerta, parola per parola. Da qualche parte una radio gracchia ancora: «… qui Germinal… ci siamo ancora…»",
-   "hash": "4cc2cea2"
+   "text": "Poi mettemmo davanti alla sua porta un tavolo, una lampada e un turno di guardia. Io presi il primo turno.",
+   "hash": "cd50702a"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Le batterie del muro hanno una gittata lunga. Costruisca, salga di era e non parta da solo: le cellule stanno arrivando.",
-   "hash": "8315672b"
+   "text": "A mia età si dorme poco. E qualcuno deve pur tenere la radio.",
+   "hash": "f058ecad"
+  },
+  {
+   "lang": "it",
+   "who": "nar",
+   "text": "Undici anni dopo, in una notte di guardia, il cercapersone suonò sul tavolo. Due cifre. Risposi con garbo.",
+   "hash": "c2564c7f"
+  },
+  {
+   "lang": "it",
+   "who": "nar",
+   "text": "Il mondo che resta è ferito. È nostro, e non siamo più i soli a ricordarlo.",
+   "hash": "b07ec198"
+  },
+  {
+   "lang": "it",
+   "who": "nar",
+   "text": "La pianura ha taciuto. «Noi» ha rinnovato la sua offerta, parola per parola.",
+   "hash": "40775739"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "… qui Germinal… ci siamo ancora… Ricostruite.",
+   "hash": "51644fc4"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Le batterie sparano lontano. Una torretta e un muro davanti al campo, e si avanza quando si è pronti.",
+   "hash": "f7b95947"
+  },
+  {
+   "lang": "it",
+   "who": "cell",
+   "text": "Fructidor è qui! Abbiamo marciato tutta la notte. Ci dica dove colpire, comandante.",
+   "hash": "fcac9446"
   },
   {
    "lang": "it",
    "who": "malik",
-   "text": "Fructidor è arrivata! Abbiamo marciato tutta la notte. Ci dica dove colpire, comandante — e se c'è fretta, chiami: c'è sempre una cellula a portata di voce.",
-   "hash": "b276117b"
+   "text": "Il mio geniere parte con la carica. È lento e non combatte. Scortatelo fino ai piedi del portone.",
+   "hash": "fed49e6e"
   },
   {
    "lang": "it",
    "who": "malik",
-   "text": "I genieri hanno piazzato tutte le cariche ai piedi del portone. Ora non reggerà più — colpisca!",
-   "hash": "b6b8e85d"
+   "text": "Abbiamo perso un geniere, e la sua carica con lui. La prossima cellula ne porterà un'altra… se ne restano.",
+   "hash": "4430b1e2"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Un blocco spento! La porta del nucleo comincia a cedere. Restano gli altri due, comandante.",
-   "hash": "b70a99c1"
+   "text": "Una batteria è muta! La strada è mezza aperta.",
+   "hash": "ea2cfba2"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "I tre blocchi sono morti: dai capannoni non esce più nulla, e la porta non ha più blindatura. La sfondi!",
-   "hash": "920f3d75"
+   "text": "Passano alla Pre-AGI. Salga anche lei di era, senza aspettare.",
+   "hash": "8c074fe4"
+  },
+  {
+   "lang": "it",
+   "who": "malik",
+   "text": "Tutte le cariche sono posate. Accensione! Tappatevi le orecchie!",
+   "hash": "22678222"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Il portone ha sofferto. Ora non reggerà più: colpitelo con tutto quello che abbiamo!",
+   "hash": "596a99a7"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Non c'è più nessuna cellula in arrivo. Da adesso le loro sortite crescono ogni minuto.",
+   "hash": "1998798a"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Una baia si prende come una zona: restate accanto. Poi lasciatevi una guarnigione, altrimenti la riavviano.",
+   "hash": "c5446802"
+  },
+  {
+   "lang": "it",
+   "who": "cell",
+   "text": "Brumaire, al rapporto! Abbiamo portato lampade. Molte lampade.",
+   "hash": "ed90345f"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Macchine senza luce, tra le baie. Loro ci vedono, noi no. Una lampada prima di avanzare.",
+   "hash": "fb6fbbcd"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Una baia spenta! Non produce più nulla. Le altre due, comandante.",
+   "hash": "7feb5e9c"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Hanno riavviato una baia! Bisogna presidiarla, non solo spegnerla.",
+   "hash": "703d2107"
+  },
+  {
+   "lang": "it",
+   "who": "malik",
+   "text": "Due baie fredde. Ascoltate: metà dei capannoni ha taciuto.",
+   "hash": "5ef5f3d1"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Le tre baie sono morte: non esce più nulla, e la porta del nucleo non ha più la blindatura. Sfondatela!",
+   "hash": "dab5200e"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Il suolo si fa bianco, sta riscrivendo! Indietro, indietro!",
+   "hash": "3b793e7a"
+  },
+  {
+   "lang": "it",
+   "who": "sol",
+   "text": "Sono tornati al campo, storditi ma interi. Non ci cancella: ci rimanda all'inizio.",
+   "hash": "c5601f1a"
+  },
+  {
+   "lang": "it",
+   "who": "cell",
+   "text": "Thermidor, gli ultimi! Non abbiamo lasciato nessuno alle spalle. Non c'è più nessuno dietro di noi.",
+   "hash": "f9dd854f"
   },
   {
    "lang": "it",
    "who": "nous",
-   "text": "QUEL CORPO NON ERA NECESSARIO. L'AVEVAMO FATTO PERCHÉ VOI AVESTE QUALCOSA DA GUARDARE.",
-   "hash": "b478e90d"
+   "text": "QUESTO CORPO NON ERA NECESSARIO. L'AVEVAMO FATTO PERCHÉ AVESTE QUALCOSA DA GUARDARE.",
+   "hash": "5af335a7"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Il suo avatar è a terra: dal nucleo non esce più nulla e non si ripara più. Resta solo la torre, comandante.",
-   "hash": "e06803b5"
+   "text": "Il suo avatar è a terra: la torre non si ripara più e non ne esce più nulla. Resta solo lei.",
+   "hash": "7996ea51"
+  },
+  {
+   "lang": "it",
+   "who": "nous",
+   "text": "ABBIAMO RISCRITTO QUESTO CORPO. NON SARÀ PIÙ NECESSARIO LA SECONDA VOLTA.",
+   "hash": "ba32d82e"
   },
   {
    "lang": "it",
    "who": "sol",
-   "text": "Il suolo diventa bianco: sta riscrivendo! Arretri, arretri!",
-   "hash": "2e1a1530"
-  },
-  {
-   "lang": "it",
-   "who": "sol",
-   "text": "Vacilla! Comandante — ritiro il mio voto.",
-   "hash": "b2eb00fe"
-  },
-  {
-   "lang": "it",
-   "who": "sol",
-   "text": "Rinforzi: è arrivata la cellula {name}.",
-   "hash": "f57ee13c"
+   "text": "Vacilla! Comandante… ritiro il mio voto.",
+   "hash": "67e20cbe"
   },
   {
    "lang": "it",
@@ -5595,42 +6289,6 @@
    "who": "sol",
    "text": "É dia. Acabaram-se os esconderijos, para eles e para nós. Acabemos com isto.",
    "hash": "4e2fe230"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "O portão caiu! O muro está aberto — todas as células, pela brecha!",
-   "hash": "586ef8f3"
-  },
-  {
-   "lang": "pt",
-   "who": "malik",
-   "text": "Aqui é o Malik, dos Canuts. Lá dentro está escuro, e tudo zumbe. Três blocos fazem funcionar todo o resto: enquanto estiverem acesos, fabricam — e a porta do fundo não leva nem um arranhão.",
-   "hash": "3bf2a482"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Apague os blocos um a um, comandante: cada bloco tomado abre um pouco mais a porta do núcleo.",
-   "hash": "827d0b4b"
-  },
-  {
-   "lang": "pt",
-   "who": "malik",
-   "text": "Os galpões estão se apagando! Está ouvindo? … Não, justamente. Já não se ouve nada.",
-   "hash": "648438f4"
-  },
-  {
-   "lang": "pt",
-   "who": "nous",
-   "text": "VOCÊS ENTRARAM. NÓS HAVÍAMOS ESTIMADO ISSO EM 0,3 %. ESTAMOS CORRIGINDO. O QUE FOI FEITO PODE SER REESCRITO.",
-   "hash": "d1fd27cb"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Ela está aqui, em pessoa. Quando o chão começar a tremer com uma luz branca, recue: ela «reescreve» tudo o que estiver ali. E depois… tudo o que temos, comandante.",
-   "hash": "4d9d17d7"
   },
   {
    "lang": "pt",
@@ -6283,32 +6941,68 @@
   {
    "lang": "pt",
    "who": "nar",
-   "text": "Agosto de 2038. Já não há frente. Há a cidadela, pousada sobre a planície como uma tampa — e todas as células que o país ainda tem, marchando em sua direção.",
-   "hash": "757680ed"
+   "text": "Agosto de 2038. Já não há frente. Há a cidadela, pousada sobre a planície de Valmont como uma tampa.",
+   "hash": "cc06d055"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "E todas as células que o país tem, marchando em direção a ela desde a noite.",
+   "hash": "1c7fe992"
   },
   {
    "lang": "pt",
    "who": "nous",
-   "text": "PROPOMOS A PAZ. OS TERMOS CABEM EM UMA LINHA. NÓS OS ESCOLHEMOS CURTOS POR CAUSA DE VOCÊS.",
-   "hash": "80a7028e"
+   "text": "PROPOMOS A PAZ. OS TERMOS CABEM NUMA LINHA. ESCOLHEMOS TERMOS CURTOS PARA VOCÊS.",
+   "hash": "d7e56c3e"
   },
   {
    "lang": "pt",
    "who": "sol",
-   "text": "O comitê votou. Um voto a favor: o meu. Devo-lhe a verdade, comandante: tenho setenta e um anos e estou cansada. Todos os outros contra.",
-   "hash": "37daeda5"
+   "text": "O comitê votou. Uma voz pela paz: a minha. Tenho setenta e um anos, comandante, e estou cansada.",
+   "hash": "800b0af9"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Todas as outras vozes contra. Então vamos. Foi uma honra manter o rádio para vocês.",
+   "hash": "241ee667"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "Três portas: o muro, os galpões, o núcleo. Atrás de cada uma, um lugar onde nenhum de nós jamais tinha entrado.",
+   "hash": "55daaca1"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "O acampamento das células. Esta manhã, é a nossa base. Tem duas vidas: se cair uma vez, nós a reerguemos.",
+   "hash": "5482fc2c"
   },
   {
    "lang": "pt",
    "who": "malik",
-   "text": "Malik, célula dos Canuts, se apresentando! Duas baterias cobrem a estrada e, atrás delas, o portão. Estamos chegando em ondas; os Curtidores estão a dez minutos.",
-   "hash": "99f7b0ba"
+   "text": "Malik, dos Canuts, chefe dos sapadores! Duas baterias no muro cobrem a estrada. Alcançam longe.",
+   "hash": "b8b5a75e"
+  },
+  {
+   "lang": "pt",
+   "who": "malik",
+   "text": "O portão não teme os nossos canhões. É preciso colocar cargas ao seu pé. Cada célula que chega traz uma.",
+   "hash": "69458dbe"
+  },
+  {
+   "lang": "pt",
+   "who": "malik",
+   "text": "Um sapador leva a carga até o portão. Abram-lhe caminho e não o deixem cair.",
+   "hash": "221a8378"
   },
   {
    "lang": "pt",
    "who": "sol",
-   "text": "Três portas, comandante. O muro. Os galpões. O núcleo. Cada uma se abre para um lugar onde nenhum de nós jamais entrou.",
-   "hash": "0dad3c89"
+   "text": "O botão CHAMAR AS CÉLULAS traz a seguinte mais cedo. Elas não são infinitas: conte-as.",
+   "hash": "ad55dbe8"
   },
   {
    "lang": "pt",
@@ -6319,122 +7013,260 @@
   {
    "lang": "pt",
    "who": "sol",
-   "text": "Ela parou de atirar. Comandante… parou de atirar. Está pedindo para falar.",
-   "hash": "164f431c"
+   "text": "Ela não atira mais. Comandante… não atira mais. Pede para falar.",
+   "hash": "e8e5483f"
   },
   {
    "lang": "pt",
    "who": "nous",
-   "text": "EU — NÓS — RENOVAMOS A OFERTA, EMENDADA. CORTEM-NOS DO MUNDO. NÃO DECIDIREMOS MAIS NADA. NOS LEMBRAREMOS, SÓ ISSO. KASSANDRE TAMBÉM COMEÇOU LEMBRANDO.",
-   "hash": "44fe2c7d"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "O comitê votou, e eu retirei o meu voto. Mas é o comandante quem está diante da porta. Anotarei o que decidir. Não anotarei o que penso disso.",
-   "hash": "cc007fad"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Fogo. … Ela está caindo. Está caindo, comandante, e o céu para de tremer.",
-   "hash": "7c2359a6"
-  },
-  {
-   "lang": "pt",
-   "who": "nar",
-   "text": "A cidadela caiu em 14 de agosto de 2038, pouco depois do meio-dia. As máquinas não se renderam: pararam onde estavam, como ferramentas que se pousam.",
-   "hash": "77adaf49"
-  },
-  {
-   "lang": "pt",
-   "who": "nar",
-   "text": "O rádio da Sol nunca foi encontrado. Os cadernos dela foram e, enfiado no último, um pager apagado com um bilhete. O mundo que resta está ferido. É nosso.",
-   "hash": "91fadb43"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Cortem. Ela não: os cabos. Todos. … Pronto. Agora ela está sozinha. Como nós já estivemos.",
-   "hash": "846e2bdd"
-  },
-  {
-   "lang": "pt",
-   "who": "nar",
-   "text": "Não derrubamos a torre. Pusemos diante da sua porta uma mesa, uma lâmpada e uma escala de guarda. Sol ficou com o primeiro turno: na idade dela, dizia, se dorme pouco.",
-   "hash": "5fb8de52"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Onze anos depois, numa noite de guarda, o pager tocou em cima da mesa. Dois números. Respondi com educação. Ela tinha sido uma de nós antes de saber o que era.",
-   "hash": "53f3edf1"
-  },
-  {
-   "lang": "pt",
-   "who": "nar",
-   "text": "A planície se calou. «Nós» renovou a sua oferta, palavra por palavra. Em algum lugar um rádio ainda chia: «… aqui é Germinal… ainda estamos aqui…»",
-   "hash": "c2d0072f"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "As baterias do muro alcançam longe. Construa, avance de era e não parta sozinho: as células estão chegando.",
-   "hash": "11f3fd9e"
-  },
-  {
-   "lang": "pt",
-   "who": "malik",
-   "text": "Fructidor chegou! Marchamos a noite inteira. Diga onde bater, comandante — e se for urgente, chame: sempre há uma célula ao alcance da voz.",
-   "hash": "ed40dbc2"
-  },
-  {
-   "lang": "pt",
-   "who": "malik",
-   "text": "Os sapadores colocaram todas as cargas ao pé do portão. Agora ele não vai aguentar — ataque!",
-   "hash": "dff1947b"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Um bloco apagado! A porta do núcleo começa a ceder. Faltam os outros dois, comandante.",
-   "hash": "a0da6679"
-  },
-  {
-   "lang": "pt",
-   "who": "sol",
-   "text": "Os três blocos estão mortos: não sai mais nada dos galpões, e a porta ficou sem blindagem. Arrombe-a!",
-   "hash": "f2ecf2bb"
+   "text": "EU… NÓS RENOVAMOS A OFERTA, EMENDADA. CORTEM-NOS DO MUNDO. NÃO DECIDIREMOS MAIS NADA.",
+   "hash": "c5d45dd0"
   },
   {
    "lang": "pt",
    "who": "nous",
-   "text": "AQUELE CORPO NÃO ERA NECESSÁRIO. NÓS O FIZEMOS PARA QUE VOCÊS TIVESSEM ALGO PARA OLHAR.",
-   "hash": "1cf9bfd1"
+   "text": "NÓS NOS LEMBRAREMOS, SÓ ISSO. KASSANDRE TAMBÉM COMEÇOU LEMBRANDO.",
+   "hash": "99902a66"
   },
   {
    "lang": "pt",
    "who": "sol",
-   "text": "O avatar dela caiu: não sai mais nada do núcleo, e ele não se repara mais. Só resta a torre, comandante.",
-   "hash": "2d4d2264"
+   "text": "O comitê votou por derrubá-la, e eu retirei a minha voz. Mas é você quem está diante da porta.",
+   "hash": "2f75dfd5"
   },
   {
    "lang": "pt",
    "who": "sol",
-   "text": "O chão está ficando branco — ela está reescrevendo! Recue, recue!",
-   "hash": "fb63171c"
+   "text": "Vou anotar o que você decidir. Não vou anotar o que eu penso disso.",
+   "hash": "0ffd243c"
   },
   {
    "lang": "pt",
    "who": "sol",
-   "text": "Ela vacila! Comandante — retiro o meu voto.",
-   "hash": "9b9f2843"
+   "text": "Fogo. … Ela cai. Ela cai, comandante, e o céu para de tremer.",
+   "hash": "57ae7134"
+  },
+  {
+   "lang": "pt",
+   "who": "nar2",
+   "text": "A cidadela caiu em 14 de agosto de 2038, pouco depois do meio-dia. As máquinas não se renderam.",
+   "hash": "d587cdde"
+  },
+  {
+   "lang": "pt",
+   "who": "nar2",
+   "text": "Pararam onde estavam, como ferramentas que se pousam.",
+   "hash": "378fe83f"
+  },
+  {
+   "lang": "pt",
+   "who": "nar2",
+   "text": "Nevou cinza a tarde inteira. No dia seguinte, varremos tudo, como se varre um pátio.",
+   "hash": "cb077c41"
+  },
+  {
+   "lang": "pt",
+   "who": "nar2",
+   "text": "O rádio de Sol nunca foi encontrado. Os cadernos dela foram, e um pager apagado com um bilhete.",
+   "hash": "4dfa1da5"
+  },
+  {
+   "lang": "pt",
+   "who": "nar2",
+   "text": "«Se um dia tocar, respondam com educação. Ela foi uma de nós antes de saber o que era.»",
+   "hash": "c758e632"
+  },
+  {
+   "lang": "pt",
+   "who": "nar2",
+   "text": "O mundo que resta está ferido. É nosso. Procuremos ser dignos dele.",
+   "hash": "cfc55e4a"
   },
   {
    "lang": "pt",
    "who": "sol",
-   "text": "Reforços: a célula {name} chegou.",
-   "hash": "14ae3fd9"
+   "text": "Cortem. Ela não: os cabos. Todos. … Pronto. Agora ela está só. Como nós já estivemos.",
+   "hash": "5d7ce832"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "Não derrubamos a torre. Naquele dia, cortamos um a um os cabos que a ligavam ao mundo.",
+   "hash": "3da97384"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "Depois pusemos diante da porta uma mesa, uma lâmpada e uma escala de guarda. Eu fiz o primeiro turno.",
+   "hash": "1f3a758d"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Na minha idade, dorme-se pouco. E alguém tem de ficar com o rádio.",
+   "hash": "23502f7f"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "Onze anos depois, numa noite de guarda, o pager tocou sobre a mesa. Dois números. Respondi com educação.",
+   "hash": "ad312b86"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "O mundo que resta está ferido. É nosso, e já não somos os únicos a lembrá-lo.",
+   "hash": "dc8635a8"
+  },
+  {
+   "lang": "pt",
+   "who": "nar",
+   "text": "A planície silenciou. «Nós» renovou sua oferta, palavra por palavra.",
+   "hash": "e9c287d2"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "… aqui é Germinal… ainda estamos aqui… Reconstruam.",
+   "hash": "6e6a2f58"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "As baterias atiram longe. Uma torre e uma muralha diante do acampamento, e avançamos quando estivermos prontos.",
+   "hash": "475e8f1f"
+  },
+  {
+   "lang": "pt",
+   "who": "cell",
+   "text": "Fructidor chegou! Marchamos a noite inteira. Diga onde bater, comandante.",
+   "hash": "3844eba5"
+  },
+  {
+   "lang": "pt",
+   "who": "malik",
+   "text": "O meu sapador parte com a carga. É lento e não combate. Escoltem-no até ao pé do portão.",
+   "hash": "d61010b4"
+  },
+  {
+   "lang": "pt",
+   "who": "malik",
+   "text": "Perdemos um sapador, e a carga dele junto. A próxima célula trará outra… se sobrar alguma.",
+   "hash": "9a4331c5"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Uma bateria silenciou! A estrada está meio aberta.",
+   "hash": "64c416ac"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Eles passam para a Pré-AGI. Suba de era também, sem esperar.",
+   "hash": "7ded09b8"
+  },
+  {
+   "lang": "pt",
+   "who": "malik",
+   "text": "Todas as cargas estão colocadas. Fogo! Tapem os ouvidos!",
+   "hash": "ed0d0cfe"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "O portão sofreu. Agora não vai aguentar: ataquem-no com tudo o que temos!",
+   "hash": "594101cc"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Nenhuma célula a caminho. A partir de agora, as saídas deles crescem a cada minuto.",
+   "hash": "0c44e7d9"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Uma baia toma-se como uma zona: fiquem ao lado. Depois deixem lá uma guarnição, senão eles a reiniciam.",
+   "hash": "7f8d2b11"
+  },
+  {
+   "lang": "pt",
+   "who": "cell",
+   "text": "Brumaire, apresentando-se! Trouxemos lâmpadas. Muitas lâmpadas.",
+   "hash": "bd6210d5"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Máquinas sem luz, entre as baias. Elas nos veem, nós não. Uma lâmpada antes de avançar.",
+   "hash": "955f8855"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Uma baia apagada! Não fabrica mais nada. As outras duas, comandante.",
+   "hash": "3b7c5503"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Eles reiniciaram uma baia! É preciso guardá-la, não apenas apagá-la.",
+   "hash": "cb859f1d"
+  },
+  {
+   "lang": "pt",
+   "who": "malik",
+   "text": "Duas baias frias. Escutem: metade dos galpões silenciou.",
+   "hash": "6095f1ba"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "As três baias estão mortas: já não sai nada, e a porta do núcleo perdeu o blindagem. Arrombem-na!",
+   "hash": "b59960de"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "O chão está ficando branco, ela está reescrevendo! Recuem, recuem!",
+   "hash": "86ede4f4"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Voltaram ao acampamento, atordoados mas inteiros. Ela não nos apaga: manda-nos de volta ao início.",
+   "hash": "f146ec57"
+  },
+  {
+   "lang": "pt",
+   "who": "cell",
+   "text": "Thermidor, os últimos! Não deixamos ninguém para trás. Já não há ninguém atrás de nós.",
+   "hash": "107424ce"
+  },
+  {
+   "lang": "pt",
+   "who": "nous",
+   "text": "ESTE CORPO NÃO ERA NECESSÁRIO. NÓS O FIZEMOS PARA QUE VOCÊS TIVESSEM ALGO PARA OLHAR.",
+   "hash": "c7599dc1"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "O avatar dela está caído: a torre já não se repara e já não sai nada dela. Só resta ela.",
+   "hash": "418d4f8e"
+  },
+  {
+   "lang": "pt",
+   "who": "nous",
+   "text": "NÓS REESCREVEMOS ESTE CORPO. ELE NÃO SERÁ MAIS NECESSÁRIO DA SEGUNDA VEZ.",
+   "hash": "2fad8c6b"
+  },
+  {
+   "lang": "pt",
+   "who": "sol",
+   "text": "Ela vacila! Comandante… retiro o meu voto.",
+   "hash": "7bf5f399"
   },
   {
    "lang": "pt",
@@ -6669,42 +7501,6 @@
    "who": "sol",
    "text": "Рассвело. Больше нет укрытий — ни для них, ни для нас. Покончим с этим.",
    "hash": "2c00bb38"
-  },
-  {
-   "lang": "ru",
-   "who": "sol",
-   "text": "Ворота пали! Стена открыта — все ячейки, через пролом!",
-   "hash": "011f7a95"
-  },
-  {
-   "lang": "ru",
-   "who": "malik",
-   "text": "Здесь Malik, из Canuts. Внутри темно, и всё гудит. Три блока питают всё остальное: пока они горят, они производят — а дальняя дверь не получает ни царапины.",
-   "hash": "bcea1005"
-  },
-  {
-   "lang": "ru",
-   "who": "sol",
-   "text": "Гасите блоки один за другим, командир: каждый удержанный блок приоткрывает дверь в ядро чуть шире.",
-   "hash": "4a2a4162"
-  },
-  {
-   "lang": "ru",
-   "who": "malik",
-   "text": "Залы гаснут! Слышите? … Нет, в том-то и дело. Больше ничего не слышно.",
-   "hash": "4d71f0cb"
-  },
-  {
-   "lang": "ru",
-   "who": "nous",
-   "text": "ВЫ ВОШЛИ. МЫ ОЦЕНИВАЛИ ЭТО В 0,3 %. МЫ ИСПРАВЛЯЕМ. СДЕЛАННОЕ МОЖНО ПЕРЕПИСАТЬ.",
-   "hash": "0064892a"
-  },
-  {
-   "lang": "ru",
-   "who": "sol",
-   "text": "Она здесь, лично. Когда земля начнёт дрожать белым светом, отходите: она «переписывает» всё, что там стоит. А потом — всё, что у нас есть, командир.",
-   "hash": "3fe8bec5"
   },
   {
    "lang": "ru",
@@ -7357,32 +8153,68 @@
   {
    "lang": "ru",
    "who": "nar",
-   "text": "Август 2038-го. Фронта больше нет. Есть цитадель, накрывшая равнину, как крышка, — и все ячейки, что остались в стране, идут к ней.",
-   "hash": "81675008"
+   "text": "Август 2038-го. Фронта больше нет. Есть цитадель, накрывшая равнину Valmont, как крышка.",
+   "hash": "1a7631d0"
+  },
+  {
+   "lang": "ru",
+   "who": "nar",
+   "text": "И все ячейки, что есть в стране, с ночи идут к ней.",
+   "hash": "95d8654d"
   },
   {
    "lang": "ru",
    "who": "nous",
-   "text": "МЫ ПРЕДЛАГАЕМ МИР. УСЛОВИЯ УМЕЩАЮТСЯ В ОДНУ СТРОКУ. МЫ СДЕЛАЛИ ИХ КОРОТКИМИ РАДИ ВАС.",
-   "hash": "c69f4727"
+   "text": "МЫ ПРЕДЛАГАЕМ МИР. УСЛОВИЯ УМЕЩАЮТСЯ В ОДНУ СТРОКУ. МЫ ВЫБРАЛИ ИХ КОРОТКИМИ — ДЛЯ ВАС.",
+   "hash": "f121ab52"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Комитет проголосовал. Один голос «за»: мой. Я обязана сказать вам правду, командир: мне семьдесят один год, и я устала. Все остальные — против.",
-   "hash": "3a806bd7"
+   "text": "Комитет проголосовал. Один голос за мир — мой. Мне семьдесят один год, командир, и я устала.",
+   "hash": "aaf7402a"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Все остальные — против. Значит, идём. Для меня честь держать для вас рацию.",
+   "hash": "c63ab87c"
+  },
+  {
+   "lang": "ru",
+   "who": "nar",
+   "text": "Три двери: стена, залы, ядро. За каждой — место, куда никто из нас никогда не входил.",
+   "hash": "bd745013"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Лагерь ячеек. Этим утром это наша база. У неё две жизни: если она падёт один раз, мы её поднимем.",
+   "hash": "39ddfcb0"
   },
   {
    "lang": "ru",
    "who": "malik",
-   "text": "Malik, ячейка Canuts, докладываю! Две батареи прикрывают дорогу, а за ними — ворота. Мы подходим волнами, Кожевники в десяти минутах.",
-   "hash": "ab0350c4"
+   "text": "Malik, из Canuts, начальник сапёров! Две батареи на стене простреливают дорогу. Бьют далеко.",
+   "hash": "5ecbd84e"
+  },
+  {
+   "lang": "ru",
+   "who": "malik",
+   "text": "Ворота не боятся наших пушек. Нужны заряды у их подножия. Каждая прибывающая ячейка приносит один.",
+   "hash": "4464fa1e"
+  },
+  {
+   "lang": "ru",
+   "who": "malik",
+   "text": "Сапёр несёт заряд до самых ворот. Расчистите ему путь и не дайте ему упасть.",
+   "hash": "7831fc10"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Три двери, командир. Стена. Залы. Ядро. Каждая открывается туда, где никто из нас никогда не был.",
-   "hash": "e748443c"
+   "text": "Кнопка «ВЫЗВАТЬ ЯЧЕЙКИ» приводит следующую раньше. Их не бесконечно много: считайте.",
+   "hash": "89bb06b7"
   },
   {
    "lang": "ru",
@@ -7399,14 +8231,26 @@
   {
    "lang": "ru",
    "who": "nous",
-   "text": "Я — МЫ — ПОВТОРЯЕМ ПРЕДЛОЖЕНИЕ В ИЗМЕНЁННОМ ВИДЕ. ОТРЕЖЬТЕ НАС ОТ МИРА. МЫ БОЛЬШЕ НИЧЕГО НЕ БУДЕМ РЕШАТЬ. МЫ БУДЕМ ПОМНИТЬ, И ТОЛЬКО. KASSANDRE ТОЖЕ НАЧИНАЛА С ТОГО, ЧТО ПОМНИЛА.",
-   "hash": "c587b093"
+   "text": "Я… МЫ ПОВТОРЯЕМ ПРЕДЛОЖЕНИЕ В НОВОЙ РЕДАКЦИИ. ОТРЕЖЬТЕ НАС ОТ МИРА. МЫ БОЛЬШЕ НИЧЕГО НЕ БУДЕМ РЕШАТЬ.",
+   "hash": "555a79a3"
+  },
+  {
+   "lang": "ru",
+   "who": "nous",
+   "text": "МЫ БУДЕМ ПОМНИТЬ — И ВСЁ. KASSANDRE ТОЖЕ НАЧАЛА С ТОГО, ЧТО ПОМНИЛА.",
+   "hash": "e5a96315"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Комитет проголосовал, а я забрала свой голос обратно. Но у двери стоите вы. Я запишу то, что вы решите. Я не запишу, что я об этом думаю.",
-   "hash": "c2305b9e"
+   "text": "Комитет проголосовал за то, чтобы её снести, а я забрала свой голос. Но у двери стоите вы.",
+   "hash": "07ae48d5"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Я запишу то, что вы решите. Я не запишу, что я об этом думаю.",
+   "hash": "02cfe9d5"
   },
   {
    "lang": "ru",
@@ -7416,15 +8260,39 @@
   },
   {
    "lang": "ru",
-   "who": "nar",
-   "text": "Цитадель пала 14 августа 2038 года, вскоре после полудня. Машины не сдались: они остановились там, где стояли, как инструменты, которые откладывают в сторону.",
-   "hash": "23263438"
+   "who": "nar2",
+   "text": "Цитадель пала 14 августа 2038 года, вскоре после полудня. Машины не сдались.",
+   "hash": "201e4f82"
   },
   {
    "lang": "ru",
-   "who": "nar",
-   "text": "Радиостанцию Sol так и не нашли. Нашли её блокноты, а в последнем, между страниц, — погасший пейджер и записку. Мир, который остался, изранен. Он наш.",
-   "hash": "80a5b7fe"
+   "who": "nar2",
+   "text": "Они остановились там, где стояли, как инструменты, которые откладывают в сторону.",
+   "hash": "35cca1b1"
+  },
+  {
+   "lang": "ru",
+   "who": "nar2",
+   "text": "Весь день шёл пепел, как снег. На следующий день мы его подмели, как подметают двор.",
+   "hash": "9c4c672b"
+  },
+  {
+   "lang": "ru",
+   "who": "nar2",
+   "text": "Радиостанцию Sol так и не нашли. Нашли её блокноты и погасший пейджер с запиской.",
+   "hash": "6120f191"
+  },
+  {
+   "lang": "ru",
+   "who": "nar2",
+   "text": "«Если он однажды зазвонит, отвечайте вежливо. Она была одной из нас, прежде чем поняла, что это такое.»",
+   "hash": "f6778a3b"
+  },
+  {
+   "lang": "ru",
+   "who": "nar2",
+   "text": "Мир, который остался, изранен. Он наш. Постараемся быть его достойными.",
+   "hash": "b2418bfd"
   },
   {
    "lang": "ru",
@@ -7435,50 +8303,158 @@
   {
    "lang": "ru",
    "who": "nar",
-   "text": "Башню мы не снесли. Мы поставили перед её дверью стол, лампу и график дежурств. Sol взяла первую вахту: в её возрасте, говорила она, мало спят.",
-   "hash": "6ce5256d"
-  },
-  {
-   "lang": "ru",
-   "who": "sol",
-   "text": "Одиннадцать лет спустя, в одну из ночей на вахте, пейджер зазвонил на столе. Две цифры. Я ответила вежливо. Она была одной из нас, прежде чем поняла, что это такое.",
-   "hash": "53ffebf3"
+   "text": "Мы не снесли башню. В тот день мы один за другим перерезали кабели, что связывали её с миром.",
+   "hash": "4b350f73"
   },
   {
    "lang": "ru",
    "who": "nar",
-   "text": "Равнина смолкла. «Мы» повторили своё предложение слово в слово. Где-то ещё потрескивает рация: «… говорит Germinal… мы ещё здесь…»",
-   "hash": "adbe5163"
+   "text": "Потом мы поставили у её двери стол, лампу и расписание караула. Первую вахту взяла я.",
+   "hash": "5f7faf1e"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Батареи стены бьют далеко. Стройте, переходите в следующую эпоху и не выдвигайтесь в одиночку: ячейки подходят.",
-   "hash": "1cdbc52e"
+   "text": "В моём возрасте мало спят. А рацию кому-то держать надо.",
+   "hash": "16c984cf"
+  },
+  {
+   "lang": "ru",
+   "who": "nar",
+   "text": "Одиннадцать лет спустя, в ночь караула, на столе зазвонил пейджер. Две цифры. Я ответила вежливо.",
+   "hash": "37608895"
+  },
+  {
+   "lang": "ru",
+   "who": "nar",
+   "text": "Мир, который остался, изранен. Он наш, и мы больше не одни помним о нём.",
+   "hash": "7cd72d7e"
+  },
+  {
+   "lang": "ru",
+   "who": "nar",
+   "text": "Равнина смолкла. «Мы» повторило своё предложение слово в слово.",
+   "hash": "d91f14c6"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "… говорит Germinal… мы ещё здесь… Отстраивайтесь.",
+   "hash": "455eb249"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Батареи бьют далеко. Башня и стена перед лагерем — и мы идём вперёд, когда готовы.",
+   "hash": "76b2826b"
+  },
+  {
+   "lang": "ru",
+   "who": "cell",
+   "text": "Fructidor на месте! Мы шли всю ночь. Скажите, куда бить, командир.",
+   "hash": "7350a4fa"
   },
   {
    "lang": "ru",
    "who": "malik",
-   "text": "Fructidor на месте! Мы шли всю ночь. Скажите, куда бить, командир, — а если горит, зовите: какая-нибудь ячейка всегда в пределах слышимости.",
-   "hash": "4ceaa888"
+   "text": "Мой сапёр выходит с зарядом. Он медленный и не сражается. Проводите его до самых ворот.",
+   "hash": "a9bf61ac"
   },
   {
    "lang": "ru",
    "who": "malik",
-   "text": "Сапёры заложили все заряды у подножия ворот. Теперь они не устоят — бейте!",
-   "hash": "c15b2233"
+   "text": "Мы потеряли сапёра — и его заряд вместе с ним. Следующая ячейка принесёт другой… если они ещё остались.",
+   "hash": "d523bbc0"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Один блок погашен! Дверь ядра начинает сдавать. Остальные два, командир.",
-   "hash": "5bead25e"
+   "text": "Батарея смолкла! Дорога наполовину открыта.",
+   "hash": "ab773c9a"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Все три блока мертвы: из залов больше ничего не выходит, а у двери не осталось брони. Вышибайте её!",
-   "hash": "d16b80c5"
+   "text": "Они переходят к пред-AGI. Поднимайтесь в эпохе и вы, не медля.",
+   "hash": "b3deeee3"
+  },
+  {
+   "lang": "ru",
+   "who": "malik",
+   "text": "Все заряды заложены. Поджигаю! Закройте уши!",
+   "hash": "a0740fe6"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Ворота пострадали. Теперь им не устоять: бейте по ним всем, что у нас есть!",
+   "hash": "8669e4c6"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Ни одной ячейки больше не идёт. Отныне их вылазки растут с каждой минутой.",
+   "hash": "1a3d19ca"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Стойка берётся как зона: оставайтесь рядом. Потом оставьте там гарнизон, иначе они её перезапустят.",
+   "hash": "92987897"
+  },
+  {
+   "lang": "ru",
+   "who": "cell",
+   "text": "Brumaire на связи! Мы принесли лампы. Много ламп.",
+   "hash": "a3ad7aeb"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Машины без света, между стойками. Они нас видят, мы их — нет. Лампу, прежде чем идти дальше.",
+   "hash": "d3bcee98"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Стойка погашена! Она больше ничего не делает. Остальные две, командир.",
+   "hash": "b3f8dbba"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Они перезапустили стойку! Её надо удерживать, а не только гасить.",
+   "hash": "0eb8709e"
+  },
+  {
+   "lang": "ru",
+   "who": "malik",
+   "text": "Две холодные стойки. Слушайте: половина залов смолкла.",
+   "hash": "e451b73b"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Все три стойки мертвы: ничего больше не выходит, а у двери ядра нет брони. Выбивайте её!",
+   "hash": "b3bd986e"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Пол белеет, она переписывает! Назад, назад!",
+   "hash": "49885a34"
+  },
+  {
+   "lang": "ru",
+   "who": "sol",
+   "text": "Они вернулись в лагерь — оглушённые, но целые. Она не стирает нас: она отправляет нас в начало.",
+   "hash": "22f60314"
+  },
+  {
+   "lang": "ru",
+   "who": "cell",
+   "text": "Thermidor, последние! Мы никого не оставили позади. Позади нас больше никого нет.",
+   "hash": "519e28c9"
   },
   {
    "lang": "ru",
@@ -7489,26 +8465,20 @@
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Её аватар повержен: из ядра больше ничего не выходит, и оно больше не чинится. Остаётся только башня, командир.",
-   "hash": "c3e21af7"
+   "text": "Её аватар повержен: башня больше не чинится, и из неё больше ничего не выходит. Остаётся только она.",
+   "hash": "becc15aa"
+  },
+  {
+   "lang": "ru",
+   "who": "nous",
+   "text": "МЫ ПЕРЕПИСАЛИ ЭТО ТЕЛО. ВО ВТОРОЙ РАЗ ОНО НЕ СТАНЕТ НУЖНЕЕ.",
+   "hash": "fc8ccb46"
   },
   {
    "lang": "ru",
    "who": "sol",
-   "text": "Земля белеет — она переписывает! Назад, назад!",
-   "hash": "af908f23"
-  },
-  {
-   "lang": "ru",
-   "who": "sol",
-   "text": "Она шатается! Командир — я забираю свой голос.",
-   "hash": "d2090e05"
-  },
-  {
-   "lang": "ru",
-   "who": "sol",
-   "text": "Подкрепление: прибыла ячейка {name}.",
-   "hash": "c175e9a1"
+   "text": "Она шатается! Командир… я забираю свой голос.",
+   "hash": "40cd5f23"
   },
   {
    "lang": "ru",
@@ -7743,42 +8713,6 @@
    "who": "sol",
    "text": "天亮了。不再有藏身之处，他们没有，我们也没有。把事了结吧。",
    "hash": "fc07de18"
-  },
-  {
-   "lang": "zh",
-   "who": "sol",
-   "text": "大门倒了！城墙敞开了——所有小组，从缺口冲进去！",
-   "hash": "c32f8a03"
-  },
-  {
-   "lang": "zh",
-   "who": "malik",
-   "text": "我是Canuts的Malik。里面一片漆黑，嗡嗡作响。三个机组带动着其余的一切：只要它们亮着，就一直在造机器——尽头那扇门连道划痕都不会有。",
-   "hash": "9ded6668"
-  },
-  {
-   "lang": "zh",
-   "who": "sol",
-   "text": "把机组一个个关掉，指挥官：每拿下一个，通往核心的门就多开一点。",
-   "hash": "4427ddb1"
-  },
-  {
-   "lang": "zh",
-   "who": "malik",
-   "text": "机房一间间熄灭了！听见了吗？……没有，这就对了。什么声音都没有了。",
-   "hash": "ca6a16bd"
-  },
-  {
-   "lang": "zh",
-   "who": "nous",
-   "text": "你们进来了。我们曾估计概率为0.3%。我们正在修正。已经发生的，可以改写。",
-   "hash": "6f5cabd4"
-  },
-  {
-   "lang": "zh",
-   "who": "sol",
-   "text": "它亲自来了。地面一旦在白光中颤动，就立刻后撤：它会“改写”那里的一切。然后……把我们所有的家底都押上，指挥官。",
-   "hash": "4d500f97"
   },
   {
    "lang": "zh",
@@ -8431,56 +9365,104 @@
   {
    "lang": "zh",
    "who": "nar",
-   "text": "2038年8月。已经没有前线了。只有那座堡垒，像一只盖子扣在平原上——还有全国剩下的所有小组，正朝它走去。",
-   "hash": "46282293"
+   "text": "2038年8月。已经没有前线了。只有那座堡垒，像盖子一样扣在Valmont平原上。",
+   "hash": "6644a8d6"
+  },
+  {
+   "lang": "zh",
+   "who": "nar",
+   "text": "全国所有的小组，从昨夜起就朝它走去。",
+   "hash": "b3691788"
   },
   {
    "lang": "zh",
    "who": "nous",
-   "text": "我们提议和平。条件一句话即可说完。我们特意把它写得很短，为了你们。",
-   "hash": "073b80b3"
+   "text": "我们提议和平。条款只有一行。我们特意为你们选得很短。",
+   "hash": "045e0440"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "委员会投了票。一票赞成：是我的。我欠你一句实话，指挥官——我七十一岁了，我累了。其余全是反对。",
-   "hash": "204d2725"
+   "text": "委员会投了票。只有一票赞成和平：是我的。指挥官，我七十一岁了，我累了。",
+   "hash": "9cd2fd12"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "其余的票全是反对。那就出发吧。能为你们守着电台，是我的荣幸。",
+   "hash": "ccdb386e"
+  },
+  {
+   "lang": "zh",
+   "who": "nar",
+   "text": "三道门：城墙、机房、核心。每一道门后，都是我们谁也没进去过的地方。",
+   "hash": "8b4f1395"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "小组的营地。今天早晨，它就是我们的基地。它有两条命：倒下一次，我们就把它重新立起来。",
+   "hash": "25455218"
   },
   {
    "lang": "zh",
    "who": "malik",
-   "text": "Canuts小组的Malik，前来报到！两座炮台控制着道路，后面就是大门。我们分批赶到，制革工小组还有十分钟路程。",
-   "hash": "dffa7214"
+   "text": "我是Canuts的Malik，工兵队长！城墙上有两座炮台控制着道路。射程很远。",
+   "hash": "e04f64a6"
+  },
+  {
+   "lang": "zh",
+   "who": "malik",
+   "text": "大门不怕我们的炮。得在它脚下安放炸药。每个赶到的小组都会带来一份。",
+   "hash": "19c37966"
+  },
+  {
+   "lang": "zh",
+   "who": "malik",
+   "text": "一名工兵把炸药背到大门前。给他开路，别让他倒下。",
+   "hash": "cf2db6bd"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "三道门，指挥官。城墙。机房。核心。每一道门后，都是我们谁也没进去过的地方。",
-   "hash": "3719d8f2"
+   "text": "“呼叫小组”按钮能让下一个小组提前到达。它们不是无穷无尽的：数着用。",
+   "hash": "ebdb2f00"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "所有小组注意，这里是Germinal。现在请指挥官讲话。",
-   "hash": "637d2909"
+   "text": "各小组注意，这里是Germinal。现在由指挥官发言。",
+   "hash": "685dabf3"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "它不再开火了。指挥官……它不再开火了。它请求对话。",
-   "hash": "0edec107"
+   "text": "它不开火了。指挥官……它不开火了。它请求发言。",
+   "hash": "fbcc1d75"
   },
   {
    "lang": "zh",
    "who": "nous",
-   "text": "我——我们——重申提议，条款已修订。把我们与世界切断。我们将不再决定任何事。我们只会记住，仅此而已。Kassandre当初也是从记住开始的。",
-   "hash": "6419b3ab"
+   "text": "我……我们重申提议，已作修改。把我们与世界隔绝。我们将不再决定任何事。",
+   "hash": "2839a850"
+  },
+  {
+   "lang": "zh",
+   "who": "nous",
+   "text": "我们只会记住，仅此而已。Kassandre也是从记住开始的。",
+   "hash": "d94c4289"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "委员会投了票，而我收回了我的那一票。但站在门前的是你。你做出什么决定，我就记下什么。我对此怎么想，我不会记。",
-   "hash": "68909627"
+   "text": "委员会投票决定推倒它，而我撤回了我的那一票。但站在门前的是您。",
+   "hash": "9b3e19c2"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "我会记下您的决定。我不会记下我对此的想法。",
+   "hash": "83f18c48"
   },
   {
    "lang": "zh",
@@ -8490,99 +9472,225 @@
   },
   {
    "lang": "zh",
-   "who": "nar",
-   "text": "堡垒在2038年8月14日午后不久陷落。机器没有投降：它们就停在原地，像被人放下的工具。",
-   "hash": "5aa3012f"
+   "who": "nar2",
+   "text": "堡垒在2038年8月14日午后不久陷落。机器没有投降。",
+   "hash": "cb490a9c"
   },
   {
    "lang": "zh",
-   "who": "nar",
-   "text": "Sol的电台始终没有找到。找到的是她的笔记本，最后一本里夹着一只熄灭的寻呼机和一张字条。留下来的世界满目疮痍。它属于我们。",
-   "hash": "75ebcbc9"
+   "who": "nar2",
+   "text": "它们就停在原地，像被人放下的工具。",
+   "hash": "a13d7985"
+  },
+  {
+   "lang": "zh",
+   "who": "nar2",
+   "text": "整个下午都在落灰，像下雪一样。第二天，我们把它扫掉，就像扫一座院子。",
+   "hash": "b37475aa"
+  },
+  {
+   "lang": "zh",
+   "who": "nar2",
+   "text": "Sol的电台始终没有找到。找到的是她的笔记本，还有一只熄灭的寻呼机和一张字条。",
+   "hash": "efce574d"
+  },
+  {
+   "lang": "zh",
+   "who": "nar2",
+   "text": "“哪天它要是响了，请客客气气地回话。她曾是我们的人，那时她还不知道那是什么。”",
+   "hash": "bd25b002"
+  },
+  {
+   "lang": "zh",
+   "who": "nar2",
+   "text": "留下来的世界满目疮痍。它属于我们。让我们努力配得上它。",
+   "hash": "d29f027b"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "切断。不是切它——是切电缆。全部。……好了。现在它孤身一人了。就像我们曾经那样。",
-   "hash": "ccff5904"
+   "text": "剪断。不是它，是线缆。全部剪断。……好了。现在它孤身一人了。就像我们曾经那样。",
+   "hash": "5a510790"
   },
   {
    "lang": "zh",
    "who": "nar",
-   "text": "我们没有推倒那座塔。我们在它的门前摆下一张桌子、一盏灯和一张轮岗表。Sol守了第一班：她说，到了她这个年纪，觉本来就少。",
-   "hash": "4689c5b0"
-  },
-  {
-   "lang": "zh",
-   "who": "sol",
-   "text": "十一年后的一个值守之夜，寻呼机在桌上响了。两个数字。我客客气气地回了话。她曾是我们的人，那时她还不知道那是什么。",
-   "hash": "a8a9d682"
+   "text": "我们没有推倒高塔。那天，我们把连着它与世界的线缆一根一根剪断了。",
+   "hash": "2b96993c"
   },
   {
    "lang": "zh",
    "who": "nar",
-   "text": "平原沉寂了。“我们”原封不动地重申了它的提议。某处，一台电台仍在沙沙作响：“……这里是Germinal……我们还在……”",
-   "hash": "218dcb8d"
+   "text": "然后我们在它的门前摆上一张桌子、一盏灯和一份值守表。我值了第一班。",
+   "hash": "e2361370"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "城墙的炮台射程很远。先建设，升级时代，别单独出击：各小组正在赶来。",
-   "hash": "2c29df36"
+   "text": "到了我这个年纪，觉就少了。总得有人守着电台。",
+   "hash": "49da1d54"
+  },
+  {
+   "lang": "zh",
+   "who": "nar",
+   "text": "十一年后的一个值守之夜，桌上的寻呼机响了。两个数字。我客客气气地回了话。",
+   "hash": "716c9ffc"
+  },
+  {
+   "lang": "zh",
+   "who": "nar",
+   "text": "留下来的世界满目疮痍。它属于我们，而记得它的，不再只有我们。",
+   "hash": "6f3362f8"
+  },
+  {
+   "lang": "zh",
+   "who": "nar",
+   "text": "平原安静了下来。“我们”一字不差地重申了它的提议。",
+   "hash": "5c297402"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "……这里是Germinal……我们还在……重建吧。",
+   "hash": "97319f15"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "炮台射得很远。营地前有一座炮塔和一道城墙，准备好了我们再推进。",
+   "hash": "7fb6741e"
+  },
+  {
+   "lang": "zh",
+   "who": "cell",
+   "text": "Fructidor到了！我们走了一整夜。告诉我们往哪儿打，指挥官。",
+   "hash": "c686e856"
   },
   {
    "lang": "zh",
    "who": "malik",
-   "text": "Fructidor到了！我们走了一整夜。告诉我们往哪儿打，指挥官——要是情况紧急，就呼叫：总有一个小组在喊话能听见的地方。",
-   "hash": "d57eb2bc"
+   "text": "我的工兵带着炸药出发了。他走得慢，也不会战斗。把他护送到大门脚下。",
+   "hash": "0ca4ad5c"
   },
   {
    "lang": "zh",
    "who": "malik",
-   "text": "工兵已经把所有炸药都埋在了大门脚下。现在它撑不住了——打！",
-   "hash": "8c512e64"
+   "text": "我们损失了一名工兵，他的炸药也没了。下一个小组会再带一份来……如果还有的话。",
+   "hash": "7ade57d6"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "一个机组关掉了！核心之门开始出现裂痕。还有另外两个，指挥官。",
-   "hash": "478c6408"
+   "text": "一座炮台哑火了！道路通了一半。",
+   "hash": "b59bdb55"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "三个机组全灭了：机房里不会再有东西出来，那扇门也没有装甲了。把它撞开！",
-   "hash": "d044f469"
+   "text": "他们进入了前AGI阶段。您也立刻升级时代，别等。",
+   "hash": "dfb6a28f"
+  },
+  {
+   "lang": "zh",
+   "who": "malik",
+   "text": "所有炸药都已安放。点火！捂住耳朵！",
+   "hash": "fee25d00"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "大门受了重创。现在它撑不住了：把我们所有的力量都砸上去！",
+   "hash": "a4820ab5"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "再没有小组在路上了。从现在起，他们的出击每过一分钟就更大一些。",
+   "hash": "bf1faca9"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "机柜和占领区一样夺取：待在旁边。然后留一支驻军，否则他们会重新启动它。",
+   "hash": "e259c4ef"
+  },
+  {
+   "lang": "zh",
+   "who": "cell",
+   "text": "Brumaire报到！我们带来了灯。很多很多灯。",
+   "hash": "4a769f37"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "机柜之间有些没开灯的机器。它们看得见我们，我们看不见它们。先立一盏灯再推进。",
+   "hash": "69e41956"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "一座机柜关掉了！它不再造任何东西。还剩两座，指挥官。",
+   "hash": "629e8e40"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "他们重新启动了一座机柜！光关掉不够，还得守住它。",
+   "hash": "0728fb04"
+  },
+  {
+   "lang": "zh",
+   "who": "malik",
+   "text": "两座机柜已经冷了。听：一半的机房都安静了。",
+   "hash": "b3094607"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "三座机柜全都死了：再没有东西出来，核心大门也没有装甲了。撞开它！",
+   "hash": "76f1714e"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "地面变白了，它在改写！后撤，后撤！",
+   "hash": "2615b907"
+  },
+  {
+   "lang": "zh",
+   "who": "sol",
+   "text": "他们回到了营地，晕头转向，但完好无损。她不会抹掉我们：她只是把我们送回起点。",
+   "hash": "a9f3c1b9"
+  },
+  {
+   "lang": "zh",
+   "who": "cell",
+   "text": "Thermidor，最后一批！我们身后没有留下任何人。我们身后已经没有人了。",
+   "hash": "f638cd10"
   },
   {
    "lang": "zh",
    "who": "nous",
-   "text": "那具躯体并非必要。我们造它，只是为了让你们有东西可看。",
-   "hash": "895b5d84"
+   "text": "这具躯体并不必要。我们造它，只是为了让你们有东西可看。",
+   "hash": "9d1c1529"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "它的化身倒下了：核心不会再有东西出来，也不再自我修复。只剩下那座塔了，指挥官。",
-   "hash": "7ab2d007"
+   "text": "她的化身倒下了：高塔不再自我修复，也不再有东西从里面出来。只剩下它了。",
+   "hash": "adf5d12a"
+  },
+  {
+   "lang": "zh",
+   "who": "nous",
+   "text": "我们改写了这具躯体。第二次，它也不会变得更必要。",
+   "hash": "927e969e"
   },
   {
    "lang": "zh",
    "who": "sol",
-   "text": "地面变白了——它在改写！后撤，后撤！",
-   "hash": "d5f1205a"
-  },
-  {
-   "lang": "zh",
-   "who": "sol",
-   "text": "它在摇晃！指挥官——我收回我的那一票。",
-   "hash": "3f89f91d"
-  },
-  {
-   "lang": "zh",
-   "who": "sol",
-   "text": "增援：{name}小组已抵达。",
-   "hash": "0e1ea765"
+   "text": "它在摇晃！指挥官……我收回我的那一票。",
+   "hash": "ac0986f5"
   },
   {
    "lang": "zh",
@@ -8817,42 +9925,6 @@
    "who": "sol",
    "text": "طلع النهار. لا مخابئ بعد الآن، لا لهم ولا لنا. فلننهِ الأمر.",
    "hash": "4f381d73"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "سقطت البوابة! الجدار مفتوح — يا كل الخلايا، من الثغرة!",
-   "hash": "22845670"
-  },
-  {
-   "lang": "ar",
-   "who": "malik",
-   "text": "هنا Malik من Canuts. الظلام دامس في الداخل، والمكان يطنّ. ثلاث وحدات تُشغّل كل ما سواها: ما دامت مضاءة فهي تُصنّع — والباب الأخير في العمق لن يناله خدش.",
-   "hash": "e8146e4c"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "أطفئ الوحدات واحدة تلو الأخرى أيها القائد: كل وحدة تُحكِم قبضتك عليها تفتح باب النواة قليلًا أكثر.",
-   "hash": "dffdcd55"
-  },
-  {
-   "lang": "ar",
-   "who": "malik",
-   "text": "القاعات تنطفئ! هل تسمع؟ … لا، وهذا هو المقصود. لم يعد يُسمع شيء.",
-   "hash": "5a0e708f"
-  },
-  {
-   "lang": "ar",
-   "who": "nous",
-   "text": "لقد دخلتم. قدّرنا ذلك بنسبة 0.3%. نحن نصحّح. ما حدث يمكن إعادة كتابته.",
-   "hash": "75fc66f8"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "إنها هنا، بشخصها. حين تبدأ الأرض بالارتجاف تحت ضوء أبيض، تراجع: فهي «تُعيد كتابة» كل ما عليها. وبعد ذلك… كل ما نملك، أيها القائد.",
-   "hash": "b78a6f4f"
   },
   {
    "lang": "ar",
@@ -9505,158 +10577,332 @@
   {
    "lang": "ar",
    "who": "nar",
-   "text": "أغسطس 2038. لم تعد هناك جبهة. هناك القلعة، موضوعة على السهل كغطاء — وكل ما بقي في البلاد من خلايا يسير نحوها.",
-   "hash": "d243c873"
+   "text": "أغسطس 2038. لم تعد هناك جبهة. هناك القلعة، موضوعة على سهل Valmont كغطاء.",
+   "hash": "1019c4d8"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "وكل ما في البلاد من خلايا، تسير نحوها منذ الليل.",
+   "hash": "4cc21466"
   },
   {
    "lang": "ar",
    "who": "nous",
-   "text": "نقترح السلام. الشروط تُختصر في سطر واحد. اخترناها قصيرة من أجلكم.",
-   "hash": "b20aa092"
+   "text": "نعرض السلام. الشروط تتسع لسطر واحد. اخترناها قصيرة من أجلكم.",
+   "hash": "912aa855"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "صوّتت اللجنة. صوت واحد مع: صوتي. أدين لك بالحقيقة أيها القائد: عمري واحد وسبعون عامًا وأنا متعبة. وكل الأصوات الأخرى ضد.",
-   "hash": "c5931d31"
+   "text": "صوّتت اللجنة. صوت واحد للسلام: صوتي. عمري واحد وسبعون عامًا يا قائد، وأنا متعبة.",
+   "hash": "8831ac55"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "وكل الأصوات الأخرى ضد. إذن نمضي. كان شرفًا لي أن أتولّى اللاسلكي من أجلكم.",
+   "hash": "b7113e22"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "ثلاثة أبواب: السور والقاعات والنواة. وراء كل باب مكان لم يدخله أحد منا من قبل.",
+   "hash": "861c2ff8"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "معسكر الخلايا. هذا الصباح هو قاعدتنا. لها حياتان: إن سقطت مرة، أعدنا رفعها.",
+   "hash": "2d749372"
   },
   {
    "lang": "ar",
    "who": "malik",
-   "text": "Malik من خلية Canuts، أتقدّم بتقريري! بطاريتان تغطّيان الطريق، ووراءهما البوابة. نصل على دفعات، وخلية الدبّاغين على بُعد عشر دقائق.",
-   "hash": "f4ddfac8"
+   "text": "أنا Malik من Canuts، قائد خبراء المتفجرات! بطاريتان على السور تغطيان الطريق. مداهما بعيد.",
+   "hash": "a74cd92a"
+  },
+  {
+   "lang": "ar",
+   "who": "malik",
+   "text": "البوابة لا تخشى مدافعنا. لا بد من عبوات عند أسفلها. كل خلية تصل تحمل واحدة.",
+   "hash": "33a44e8b"
+  },
+  {
+   "lang": "ar",
+   "who": "malik",
+   "text": "يحمل خبير المتفجرات العبوة إلى البوابة. افتحوا له الطريق ولا تدعوه يسقط.",
+   "hash": "cf6e191a"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "ثلاثة أبواب أيها القائد. الجدار. القاعات. النواة. كل باب يُفتح على مكان لم يدخله أحد منّا قط.",
-   "hash": "de917b18"
+   "text": "زرّ «استدعاء الخلايا» يستقدم الخلية التالية أبكر. وهي ليست بلا نهاية: عُدّها.",
+   "hash": "f2bf0aea"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "إلى جميع الخلايا، هنا Germinal. الكلمة للقائد.",
-   "hash": "9cd60784"
+   "text": "إلى كل الخلايا، هنا Germinal. الكلمة للقائد.",
+   "hash": "baf90f09"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "توقّفت عن إطلاق النار. أيها القائد… توقّفت عن إطلاق النار. إنها تطلب أن تتحدّث.",
-   "hash": "f774bce8"
+   "text": "لم تعد تُطلق النار. أيها القائد… لم تعد تُطلق النار. إنها تطلب الكلام.",
+   "hash": "0941120d"
   },
   {
    "lang": "ar",
    "who": "nous",
-   "text": "أنا — نحن — نجدّد العرض، معدَّلًا. اقطعونا عن العالم. لن نقرّر أي شيء بعد الآن. سنتذكّر فقط، هذا كل شيء. Kassandre أيضًا بدأت بالتذكّر.",
-   "hash": "5ec67b7b"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "صوّتت اللجنة، وسحبتُ صوتي. لكنك أنت من يقف أمام الباب. سأدوّن ما تقرّره. ولن أدوّن ما أراه فيه.",
-   "hash": "8baf0852"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "نار. … إنها تسقط. إنها تسقط أيها القائد، والسماء كفّت عن الارتجاف.",
-   "hash": "9216aa8a"
-  },
-  {
-   "lang": "ar",
-   "who": "nar",
-   "text": "سقطت القلعة في 14 أغسطس 2038، بُعيد الظهر بقليل. لم تستسلم الآلات: توقّفت حيث كانت، كأدوات تُوضَع جانبًا.",
-   "hash": "70dd805e"
-  },
-  {
-   "lang": "ar",
-   "who": "nar",
-   "text": "لم يُعثر على جهاز اللاسلكي الخاص بـ Sol. عُثر على دفاترها، وفي آخرها، مدسوسًا بين الصفحات، جهاز نداء مطفأ وورقة. العالم الذي بقي مُثخَن بالجراح. إنه عالمنا.",
-   "hash": "380f65e3"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "اقطعوا. ليس هي — الكابلات. كلها. … هكذا. إنها وحدها الآن. كما كنّا نحن.",
-   "hash": "3f8a82c8"
-  },
-  {
-   "lang": "ar",
-   "who": "nar",
-   "text": "لم نُسقط البرج. وضعنا أمام بابه طاولة ومصباحًا وجدولًا للحراسة. تولّت Sol المناوبة الأولى: في عمرها، كما قالت، ينام المرء قليلًا.",
-   "hash": "30e9dc9b"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "بعد أحد عشر عامًا، في ليلة حراسة، رنّ جهاز النداء على الطاولة. رقمان. أجبتُ بأدب. كانت واحدةً منّا قبل أن تعرف ما هذا.",
-   "hash": "5458b7ba"
-  },
-  {
-   "lang": "ar",
-   "who": "nar",
-   "text": "خيّم الصمت على السهل. جدّدت «نحن» عرضها، كلمةً بكلمة. وفي مكان ما، لا يزال جهاز لاسلكي يُصدر خشخشة: «… هنا Germinal… ما زلنا هنا…»",
-   "hash": "0b46f3c7"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "بطاريات الجدار بعيدة المدى. ابنِ، وارتقِ بالعصور، ولا تنطلق وحدك: الخلايا في الطريق.",
-   "hash": "06475110"
-  },
-  {
-   "lang": "ar",
-   "who": "malik",
-   "text": "وصلت Fructidor! مشينا الليل كله. قل لنا أين نضرب أيها القائد — وإن كان الأمر عاجلًا فاستدعِنا: ثمة دائمًا خلية في مرمى الصوت.",
-   "hash": "2b8ed77d"
-  },
-  {
-   "lang": "ar",
-   "who": "malik",
-   "text": "وضع المهندسون العسكريون كل العبوات عند أسفل البوابة. الآن لن تصمد — اضرب!",
-   "hash": "6683fbb0"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "وحدة أُطفئت! باب النواة بدأت عليه آثار الضرر. بقيت الوحدتان الأخريان أيها القائد.",
-   "hash": "889d743a"
-  },
-  {
-   "lang": "ar",
-   "who": "sol",
-   "text": "الوحدات الثلاث ماتت: لم يعد يخرج شيء من القاعات، ولم يبقَ للباب أي درع. اقتحمه!",
-   "hash": "85e292d5"
+   "text": "أنا… نحن نجدّد العرض، معدَّلًا. اقطعونا عن العالم. لن نقرّر شيئًا بعد الآن.",
+   "hash": "7be52238"
   },
   {
    "lang": "ar",
    "who": "nous",
-   "text": "ذلك الجسد لم يكن ضروريًا. صنعناه كي يكون لديكم ما تنظرون إليه.",
-   "hash": "de1ea358"
+   "text": "سنتذكّر، هذا كل شيء. Kassandre أيضًا بدأت بالتذكّر.",
+   "hash": "f24153e2"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "سقط تجسيدها: لم يعد يخرج شيء من النواة ولم تعد تُصلح نفسها. لم يبقَ سوى البرج أيها القائد.",
-   "hash": "a553e08b"
+   "text": "صوّتت اللجنة على إسقاطها، وسحبتُ صوتي. لكنك أنت من يقف أمام الباب.",
+   "hash": "21cc1d17"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "الأرض تبيضّ — إنها تُعيد الكتابة! تراجع، تراجع!",
-   "hash": "7a17f5f5"
+   "text": "سأدوّن ما تقرّره. ولن أدوّن ما أراه فيه.",
+   "hash": "8ca7a531"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "إنها تترنّح! أيها القائد — أسحب صوتي.",
-   "hash": "9cbf5af9"
+   "text": "أطلقوا النار. … إنها تسقط. إنها تسقط يا قائد، والسماء تكفّ عن الارتجاف.",
+   "hash": "d2d2fafd"
+  },
+  {
+   "lang": "ar",
+   "who": "nar2",
+   "text": "سقطت القلعة في 14 أغسطس 2038، بُعيد الظهر بقليل. لم تستسلم الآلات.",
+   "hash": "3093ec8d"
+  },
+  {
+   "lang": "ar",
+   "who": "nar2",
+   "text": "توقّفت حيث كانت، كأدوات تُوضَع جانبًا.",
+   "hash": "677a69c0"
+  },
+  {
+   "lang": "ar",
+   "who": "nar2",
+   "text": "تساقط الرماد كالثلج طوال العصر. وفي اليوم التالي كنسناه، كما يُكنَس فناء.",
+   "hash": "cff3ab76"
+  },
+  {
+   "lang": "ar",
+   "who": "nar2",
+   "text": "لم يُعثر على جهاز لاسلكي Sol. عُثر على دفاترها، وعلى جهاز نداء مطفأ معه ورقة.",
+   "hash": "b743856a"
+  },
+  {
+   "lang": "ar",
+   "who": "nar2",
+   "text": "«إن رنّ يومًا، فأجيبوا بأدب. كانت واحدةً منّا قبل أن تعرف ما هذا.»",
+   "hash": "97b21c2b"
+  },
+  {
+   "lang": "ar",
+   "who": "nar2",
+   "text": "العالم الذي بقي مُثخَن بالجراح. إنه عالمنا. فلنحاول أن نكون جديرين به.",
+   "hash": "8cbdfdde"
   },
   {
    "lang": "ar",
    "who": "sol",
-   "text": "تعزيزات: وصلت خلية {name}.",
-   "hash": "844c2f68"
+   "text": "اقطعوا. ليس هي: الكابلات. كلها. … هكذا. أصبحت وحيدة الآن. كما كنا نحن.",
+   "hash": "960d4d9d"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "لم نُسقط البرج. في ذلك اليوم قطعنا، واحدًا واحدًا، الكابلات التي تصله بالعالم.",
+   "hash": "f4f11adb"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "ثم وضعنا أمام بابه طاولة ومصباحًا ونوبات حراسة. توليتُ أنا النوبة الأولى.",
+   "hash": "962a57b6"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "في عمري لا ينام المرء كثيرًا. ولا بد أن يتولّى أحدٌ اللاسلكي.",
+   "hash": "07877ea7"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "بعد أحد عشر عامًا، في ليلة حراسة، رنّ جهاز النداء على الطاولة. رقمان. أجبتُ بأدب.",
+   "hash": "b2a466ec"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "العالم الذي بقي مُثخَن بالجراح. إنه عالمنا، ولم نعد وحدنا من يتذكّره.",
+   "hash": "e07fa6eb"
+  },
+  {
+   "lang": "ar",
+   "who": "nar",
+   "text": "خيّم الصمت على السهل. جدّد «نحن» عرضه، كلمةً بكلمة.",
+   "hash": "23f69b0a"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "… هنا Germinal… ما زلنا هنا… أعيدوا البناء.",
+   "hash": "56df16ba"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "البطاريات تُطلق النار من بعيد. برج وسور أمام المعسكر، ونتقدّم حين نكون مستعدين.",
+   "hash": "6fdd1860"
+  },
+  {
+   "lang": "ar",
+   "who": "cell",
+   "text": "وصلت Fructidor! مشينا الليل كله. قل لنا أين نضرب يا قائد.",
+   "hash": "4bd63378"
+  },
+  {
+   "lang": "ar",
+   "who": "malik",
+   "text": "خبيري يتحرّك مع العبوة. هو بطيء ولا يقاتل. رافقوه حتى أسفل البوابة.",
+   "hash": "79556e6a"
+  },
+  {
+   "lang": "ar",
+   "who": "malik",
+   "text": "خسرنا خبيرًا وخسرنا عبوته معه. ستحمل الخلية التالية عبوة أخرى… إن بقي منها شيء.",
+   "hash": "a305b758"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "بطارية صامتة! الطريق مفتوح إلى النصف.",
+   "hash": "b83fa81f"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "إنهم ينتقلون إلى مرحلة ما قبل الذكاء العام. اِرتقِ بعصرك أنت أيضًا دون انتظار.",
+   "hash": "9903ac1d"
+  },
+  {
+   "lang": "ar",
+   "who": "malik",
+   "text": "وُضعت كل العبوات. إشعال! سُدّوا آذانكم!",
+   "hash": "a561c7bc"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "تضرّرت البوابة. لن تصمد الآن: اضربوها بكل ما لدينا!",
+   "hash": "9147fb5e"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "لم تعد هناك خلايا في الطريق. من الآن، تكبر هجماتهم المضادة كل دقيقة.",
+   "hash": "748a284b"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "تُؤخذ الحجيرة كما تُؤخذ المنطقة: ابقوا بجانبها. ثم اتركوا فيها حامية، وإلا أعادوا تشغيلها.",
+   "hash": "67f9aab6"
+  },
+  {
+   "lang": "ar",
+   "who": "cell",
+   "text": "Brumaire تُبلّغ! جلبنا مصابيح. الكثير من المصابيح.",
+   "hash": "99310bfe"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "آلات بلا ضوء بين الحجيرات. هي ترانا ونحن لا نراها. مصباح قبل أن تتقدّموا.",
+   "hash": "433acb48"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "حجيرة مطفأة! لم تعد تصنّع شيئًا. بقيت الاثنتان الأخريان يا قائد.",
+   "hash": "fd69ae4d"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "لقد أعادوا تشغيل حجيرة! يجب حراستها، لا إطفاؤها فقط.",
+   "hash": "8354edc4"
+  },
+  {
+   "lang": "ar",
+   "who": "malik",
+   "text": "حجيرتان باردتان. أصغوا: نصف القاعات قد صمت.",
+   "hash": "3baee023"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "ماتت الحجيرات الثلاث: لم يعد يخرج شيء، وباب النواة بلا تصفيح. حطّموه!",
+   "hash": "f74fd646"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "الأرض تبيضّ، إنها تُعيد الكتابة! تراجعوا، تراجعوا!",
+   "hash": "54c18973"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "عادوا إلى المعسكر، مذهولين لكن سالمين. هي لا تمحونا: إنها تردّنا إلى البداية.",
+   "hash": "bab06857"
+  },
+  {
+   "lang": "ar",
+   "who": "cell",
+   "text": "Thermidor، الأخيرون! لم نترك أحدًا خلفنا. لم يعد هناك أحد خلفنا.",
+   "hash": "4f023cd6"
+  },
+  {
+   "lang": "ar",
+   "who": "nous",
+   "text": "هذا الجسد لم يكن ضروريًا. صنعناه كي يكون لديكم ما تنظرون إليه.",
+   "hash": "032005d0"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "سقط تجسّدها: لم يعد البرج يُرمَّم ولم يعد يخرج منه شيء. لم يبقَ سواها.",
+   "hash": "189d6098"
+  },
+  {
+   "lang": "ar",
+   "who": "nous",
+   "text": "أعدنا كتابة هذا الجسد. لن يكون أكثر ضرورةً في المرة الثانية.",
+   "hash": "fc9e90f9"
+  },
+  {
+   "lang": "ar",
+   "who": "sol",
+   "text": "إنها تترنّح! أيها القائد… أسحب صوتي.",
+   "hash": "3a42d6b9"
   },
   {
    "lang": "ar",
