@@ -43,6 +43,8 @@ function m4Sound(kind){ if (typeof AC==='undefined' || !AC || !SETTINGS.sfx) ret
   if (kind==='bell'){ tone(196, t0, 2.4, 'sine', .07, -4, .005); tone(392.6, t0, 1.6, 'sine', .028, -6, .005); tone(588, t0, 1, 'sine', .014, -8, .005); }
   else if (kind==='door'){ tone(180, t0, .7, 'sawtooth', .02, 90, .1, 520); noise(t0, .5, .012, 900); }
   else if (kind==='beep'){ tone(880, t0, .1, 'sine', .018); tone(880, t0+.28, .1, 'sine', .018); tone(880, t0+.56, .3, 'sine', .018); }
+  else if (kind==='engine'){ tone(52+Math.random()*4, t0, 1.3, 'sawtooth', .03, 0, .2, 240); tone(104, t0, 1.1, 'square', .008, 0, .2, 180); noise(t0+.15, .8, .012, 700); }   // la déneigeuse : moteur grave, raclement de lame
+  else if (kind==='step'){ noise(t0, .05, .008, 1500); noise(t0+.22, .05, .006, 1300); }                                                                 // des pas dans la neige
   else if (kind==='ice'){ noise(t0, .06, .02, 5200); tone(2400+Math.random()*900, t0, .05, 'triangle', .008, -900); }
 } catch(e){} finally { sfxBus = null; } }
 
@@ -171,6 +173,12 @@ BIOMES.rochefroide = {
       ctx.stroke(); }
     fxSnow(t, 70+Math.round(90*gu), 'rgba(246,248,252,0.86)', -150-330*gu, 60); },
 };
+
+// ambiance du lieu : le vent (qui forcit en blizzard), le crépitement d'un brasero quand la caméra en est proche
+AMB_PROFILES.rochefroide = { grp:['amb_cold','amb_fire'], f(c){ const gu = (c && c.gust) || 0, cx = camX + VW()/2;
+  const near = !!c && (cx < 600 || game.zones.some(z => m4Lit(z) && Math.abs(z.x-cx) < 520));
+  if (gu > 0.3) oneShot('gust', 4, 0.7); else oneShot('gust', 14, 0.45);
+  return { blizzard:0.35 + 0.6*gu, howl:0.4 + 0.3*gu, fire: near? 0.55 : 0.08 }; } };
 
 /* ---------- personnages : Anselme Wójcik, ancien porion du puits (casquette, moustache, lampe frontale éteinte) ---------- */
 CINE_WHO.anselme = { name:'ANSELME', ink:'#5a4630' };
@@ -741,6 +749,9 @@ campMission(3, {
       else { c.pls.splice(i,1); c.pDead++; explode(pl.x, gY(pl.x)-24, 1.8); m4Say(c, 'pld', M4_TX.rL, 1); } }
     if (!c.g3 && c.pDead >= c.plTimes.length && c.pEx === 0){ c.g3 = true; m4Bonus(c, 2); }
     // l'émetteur : un bip lent, jusqu'au silence de la scène S3 ; un craquement de glace de loin en loin
+    if (!CINE.on){ const cx = camX + VW()/2;
+      if (c.pls.some(u => u.hp > 0 && Math.abs(u.x-cx) < 1000) && (c.engT = (c.engT||0) - dt) <= 0){ c.engT = 1.1; m4Sound('engine'); }
+      if ((c.stepT = (c.stepT||0) - dt) <= 0){ c.stepT = 0.55; if (p.units.some(u => !u.fly && Math.abs(u.x-cx) < VW()/2 && Math.abs((u.tx!=null? u.tx : u.x) - u.x) > 8)) m4Sound('step'); } }
     if (!c.silent && !CINE.on && (c.beepT -= dt) <= 0){ c.beepT = 7; m4Sound('beep'); }
     if (!CINE.on && Math.random() < dt*0.04) m4Sound('ice');
     this.light(g, c);
