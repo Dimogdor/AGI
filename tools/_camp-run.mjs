@@ -19,6 +19,7 @@ export async function campRun({ mission, bot, info, maxMin = 14, levels = (proce
       try { localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1');
         localStorage.setItem('agi_settings', JSON.stringify({ quality:'high', lang:'fr', music:false, sfx:false })); } catch(e){} });
     await page.goto(GAME); await page.waitForTimeout(300);
+    if (process.env.OVERRIDE) await page.evaluate(process.env.OVERRIDE);       // essai d'équilibrage : ex. OVERRIDE='M2.v=12' (constantes de mission, avant campStart)
     const r = await page.evaluate(([mission, lvl, active, botSrc, infoSrc, maxMin, tstep, DOC]) => {
       let s = 20280317 + lvl*101 + (active? 7 : 0); Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };
       CAMP_SAVE.done = 5; CAMP_SAVE.diff = lvl; if (DOC) CAMP_SAVE.doc[mission] = 1; else delete CAMP_SAVE.doc[mission]; campStart(mission);   // DOC=1 : seconde doctrine
