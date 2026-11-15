@@ -63,7 +63,7 @@ if (L0){
   check(bad===0, `empreinte du jeu (voiceKey) = empreinte de l'extracteur (${man.lines.length} répliques)`);
   await page.waitForFunction(() => voiceIndex()!==undefined, null, { timeout:5000, polling:100 }).catch(()=>{});
   // mission I, ouverture : on s'arrête sur la plus courte réplique dite
-  const r = await page.evaluate(() => { CAMP_SAVE.done = 5; campLaunch(0);
+  const r = await page.evaluate(() => { CAMP_SAVE.done = 5; campStart(0);
     const sc = CINE.script; let best = -1, bd = 1e9;
     sc.forEach((s,i) => { const d = s.txt? voiceDur(s.who||'nar', s.txt) : 0; if (d>0 && d<bd){ bd = d; best = i; } });
     if (best<0) return { best };
@@ -82,7 +82,7 @@ if (L0){
     if (sk){ await page.waitForFunction(() => VOICE.cur && VOICE.cur.state==='play', null, { timeout:6000, polling:100 }).catch(()=>{});
       const s2 = await page.evaluate(() => { cineEnd(); return !VOICE.cur && !CINE.on; }); check(s2, '« passer la cinématique » coupe la voix'); }
     // réglage coupé : aucune lecture
-    const off = await page.evaluate(() => { voiceToggle(false); const p0 = VOICE.plays; campLaunch(0);
+    const off = await page.evaluate(() => { voiceToggle(false); const p0 = VOICE.plays; campStart(0);
       const i = CINE.script.findIndex(s => s.txt); CINE.i = i-1; cineNext(); return { vd:CINE.vd, cur:!!VOICE.cur, p0 }; });
     await page.waitForTimeout(600);
     const p1 = await page.evaluate(() => VOICE.plays);
@@ -100,7 +100,7 @@ if (L0){
 
 console.log('VOIX OFF — fichier local (file://)');
 { const { page, errs } = await open('file://'+path.join(ROOT, 'la-derniere-bataille.html'), { lang:'fr' });
-  const r = await page.evaluate(() => { CAMP_SAVE.done = 5; campLaunch(0); let n = 0; while (CINE.on && n++ < 40){ CINE.t = 99; cineTick(0.05); render(1/60); } return { idx:voiceIndex(), on:CINE.on, n }; });
+  const r = await page.evaluate(() => { CAMP_SAVE.done = 5; campStart(0); let n = 0; while (CINE.on && n++ < 40){ CINE.t = 99; cineTick(0.05); render(1/60); } return { idx:voiceIndex(), on:CINE.on, n }; });
   check(r.idx===null && !r.on && r.n>3, 'voix indisponible sans serveur : la cinématique se déroule, muette');
   check(!errs.length, 'aucune erreur JS / console en file://'+(errs.length? ' — '+errs.slice(0,3).join(' | ') : ''));
   await page.close(); }

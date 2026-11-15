@@ -10,7 +10,7 @@
    ouvert (ères III à V, héros, transcendance). À la fin, « nous » renouvelle son offre : le
    joueur CHOISIT (abattre la tour / la couper du monde et veiller) — deux épilogues.            */
 // eMul : solidité des machines de la citadelle, AVANT le multiplicateur commun de difficulté (×0,8 / ×1 / ×1,12)
-const M5 = { need:[4,5,4], cells:[4,9,10], wMul:[0.85,0.85,0.88], wave:[80,68,62], guard:[4,4,4], spCd:[110,85,75], eMul:[0.5,0.5,0.5], cap:[8,10,11], reinf:[58,55,52], gate:[[1800,1800,1900],[3600,3200,2400],[4000,3600,2800]], hero:[0.2,0.3,0.34], rw:[46,40,37] };
+const M5 = { need:[4,5,4], cells:[4,9,10], wMul:[0.85,0.85,0.88], wave:[80,68,62], guard:[4,4,4], spCd:[110,85,75], eMul:[0.5,0.5,0.5], cap:[8,10,11], reinf:[58,55,52], gate:[[1800,1800,1900],[3600,3200,2400],[4000,3600,2800]], hero:[0.18,0.22,0.24], rw:[46,40,37] };
 const m5Act = () => (game && game.camp && game.camp.act) || 1;
 const m5Owned = g => g.zones.reduce((n,z)=> n+(z.owner==='p'? 1 : 0), 0);
 
@@ -255,9 +255,9 @@ function m5Cell(g, c, n, sap){ if (!(c.cellsLeft > 0)) return 0; const p = g.p, 
     campRadio('sol', CAMP_UI.reinf, { vars:{ name:CAMP_CELLS[c.cell++ % CAMP_CELLS.length] } }); sfx('evolve'); }
   return 1; }
 // la garnison de la porte, au début de chaque acte, et les sorties : des colonnes qui foncent sur notre base
-function m5Guard(g, c, top){ const e = g.e, k0 = e.units.length, have = top? e.units.filter(u=>u.ord==='hold').length : 0; for (let i=have;i<M5.guard[c.lvl];i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x-60-i*20); const k = M5.wMul[c.lvl];
+function m5Guard(g, c, top){ const e = g.e, k0 = e.units.length, have = top? Math.max(e.units.filter(u=>u.ord==='hold').length, e.units.length >= 22? 99 : 0) : 0;   // la garde n'est relevée que si la porte n'est pas déjà noire de machines for (let i=have;i<M5.guard[c.lvl];i++) spawnUnit(e, [1,2,0,2,3][i%5], false, e.x-60-i*20); const k = M5.wMul[c.lvl];
   for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; u.ord = 'hold'; u.holdX = u.x; } }
-function m5Sortie(g, c){ const e = g.e, k0 = e.units.length, n = Math.round((1 + c.act*2 + (c.cellsLeft>0? 0 : Math.floor((c.t-c.dry)/60)*3)) * 0.9 * ((c.act===2 && c.owned>=3) || (c.act===3 && c.avatar)? 0.5 : 1)); if (e.units.length < 26) campWave(Math.min(n, 16));   // plus on attend, plus elles impriment
+function m5Sortie(g, c){ const e = g.e, k0 = e.units.length, n = Math.round((1 + c.act*2 + (c.cellsLeft>0? 0 : Math.min(6, Math.floor((c.t-c.dry)/60)*2))) * 0.9 * ((c.act===2 && c.owned>=3) || (c.act===3 && c.avatar)? 0.5 : 1)); if (e.units.length < 26) campWave(Math.min(n, 16));   // plus on attend, plus elles impriment
   const k = M5.wMul[c.lvl]; for (let j=k0;j<e.units.length;j++){ const u = e.units[j]; u.m5 = 1; u.hp *= k; u.maxhp *= k; u.dmg *= k; } }
 // réglages ennemis d'un acte (appelé par campApplyAct, une fois NOTRE camp remis à zéro selon la fiche de l'acte)
 function m5Transform(g, c){
@@ -277,8 +277,8 @@ const M5_GOALS = {
 const M5_ACTS = {
   2:{ army:{ keep:5, hero:true }, heal:1, squad:[1,2,2], res:{ f:450, m:420, w:160 }, base:{ hp:2000 }, era:{ p:3 },
       map:{ terrain:{ a:3, f1:0.004, b:2, f2:0.0113, c:1, f3:0.021, base:2 } } },          // les halles : un sol de dalles, presque plat
-  3:{ army:{ keep:4, hero:true }, heal:1, squad:[1,2,3], res:{ f:520, m:480, w:200 }, base:{ hp:1900 }, era:{ p:4 },
-      map:{ terrain:{ a:24, f1:0.0042, b:9, f2:0.0113, c:4, f3:0.021, base:6 } } },          // le noyau : un sol soulevé, en éclats
+  3:{ army:{ keep:5, hero:true }, heal:1, squad:[1,1,2,2,3], res:{ f:680, m:620, w:240 }, base:{ hp:1900 }, era:{ p:4 },
+      map:{ terrain:{ a:10, f1:0.0042, b:6, f2:0.0113, c:3, f3:0.021, base:4 } } },          // le noyau : un sol soulevé, en éclats
 };
 function m5ActSpec(g, c){ const sc = m5ActCine(g, c), a = c.act+1, card = sc[1];
   return Object.assign({ act:a, title:card.title, sub:card.sub, card:{ plate:card.plate, mus:card.mus }, before:[sc[0]], after:sc.slice(2),
@@ -382,8 +382,10 @@ campMission(4, {
         for (const z of g.zones) if (z.owner!=='p' && e.units.length<60){ spawnUnit(e, [0,2,1][(z.x|0)%3], false, z.x+30); e.units[e.units.length-1].ord = 'charge'; burst(z.x, gY(z.x)-40, '#9fd6ea', 8, 0.8); } } }
     if (c.act===3){                                                    // LE NOYAU : réécritures
       if (!c.avatar && !e.units.some(u=>u.role==='hero')){ c.avatar = 1; g.shake = 12; sfx('evolve'); }
+      if (!c.avatar && T - c.t0 > 240) for (const u of e.units) if (u.role==='hero') u.hp -= u.maxhp*0.012*dt;   // l'avatar est instable : il se défait s'il ne gagne pas vite
       if (!c.avatar && e.hp < c.lastE) e.hp = c.lastE - (c.lastE-e.hp)*0.3;   // tant que son avatar marche, le noyau se réécrit à mesure
-      if (!c.rw && T >= c.nextRw){ let fx = p.x+300; for (const u of p.units) if (u.x>fx) fx = u.x; c.rw = { x:clamp(fx-150, p.x+260, e.x-420), w:420, t:0 }; sfx('deny'); }
+      if (!c.rw && !c.avatar && T >= c.nextRw){   // plus d'avatar, plus de réécriture
+        let fx = p.x+300; for (const u of p.units) if (u.x>fx) fx = u.x; c.rw = { x:clamp(fx-150, p.x+260, e.x-420), w:420, t:0 }; sfx('deny'); }
       const r = c.rw; if (r){ r.t += dt;
         if (r.t >= 4 && !r.done){ r.done = 1; g.flash = Math.max(g.flash||0, 0.7); g.shake = Math.max(g.shake, 10); sfx('boom');
           for (const u of p.units) if (u.x > r.x && u.x < r.x+r.w){ u.hp -= u.maxhp*[0.14,0.2,0.23][c.lvl]*(u.role==='hero'? 0.4 : 1); u.x = Math.max(p.x+60, u.x-190); u.flash = 0.5; } }
