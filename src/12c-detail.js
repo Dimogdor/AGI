@@ -438,3 +438,73 @@ function inkLabel(txt, x, y, px, col){
   ctx.save(); ctx.font = HF(px||11); ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(20,14,12,0.85)'; ctx.lineWidth = Math.max(2.4, (px||11)*0.28);
   ctx.strokeText(txt, x, y); ctx.fillStyle = col || '#f4ecd8'; ctx.fillText(txt, x, y); ctx.restore();
 }
+
+/* ====== OBJETS DE MISSION cuits (contour d'encre, à l'échelle du jeu) : modèle = le port de la mission II ======
+   Chaque peintre dessine l'objet statique ; les parties vivantes (eau, flammes, jauge, balancier, fanion) restent
+   dans la fonction de dessin de la mission. blitObj() pose le sprite, origine (0,0) = pied de l'objet. */
+function blitObj(key, w, h, ox, oy, paint, sx){
+  const S = sprite(key, w, h, c => { c.translate(ox, oy); paint(c); });
+  ctx.drawImage(S, -ox*(sx||1), -oy*(sx||1), w*(sx||1), h*(sx||1));
+}
+// transformateur de quartier sur poteau (mission I) ; l'ampoule d'état (-8,-81) est vivante
+function paintTransformer(c){
+  dkL(c, -8, -44, -8, -80, 3.4, '#3a3028'); dkL(c, -20, -71, 4, -71, 3, '#3a3028');                                  // poteau et traverse
+  for (const ix of [-17,-8,1]){ dkR(c, ix-1.2, -77, 2.4, 6, '#d8d2c0'); for (let k=0;k<3;k++) dkR(c, ix-2.4, -77+k*2.2, 4.8, 1.2, '#b8b2a0'); }   // isolateurs
+  dkL(c, -26, -71, -20, -71, 1, '#2a2a2a');
+  dkP(c, [-20,-44, 20,-44, 18,0, -18,0], '#4c5058');                                                               // armoire
+  dkR(c, -22, -48, 44, 5, '#3a3d45'); dkR(c, 11, -42, 6, 42, '#3a3d45');
+  c.fillStyle = 'rgba(0,0,0,0.38)'; for (let i=0;i<5;i++) c.fillRect(-14, -36+i*4, 14, 1.5);                      // ouïes
+  dkP(c, [4,-14, 10,-27, -2,-14], '#e8b830'); dkP(c, [4.6,-24, 2.6,-19.4, 4.6,-19.4, 3.2,-15.6, 6.4,-21, 4.4,-21], '#1f1b17');
+  dkR(c, -15, -8, 9, 3.4, '#c8302a');                                                                              // coffret de coupure
+  dkL(c, 2, -44, 7, -53, 2, '#22232b');                                                                            // câble
+}
+// borne d'incendie
+function paintHydrant(c){
+  dkR(c, -9, -4, 18, 4, '#7d1d15');
+  dkR(c, -5.6, -27, 11.2, 24, '#c0301f'); dkR(c, -5.6, -27, 3, 24, '#d8402c');
+  c.fillStyle = '#c0301f'; c.beginPath(); c.arc(0, -27, 6.6, Math.PI, 0); c.fill();
+  dkR(c, -7.6, -10, 15.2, 2.4, '#8e1d14');                                                                         // bague
+  dkR(c, -11, -21, 6, 7, '#8e1d14'); dkR(c, 5, -21, 6, 7, '#8e1d14'); dkC(c, -11.4, -17.5, 1.6, '#d8c070'); dkC(c, 11.4, -17.5, 1.6, '#d8c070');   // buses
+  dkC(c, 0, -34, 2.4, '#e8c04a'); dkR(c, -0.9, -34, 1.8, 7.4, '#e8c04a');                                         // clé des pompiers
+  dkL(c, -11, -14, -12, -6, 0.9, '#6a6a6a');                                                                       // chaîne
+}
+// prise d'eau de la mission III : socle, crépine, tuyau, corps de pompe, bec, hampe (balancier et fanion vivants)
+function paintIntake(c){
+  c.fillStyle = '#3d6f88'; c.beginPath(); c.ellipse(-30, 2, 22, 4, 0, 0, 6.283); c.fill();                          // flaque
+  dkP(c, [-13,-9, 30,-9, 30,0, -13,0], '#9a9a92'); dkR(c, 18, -9, 12, 9, 'rgba(40,46,52,0.35)');
+  c.fillStyle = '#7d8a90'; c.beginPath(); c.ellipse(-30, -5, 11, 5, 0, 0, 6.283); c.fill();                          // crépine
+  c.strokeStyle = M3_INK; c.lineWidth = 1; for (let k=-2;k<=2;k++){ c.beginPath(); c.moveTo(-30+k*4, -9); c.lineTo(-30+k*4, -1); c.stroke(); }
+  dkL(c, -19, -5, -4, -5, 3.6, '#5a6268'); dkL(c, -4, -5, -4, -22, 3.6, '#5a6268');
+  dkR(c, -9, -42, 10, 30, '#4c5a62'); dkR(c, -11, -46, 14, 4, '#2f3a40'); dkR(c, -9, -42, 2.4, 30, 'rgba(255,255,255,0.18)');
+  dkP(c, [1,-36, 14,-33, 14,-29, 1,-30], '#4c5a62');
+  dkL(c, 26, -9, 26, -52, 2.4, '#3a3028'); dkC(c, 26, -53, 1.8, '#c8a43a');                                         // hampe
+  dkC(c, -4, -46, 2.2, '#2a2420');                                                                                 // axe du balancier
+}
+// brasero de la mission IV : trois pierres, fût percé sur rivets, bandes ; variantes allumé / éteint / pris par l'ennemi
+function paintBrazier(c, on, foe){
+  if (on){ c.fillStyle = 'rgba(120,126,136,0.55)'; c.beginPath(); c.ellipse(0,0,30,5,0,0,6.283); c.fill(); }
+  for (const sx of [-11,0,11]){ c.fillStyle = '#5a5a60'; c.beginPath(); c.ellipse(sx,-2.4,5.8,3.6,0,0,6.283); c.fill(); }
+  dkP(c, [-11,-29, 11,-29, 10,-6, -10,-6], '#3d3a3c'); dkR(c, -12, -31, 24, 3.4, '#2a282b'); dkR(c, -11.4, -18.4, 22.8, 2.2, '#2a282b'); dkR(c, 6, -28, 4, 22, 'rgba(0,0,0,0.3)');
+  c.fillStyle = on? '#f0a040' : '#17181c'; for (let i=0;i<3;i++){ c.fillRect(-7+i*5,-25,2.4,3); c.fillRect(-5+i*5,-14,2.4,3); }
+  for (const rx of [-9,9]) dkC(c, rx, -29.6, 0.9, '#6a6670');
+  if (!on){ c.fillStyle = '#eef1f5'; c.beginPath(); c.moveTo(-12,-30); c.quadraticCurveTo(0,-39, 12,-30); c.closePath(); c.fill();
+    if (foe){ c.beginPath(); c.moveTo(-19,0); c.quadraticCurveTo(-8,-22, 0,-12); c.quadraticCurveTo(10,-20, 19,0); c.closePath(); c.fill(); } }
+}
+// hérisson antichar : trois poutrelles en cornières, boulons
+function paintHedgehog(c){
+  const beam = (x0,y0,x1,y1) => { dkL(c, x0, y0, x1, y1, 4.6, '#2a2724'); dkL(c, x0, y0, x1, y1, 3, '#4a4642'); dkL(c, x0-0.5, y0-0.6, x1-0.5, y1-0.6, 0.9, 'rgba(230,210,180,0.4)'); };
+  beam(-13, -2, 11, -22); beam(13, -2, -11, -22); beam(-3, -2, 5, -24);
+  dkC(c, 0, -12, 1.6, '#8a8680'); dkC(c, -9, -8, 1, '#8a8680'); dkC(c, 9, -8, 1, '#8a8680');
+}
+// campement des cellules (mission V, acte 1) : deux tentes et le camion-radio ; antenne et banderole vivantes
+function paintCamp1(c){
+  for (const [x,w,h,col] of [[-92,46,38,'#6c7a58'],[-48,54,46,'#7a8664']]){
+    dkP(c, [x-w/2,0, x,-h, x+w/2,0], col); dkP(c, [x-4,0, x,-h*0.58, x+7,0], 'rgba(20,16,10,0.5)'); dkL(c, x, -h, x, -h-6, 1.2, '#3a3028'); }
+  dkP(c, [-4,-40, 60,-40, 60,-8, -4,-8], '#4a5846');                                                               // caisse
+  dkR(c, -4, -14, 64, 6, 'rgba(0,0,0,0.28)'); dkR(c, -2, -38, 60, 2.4, 'rgba(255,255,255,0.14)');
+  for (const px of [6,20,34,48]) dkR(c, px, -34, 8, 10, 'rgba(10,14,10,0.35)');                                    // panneaux
+  dkP(c, [60,-32, 78,-32, 83,-18, 83,-8, 60,-8], '#3a4638'); dkP(c, [64,-29, 76,-29, 79,-20, 64,-20], '#9fc0d0'); // cabine, pare-brise
+  dkR(c, -6, -9, 90, 2.4, '#2a2622'); dkC(c, 82, -12, 1.6, '#f4e8a0');                                              // pare-chocs, phare
+  for (const wx of [8,40,70]){ dkC(c, wx, -6, 7.4, '#1c1a18'); dkC(c, wx, -6, 3, '#6a6a66'); dkC(c, wx, -6, 1, '#1c1a18'); }
+  dkL(c, 20, -40, 20, -84, 2, '#2a2622'); dkL(c, 12, -70, 28, -70, 1.8, '#2a2622'); dkC(c, 20, -85, 1.6, '#c42a1c');   // mât d'antenne
+}

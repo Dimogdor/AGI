@@ -554,16 +554,11 @@ function m4DrawZone(z, t, vw){
     ctx.fillStyle = 'rgba(214,120,50,0.8)'; ctx.fillRect(x-R-1, gY(z.x-R)+2, 2, 10); ctx.fillRect(x+R-1, gY(z.x+R)+2, 2, 10); }
   ctx.save(); ctx.translate(x, y);
   ctx.fillStyle = 'rgba(20,24,34,0.28)'; ctx.beginPath(); ctx.ellipse(1,1,17,4,0,0,6.283); ctx.fill();
-  if (on){ ctx.fillStyle = 'rgba(120,126,136,0.55)'; ctx.beginPath(); ctx.ellipse(0,0,30,5,0,0,6.283); ctx.fill(); }                    // neige fondue
-  ctx.fillStyle = '#5a5a60'; for (const sx of [-10,0,10]){ ctx.beginPath(); ctx.ellipse(sx,-2,5.5,3.4,0,0,6.283); ctx.fill(); }          // trois pierres
-  ctx.fillStyle = '#3d3a3c'; ctx.fillRect(-10,-28,20,21); ctx.fillStyle = '#2a282b'; ctx.fillRect(-11,-29,22,3); ctx.fillRect(-11,-18,22,2); ctx.fillRect(6,-28,4,21);
-  ctx.fillStyle = on? '#f0a040' : '#17181c'; for (let i=0;i<3;i++){ ctx.fillRect(-7+i*5,-24,2.4,3); ctx.fillRect(-5+i*5,-14,2.4,3); }      // le fût percé
+  blitObj('M4BR'+(on? 1 : 0)+(z.owner==='e'? 'e' : ''), 48, 44, 24, 40, c => paintBrazier(c, on, z.owner==='e'));
   if (on){ for (let i=0;i<3;i++){ const fh = 13 + 6*Math.sin(t*9+i*2.1+z.x) + (c.stoke>0? 8 : 0), fx = -6+i*6;
       ctx.fillStyle = i===1? '#f7d060' : '#e8742c'; ctx.beginPath(); ctx.moveTo(fx-4.5,-28); ctx.quadraticCurveTo(fx-2+Math.sin(t*7+i)*3,-30-fh*0.6, fx+Math.sin(t*5+i)*2,-29-fh); ctx.quadraticCurveTo(fx+4,-30-fh*0.5, fx+4.5,-28); ctx.closePath(); ctx.fill(); }
     ctx.fillStyle = '#e8742c'; for (let i=0;i<3;i++){ const k = (t*0.7+i/3)%1; ctx.globalAlpha = 1-k; ctx.fillRect(-6+i*6+Math.sin(t*3+i)*5, -42-k*34, 1.8, 1.8); } ctx.globalAlpha = 1;
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(lightSprite('#ffb060'), -34, -62, 68, 68); ctx.restore(); }                 // le halo
-  else { ctx.fillStyle = '#eef1f5'; ctx.beginPath(); ctx.moveTo(-11,-29); ctx.quadraticCurveTo(0,-37, 11,-29); ctx.closePath(); ctx.fill();   // éteint : coiffé de neige
-    if (z.owner==='e'){ ctx.fillStyle = '#eef1f5'; ctx.beginPath(); ctx.moveTo(-18,0); ctx.quadraticCurveTo(-8,-22, 0,-12); ctx.quadraticCurveTo(10,-20, 18,0); ctx.closePath(); ctx.fill(); } }
   const a = Math.abs(pr); if (a>0.01 && a<1){ ctx.fillStyle = 'rgba(20,24,34,0.7)'; ctx.fillRect(-18,7,36,4); ctx.fillStyle = pr>0? '#f0a040' : '#9fc4e0'; ctx.fillRect(-18,7,36*a,4); }
   ctx.restore();
 }
