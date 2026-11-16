@@ -1639,7 +1639,7 @@ function bandT(x0,y0,x1,y1,t,w,col){
   TC.save(); TC.translate(x,y); TC.rotate(Math.atan2(y1-y0,x1-x0)); TC.fillStyle=col; TC.fillRect(-1.3,-w/2,2.6,w); TC.restore();
 }
 // bouche de l'arme [avance, hauteur] par rôle : tirs, éclairs et obus partent enfin du canon
-const MZ_DEF=[10,-26], MZ_MEL=[8,-36], MZ_HR=[29,-40], MZ_HS=[25,-47], MZ_BS=[7,-55], MZ_BR=[0,1,2,3,4].map(e=>[22+e,-35.5]);
+const MZ_DEF=[10,-26], MZ_MEL=[8,-36], MZ_HR=[29,-40], MZ_HS=[25,-47], MZ_BS=[28,-57], MZ_BR=[0,1,2,3,4].map(e=>[30+e,-34.5]);
 function muzzleOf(u){
   if (u.fly || u.role==='hero' || u.role==='gremlin') return MZ_DEF;
   const hum = u.fac==='HUM';
@@ -1654,7 +1654,7 @@ function muzzleOf(u){
 let SPART = 'full', SPOSE = 0;
 const LEGS = { W:48, H:40, ox:-24, oy:-34 };          // position de la toile des jambes / pieds
 const unitHeavy = (kind, role) => role==='tank' || (kind==='bot' && role==='siege');
-const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || (kind==='hum' && era===4);
+const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || era>=3;
 function bakePart(kind, fac, role, era, trans, part, pose){
   SPART = part; SPOSE = pose||0;
   try { drawUnitSprite(kind, fac, role, era, trans); } finally { SPART = 'full'; SPOSE = 0; }
@@ -1739,6 +1739,16 @@ function armPose(role, era, cx, F){
 }
 
 // ===== HUMANITÉ : survivants de la Révolte → milice → tactique → exo-armure → armure d'or =====
+// panneau solaire : cadre d'or, cellules sombres en quadrillage (ère IV humaine « La Commune »)
+function solarT(q, frame){
+  frame = frame || '#e8c860';
+  plateT(q, '#1d3556', false);
+  const L = (a,b,t) => [q[a*2]+(q[b*2]-q[a*2])*t, q[a*2+1]+(q[b*2+1]-q[a*2+1])*t];
+  TC.strokeStyle='rgba(140,190,235,0.55)'; TC.lineWidth=0.6;
+  for (const t of [0.33,0.66]){ const a=L(0,1,t), b=L(3,2,t); strokeP([a[0],a[1],b[0],b[1]]); TC.stroke(); }
+  { const a=L(0,3,0.5), b=L(1,2,0.5); strokeP([a[0],a[1],b[0],b[1]]); TC.stroke(); }
+  TC.strokeStyle=frame; TC.lineWidth=1.3; polyP(q); TC.stroke();
+}
 function drawHumSprite(fac, role, era, trans, hero){
   const cx=USP.cx, F=USP.foot, acc=FACTIONS[fac].accent;
   const uni = hero? '#55653c' : FACTIONS[fac].eraCols[era];
@@ -1762,8 +1772,16 @@ function drawHumSprite(fac, role, era, trans, hero){
     TC.fillStyle='rgba(0,0,0,0.35)'; TC.fillRect(cx+1,F-1.4,11,1.4); };
   if (SPART==='legs'){ const a=SPOSE*0.34; rot(cx-1,F-24,a,legB); rot(cx+2,F-24,-a,legF); return; }
   // --- arrière-plan : cape (ère d'or), paquetage
-  if (doBack && era===4){ TC.fillStyle=lgrad(cx-14,F-46,cx-4,F-8,[[0,'#c8402c'],[1,'#661a16']]);
-    polyP([cx-6,F-46, cx-1,F-44, cx-7,F-9, cx-19,F-11, cx-14,F-30]); TC.fill(); }
+  // ères III-IV : module dorsal d'exo-armure (batterie + antenne ; ailettes de panneaux solaires). Plus de cape.
+  if (doBack && era===3){
+    plateT([cx-13,F-47, cx-5,F-46, cx-5,F-29, cx-12,F-30], '#2c2c3a');
+    TC.strokeStyle='rgba(255,255,255,0.18)'; TC.lineWidth=0.8; for (let i=0;i<3;i++){ strokeP([cx-11.5,F-43+i*4.4, cx-6.5,F-43+i*4.4]); TC.stroke(); }
+    TC.strokeStyle='#2a2a32'; TC.lineWidth=1.2; strokeP([cx-10,F-47, cx-14,F-63]); TC.stroke();
+    glowDot(cx-14,F-63.5,1.3,acc,5);
+  } else if (doBack && era===4){
+    solarT([cx-5,F-47, cx-8,F-64, cx-19,F-60, cx-15,F-45]);
+    solarT([cx-7,F-45, cx-13,F-56, cx-24,F-48, cx-17,F-34]);
+  }
   if (!doBack){}
   else if (role==='support'){
     const bx=cx-sw-7;
@@ -1866,10 +1884,11 @@ function drawHumSprite(fac, role, era, trans, hero){
     TC.fillStyle=lgrad(hx-9,hy-10,hx+9,hy+8,[[0,shade(hc,1.4)],[0.5,hc],[1,shade(hc,0.55)]]);
     TC.beginPath(); TC.arc(hx,hy-0.5,hr+1.4,0,6.283); TC.fill();
     TC.fillStyle=shade(hc,0.6); polyP([hx+2,hy+3, hx+9,hy+2, hx+8,hy+7, hx+2,hy+8]); TC.fill();       // mentonnière
-    if (era===4){ TC.fillStyle=lgrad(hx-12,hy-16,hx,hy-8,[[0,'#e84a34'],[1,'#8a2018']]);
-      polyP([hx-1,hy-8.5, hx+3,hy-9.5, hx-5,hy-15.5, hx-12,hy-11]); TC.fill(); }                      // cimier
+    if (era===4) solarT([hx-1,hy-8.5, hx+3,hy-9.2, hx-3,hy-15.5, hx-10,hy-12.5]);                     // ailette solaire (plus de cimier)
+    else { TC.strokeStyle='#2a2a32'; TC.lineWidth=1.1; strokeP([hx-3,hy-8, hx-6,hy-16]); TC.stroke(); glowDot(hx-6,hy-16.4,1.1,acc,4); }  // antenne
     const vc = era===4? '#fff0c0' : '#ffd34a';
-    bloomT(vc,6,()=>{ TC.fillStyle=vc; rrectT(hx+1,hy-2.6,8.6,2.6,1.2); TC.fill(); });              // visière
+    TC.fillStyle='#15121c'; rrectT(hx+0.2,hy-4.2,10,5,2); TC.fill();                                  // fond sombre de visière
+    bloomT(vc,6,()=>{ TC.fillStyle=vc; rrectT(hx+1.2,hy-3,8.2,2.4,1.1); TC.fill(); });              // visière
     if (role==='support') crossT(hx-3,hy-5,4,RED);
   }
   }
@@ -1901,10 +1920,10 @@ function drawHumSprite(fac, role, era, trans, hero){
     else if (era===1){ TC.fillStyle=lgrad(3,-3,3,2,[[0,'#e8ecf0'],[1,'#7a828c']]); polyP([3,-1.6, 18,-3, 21,-0.6, 17,1.8, 3,1.6]); TC.fill(); }  // machette
     else if (era===2){ tubeT(2,0,17,0,1.2,'#2a2c30'); TC.fillStyle=lgrad(12,-7,18,0,[[0,'#e0e4ea'],[1,'#6a7280']]);
       polyP([12,-1.4, 17,-1.4, 19.5,-7, 14,-6]); TC.fill(); }                                            // tomahawk
-    else { const bc = era===4? '#fff3c4' : '#ffe0b0', gc = era===4? '#ffe9a0' : acc;
-      TC.fillStyle=era===4? '#d8a840' : '#4a4a58'; TC.fillRect(2,-3.2,2.2,6.4);                         // garde
-      bloomT(gc,7,()=>{ TC.fillStyle=bc; polyP([4,-1.8, 21,-1.3, 24,0, 21,1.3, 4,1.8]); TC.fill(); });   // lame d'énergie / d'or
-      TC.fillStyle='rgba(255,255,255,0.9)'; TC.fillRect(5,-0.4,16,0.8); }
+    else { const gc = era===4? '#fff0c0' : acc;                                                          // lame vibrante sombre, fil lumineux
+      TC.fillStyle='#2c2a34'; TC.fillRect(2,-3.2,2.2,6.4);                                               // garde
+      TC.fillStyle=lgrad(0,-2,0,2,[[0,'#4a4858'],[1,'#17151c']]); polyP([4,-1.9, 21,-1.4, 24,0, 21,1.4, 4,1.9]); TC.fill();
+      bloomT(gc,6,()=>{ TC.strokeStyle=gc; TC.lineWidth=1; strokeP([4.5,-1.6, 21,-1.2, 23.6,0]); TC.stroke(); }); }
     TC.restore();
   }
   function humRifle(e){
@@ -1922,16 +1941,17 @@ function drawHumSprite(fac, role, era, trans, hero){
       TC.fillStyle='#1c1e22'; TC.fillRect(cx+8,y-3.6,1.6,1.4); tubeT(cx+5,y-5,cx+14,y-5,1.5,'#24262a');     // lunette
       TC.fillStyle='rgba(140,220,255,0.9)'; TC.fillRect(cx+13.4,y-5.8,0.9,1.6);
     } else {
-      const bc = e===4? '#f0d888' : '#c8ccd6', ec = e===4? '#ffe9a0' : '#ffb35a';
+      const bc = e===4? '#2e2a38' : '#3a3e4c', ec = e===4? '#fff0c0' : '#ffb35a';                       // fusil à rails : sombre, lisible sur l'or
       plateT([cx-1,y-3, cx+22,y-2.4, cx+27,y-0.4, cx+22,y+2, cx+7,y+2.4, cx+2,y+3.6, cx-1,y+2.4], bc);
-      TC.fillStyle=shade(bc,0.45); TC.fillRect(cx+6,y+0.6,15,1.2);
-      for (let i=0;i<3;i++) glowDot(cx+11+i*3.6,y-0.4,0.9,ec,4);
-      glowDot(cx+27,y-0.4,1.5,ec,6);
+      tubeT(cx+22,y-1.6,cx+33,y-1.4,1.1,'#22242c');                                                     // rail de sortie
+      TC.fillStyle='rgba(0,0,0,0.5)'; TC.fillRect(cx+6,y+0.6,15,1.2);
+      for (let i=0;i<3;i++){ bloomT(ec,4,()=>{ TC.strokeStyle=ec; TC.lineWidth=1; strokeP([cx+10+i*3.8,y-3, cx+10+i*3.8,y+2]); TC.stroke(); }); }  // bobines gauss
+      glowDot(cx+33,y-1.4,1.3,ec,6);
     }
   }
   function humLauncher(){
     const x0=cx-13, y0=F-42, x1=cx+20, y1=F-47;
-    const tc = era===0? '#7a7e84' : era===1? '#5a6a3c' : era===2? '#3e4a3c' : era===3? '#2c2e3a' : '#d8b048';
+    const tc = era===0? '#7a7e84' : era===1? '#5a6a3c' : era===2? '#3e4a3c' : era===3? '#2c2e3a' : '#2e2a38';
     if (era===1) tubeT(x0-2,y0+0.3,x0+5,y0-0.8,4.4,shade(tc,0.85));                                      // évasement arrière
     tubeT(x0,y0,x1,y1,3.4,tc);
     const along = (t,fn) => { TC.save(); TC.translate(x0+(x1-x0)*t, y0+(y1-y0)*t); TC.rotate(Math.atan2(y1-y0,x1-x0)); fn(); TC.restore(); };
@@ -1942,44 +1962,57 @@ function drawHumSprite(fac, role, era, trans, hero){
       TC.fillStyle='rgba(140,220,255,0.9)'; TC.fillRect(3,-7.4,1,2.4); });                                // optique
     else if (era===3){ for (const t of [0.4,0.6,0.8]) along(t,()=>{ bloomT('#ffb35a',5,()=>{ TC.fillStyle='#ffb35a'; TC.fillRect(-0.9,-3.8,1.8,7.6); }); });
       along(1,()=>{ TC.fillStyle='#4a4c5a'; TC.fillRect(0,-3.4,5,1.6); TC.fillRect(0,1.8,5,1.6); }); }       // rails
-    else along(1,()=>glowDot(1,0,2.2,'#fff0c0',7));
+    else { for (const t of [0.35,0.7]) along(t,()=>bloomT('#fff0c0',5,()=>{ TC.fillStyle='#fff0c0'; TC.fillRect(-0.8,-3.8,1.6,7.6); }));
+      along(1,()=>glowDot(1,0,2.2,'#fff0c0',7)); }
     along(0.4,()=>{ TC.fillStyle='#2a2a2e'; TC.fillRect(-1.2,2.4,2.4,4.4); });                              // poignée
   }
   function humMedic(){
     if (era<2){ TC.fillStyle='#4a4038'; TC.fillRect(fh[0]-0.8,fh[1],1.6,2.4);                               // trousse portée
       TC.fillStyle=lgrad(fh[0]-5,fh[1]+2,fh[0]+5,fh[1]+10,[[0,'#ffffff'],[1,'#b8bcb8']]); rrectT(fh[0]-5,fh[1]+2,10,8,1.6); TC.fill();
       crossT(fh[0],fh[1]+6,5,RED); }
-    else { const bc = era===4? '#f0d888' : '#e4e8ec';                                                       // émetteur de soin
+    else { const bc = era===4? '#fff6dc' : '#e4e8ec';                                                       // émetteur de soin
       plateT([fh[0]-3,fh[1]-3, fh[0]+8,fh[1]-2.4, fh[0]+9,fh[1]+1.2, fh[0]-2,fh[1]+2], bc);
       crossT(fh[0]+3,fh[1]-0.6,3,RED); glowDot(fh[0]+9.6,fh[1]-0.6,1.6,'#7dffb0',6); }
   }
-  function humShield(){
+  function humShield(){                                                                                // plaques anti-émeute / de barricade (jamais d'écu héraldique)
     const x=cx+8, y=F-50, w=12, h=46;
-    if (era===0){ TC.fillStyle=lgrad(x,y,x+w,y+h,[[0,'#9a7a52'],[1,'#5a4228']]); rrectT(x,y,w,h,1.5); TC.fill();   // porte de récup
-      TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.8; for (let i=1;i<3;i++){ strokeP([x+i*4,y+1, x+i*4,y+h-1]); TC.stroke(); }
-      TC.fillStyle='#8a8e92'; TC.fillRect(x,y+9,w,3); TC.fillRect(x,y+h-12,w,3);
-      TC.fillStyle='#c8ccd0'; for (const yy of [y+10.5,y+h-10.5]) for (const xx of [x+2,x+w-2]){ TC.beginPath(); TC.arc(xx,yy,0.8,0,6.283); TC.fill(); } }
-    else if (era===1){ plateT([x,y, x+w,y+1, x+w,y+h-1, x,y+h], '#8a9098');                                         // bouclier d'acier
-      TC.fillStyle='#1a1d22'; rrectT(x+3,y+5,w-5,2.2,1); TC.fill();
+    const slit = (yy) => { TC.fillStyle='#14161a'; rrectT(x+2.4,yy,w-4,2.4,1); TC.fill(); };
+    if (era===0){ plateT([x,y+1, x+w,y, x+w,y+h, x,y+h], '#7e8a8e');                                           // tôle ondulée de barricade
+      TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=0.9; for (let i=1;i<5;i++){ strokeP([x+i*2.4,y+2, x+i*2.4,y+h-1]); TC.stroke(); }
+      TC.strokeStyle='rgba(255,255,255,0.25)'; for (let i=1;i<5;i++){ strokeP([x+i*2.4+1,y+2, x+i*2.4+1,y+h-1]); TC.stroke(); }
+      slit(y+7);
+      TC.fillStyle=acc; TC.fillRect(x,y+h*0.52,w,3.4);                                                          // bande peinte
+      TC.fillStyle='#8a5a34'; TC.fillRect(x+1,y+h-14,5,6);                                                      // plaque de rouille
+      TC.fillStyle='#c8ccd0'; for (const yy of [y+3,y+h-3]) for (const xx of [x+1.6,x+w-1.6]){ TC.beginPath(); TC.arc(xx,yy,0.8,0,6.283); TC.fill(); } }
+    else if (era===1){ plateT([x,y, x+w,y+1, x+w,y+h-1, x,y+h], '#8a9098');                                    // plaque d'acier
+      slit(y+5);
       TC.fillStyle='#c8ccd2'; for (let i=0;i<5;i++){ TC.beginPath(); TC.arc(x+1.6,y+4+i*9.4,0.8,0,6.283); TC.arc(x+w-1.6,y+4+i*9.4,0.8,0,6.283); TC.fill(); } }
-    else if (era===2){ TC.fillStyle='rgba(150,190,215,0.62)'; rrectT(x,y,w,h,2); TC.fill();                        // polycarbonate
+    else if (era===2){ TC.fillStyle='rgba(150,190,215,0.62)'; rrectT(x,y,w,h,2); TC.fill();                    // polycarbonate
       TC.strokeStyle='rgba(40,50,60,0.9)'; TC.lineWidth=1.4; rrectT(x,y,w,h,2); TC.stroke();
       TC.fillStyle='rgba(255,255,255,0.45)'; TC.fillRect(x+2,y+3,1.6,h-8);
       TC.fillStyle=acc; TC.fillRect(x+1,y+h*0.42,w-2,3); }
-    else { const c = era===4? '#e8c860' : '#3a3a4a';                                                                 // pavois d'énergie / d'or
-      plateT([x,y+2, x+w/2,y, x+w,y+2, x+w,y+h-6, x+w/2,y+h, x,y+h-6], c);
-      if (era===3){ TC.strokeStyle=rgbaC(acc,0.9); TC.lineWidth=1.2; bloomT(acc,5,()=>{ polyP([x+2,y+4, x+w/2,y+2.5, x+w-2,y+4, x+w-2,y+h-7, x+w/2,y+h-2.5, x+2,y+h-7]); TC.stroke(); }); }
-      else bloomT('#fff0c0',7,()=>drawStar(x+w/2,y+h*0.42,4.2,'#fff3c4')); }
+    else if (era===3){ plateT([x,y, x+w,y, x+w,y+h, x,y+h], '#2e2e3c');                                        // plaque composite à voyants
+      slit(y+4);
+      TC.strokeStyle='rgba(255,255,255,0.14)'; TC.lineWidth=0.8; for (let i=0;i<5;i++){ strokeP([x+1,y+12+i*6.5, x+w-1,y+12+i*6.5]); TC.stroke(); }
+      bloomT(acc,5,()=>{ TC.fillStyle=acc; TC.fillRect(x+w-3,y+9,1.6,h-14); TC.fillRect(x+1.4,y+9,1.2,h-14); }); }
+    else { plateT([x,y, x+w,y, x+w,y+h, x,y+h], '#e8c860');                                                    // plaque-panneau solaire
+      TC.fillStyle='#1d3556'; TC.fillRect(x+1.4,y+8,w-2.8,h-10);
+      TC.strokeStyle='rgba(140,190,235,0.55)'; TC.lineWidth=0.6;
+      for (let i=1;i<4;i++){ strokeP([x+1.4,y+8+i*(h-10)/4, x+w-1.4,y+8+i*(h-10)/4]); TC.stroke(); }
+      strokeP([x+w/2,y+8, x+w/2,y+h-2]); TC.stroke();
+      slit(y+2.6); }
   }
 }
 
 // ===== GPT : robots industriels → coque → blindés → effilés → cristal =====
 function drawBotSprite(fac, role, era, trans, hero){
   const cx=USP.cx, F=USP.foot;
-  const lite = hero? '#ff6ad6' : FACTIONS[fac].eraCols[era];         // couleur de l'ère : lumières
+  const RTINT = { melee:'#ff5a5a', tank:'#8a7bff', ranged:'#5ad8ff', siege:'#ffb040', support:'#6aff9a' };   // teinte de rôle (ères III-IV)
+  const lite = hero? '#ff6ad6' : era>=3? mix(FACTIONS[fac].eraCols[era], RTINT[role]||'#ffffff', era===4? 0.45 : 0.25) : FACTIONS[fac].eraCols[era];   // couleur de l'ère : lumières
   const plate = mix(lite,'#4a5260',0.5), frame='#2a3038', joint='#15181d';
-  const tank = role==='tank', heavy = tank || role==='siege', sw = tank? 11 : role==='siege'? 9.5 : 8.5;
-  const lw = heavy? 6.4 : 5, hy0 = tank? 4 : 0;
+  const tank = role==='tank', heavy = tank || role==='siege', melee = role==='melee';
+  const sw = tank? 11 : role==='siege'? 9.5 : melee? 9.5 : role==='ranged'? 7.5 : 8.5;      // mêlée : trapu et large ; tireur : fin
+  const lw = heavy? 6.4 : 5, hy0 = tank? 4 : melee? 3 : 0;
   const P = armPose(hero?'hero':role, era, cx, F);
   if (!hero){ P.f[0]+=1; P.f[1]-=2; P.b[1]-=2; }                       // épaules de châssis plus hautes
   const doBack = SPART==='full' || SPART==='back';
@@ -1993,6 +2026,22 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.fillStyle=joint; TC.beginPath(); TC.arc(cx+7,F-15,2.4,0,6.283); TC.fill();
     plateT([cx-2,F, cx+11,F, cx+8.5,F-4, cx+1,F-5], shade(plate,0.9)); };
   if (SPART==='legs'){ const a=SPOSE*0.3; rot(cx-2,F-25,a,legB); rot(cx+2,F-25,-a,legF); return; }
+  // --- ères III-IV : ailerons dorsaux (III) / éclats de cristal en ailes (IV), pour tous les rôles
+  if (doBack && era===3){
+    for (const [dx,h] of [[0,15],[4,11]]){ plateT([cx-4-dx,F-46, cx-9-dx-h*0.35,F-46-h, cx-7-dx,F-46-h*0.9, cx-1-dx,F-45], shade(plate,1.1));
+      TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=0.8; strokeP([cx-4-dx,F-46, cx-9-dx-h*0.35,F-46-h]); TC.stroke(); }
+    TC.fillStyle=frame; rrectT(cx-12,F-36,5,7,1.5); TC.fill(); glowDot(cx-11.5,F-28.6,1.4,lite,5);              // tuyère
+  } else if (doBack && era===4){
+    for (const [x1,y1,x2,y2] of [[cx-9,F-70,cx-1,F-46],[cx-17,F-60,cx-3,F-42],[cx-14,F-46,cx-3,F-36]]){
+      polyP([x2,y2, x1,y1, x2-8,y2-3, x2-5,y2+4]); TC.fillStyle=shade(plate,1.28); TC.fill(); TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=0.8; TC.stroke(); }
+  }
+  // --- soutien : mât d'antenne et parabole de relais
+  if (doBack && role==='support'){
+    TC.strokeStyle=frame; TC.lineWidth=1.6; strokeP([cx-8,F-45, cx-10,F-69]); TC.stroke();
+    TC.fillStyle=shade(plate,1.15); TC.beginPath(); TC.ellipse(cx-10,F-66,5,1.7,-0.2,0,6.283); TC.fill();
+    glowDot(cx-10,F-70,1.4,lite,5);
+    if (era>=3){ TC.strokeStyle=frame; TC.lineWidth=1.2; strokeP([cx-8,F-52, cx-14,F-60]); TC.stroke(); glowDot(cx-14,F-60.6,1.1,lite,4); }
+  }
   // --- drone de réparation (soutien), derrière
   if (doBack && role==='support'){
     TC.fillStyle=lgrad(cx-16,F-66,cx-4,F-60,[[0,shade(plate,1.4)],[1,shade(plate,0.6)]]);
@@ -2000,14 +2049,21 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.fillStyle=frame; TC.fillRect(cx-17,F-66,14,1.2);
     glowDot(cx-10,F-60.6,1.4,lite,5);
   }
-  // --- nacelle lance-missiles (siège), sur l'épaule arrière
+  // --- siège : dos large, affût et gros canon par-dessus l'épaule (le plus gros gabarit des machines)
   if (doBack && role==='siege'){
-    plateT([cx-14,F-55, cx+2,F-60, cx+4,F-49, cx-12,F-45], plate);
-    TC.fillStyle=frame; polyP([cx+2,F-60, cx+5,F-61, cx+7,F-50, cx+4,F-49]); TC.fill();
-    const n = 2 + Math.min(era,2);
-    for (let i=0;i<n;i++){ const t=(i+0.5)/n; const x=cx+5.5+t*1.6, y=F-60.5+t*10.5;
-      TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(x,y,1.9,0,6.283); TC.fill();
-      TC.fillStyle=era>=2? lite : '#e04a3a'; TC.beginPath(); TC.arc(x+0.3,y,1.2,0,6.283); TC.fill(); }
+    plateT([cx-18,F-60, cx+2,F-62, cx+4,F-40, cx-16,F-36], shade(plate,0.92));                          // affût large
+    TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.9; strokeP([cx-17,F-48, cx+3,F-50]); TC.stroke();
+    TC.fillStyle=frame; rrectT(cx-21,F-54,5,14,1.6); TC.fill();                                       // culasse
+    const bc = era===0? '#6e6a60' : shade(plate,0.82), by1=F-52, by2=F-58;
+    tubeT(cx-8,by1,cx+27,by2,3.5,bc);
+    const along=(t,fn)=>{ TC.save(); TC.translate(cx-8+35*t, by1+(by2-by1)*t); TC.rotate(Math.atan2(by2-by1,35)); fn(); TC.restore(); };
+    if (era===0){ for (const t of [0.35,0.6]) along(t,()=>{ TC.fillStyle='#c4c8cc'; TC.fillRect(-1.6,-4.6,3.2,9.2); }); }  // rafistolé au chatterton
+    else if (era===1){ along(0.5,()=>{ TC.fillStyle=frame; TC.fillRect(-1.6,-5.2,3.2,3.2); tubeT(-14,-5.4,10,-5.4,1.2,shade(bc,0.8)); }); }   // fût de recul
+    else if (era===2){ for (let i=0;i<4;i++){ TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(cx-10+(i%2)*6.4,F-56+Math.floor(i/2)*7,2.2,0,6.283); TC.fill();
+        TC.fillStyle='#e04a3a'; TC.beginPath(); TC.arc(cx-9.7+(i%2)*6.4,F-56+Math.floor(i/2)*7,1.3,0,6.283); TC.fill(); } }   // batterie de missiles
+    else if (era===3){ for (const t of [0.4,0.6,0.8]) along(t,()=>bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(-0.8,-4.8,1.6,9.6); })); }   // bobines
+    else { along(1,()=>{ bloomT(lite,8,()=>{ TC.fillStyle=lite; polyP([0,-4.6, 6,0, 0,4.6, -3,0]); TC.fill(); }); }); }                  // prisme
+    along(1,()=>{ TC.fillStyle=joint; TC.fillRect(-1,-4.2,3.2,8.4); });                                // frein de bouche
     TC.fillStyle=joint; TC.fillRect(cx-6,F-47,4,4);
   }
   if (SPART==='back') return;
@@ -2015,7 +2071,13 @@ function drawBotSprite(fac, role, era, trans, hero){
   if (SPART==='full') legB();
   // --- bras arrière (couche 'armb')
   if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, 4.4, shade(frame,0.85));
-    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill(); }
+    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill();
+    if (melee && !hero){ TC.save(); TC.translate(P.b[4],P.b[5]); TC.rotate(-0.55);                       // lame de l'avant-bras arrière
+      if (era===0){ TC.fillStyle='#c8ccd0'; polyP([0,-1.6, 9,-3.4, 6,0, 9,3.4, 0,1.6]); TC.fill(); }      // cisaille
+      else { TC.fillStyle=lgrad(0,-2,0,2,[[0,'#e8ecf0'],[1,'#6a727c']]); polyP([0,-1.6, 14,-0.8, 17,0.2, 14,1, 0,1.8]); TC.fill();
+        if (era>=3) bloomT(lite,5,()=>{ TC.strokeStyle=lite; TC.lineWidth=0.9; strokeP([1,0, 16,0.2]); TC.stroke(); }); }
+      TC.restore(); }
+  }
   if (SPART==='armb') return;
   // --- jambe avant : cuisse blindée, genou articulé, vérin
   if (SPART==='full') legF();
@@ -2050,6 +2112,13 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.strokeStyle=rgbaC(lite,0.7); TC.lineWidth=0.8; strokeP([cx-sw+1,ct+1.5, cx+2,F-38, cx+sw+1,ct+2.5]); TC.stroke();
     glowDot(cx+2,F-40,2.2,lite,7);
     for (const [x,y] of [[cx-sw-4,F-46],[cx-sw-2,F-30]]){ TC.fillStyle=shade(plate,1.2); polyP([x,y-2.6, x+1.6,y, x,y+2.6, x-1.6,y]); TC.fill(); }  // éclats en orbite
+  }
+  if (tank){                                                                                            // bloc blindé : plastron massif, jupe, deuxième épaulière
+    plateT([cx-sw-2,ct+5, cx+sw+2,ct+5, cx+sw+2,F-33, cx-sw-2,F-33], shade(plate,0.95));
+    TC.strokeStyle='rgba(0,0,0,0.38)'; TC.lineWidth=1; for (let i=0;i<3;i++){ strokeP([cx-sw+1,ct+10+i*3.6, cx+sw-1,ct+10+i*3.6]); TC.stroke(); }
+    TC.fillStyle='rgba(255,255,255,0.45)'; for (const [x,y] of [[cx-sw-0.6,ct+6.6],[cx+sw+0.6,ct+6.6],[cx-sw-0.6,F-35],[cx+sw+0.6,F-35]]){ TC.beginPath(); TC.arc(x,y,0.8,0,6.283); TC.fill(); }
+    plateT([cx-9,F-31, cx+10,F-31, cx+11,F-20, cx-10,F-20], shade(plate,0.85));
+    plateT([cx-sw-5,ct-2, cx-2,ct-1, cx-2,ct+7, cx-sw-6,ct+6], shade(plate,1.0));
   }
   if (heavy || era>=2){                                                                                // épaulière
     const g = era===3? 1.5 : 0;
@@ -2127,16 +2196,28 @@ function drawBotSprite(fac, role, era, trans, hero){
     arm(P.f);
     TC.save(); TC.translate(fh[0],fh[1]); TC.fillStyle='#8a929c'; TC.rotate(-0.5); TC.fillRect(0,-2.6,6,1.6); TC.rotate(0.9); TC.fillRect(0,1,6,1.6); TC.restore();   // pince
     glowDot(fh[0]+6.5,fh[1]-0.2,1.3,lite,6);
-    bloomT(lite,5,()=>crossT(cx-3,F-41,3.6,lite));                                                     // marquage réparateur
+    TC.fillStyle='#f2f4f2'; rrectT(cx-6,F-45,9.5,9.5,1.6); TC.fill();                                    // panneau de soin
+    crossT(cx-1.2,F-40.2,6.6,'#e0443a'); bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(cx-6,F-35.4,9.5,1); });
   } else {
-    // tireur : canon de bras ; siège : canon court de visée sous la nacelle
+    // tireur : long fusil à deux mains, crosse, lunette, bipied ; siège : bras sur la poignée du canon dorsal
     const sh=P.f; limbT([sh[0],sh[1], sh[2],sh[3]], 4.6, frame);
-    const L = role==='siege'? 12 : 19+era;
-    tubeT(sh[2],sh[3]-1, sh[2]+L,sh[3]-1.5, 3.3, plate);
-    TC.fillStyle=frame; TC.fillRect(sh[2]+L*0.3,sh[3]-4.6,1.4,6.4); TC.fillRect(sh[2]+L*0.55,sh[3]-4.6,1.4,6.4);
-    TC.fillStyle=joint; TC.beginPath(); TC.arc(sh[2]+L,sh[3]-1.5,2,0,6.283); TC.fill();
-    glowDot(sh[2]+L,sh[3]-1.5,1.3,lite,6);
-    if (era>=3 && role!=='siege') for (let i=0;i<2;i++) glowDot(sh[2]+L*0.42+i*4,sh[3]-1.2,0.8,lite,4);
+    if (role==='siege'){
+      TC.fillStyle=joint; rrectT(sh[2]-1.5,sh[3]-4,4,8,1.4); TC.fill();                                // poignée
+      glowDot(sh[2]+3.5,sh[3]-2,1.2,lite,5);
+    } else {
+      const L = 27+era, y0=sh[3]-1, rc = era>=3? shade(plate,0.8) : plate;
+      plateT([cx-9,F-44, sh[2]+3,y0-2.4, sh[2]+3,y0+2, cx-7,F-37], frame);                              // crosse sur l'épaule
+      tubeT(sh[2],y0,sh[2]+L,y0-0.5,2.6,rc);
+      tubeT(sh[2]+L*0.62,y0-0.3,sh[2]+L+1.5,y0-0.8,1.7,shade(rc,0.7));                                 // volée amincie
+      TC.fillStyle=frame; TC.fillRect(sh[2]+L*0.25,y0-3.8,1.4,5.4); TC.fillRect(sh[2]+L*0.5,y0-3.8,1.4,5.4);
+      tubeT(sh[2]+L*0.35,y0+1,sh[2]+L*0.5,y0+6,0.8,frame);                                              // bipied
+      if (era>=1){ tubeT(sh[2]+4,y0-4.8,sh[2]+L*0.52,y0-4.8,1.5,'#1c2024');                              // lunette
+        glowDot(sh[2]+L*0.52,y0-4.8,0.9,lite,4); }
+      if (era===3) for (let i=0;i<3;i++) bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(sh[2]+L*0.3+i*5,y0-2.8,1.2,5.4); });           // rails
+      if (era===4) bloomT(lite,8,()=>{ TC.fillStyle=lite; polyP([sh[2]+L+1,y0-0.8-3.4, sh[2]+L+6,y0-0.8, sh[2]+L+1,y0-0.8+3.4, sh[2]+L-1.5,y0-0.8]); TC.fill(); });  // prisme
+      TC.fillStyle=joint; TC.beginPath(); TC.arc(sh[2]+L+1.5,y0-0.8,1.5,0,6.283); TC.fill();
+      glowDot(sh[2]+L+1.6,y0-0.8,1,lite,5);
+    }
   }
 }
 function attackFX(u, x, bodyY, imp, mx){
@@ -2281,59 +2362,171 @@ function blitHumanoid(u, x, gy, kind){
 }
 function drawHuman(u, x, gy){ blitHumanoid(u, x, gy, 'hum'); }
 function drawBot(u, x, gy){ blitHumanoid(u, x, gy, 'bot'); }
-// AÉRONEFS : hélicoptère humain (civil rafistolé → hélico de milice → hélico d'attaque →
-// VTOL → or) et drone quadrirotor GPT. Les rotors restent animés en direct par drawAir.
+// AÉRONEFS (v1.17) : un appareil crédible par ère et par camp, dessiné pour remplir la toile 64×44.
+//  HUM : parapente armé → hélico léger → VTOL furtif à rotors carénés → chasseur plasma → planeur solaire.
+//  IA  : drones — quadrirotor → quadrirotor blindé → drone à turbines carénées → drone hexa à ailerons → drone cristal à anneaux.
+// Les rotors tournent en direct dans drawAir (AIR_ROT : [dx, dy, demi-largeur] en pixels de sprite).
+const AIR_ROT = {
+  HUM: [ null, [[-1.4,-10.6,13]], [[-13,-8.5,7],[9,-8.5,7]], null, null ],
+  IA:  [ [[-17,-8,8.5],[17,-8,8.5],[-10,-11,5.5],[10,-11,5.5]],
+         [[-18,-8,9.5],[18,-8,9.5],[-11,-11.5,6],[11,-11.5,6]],
+         [[-16,-7.2,8],[16,-7.2,8]],
+         [[-17,-9,8],[17,-9,8],[-9,-12.5,5]],
+         [[-16,-8,9],[16,-8,9]] ],
+};
 function airSprite(fac, era, trans){
   const cx=32, cy=22;
   if (fac==='HUM'){
     const acc=FACTIONS.HUM.accent, body=FACTIONS.HUM.eraCols[era];
-    TC.fillStyle=lgrad(cx-26,cy-5,cx-26,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);   // poutre de queue
-    polyP([cx-8,cy-4.5, cx-26,cy-3.4, cx-26,cy-0.6, cx-8,cy+2]); TC.fill();
-    plateT([cx-29.5,cy-11, cx-25,cy-10, cx-23.5,cy+0.5, cx-27.5,cy+0.5], body);                // dérive
-    TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-25.5,cy-4.5,4.4,0,6.283); TC.stroke();  // anticouple
-    TC.fillStyle=acc; TC.fillRect(cx-20,cy-3.6,3,3.4);                                         // bande de faction
-    TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';                            // patins
-    strokeP([cx-10,cy+10, cx+10,cy+10, cx+13,cy+8]); TC.stroke();
-    strokeP([cx-5,cy+5, cx-6,cy+10]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+10]); TC.stroke();
-    if (era>=2){ plateT([cx-6,cy+2, cx+4,cy+2, cx+3,cy+5, cx-5,cy+5], shade(body,0.8));          // aile courte + paniers
-      tubeT(cx-5,cy+6.2,cx+5,cy+6.2,1.7,era===4?'#c8a040':'#2a2e34');
-      TC.fillStyle=era===4?'#fff0c0':'#c84a2a'; TC.beginPath(); TC.arc(cx+5,cy+6.2,1,0,6.283); TC.fill(); }
-    plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body); // fuselage
-    TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);  // verrière
-    polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
-    TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
-    plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));                    // capot moteur
-    TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);                                // mât rotor
-    if (era===0){ TC.fillStyle=shade(body,1.25); TC.fillRect(cx-7,cy-2,5,4);                    // tôle rapiécée
-      TC.fillStyle='rgba(0,0,0,0.4)'; for (const [x,y] of [[cx-6.4,cy-1.4],[cx-2.6,cy-1.4],[cx-6.4,cy+1.4],[cx-2.6,cy+1.4]]) TC.fillRect(x,y,0.8,0.8); }
-    else if (era===1){ tubeT(cx+1,cy+3,cx+10,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6); } // porte + mitrailleuse
-    else if (era>=3){ const gc = era===4? '#fff0c0' : '#ffb35a';
-      TC.fillStyle=era===4?'#fff3c4':shade(body,1.35); TC.fillRect(cx-9,cy-0.6,18,1.2);
-      tubeT(cx+11,cy+4,cx+16,cy+4.6,1,'#2a2e34'); glowDot(cx+11,cy+4,1.4,gc,5); }               // tourelle de nez
-    if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
-  } else {
-    const lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
-    TC.strokeStyle=frame; TC.lineWidth=1.8; TC.lineCap='round';                                // bras porteurs
-    strokeP([cx-10,cy-5.6, cx-3,cy-2]); TC.stroke(); strokeP([cx+10,cy-5.6, cx+3,cy-2]); TC.stroke();
-    for (const sx of [-10,10]){ TC.fillStyle=frame; rrectT(cx+sx-2.6,cy-8,5.2,2.8,1.3); TC.fill(); }
-    for (let i=0;i<Math.min(era,3);i++)                                                        // ailerons d'ère
-      plateT([cx-12+i*3.2,cy-2, cx-10+i*3.2,cy-8-i*0.8, cx-8+i*3.2,cy-7.4-i*0.8, cx-8.6+i*3.2,cy-2], shade(plate,1.1));
-    if (era===4){ polyP([cx-14,cy-1, cx-4,cy-6, cx+10,cy-5, cx+16,cy]); TC.fillStyle=shade(plate,1.35); TC.fill();   // coque de cristal
-      polyP([cx-14,cy-1, cx+16,cy, cx+8,cy+5, cx-6,cy+4]); TC.fillStyle=shade(plate,0.75); TC.fill(); }
-    else plateT([cx-14,cy-1, cx-6,cy-5, cx+8,cy-5, cx+15,cy, cx+8,cy+5, cx-6,cy+4], plate);         // corps effilé
-    TC.fillStyle=frame; polyP([cx-6,cy+2, cx+8,cy+2, cx+8,cy+5, cx-6,cy+4]); TC.fill();
-    tubeT(cx,cy+4.6,cx+10,cy+6.2,1.2,'#3a4048');                                              // canon ventral
-    TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+9,cy-0.6,2.8,0,6.283); TC.fill();         // œil-capteur
-    glowDot(cx+9.4,cy-0.6,1.6,lite,6);
-    if (era>=2){ TC.fillStyle=rgbaC(lite,0.9); TC.fillRect(cx-5,cy-2.6,8,1); }
-    if (trans) bloomT('#39ff6a',7,()=>{ TC.strokeStyle=rgbaC('#39ff6a',0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(cx,cy-11,7,1.8,0,0,6.283); TC.stroke(); });
+    if (era===0){                                                                              // PARAPENTE ARMÉ
+      const P0=[cx-28,cy-4], P2=[cx+28,cy-4], Cu=[cx,cy-27], Cl=[cx,cy-12];
+      const B=(a,c,b,t)=>[(1-t)*(1-t)*a[0]+2*t*(1-t)*c[0]+t*t*b[0], (1-t)*(1-t)*a[1]+2*t*(1-t)*c[1]+t*t*b[1]];
+      TC.strokeStyle='rgba(30,30,36,0.7)'; TC.lineWidth=0.7; TC.lineCap='round';                   // suspentes
+      for (const t of [0.08,0.3,0.5,0.7,0.92]){ const q=B(P0,Cl,P2,t); strokeP([q[0],q[1], cx+1,cy+2]); TC.stroke(); }
+      const N=6;
+      for (let i=0;i<N;i++){ const t0=i/N, t1=(i+1)/N, pts=[];
+        for (let k=0;k<=3;k++){ const q=B(P0,Cu,P2,t0+(t1-t0)*k/3); pts.push(q[0],q[1]); }
+        for (let k=3;k>=0;k--){ const q=B(P0,Cl,P2,t0+(t1-t0)*k/3); pts.push(q[0],q[1]); }
+        plateT(pts, i%2? body : shade(acc,0.85)); }
+      // pilote assis dans son harnais, fusil sur les genoux
+      plateT([cx-4,cy+1, cx+3,cy+1, cx+4,cy+11, cx-4,cy+12], shade(body,0.8));                    // harnais / buste
+      limbT([cx+1,cy+10, cx+8,cy+11, cx+9,cy+17], 3.6, '#2a2420');                                 // jambes pendantes
+      TC.fillStyle='#e2b48a'; TC.beginPath(); TC.arc(cx,cy-2,3.4,0,6.283); TC.fill();               // tête
+      TC.fillStyle='#d8a630'; TC.beginPath(); TC.arc(cx,cy-3,3.9,Math.PI,0); TC.fill();             // casque
+      TC.fillStyle=acc; TC.fillRect(cx-3.6,cy-1.4,7.2,1.3);
+      limbT([cx+1,cy+3, cx+6,cy+6, cx+10,cy+4.5], 2.6, shade(body,0.9));                           // bras
+      TC.fillStyle=lgrad(cx+5,cy+2,cx+5,cy+7,[[0,'#9a6034'],[1,'#5a3418']]); polyP([cx+4,cy+3.6, cx+13,cy+2.6, cx+13,cy+5, cx+5,cy+6.4]); TC.fill();
+      tubeT(cx+12,cy+3.4,cx+27,cy+3.4,1.1,'#4a4e54');                                              // canon
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-0.5,cy+6,2.6,'#ff4a2a'));
+      return;
+    }
+    if (era===1){                                                                              // HÉLICO LÉGER
+      TC.fillStyle=lgrad(cx-27,cy-5,cx-27,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);
+      polyP([cx-8,cy-4.5, cx-27,cy-3.4, cx-27,cy-0.6, cx-8,cy+2]); TC.fill();
+      plateT([cx-30.5,cy-11, cx-26,cy-10, cx-24.5,cy+0.5, cx-28.5,cy+0.5], body);
+      TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-26.5,cy-4.5,4.4,0,6.283); TC.stroke();
+      TC.fillStyle=acc; TC.fillRect(cx-21,cy-3.6,3,3.4);
+      TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';
+      strokeP([cx-10,cy+11, cx+10,cy+11, cx+13,cy+9]); TC.stroke();
+      strokeP([cx-5,cy+5, cx-6,cy+11]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+11]); TC.stroke();
+      plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body);
+      TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);
+      polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
+      TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
+      plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));
+      TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);
+      tubeT(cx+1,cy+3,cx+11,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6);   // porte + mitrailleuse
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
+      return;
+    }
+    if (era===2){                                                                              // VTOL FURTIF (deux rotors carénés)
+      const dark='#2a2e38';
+      plateT([cx-24,cy+0.5, cx-14,cy-4.5, cx+14,cy-5, cx+28,cy+1.5, cx+12,cy+6, cx-14,cy+6], body);   // fuselage à facettes
+      polyP([cx-24,cy+0.5, cx-14,cy-4.5, cx-9,cy-1, cx-20,cy+3]); TC.fillStyle=shade(body,0.6); TC.fill();
+      plateT([cx-27,cy-9, cx-22,cy-8, cx-19,cy+0.5, cx-25,cy+0.5], shade(body,0.85));                  // dérive
+      TC.fillStyle='rgba(20,28,40,0.95)'; polyP([cx+9,cy-4.2, cx+19,cy-0.6, cx+10,cy+1.6, cx+5,cy-1.5]); TC.fill();   // verrière sombre
+      TC.fillStyle='rgba(150,200,240,0.55)'; polyP([cx+10,cy-3.4, cx+15,cy-1.4, cx+10,cy-0.4]); TC.fill();
+      TC.strokeStyle=dark; TC.lineWidth=2; TC.lineCap='round';                                          // mâts de nacelles
+      strokeP([cx-13,cy-2, cx-13,cy-6.5]); TC.stroke(); strokeP([cx+9,cy-3, cx+9,cy-6.5]); TC.stroke();
+      for (const px of [-13,9]){ TC.fillStyle=dark; rrectT(cx+px-8,cy-10.5,16,4.4,2); TC.fill();        // nacelles carénées
+        TC.fillStyle='rgba(180,200,220,0.18)'; TC.fillRect(cx+px-6,cy-9.8,12,1.4); }
+      tubeT(cx+2,cy+6,cx+14,cy+7.2,1.4,'#1c2026'); TC.fillStyle='#c84a2a'; TC.beginPath(); TC.arc(cx+14.4,cy+7.2,1,0,6.283); TC.fill();  // panier d'armes
+      TC.fillStyle=acc; TC.fillRect(cx-6,cy-1.2,5,1.6);
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy+2,2.6,'#ff4a2a'));
+      return;
+    }
+    if (era===3){                                                                              // CHASSEUR PLASMA (aile delta)
+      const glow='#ff9a4a';
+      plateT([cx-6,cy-3, cx-26,cy-14, cx-21,cy-3, cx-6,cy+1], shade(body,0.7));                       // dérive
+      plateT([cx-22,cy-2, cx-14,cy-6, cx+8,cy-5.6, cx+29,cy+1, cx+10,cy+5.4, cx-20,cy+4.4], body);    // fuselage effilé
+      plateT([cx-8,cy+3, cx+12,cy+3.4, cx-4,cy+12, cx-18,cy+9], shade(body,0.82));                    // aile delta
+      TC.fillStyle='rgba(18,22,32,0.96)'; polyP([cx+4,cy-5.4, cx+14,cy-4, cx+18,cy-0.6, cx+4,cy-0.8]); TC.fill();   // verrière
+      TC.fillStyle='rgba(255,255,255,0.35)'; polyP([cx+6,cy-4.6, cx+11,cy-3.8, cx+7,cy-1.6]); TC.fill();
+      TC.fillStyle='#1c2026'; rrectT(cx-8,cy+6,15,3.4,1.6); TC.fill();                                 // pod à plasma
+      glowDot(cx+7.4,cy+7.7,1.8,glow,7);
+      bloomT(glow,9,()=>{ TC.fillStyle=glow; polyP([cx-22,cy-1.4, cx-31,cy+1, cx-22,cy+3.4]); TC.fill(); });   // flamme de tuyère
+      TC.fillStyle=acc; TC.fillRect(cx-14,cy-2,6,1.5);
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-9,cy+0.5,2.4,'#ff4a2a'));
+      return;
+    }
+    // ère 4 : PLANEUR SOLAIRE — nacelle d'or sous une grande aile à cellules
+    solarT([cx-27,cy-1, cx-18,cy-12, cx+24,cy-12, cx+30,cy-1]);
+    plateT([cx-27,cy-1, cx+30,cy-1, cx+29,cy+1.6, cx-26,cy+1.6], '#c8a040', false);                   // tranche de l'aile
+    plateT([cx-9,cy+1.4, cx+12,cy+1.4, cx+18,cy+6, cx+6,cy+10, cx-9,cy+8], body);                      // nacelle
+    TC.fillStyle='rgba(20,26,40,0.95)'; polyP([cx+8,cy+2.4, cx+15,cy+5.4, cx+7,cy+7.4, cx+3,cy+3.6]); TC.fill();
+    TC.fillStyle='rgba(255,255,255,0.4)'; polyP([cx+8,cy+3.4, cx+12,cy+5, cx+8,cy+5.6]); TC.fill();
+    TC.strokeStyle='#c8a040'; TC.lineWidth=1.6; TC.lineCap='round'; strokeP([cx-8,cy+6, cx-24,cy+3, cx-30,cy-3]); TC.stroke();   // poutre de queue
+    plateT([cx-31,cy-8, cx-28,cy-8, cx-27,cy+1, cx-31,cy+1], shade(body,0.9));
+    tubeT(cx+2,cy+10,cx+14,cy+10.4,1.2,'#2e2a38'); glowDot(cx+14.4,cy+10.4,1.2,'#fff0c0',5);           // nacelle d'arme sombre
+    if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+5.5,2.4,'#ff4a2a'));
+    return;
   }
+  // ---- drones G·P·T : même famille que le gremlin (corps coque, œil-capteur, bras porte-rotors)
+  const lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
+  const rotor=(x,y,w,far)=>{                                                                       // moyeu + garde de rotor
+    TC.fillStyle=far? shade(frame,0.75) : frame; rrectT(x-1.2,y-0.2,2.4,4,1); TC.fill();
+    TC.strokeStyle=far? 'rgba(120,130,145,0.5)':'rgba(170,180,195,0.6)'; TC.lineWidth=0.8; TC.beginPath(); TC.ellipse(x,y,w,w*0.26,0,0,6.283); TC.stroke(); };
+  const eye=(x,y,r)=>{ TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(x,y,r+1.2,0,6.283); TC.fill(); glowDot(x+0.3,y,r,lite,6); };
+  if (era<=1){                                                                                      // QUADRIROTOR (0) / blindé armé (1)
+    TC.strokeStyle=frame; TC.lineWidth=2; TC.lineCap='round';
+    strokeP([cx-5,cy-1, cx-10,cy-8.5, cx-17,cy-5.5]); TC.stroke(); strokeP([cx+5,cy-1, cx+10,cy-8.5, cx+17,cy-5.5]); TC.stroke();  // bras lointains
+    for (const [x,y,w] of [[-10,-11,5.5],[10,-11,5.5]]) rotor(cx+x,cy+y+0.6,w,true);
+    TC.strokeStyle=shade(frame,1.15); strokeP([cx-5,cy+1, cx-17,cy-5]); TC.stroke(); strokeP([cx+5,cy+1, cx+17,cy-5]); TC.stroke();
+    for (const x of [-17,17]) rotor(cx+x,cy-8,8.5,false);
+    const bw = era===0? 8.5 : 10.5;
+    plateT([cx-bw,cy-3, cx-bw+3,cy-6.5, cx+bw-3,cy-6.5, cx+bw,cy-3, cx+bw-1,cy+4, cx-bw+2,cy+5], plate);          // coque
+    TC.fillStyle=frame; polyP([cx-bw+2,cy+1.5, cx+bw-1,cy+1.5, cx+bw-1,cy+4.2, cx-bw+2,cy+5]); TC.fill();
+    if (era===1){ TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.8; strokeP([cx-bw+2,cy-3.4, cx+bw-2,cy-3.4]); TC.stroke();
+      for (const sx of [-1,1]){ tubeT(cx+sx*13,cy+2.5,cx+sx*13+9,cy+3.2,1.5,'#3a4048'); TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(cx+sx*13+9,cy+3.2,1.4,0,6.283); TC.fill(); }  // pods d'armes
+      TC.strokeStyle=frame; TC.lineWidth=1.4; strokeP([cx-6,cy+4, cx-8,cy+8, cx-13,cy+8.5]); TC.stroke(); strokeP([cx+6,cy+4, cx+8,cy+8, cx+13,cy+8.5]); TC.stroke(); }   // patins
+    else { TC.strokeStyle=frame; TC.lineWidth=1.2; strokeP([cx-5,cy+5, cx-6.5,cy+8, cx-10,cy+8]); TC.stroke(); strokeP([cx+5,cy+5, cx+6.5,cy+8, cx+10,cy+8]); TC.stroke(); }
+    eye(cx+bw-3,cy-0.6,1.9);
+    glowDot(cx-bw+3,cy-4.4,0.9,'#ff5a4a',3);
+    tubeT(cx+1,cy+5.6,cx+11,cy+6.4,1.2,'#3a4048');                                                // canon ventral
+  } else if (era===2){                                                                              // DRONE À TURBINES CARÉNÉES
+    for (const sx of [-1,1]){ const x=cx+sx*16;
+      TC.fillStyle=frame; rrectT(x-9,cy-8.8,18,6.6,2.6); TC.fill();                                  // carénage
+      TC.fillStyle='#0c1218'; rrectT(x-7.2,cy-7.8,14.4,3.2,1.4); TC.fill();
+      TC.fillStyle=shade(plate,1.15); rrectT(x-9,cy-9.4,18,1.6,0.8); TC.fill();
+      TC.strokeStyle=frame; TC.lineWidth=2; TC.lineCap='round'; strokeP([x-sx*5,cy-2, x-sx*10,cy+1]); TC.stroke(); }
+    plateT([cx-11,cy-2, cx-4,cy-5, cx+8,cy-5, cx+14,cy, cx+8,cy+5.4, cx-5,cy+5], plate);            // corps losange
+    TC.strokeStyle='rgba(0,0,0,0.32)'; TC.lineWidth=0.9; strokeP([cx-8,cy-0.4, cx+11,cy-0.4]); TC.stroke();
+    TC.fillStyle=rgbaC(lite,0.85); TC.fillRect(cx-5,cy+2,9,1);
+    eye(cx+9,cy-1.2,1.8);
+    tubeT(cx+1,cy+5,cx+14,cy+6.4,1.4,'#3a4048'); glowDot(cx+14.4,cy+6.4,1.1,lite,5);
+  } else if (era===3){                                                                              // DRONE HEXA À AILERONS
+    TC.strokeStyle=frame; TC.lineWidth=1.8; TC.lineCap='round';
+    strokeP([cx-3,cy-2, cx-9,cy-12, cx-9,cy-9.5]); TC.stroke();
+    rotor(cx-9,cy-12.5,5,true);
+    for (const x of [-17,17]){ TC.strokeStyle=frame; TC.lineWidth=2.2; strokeP([cx+x*0.3,cy-1.4, cx+x*0.8,cy-5]); TC.stroke();
+      TC.fillStyle=frame; rrectT(cx+x-8.6,cy-10.4,17.2,5.4,2.4); TC.fill();
+      TC.fillStyle='#0c1218'; rrectT(cx+x-7,cy-9.4,14,2.6,1.2); TC.fill();
+      bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(cx+x-7,cy-5.6,14,0.9); }); }
+    for (let i=0;i<3;i++) plateT([cx-14+i*3.4,cy-1, cx-12.4+i*3.4,cy-8.6-i*0.6, cx-9.8+i*3.4,cy-8.2-i*0.6, cx-10.4+i*3.4,cy-1], shade(plate,1.12));   // ailerons dorsaux
+    plateT([cx-15,cy-1, cx-7,cy-5, cx+9,cy-5, cx+17,cy, cx+9,cy+5.4, cx-7,cy+4.6], plate);
+    TC.fillStyle=frame; polyP([cx-7,cy+2, cx+9,cy+2, cx+9,cy+5.4, cx-7,cy+4.6]); TC.fill();
+    bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(cx-8,cy-2.4,17,1); });
+    eye(cx+11,cy-0.8,1.9);
+    for (const sx of [-1,1]) tubeT(cx+sx*6,cy+5.4,cx+sx*6+9,cy+6.6,1.2,'#3a4048');
+  } else {                                                                                          // DRONE CRISTAL À ANNEAUX D'ÉNERGIE
+    for (const sx of [-1,1]){ const x=cx+sx*16;
+      bloomT(lite,7,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=1.6; TC.beginPath(); TC.ellipse(x,cy-8,9,2.8,0,0,6.283); TC.stroke(); });
+      for (const dy of [-1,1]){ TC.fillStyle=shade(plate,1.25); polyP([x-1.4,cy-8+dy*4.6, x,cy-8+dy*2.4, x+1.4,cy-8+dy*4.6, x,cy-8+dy*6.6]); TC.fill(); }
+      TC.strokeStyle=rgbaC(lite,0.5); TC.lineWidth=1; strokeP([cx+sx*7,cy-1, x-sx*4,cy-6.4]); TC.stroke(); }
+    polyP([cx-14,cy-1, cx-3,cy-9, cx+10,cy-8, cx+17,cy]); TC.fillStyle=shade(plate,1.35); TC.fill();      // coque de cristal
+    polyP([cx-14,cy-1, cx+17,cy, cx+8,cy+6.4, cx-5,cy+5.4]); TC.fillStyle=shade(plate,0.75); TC.fill();
+    TC.strokeStyle=rgbaC(lite,0.7); TC.lineWidth=0.8; strokeP([cx-12,cy-1, cx+2,cy-6, cx+16,cy-0.4]); TC.stroke();
+    TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+10,cy-1.2,2.8,0,6.283); TC.fill(); glowDot(cx+10.4,cy-1.2,1.8,lite,7);
+    tubeT(cx,cy+5.4,cx+11,cy+7,1.2,'#3a4048');
+    for (const [x,y] of [[cx-20,cy+6],[cx+22,cy+5]]){ TC.fillStyle=shade(plate,1.2); polyP([x,y-2.2, x+1.4,y, x,y+2.2, x-1.4,y]); TC.fill(); }
+  }
+  if (trans) bloomT('#39ff6a',7,()=>{ TC.strokeStyle=rgbaC('#39ff6a',0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(cx,cy-14,7,1.8,0,0,6.283); TC.stroke(); });
 }
 function drawAir(u, x, gy){
   const fac=u.fac, era=u.era, t=u.bob, dir=u.side, acc=FACTIONS[fac].accent;
   const spr = sprite('AIR'+fac+era+(u.trans?'T':''), 64, 44, ()=>airSprite(fac,era,u.trans));
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
-  const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
+  const AS = 1.75;                // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
   // ASSIETTE (v1.14) : l'appareil pique du nez quand il avance, se cabre au tir, se redresse en vol stationnaire
   const mvA = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
@@ -2344,23 +2537,29 @@ function drawAir(u, x, gy){
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
-  ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2.5;
-  if (fac==='HUM'){ const r=Math.abs(Math.sin(t*9))*20; ctx.beginPath(); ctx.moveTo(x-r,y-16); ctx.lineTo(x+r,y-16); ctx.stroke(); }
-  else { for(const sx2 of[-15,15]){ const r=Math.abs(Math.sin(t*10+sx2))*9; ctx.beginPath(); ctx.moveTo(x+sx2-r,y-10); ctx.lineTo(x+sx2+r,y-10); ctx.stroke(); } }
+  ctx.strokeStyle=rgbaC(fac==='HUM'? '#cfd6e0' : (era===4? FACTIONS.IA.eraCols[4] : acc),0.5); ctx.lineWidth=2.5;
+  const rots = AIR_ROT[fac][era];
+  if (rots) rots.forEach((R,i)=>{ const r=Math.abs(Math.sin(t*(fac==='HUM'?9:10)+i*1.7))*R[2]*AS; const rx=x+dir*R[0]*AS, ry=y+R[1]*AS;
+    ctx.beginPath(); ctx.moveTo(rx-r,ry); ctx.lineTo(rx+r,ry); ctx.stroke(); });
   ctx.restore();
   if (u.atkT>u.rate-0.14) attackFX(u, x, y);
 }
 // GREMLIN (essaim GPT) : petit robot-araignée mis en cache (avant : capsule néon redessinée
 // avec halos en direct à chaque frame)
 function gremlinSprite(era){
-  const cx=14, cy=12, lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
-  TC.strokeStyle='#4a525c'; TC.lineWidth=0.9; TC.lineCap='round'; TC.lineJoin='round';
-  for (const s of [-1,1]) for (let i=0;i<3;i++){ const x0=cx+s*(1+i*1.6), kx=cx+s*(7+i*1.8), fx=cx+s*(5+i*2.6);
-    strokeP([x0,cy+1, kx,cy-2+i, fx,cy+10]); TC.stroke(); }
-  TC.fillStyle=lgrad(cx-7,cy-6,cx+7,cy+5,[[0,shade(plate,1.45)],[0.5,plate],[1,shade(plate,0.55)]]);
-  TC.beginPath(); TC.ellipse(cx,cy,7.4,5.6,0,0,6.283); TC.fill();
-  TC.fillStyle='#0a1016'; rrectT(cx+1,cy-2.6,6,3.4,1.6); TC.fill();
-  glowDot(cx+3,cy-1,1.2,lite,4); glowDot(cx+5.6,cy-1,1.2,lite,4);
+  // mini-drone de la même famille que les aéronefs : coque, œil-capteur, deux petits rotors carénés sur bras, pattes d'atterrissage
+  const cx=14, cy=13, lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
+  TC.strokeStyle=frame; TC.lineWidth=1.3; TC.lineCap='round'; TC.lineJoin='round';
+  for (const s of [-1,1]){ strokeP([cx+s*2,cy+2.5, cx+s*6,cy+6.5, cx+s*9,cy+10.5]); TC.stroke();       // pattes
+    strokeP([cx+s*3.5,cy+3, cx+s*3,cy+7, cx+s*4.8,cy+10.5]); TC.stroke();
+    strokeP([cx+s*2,cy-2, cx+s*8,cy-6]); TC.stroke();                                                    // bras porte-rotor
+    TC.fillStyle=frame; TC.fillRect(cx+s*8-0.6,cy-7.4,1.2,2.2);
+    TC.strokeStyle='rgba(170,180,195,0.75)'; TC.lineWidth=0.8; TC.beginPath(); TC.ellipse(cx+s*8,cy-7.6,4.4,1.2,0,0,6.283); TC.stroke();
+    TC.strokeStyle=frame; TC.lineWidth=1.3; }
+  plateT([cx-7,cy, cx-5,cy-4.6, cx+5,cy-4.6, cx+7.4,cy, cx+6,cy+4, cx-5,cy+4.4], plate);
+  TC.fillStyle=frame; polyP([cx-5,cy+2, cx+6,cy+2, cx+6,cy+4, cx-5,cy+4.4]); TC.fill();
+  TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+3.4,cy-0.6,2.5,0,6.283); TC.fill();
+  glowDot(cx+3.6,cy-0.6,1.4,lite,5);
 }
 // HÉROS : voir 12b-hero.js (un personnage par ère, en couches animées)
 // PERF : PRÉCHAUFFE de tous les sprites d'unités possibles (2 factions × 5 rôles au sol × 5 ères
