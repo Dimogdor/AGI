@@ -39,7 +39,7 @@ function startCata(key){
   const g=game, c=CATAS[key];
   g.cata=key; g.cataT=0; g.cataDur=c.dur;
   g.cataX = WORLD*(0.3+Math.random()*0.4);
-  announce(c.icon+'  '+cataName(key)+'  '+c.icon, c.col);
+  announce(c.icon+'  '+cataName(key)+'  '+c.icon, c.col, {r:{L:'cata', k:key}, pr:c.icon+'  ', sx:'  '+c.icon});
   sfx('boom');
   // effets INSTANTANÉS et radicaux au déclenchement
   if (key==='nuke'){

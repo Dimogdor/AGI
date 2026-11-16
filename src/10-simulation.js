@@ -398,12 +398,16 @@ function heroFollow(u, side, dt, gap, targets){
   if (gap===0 && front!==null && targets && side.stance==='charge'){   // armée en « tenir » : il reste sur la ligne
     let near = null, nd = 220;
     for (const f of targets){ if (f.hp<=0 && !f.isBase) continue; const dx = (f.x-front)*side.side; if (dx>-12 && dx<nd){ nd = dx; near = f; } }
-    if (near){ const w2 = near.x - side.side*u.range*0.5; if ((w2-want)*side.side>0) want = w2; }
-  }
+    // le contact est GARDÉ ~1,5 s après sa disparition (mort de l'ennemi, relève d'une cible) : sans cette mémoire
+    // il bondissait devant le front dès qu'un ennemi passait sous 220 px, puis reculait à reculons
+    if (near){ u._cx = near.x - side.side*u.range*0.5; u._cT = game.t; }
+    else if (u._cx!==undefined && game.t-u._cT>1.5) u._cx = undefined;
+    if (u._cx!==undefined && (u._cx-want)*side.side>0) want = u._cx;
+  } else u._cx = undefined;
   const d = (want-u.x)*side.side;
   const sp = u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*dt;
-  if (d>1) u.x += side.side*Math.min(d, sp);
-  else if (d<-1) u.x -= side.side*Math.min(-d, sp*1.2);
+  if (d>1e-3) u.x += side.side*Math.min(d, sp);                      // pas de zone morte : le front avance de < 1 px/image
+  else if (d<-24) u.x -= side.side*Math.min(-d-12, sp*1.2);        // ne recule que s'il est vraiment trop en avant (> 24 px)
   u.x = clamp(u.x, 30, WORLD-30);
 }
 function heroAdvance(u, side, dt){   // même vitesse que tryMove, sans la file d'attente derrière les unités de mêlée
@@ -628,6 +632,7 @@ function update(dt){
     tutTick(dt); return;
   }
   game.t += dt;
+  if (game.boomAt!==undefined && game.t>=game.boomAt){ game.boomAt = undefined; sfxAt('boom', WORLD/2); }   // détonation de la Bombe H
   const p=game.p, e=game.e, d=game.d;
   if (CHEAT.god){ p.hp=p.maxhp; for (const u of p.units) u.hp=u.maxhp; }   // MODE TRICHE : base + troupes du joueur invincibles
   // comeback RENFORCÉ : le camp qui perd produit nettement plus, recharge son ultime plus
@@ -863,7 +868,7 @@ function triggerNuclearWinter(){
   addFloater(WORLD/2, gY(WORLD/2)-150, tr('ev_winter_sub'), '#bfe6ff', 14);
   // SILENCE DRAMATIQUE puis détonation : la musique se tait, le « boom » tombe ~0,6 s après le flash.
   if (AC){ audioDuckUntil = AC.currentTime + 0.6; }
-  setTimeout(()=>{ sfxAt('boom', WORLD/2); }, 600);
+  g.boomAt = g.t + 0.6;                      // horloge de jeu (et non setTimeout : le son ne jouait plus en pause / au menu)
 }
 // malus d'hiver qui s'estompe : ÷2 au début → ×1 (normal) après 6 min
 function winterMul(){ return game.winter? clamp(0.5 + 0.5*(1-(game.winterT||0)/WINTER_DUR), 0.5, 1) : 1; }

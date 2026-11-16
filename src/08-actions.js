@@ -116,7 +116,7 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
   u.ord = null; u.holdX = null; u.task = null;
   u.heat = 0; u.tiredT = 0; u.kills = 0; u.vet = false; u.lastHit = null;
   u.farFatigued = false; u.farT = 0;   // fatigue de traversée (déclenchée une fois, loin de la base)
-  u.id = UID++;
+  u.id = UID++; u._born = game.t;      // l'entrée en scène se joue à la naissance, pas à l'arrivée dans le champ
   side.units.push(u);
 }
 function tryUpgRole(side, ri){
@@ -138,10 +138,11 @@ function tryEvolve(side){
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
   burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
-  announce(fmt(side===game.p? 'a_evolve_you':'a_evolve_foe', {era:lEra(side.facKey,side.era)}), side.fac.accent);
+  announce(fmt(side===game.p? 'a_evolve_you':'a_evolve_foe', {era:lEra(side.facKey,side.era)}), side.fac.accent,
+    {q:side===game.p? 'a_evolve_you':'a_evolve_foe', v:{era:{L:'era', f:side.facKey, i:side.era}}});
   if (side===game.p){ sfx('evolve'); voice(side.facKey); game.shake=8;
     // LORE CONTEXTUEL : une courte phrase historique s'affiche au passage d'ère.
-    addFloater(camX+VW()/2, 96, lEraLore(side.facKey, side.era), '#e8d8a0', 14);
+    addFloaterLocal(camX+VW()/2, 96, lEraLore(side.facKey, side.era), '#e8d8a0', 14);   // (repère d'écran de l'hôte : pas envoyé)
   }
   return true;
 }
@@ -149,8 +150,8 @@ function checkTrans(side){
   if (side.trans || side.era<4 || side.xp < TRANS_XP) return;
   side.trans = true;
   for (const u of side.units) u.trans = true; // les troupes existantes changent d'allure
-  announce(side.fac.sym+" "+lTransName(side.facKey)+" "+side.fac.sym, side.fac.accent);
-  addFloater(side.x, gY(side.x)-150, lTransTxt(side.facKey), side.fac.accent, 15);
+  announce(side.fac.sym+" "+lTransName(side.facKey)+" "+side.fac.sym, side.fac.accent, {r:{L:'tn', f:side.facKey}, pr:side.fac.sym+' ', sx:' '+side.fac.sym});
+  addFloater(side.x, gY(side.x)-150, lTransTxt(side.facKey), side.fac.accent, 15, {r:{L:'ttx', f:side.facKey}});
   game.flash = 0.8; game.shake = 12;
   if (side===game.p) sfx('trans');
 }
@@ -184,7 +185,7 @@ function trySpecial(side){
   for (const s of sideBuildSlots(foe)) if (s.b) { s.b.hp -= dmg*0.5; burst(s.x, gY(s.x)-30, side.fac.accent, 8); }
   foe.hp -= dmg*0.4;
   game.shake=14; game.flash=0.5; game.specialsUsed++;
-  announce("✸ "+lSpecial(side.facKey,side.era)+" ✸", side.fac.accent);
+  announce("✸ "+lSpecial(side.facKey,side.era)+" ✸", side.fac.accent, {r:{L:'sp', f:side.facKey, i:side.era}, pr:'✸ ', sx:' ✸'});
   sfx('spec');
   return true;
 }
@@ -437,7 +438,7 @@ function spawnHero(side, power){
   u.side=side.side; u.era=side.era; u.fac=side.facKey; u.trans=side.trans;
   u.atkT=0; u.bob=Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord=null; u.holdX=null; u.task=null; u.heat=0; u.tiredT=0;
-  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
+  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++; u._born = game.t;
   u.atkN = 0; u.hstate = null; u.barkT = 5+Math.random()*5;
   warmHero(side); heroSfx(side.facKey, 'spawn', u.x);
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie

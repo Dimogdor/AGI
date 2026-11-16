@@ -37,6 +37,9 @@ function serialize(){
     neut:game.neut.map(n=>[n.owner===game.p?1:n.owner===game.e?-1:0, serBld(n.b)]),
     nodes:game.nodes.map(n=>[n.owner==='p'?1:n.owner==='e'?-1:0, Math.round(n.prog*100)/100]),
     zones:game.zones.map(z=>[z.owner==='p'?1:z.owner==='e'?-1:0, Math.round(z.prog*100)/100]),
+    bz:game.bonusZone? [Math.round(game.bonusZone.x), game.bonusZone.owner==='p'?1:game.bonusZone.owner==='e'?-1:0, Math.round(game.bonusZone.prog*100)/100,
+      Math.round(game.bonusZone.t*10)/10, game.bonusZone.contested?1:0] : 0,
+    met:METEORS.slice(0,12).map(m=>[Math.round(m.tx), Math.round(m.t*100)/100, Math.round(m.dur*100)/100, Math.round(m.dx)]),
     shots:shots.map(s=>[Math.round(s.x),s.y,Math.round(s.tx),s.ty,s.t,s.dur,s.fac==='HUM'?0:1,s.era]),
     proj:projectiles.map(pr=>[Math.round(pr.sx),Math.round(pr.tx),pr.t,pr.dur,pr.fac==='HUM'?0:1,pr.era]),
   };
@@ -190,10 +193,11 @@ function applySnapshot(snap){
     if (role==='hero'){ const hb = SN(a[14], 0, 31)|0; u.atkN = hb&7; u.hstate = (hb&8)? 'flee' : null; u._hg = !!(hb&16); }
     const pv = GV[id];
     if (role==='hero'){ if (pv){ u._h = pv._h; u.gestT = pv.gestT; } if (u._hg && !(pv && pv._hg)) u.gestT = g.t; }
-    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
+    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._dust = pv._dust; u._mvT = pv._mvT; u._bk = pv._bk; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
       if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
       // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
       if (!(a[13] && pv.atkT<0.75)) u.atkT = pv.atkT; }
+    else u._born = g.t;                                        // nouvelle venue : l'apparition se joue à sa création, pas à son entrée dans le champ
     GV2[id] = u;
     loc.units.push(u);
   };
@@ -215,6 +219,11 @@ function applySnapshot(snap){
     g.nodes[i].prog = -SN(nd[1], -1, 1); }
   if (g.zones) for (let i=0;i<g.zones.length;i++){ const zd=sz[i]; if (!Array.isArray(zd)) continue;
     g.zones[i].owner = zd[0]===-1? 'p' : zd[0]===1? 'e' : null; g.zones[i].prog = -SN(zd[1], -1, 1); }
+  // 4e zone bonus et météores (vue miroir : x → WORLD-x, propriétaire et progression inversés)
+  if (Array.isArray(snap.bz)){ const b = snap.bz, o = SN(b[1], -1, 1)|0;
+    g.bonusZone = { x:WORLD-SN(b[0], 0, WORLD), owner:o===-1? 'p' : o===1? 'e' : null, prog:-SN(b[2], -1, 1), t:SN(b[3], 0, 600), contested:!!b[4] }; }
+  else g.bonusZone = null;
+  METEORS = SA(snap.met, 12).filter(Array.isArray).map(m=>({ tx:WORLD-SN(m[0], 0, WORLD), t:SN(m[1], 0, 5), dur:SN(m[2], 0.1, 5, 1), dx:-SN(m[3], -400, 400) }));
   // tirs & obus (mirroir x)
   shots = SA(snap.shots, 400).filter(Array.isArray).map(s=>({x:WORLD-SN(s[0],0,WORLD), y:SN(s[1],-200,800), tx:WORLD-SN(s[2],0,WORLD), ty:SN(s[3],-200,800),
     t:SN(s[4],0,5), dur:SN(s[5],0.01,5,0.16), fac:s[6]?'IA':'HUM', era:SN(s[7],0,4)|0}));
@@ -229,8 +238,8 @@ function applyEvents(ev){
     const x = WORLD - SN(e.x, 0, WORLD), y = SN(e.y, -300, 900);
     if (e.k==='b') burst(x, y, SCOL(e.c), SN(e.n, 0, 60)|0, SN(e.p, 0, 3, 1));
     else if (e.k==='x') explode(x, y, SN(e.p, 0, 3, 1), SCOL(e.c));
-    else if (e.k==='f') addFloater(x, y, String(e.t==null? '' : e.t).slice(0, 48), SCOL(e.c), SN(e.s, 6, 40, 13));
-    else if (e.k==='a'){ game.msg={txt:String(e.t==null? '' : e.t).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
+    else if (e.k==='f') addFloaterLocal(x, y, netTxtOut(e).slice(0, 80), SCOL(e.c), SN(e.s, 6, 40, 13));
+    else if (e.k==='a'){ game.msg={txt:netTxtOut(e).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
     else if (e.k==='s' && NET_SFX.has(e.n)) sfx(e.n, SN(e.p, 0, 8));
     else if (e.k==='h' && typeof e.n==='string' && HSFX_GAP.hasOwnProperty(e.n)) heroSfx(e.f? 'IA':'HUM', e.n, x, true);
   }
@@ -252,6 +261,8 @@ function netGuestTick(dt){
   }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
+  for (const m of METEORS) m.t = Math.min(m.dur, m.t+dt);                   // la chute continue entre deux instantanés
+  if (game.bonusZone) game.bonusZone.t += dt;
   stepParticles(dt);
   for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if (deaths[i].t>deaths[i].life) deaths.splice(i,1); }
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if (f.t>1.6) floaters.splice(i,1); }

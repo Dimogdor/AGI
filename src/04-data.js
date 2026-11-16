@@ -259,7 +259,8 @@ function lTransTxt(fk){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const v=L
 // nom de bâtiment LOCALISÉ et CONSCIENT DE LA FACTION (Ferme/Marché côté HUM ↔ Panneaux/Serveur côté IA)
 function bName(fk,type){ if(type==='farmF') return tr(fk==='HUM'?'bn_farmH':'bn_farmI');
   if(type==='farmM') return tr(fk==='HUM'?'bn_marketH':'bn_marketI'); return tr('bn_'+type); }
-function fmt(key,o){ return tr(key).replace(/\{(\w+)\}/g,(m,k)=>(o&&o[k]!=null)? o[k] : m); }
+let FMT_LAST = null;   // dernier fmt() : permet à announce()/addFloater() d'envoyer à l'invité la CLÉ + les variables plutôt que le texte de l'hôte
+function fmt(key,o){ const out = tr(key).replace(/\{(\w+)\}/g,(m,k)=>(o&&o[k]!=null)? o[k] : m); FMT_LAST = {key, o, out}; return out; }
 // hauteur visuelle d'un bâtiment (grandit avec le niveau)
 function bldH(b){
   const l = (b.lvl||1)-1;
