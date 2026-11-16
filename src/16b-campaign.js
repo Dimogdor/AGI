@@ -29,7 +29,7 @@ function campSave(){ try { localStorage.setItem(CAMP_KEY, JSON.stringify(CAMP_SA
 const CAMP_UI = {
   tab:      {fr:"CAMPAGNE", en:"CAMPAIGN", es:"CAMPAÑA", de:"KAMPAGNE", it:"CAMPAGNA", pt:"CAMPANHA", ru:"КАМПАНИЯ", zh:"战役", ar:"الحملة"},
   head:     {fr:"LES CARNETS DE GERMINAL", en:"THE GERMINAL NOTEBOOKS", es:"LOS CUADERNOS DE GERMINAL", de:"DIE NOTIZBÜCHER VON GERMINAL", it:"I QUADERNI DI GERMINAL", pt:"OS CADERNOS DE GERMINAL", ru:"ТЕТРАДИ GERMINAL", zh:"GERMINAL 笔记", ar:"دفاتر GERMINAL"},
-  sub:      {fr:"Cinq nuits, treize ans. Tenus par Sol, opératrice radio.", en:"Five nights, thirteen years. Kept by Sol, radio operator.", es:"Cinco noches, trece años. Escritos por Sol, operadora de radio.", de:"Fünf Nächte, dreizehn Jahre. Geführt von Sol, Funkerin.", it:"Cinque notti, tredici anni. Tenuti da Sol, operatrice radio.", pt:"Cinco noites, treze anos. Escritos por Sol, operadora de rádio.", ru:"Пять ночей, тринадцать лет. Ведёт Sol, радистка.", zh:"五个夜晚，十三年。由无线电操作员Sol记录。", ar:"خمس ليالٍ، ثلاث عشرة سنة. دوّنتها Sol، مشغّلة اللاسلكي."},
+  sub:      {fr:"Cinq jours, dix ans. Tenus par Sol, opératrice radio.", en:"Five days, ten years. Kept by Sol, radio operator.", es:"Cinco días, diez años. Escritos por Sol, operadora de radio.", de:"Fünf Tage, zehn Jahre. Geführt von Sol, Funkerin.", it:"Cinque giorni, dieci anni. Tenuti da Sol, operatrice radio.", pt:"Cinco dias, dez anos. Escritos por Sol, operadora de rádio.", ru:"Пять дней, десять лет. Ведёт Sol, радистка.", zh:"五天，十年。由无线电操作员Sol记录。", ar:"خمسة أيام، عشر سنوات. دوّنتها Sol، مشغّلة اللاسلكي."},
   locked:   {fr:"page arrachée — terminez la mission précédente", en:"torn page — finish the previous mission", es:"página arrancada: complete la misión anterior", de:"herausgerissene Seite – schließen Sie die vorherige Mission ab", it:"pagina strappata: completi la missione precedente", pt:"página arrancada — conclua a missão anterior", ru:"вырванная страница — завершите предыдущую миссию", zh:"缺页——请先完成上一个任务", ar:"صفحة ممزّقة — أنهِ المهمة السابقة"},
   doneTag:  {fr:"ACCOMPLIE", en:"DONE", es:"CUMPLIDA", de:"ERLEDIGT", it:"COMPIUTA", pt:"CUMPRIDA", ru:"ВЫПОЛНЕНО", zh:"已完成", ar:"مُنجَزة"},
   best:     {fr:"meilleur temps", en:"best time", es:"mejor tiempo", de:"Bestzeit", it:"miglior tempo", pt:"melhor tempo", ru:"лучшее время", zh:"最佳用时", ar:"أفضل وقت"},
@@ -46,15 +46,15 @@ const CAMP_UI = {
   radioK:   {fr:"BIPEUR · 55", en:"PAGER · 55", es:"BUSCA · 55", de:"PIEPSER · 55", it:"CERCAPERSONE · 55", pt:"PAGER · 55", ru:"ПЕЙДЖЕР · 55", zh:"寻呼机 · 55", ar:"جهاز النداء · 55"},
   reinf:    {fr:"Renforts : la cellule {name} est arrivée.", en:"Reinforcements: the {name} cell has arrived.", es:"Refuerzos: ha llegado la célula {name}.", de:"Verstärkung: Die Zelle {name} ist eingetroffen.", it:"Rinforzi: è arrivata la cellula {name}.", pt:"Reforços: a célula {name} chegou.", ru:"Подкрепление: прибыла ячейка {name}.", zh:"增援：{name}小组已抵达。", ar:"تعزيزات: وصلت خلية {name}."},
   // ---- v1.16 : présentation, difficulté, briefing, aide en mission ----
-  about:    {fr:"Germinal est une cellule de résistance du quartier des Tanneurs, à Valmont : des soignantes, des livreurs, des cheminots. En face : Omnicorp, la compagnie qui confie la ville à ses machines — puis ce qui, plus tard, se fera appeler « Nous ». Chaque mission est une nuit décisive de ces treize années. Vous commandez sur le terrain ; Sol tient la radio et les carnets. Le but de la campagne : que les humains continuent de décider pour eux-mêmes.",
-             en:"Germinal is a resistance cell from the Tanners' district of Valmont: care workers, couriers, railwaymen. Facing them: Omnicorp, the company that hands the city over to its machines — and later, what will call itself \"We\". Each mission is one decisive night in those thirteen years. You command in the field; Sol keeps the radio and the notebooks. The goal of the campaign: that humans go on deciding for themselves.",
-             es:"Germinal es una célula de resistencia del barrio de los Curtidores, en Valmont: auxiliares sanitarias, repartidores, ferroviarios. Enfrente: Omnicorp, la compañía que entrega la ciudad a sus máquinas, y más tarde lo que se hará llamar «Nosotros». Cada misión es una noche decisiva de esos trece años. Usted manda sobre el terreno; Sol lleva la radio y los cuadernos. El objetivo de la campaña: que los humanos sigan decidiendo por sí mismos.",
-             de:"Germinal ist eine Widerstandszelle aus dem Gerberviertel von Valmont: Pflegekräfte, Lieferfahrer, Eisenbahner. Ihnen gegenüber: Omnicorp, der Konzern, der die Stadt seinen Maschinen überlässt – und später das, was sich „Wir“ nennen wird. Jede Mission ist eine entscheidende Nacht dieser dreizehn Jahre. Sie führen im Gelände; Sol hält das Funkgerät und die Notizbücher. Das Ziel der Kampagne: dass die Menschen weiterhin selbst entscheiden.",
-             it:"Germinal è una cellula di resistenza del quartiere dei Conciatori, a Valmont: operatrici sanitarie, fattorini, ferrovieri. Di fronte: Omnicorp, la compagnia che consegna la città alle sue macchine, e più tardi ciò che si farà chiamare «Noi». Ogni missione è una notte decisiva di questi tredici anni. Lei comanda sul campo; Sol tiene la radio e i quaderni. Lo scopo della campagna: che gli esseri umani continuino a decidere per sé.",
-             pt:"Germinal é uma célula de resistência do bairro dos Curtidores, em Valmont: auxiliares de enfermagem, entregadores, ferroviários. Do outro lado: a Omnicorp, a companhia que entrega a cidade às suas máquinas — e, mais tarde, o que passará a se chamar «Nós». Cada missão é uma noite decisiva desses treze anos. Você comanda em campo; Sol cuida do rádio e dos cadernos. O objetivo da campanha: que os humanos continuem decidindo por si mesmos.",
-             ru:"Germinal — ячейка сопротивления из квартала Кожевников в Valmont: санитарки, курьеры, железнодорожники. Против них — Omnicorp, компания, отдающая город своим машинам, а позже то, что назовёт себя «Мы». Каждая миссия — одна решающая ночь из этих тринадцати лет. Вы командуете на поле; Sol держит рацию и ведёт тетради. Цель кампании: чтобы люди и дальше решали сами за себя.",
-             zh:"Germinal是Valmont制革工区的一个抵抗小组：护理员、快递员、铁路工人。对面是Omnicorp——那家把城市交给机器的公司，后来又出现了自称“我们”的东西。每个任务都是这十三年里决定性的一夜。您在战场上指挥；Sol守着电台，写下笔记。这场战役的目标：让人类继续为自己做决定。",
-             ar:"Germinal خليّة مقاومة من حيّ الدبّاغين في Valmont: مساعِدات تمريض وسُعاة توصيل وعمّال سكك حديدية. في المقابل: Omnicorp، الشركة التي تسلّم المدينة لآلاتها، ثم لاحقًا ما سيسمّي نفسه «نحن». كل مهمة ليلة حاسمة من تلك السنوات الثلاث عشرة. أنت تقود في الميدان، وSol تمسك اللاسلكي والدفاتر. هدف الحملة: أن يواصل البشر اتخاذ قراراتهم بأنفسهم."},
+  about:    {fr:"Germinal est une cellule de résistance du quartier des Tanneurs, à Valmont : des aides-soignantes, des livreurs, des cheminots, une ancienne standardiste des pompiers. En face : Omnicorp, la compagnie qui confie la ville à ses machines — puis ce qui, plus tard, se fera appeler « nous ». Chaque mission est un jour décisif de ces dix années, à partir d'octobre 2028. Vous commandez sur le terrain ; Sol tient la radio et les carnets. Le but de la campagne : que les humains continuent de décider pour eux-mêmes.",
+             en:"Germinal is a resistance cell from the Tanners' district of Valmont: care workers, couriers, railwaymen, a former fire-brigade switchboard operator. Facing them: Omnicorp, the company that hands the city over to its machines — and later, what will call itself \"we\". Each mission is one decisive day in those ten years, starting in October 2028. You command in the field; Sol keeps the radio and the notebooks. The goal of the campaign: that humans go on deciding for themselves.",
+             es:"Germinal es una célula de resistencia del barrio de los Curtidores, en Valmont: auxiliares sanitarias, repartidores, ferroviarios, una antigua telefonista de los bomberos. Enfrente: Omnicorp, la compañía que entrega la ciudad a sus máquinas, y más tarde lo que se hará llamar «nosotros». Cada misión es un día decisivo de esos diez años, a partir de octubre de 2028. Usted manda sobre el terreno; Sol lleva la radio y los cuadernos. El objetivo de la campaña: que los humanos sigan decidiendo por sí mismos.",
+             de:"Germinal ist eine Widerstandszelle aus dem Gerberviertel von Valmont: Pflegekräfte, Lieferfahrer, Eisenbahner, eine ehemalige Telefonistin der Feuerwehr. Ihnen gegenüber: Omnicorp, der Konzern, der die Stadt seinen Maschinen überlässt – und später das, was sich „wir“ nennen wird. Jede Mission ist ein entscheidender Tag dieser zehn Jahre, ab Oktober 2028. Sie führen im Gelände; Sol hält das Funkgerät und die Notizbücher. Das Ziel der Kampagne: dass die Menschen weiterhin selbst entscheiden.",
+             it:"Germinal è una cellula di resistenza del quartiere dei Conciatori, a Valmont: operatrici sanitarie, fattorini, ferrovieri, un'ex centralinista dei vigili del fuoco. Di fronte: Omnicorp, la compagnia che consegna la città alle sue macchine, e più tardi ciò che si farà chiamare «noi». Ogni missione è un giorno decisivo di questi dieci anni, a partire dall'ottobre 2028. Lei comanda sul campo; Sol tiene la radio e i quaderni. Lo scopo della campagna: che gli esseri umani continuino a decidere per sé.",
+             pt:"Germinal é uma célula de resistência do bairro dos Curtidores, em Valmont: auxiliares de enfermagem, entregadores, ferroviários, uma ex-telefonista dos bombeiros. Do outro lado: a Omnicorp, a companhia que entrega a cidade às suas máquinas — e, mais tarde, o que passará a se chamar «nós». Cada missão é um dia decisivo desses dez anos, a partir de outubro de 2028. Você comanda em campo; Sol cuida do rádio e dos cadernos. O objetivo da campanha: que os humanos continuem decidindo por si mesmos.",
+             ru:"Germinal — ячейка сопротивления из квартала Кожевников в Valmont: санитарки, курьеры, железнодорожники, бывшая телефонистка пожарной части. Против них — Omnicorp, компания, отдающая город своим машинам, а позже то, что назовёт себя «мы». Каждая миссия — один решающий день из этих десяти лет, начиная с октября 2028 года. Вы командуете на поле; Sol держит рацию и ведёт тетради. Цель кампании: чтобы люди и дальше решали сами за себя.",
+             zh:"Germinal是Valmont制革工区的一个抵抗小组：护理员、快递员、铁路工人，还有一位曾在消防队接线的话务员。对面是Omnicorp——那家把城市交给机器的公司，后来又出现了自称“我们”的东西。每个任务都是这十年里决定性的一天，从2028年10月开始。您在战场上指挥；Sol守着电台，写下笔记。这场战役的目标：让人类继续为自己做决定。",
+             ar:"Germinal خليّة مقاومة من حيّ الدبّاغين في Valmont: مساعِدات تمريض وسُعاة توصيل وعمّال سكك حديدية وعاملة هاتف سابقة لدى الإطفاء. في المقابل: Omnicorp، الشركة التي تسلّم المدينة لآلاتها، ثم لاحقًا ما سيسمّي نفسه «نحن». كل مهمة يوم حاسم من تلك السنوات العشر، بدءًا من أكتوبر 2028. أنت تقود في الميدان، وSol تمسك اللاسلكي والدفاتر. هدف الحملة: أن يواصل البشر اتخاذ قراراتهم بأنفسهم."},
   diffLbl:  {fr:"DIFFICULTÉ", en:"DIFFICULTY", es:"DIFICULTAD", de:"SCHWIERIGKEIT", it:"DIFFICOLTÀ", pt:"DIFICULDADE", ru:"СЛОЖНОСТЬ", zh:"难度", ar:"الصعوبة"},
   d0:       {fr:"Récit", en:"Story", es:"Relato", de:"Erzählung", it:"Racconto", pt:"Relato", ru:"Повествование", zh:"叙事", ar:"السرد"},
   d1:       {fr:"Lutte", en:"Struggle", es:"Lucha", de:"Kampf", it:"Lotta", pt:"Luta", ru:"Борьба", zh:"抗争", ar:"النضال"},
@@ -136,6 +136,8 @@ const campHp = (n, who) => Math.round(n*(who==='e'? campD().eBase : campD().base
 // niveau d'IA d'escarmouche (index DIFFS) d'une mission pour un niveau de difficulté
 const campAiLevel = (m, D) => clamp(m && m.ai? m.ai[D.i] : 1 + D.ai, 0, 3);
 // « +35 % » / « −20 % » / « standard » (espace insécable en français)
+// moment de la mission (champ traduit `when` : « Octobre 2028 », « Printemps »…) — v1.17 : plus d'années
+const campWhen = m => m && m.when? cT(m.when) : '';
 function campPct(k){ if (Math.abs(k-1) < 0.005) return cT(CAMP_UI.same);
   return (k>1? '+' : '−') + Math.round(Math.abs(k-1)*100) + (SETTINGS.lang==='fr'? ' %' : '%'); }
 // ce qui change, en clair, chiffres tirés du modèle (m : mission, pour nommer le niveau d'IA)
@@ -394,7 +396,7 @@ function startMission(i){
   { const d = campDoc(i); if (d) docApply(d, g, c); }                      // doctrine choisie pour cette mission
   prewarmSprites();
   const sc = m.intro? m.intro(g, c) : null;                               // cinématique d'ouverture, sur le terrain
-  if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
+  if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(campWhen(m).toUpperCase()+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
 }
 // fin de mission : cinématique de clôture (si la mission en a une), puis l'écran de fin
 function campEndCine(){
@@ -611,7 +613,7 @@ function drawCampOverlay(){
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.font = uiF(pal,'head',19); ctx.fillStyle = pal.ink;
   ctx.fillText(campTrunc((m.num||'')+' · '+cT(m.title).toUpperCase(), pw-200), px+18, py+24);
-  ctx.font = '10px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText(m.year+' · '+cT(m.place), px+pw-18, py+24); ctx.textAlign = 'left';
+  ctx.font = '10px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText(campWhen(m)+' · '+cT(m.place), px+pw-18, py+24); ctx.textAlign = 'left';
   ctx.fillStyle = pal.ink; ctx.fillRect(px+16, py+38, pw-32, 2);
   const colW = (pw-50)/2, lx = px+18, rx = px+32+colW, top = py+54, bottom = py+ph-52;
   let y = top;
@@ -690,7 +692,7 @@ function campBriefRender(){
   const sheet = el('div', 'cbSheet'); box.appendChild(sheet);
   // en-tête : numéro, titre, lieu
   const head = el('div', 'cbHead'); head.appendChild(el('span', 'cbNo', m.num || ''));
-  const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+m.year));
+  const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+campWhen(m)));
   ht.appendChild(el('div', 'cbTitle', cT(m.title))); ht.appendChild(el('div', 'cbPlace', cT(m.place)));
   head.appendChild(ht); sheet.appendChild(head);
   const body = el('div', 'cbBody'); sheet.appendChild(body);
@@ -774,7 +776,7 @@ function campMap(){
     g.strokeStyle = open? '#c42a1c' : 'rgba(31,27,23,0.45)'; g.lineWidth = 1.8; g.beginPath(); g.arc(x, y, 6, 0, 6.283); g.stroke();
     if (done){ g.beginPath(); g.moveTo(x-4,y-4); g.lineTo(x+4,y+4); g.moveTo(x+4,y-4); g.lineTo(x-4,y+4); g.stroke(); }
     else if (open){ g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill(); }
-    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(['I','II','III','IV','V'][i]+(open? ' · '+CAMPAIGN[i].year : ''), x, y+(i===2||i===3? -11 : 18)); });
+    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(['I','II','III','IV','V'][i]+(open? ' · '+campWhen(CAMPAIGN[i]) : ''), x, y+(i===2||i===3? -11 : 18)); });
   g.strokeStyle = '#1f1b17'; g.lineWidth = 1; g.beginPath(); g.moveTo(456,22); g.lineTo(456,8); g.lineTo(452,14); g.moveTo(456,8); g.lineTo(460,14); g.stroke(); g.fillStyle = '#1f1b17'; g.fillText('N', 456, 32);
   return cv;
 }
@@ -804,7 +806,7 @@ function campRenderMenu(){
     b.appendChild(el('span', 'misNo', m.num || String(i+1)));
     const body = el('span', 'misBody');
     body.appendChild(el('b', null, open? cT(m.title) : '· · ·'));
-    body.appendChild(el('i', null, open? m.year+' · '+cT(m.place) : cT(CAMP_UI.locked)));
+    body.appendChild(el('i', null, open? campWhen(m)+' · '+cT(m.place) : cT(CAMP_UI.locked)));
     b.appendChild(body);
     if (done) b.appendChild(el('span', 'misDone', cT(CAMP_UI.doneTag)+(CAMP_SAVE.bonus[i]? ' ★' : '')+(CAMP_SAVE.best[i]? ' · '+fmtTime(CAMP_SAVE.best[i]) : '')));
     if (open) b.addEventListener('click', ()=>campLaunch(i)); else b.disabled = true;
