@@ -387,7 +387,7 @@ const M2_PL = {
     const pn = [150,108, 330,108, 330,164, 150,164, 150,108];
     inkWash(g, pn, '#efe9db', 0.96); inkLine(g, pn, n, 1.8);
     inkLine(g, [180,96, 180,108], n, 1.2); inkLine(g, [300,96, 300,108], n, 1.2);
-    if (t>0.8){ m2Txt(g, cT(M2_PL.gate1), 240, 123, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate2), 240, 136, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate3), 240, 150, 12.5, null, null, 168);   // le panneau fait 180 de large }
+    if (t>0.8){ m2Txt(g, cT(M2_PL.gate1), 240, 123, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate2), 240, 136, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate3), 240, 150, 12.5, null, null, 168); }   // le panneau fait 180 de large
     g.fillStyle = Math.sin(t*5)>0? '#0b6fa8' : 'rgba(11,111,168,0.22)'; g.beginPath(); g.arc(360, 98, 4.6, 0, 6.283); g.fill();   // voyant bleu
     plateEnd(g, w, h); },
 
