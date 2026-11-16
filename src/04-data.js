@@ -163,7 +163,7 @@ const FAC_TRAITS = {
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
           frozen:0.5, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
           acidUnit:18, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
-          sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:100 },
+          sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
   },
   IA: {
     heroDmg:1.3, heroAura:7,                         // Singularité : dégâts ×1,3, aura de réparation 7·ère/s à 150 px (`hero`)
@@ -177,8 +177,8 @@ const FAC_TRAITS = {
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
           frozen:0.25, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
-          acidUnit:22, acidBld:20, heatUnit:16, heatTired:0.12, heatEco:0.8,
-          sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.5 },
+          acidUnit:16, acidBld:20, heatUnit:12, heatTired:0.12, heatEco:0.9,
+          sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.7 },
   },
 };
 // Recalage de la difficulté de l'escarmouche : les mécaniques d'asymétrie renforcent l'IA (réseau, héros…) ; on baisse d'autant son bonus
