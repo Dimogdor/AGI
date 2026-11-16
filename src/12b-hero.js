@@ -437,7 +437,9 @@ function drawHero(u, x, gy){
   const fac = u.fac, hum = fac==='HUM', era = heroEra(u.era), S = HERO_S[fac][era], R = HERO_RIG[fac];
   const t = u.bob, A0 = ctx.globalAlpha, rich = qFx();
   const mv = Math.abs(u.x-(u._wx!=null? u._wx : u.x)); u._wx = u.x;
-  const moving = mv>0.04, ph = t*1.1;
+  // mémoire de marche (0,12 s) : une image sans déplacement ne stoppe pas la foulée (sinon scintillement marche/arrêt)
+  if (mv>0.04) u._mvT = game.t;
+  const moving = mv>0.04 || (u._mvT!==undefined && game.t-u._mvT<0.12), ph = t*1.1; u._walk = moving;
   let dir = u.side; if (u.hstate==='flee' && moving) dir = -dir;      // repli prudent : il tourne le dos et court vers sa base
   const float = !hum && era===4;                                       // la Singularité cristalline lévite
   const sp = Math.sin(ph), pose = (float || !moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);

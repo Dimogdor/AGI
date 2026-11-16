@@ -402,7 +402,7 @@ function heroFollow(u, side, dt, gap, targets){
   }
   const d = (want-u.x)*side.side;
   const sp = u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*dt;
-  if (d>1) u.x += side.side*Math.min(d, sp);
+  if (d>1e-3) u.x += side.side*Math.min(d, sp);                      // pas de zone morte : le front avance de < 1 px/image
   else if (d<-1) u.x -= side.side*Math.min(-d, sp*1.2);
   u.x = clamp(u.x, 30, WORLD-30);
 }
