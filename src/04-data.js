@@ -156,7 +156,7 @@ const FAC_TRAITS = {
     texD:0.82, texR:0.82,                            // texture de frappe : dégâts ×0,82, cadence ×0,82 (rapide et léger)
     heatGain:0.045, tiredT:3, tiredDmg:0.8, tiredRate:1.3,   // effort : +0,045 de fatigue par coup, 3 s de fatigue à −20 % de dégâts et cadence ×1,3
     heatRec:0.04,                                    // fatigue : récupération /s (0,05 avant : la fatigue ne se déclenchait presque jamais)
-    longevT:600,                                     // M1 : bonus de longévité à plein régime en 10 min (15 min pour la machine)
+    longevT:750,                                     // M1 : bonus de longévité à plein régime en 12,5 min (15 min pour la machine)
     rebuildK:0.5, rebuildT:90,                       // M1 : rebâtir le même type sur une ruine de moins de 90 s coûte −50 %
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
@@ -172,7 +172,7 @@ const FAC_TRAITS = {
     texD:1.22, texR:1.22,                            // texture de frappe : dégâts ×1,22, cadence ×1,22 (lent et lourd)
     heatGain:0.065, tiredT:4, tiredDmg:0.7, tiredRate:1.5,   // effort : +0,065 de chaleur par coup, 4 s de surchauffe à −30 % de dégâts et cadence ×1,5
     hpMul:1.05, heatRec:0.030,                       // +5 % PV de base (« robustesse industrielle ») ; refroidissement /s
-    netStep:0.06, netMax:0.24, netCut:12,            // M1 : +6 % de production par autre bâtiment éco (max +24 %), coupé 12 s si l'un d'eux tombe
+    netStep:0.07, netMax:0.28, netCut:12,            // M1 : +7 % de production par autre bâtiment éco (max +28 %), coupé 12 s si l'un d'eux tombe
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
