@@ -166,7 +166,7 @@ const FAC_TRAITS = {
           sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:100 },
   },
   IA: {
-    heroDmg:1.3, heroAura:6,                         // Singularité : dégâts ×1,3, aura de réparation 6·ère/s à 150 px (`hero`)
+    heroDmg:1.3, heroAura:7,                         // Singularité : dégâts ×1,3, aura de réparation 7·ère/s à 150 px (`hero`)
     infCost:1,
     healBase:40, healLvl:9, healPeriod:1.35,         // ruche : soin 40 + 9 par niveau, 35 % plus lent (elle produit aussi des drones)
     texD:1.22, texR:1.22,                            // texture de frappe : dégâts ×1,22, cadence ×1,22 (lent et lourd)
