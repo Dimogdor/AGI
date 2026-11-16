@@ -8,6 +8,6 @@ Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'au
 |---|---|---|---|---|
 | 1 | Bugs (héros, en ligne, missions, tutoriel) | dev-gameplay | **intégré** | — |
 | 1 | Chronologie 2028 + saisons, ères, G·P·T, noms d'unités civils, Couvre-feu | opus | **intégré** (af158b2) | — |
-| 2 | Graphismes : unités (2a) ; réparateurs, garnisons, bâtiments, barres, épaves, obus, objets de mission, parallaxe (2b) | dev-ui ×2 | en cours | intégrer |
-| 3–5 | Asymétrie des factions (bancs, environnement/économie, unités/moral, pouvoirs/héros) | sonnet/opus | à venir | — |
+| 2 | Graphismes : unités ; réparateurs, garnisons, bâtiments, jauges, épaves, obus, objets de mission, parallaxe | dev-ui ×2 | **intégré** (84b011a), CI verte | restes mineurs pour Fable |
+| 3–5 | Asymétrie des factions (lots 0-1 de FACTIONS.md en cours : bancs, base de mesure, environnement, territoire, bâtiments, économie) | dev-gameplay | coupé par la limite avant d'écrire (rien à sauver) — relancer après 18 h UTC | lots 2-3 ensuite |
 | fin | Audit indépendant + Fable conseiller (lecture seule), corrections, livraison v1.17 | reviewer, fable | à venir | — |
