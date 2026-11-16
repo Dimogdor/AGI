@@ -14,3 +14,8 @@
   par langue). Les audits peuvent signaler des bugs de logique audio, pas de qualité sonore.
 - **2026-11 · Fable en conseiller** : la vérification finale de v1.17 est confiée à un agent Fable en lecture
   seule (il conseille, ne code rien).
+- **2026-11 · Arbitrages v1.17 (auteur)** : ère IV humaine « LES CELLULES », ère IV de la machine « NOUS » ; graphie
+  « G·P·T » partout à l'écran ; ton conservé (Che, bombe H) mais noms d'unités moins « police » (plus
+  résistants / civils), unités renommables selon les ères ; événement « Grève générale » de l'escarmouche
+  renommé « Couvre-feu » ; mission II : quarante mille grévistes ; les répliques réécrites restent MUETTES
+  jusqu'à la refonte audio finale (aucune régénération de voix, test-voice en avertissement).
