@@ -31,10 +31,12 @@ const r = await page.evaluate(() => { document.getElementById('menu').style.disp
   M3_RETRY = true; startMission(0); o.afterOther = M3_RETRY;                                        // autre mission : remise à zéro
   startMission(2); o.m3fresh = game.camp.water;
   M3_RETRY = true; newGame('HUM', 1, false); o.afterSkirmish = M3_RETRY;                            // escarmouche
+  M1_RETRY = true; startMission(0); o.m1keep = M1_RETRY; startMission(1); o.m1after = M1_RETRY;
   M4_RETRY = true; startMission(3); o.m4flag = M4_RETRY; startMission(1); o.m4after = M4_RETRY;
   M3_RETRY = M4_RETRY = true; paused = false; netDisconnect(); game = null; M3_RETRY = M4_RETRY = false; return o; });
 check(r.m3retry===70 && r.m3flag===true, 'mission III relancée après sa défaite : reprise allégée conservée (eau '+r.m3retry+')');
 check(r.afterOther===false && r.m3fresh===40, 'une autre mission remet le drapeau à zéro : la mission III repart normale (eau '+r.m3fresh+')');
+check(r.m1keep===true && r.m1after===false, 'mission I : même règle pour sa reprise allégée');
 check(r.afterSkirmish===false, 'une escarmouche remet le drapeau à zéro');
 check(r.m4flag===true && r.m4after===false, 'mission IV : conservé pour elle-même, remis à zéro par une autre mission');
 
