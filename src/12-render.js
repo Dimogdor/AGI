@@ -2312,59 +2312,171 @@ function blitHumanoid(u, x, gy, kind){
 }
 function drawHuman(u, x, gy){ blitHumanoid(u, x, gy, 'hum'); }
 function drawBot(u, x, gy){ blitHumanoid(u, x, gy, 'bot'); }
-// AÉRONEFS : hélicoptère humain (civil rafistolé → hélico de milice → hélico d'attaque →
-// VTOL → or) et drone quadrirotor GPT. Les rotors restent animés en direct par drawAir.
+// AÉRONEFS (v1.17) : un appareil crédible par ère et par camp, dessiné pour remplir la toile 64×44.
+//  HUM : parapente armé → hélico léger → VTOL furtif à rotors carénés → chasseur plasma → planeur solaire.
+//  IA  : drones — quadrirotor → quadrirotor blindé → drone à turbines carénées → drone hexa à ailerons → drone cristal à anneaux.
+// Les rotors tournent en direct dans drawAir (AIR_ROT : [dx, dy, demi-largeur] en pixels de sprite).
+const AIR_ROT = {
+  HUM: [ null, [[-1.4,-10.6,13]], [[-13,-8.5,7],[9,-8.5,7]], null, null ],
+  IA:  [ [[-17,-8,8.5],[17,-8,8.5],[-10,-11,5.5],[10,-11,5.5]],
+         [[-18,-8,9.5],[18,-8,9.5],[-11,-11.5,6],[11,-11.5,6]],
+         [[-16,-7.2,8],[16,-7.2,8]],
+         [[-17,-9,8],[17,-9,8],[-9,-12.5,5]],
+         [[-16,-8,9],[16,-8,9]] ],
+};
 function airSprite(fac, era, trans){
   const cx=32, cy=22;
   if (fac==='HUM'){
     const acc=FACTIONS.HUM.accent, body=FACTIONS.HUM.eraCols[era];
-    TC.fillStyle=lgrad(cx-26,cy-5,cx-26,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);   // poutre de queue
-    polyP([cx-8,cy-4.5, cx-26,cy-3.4, cx-26,cy-0.6, cx-8,cy+2]); TC.fill();
-    plateT([cx-29.5,cy-11, cx-25,cy-10, cx-23.5,cy+0.5, cx-27.5,cy+0.5], body);                // dérive
-    TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-25.5,cy-4.5,4.4,0,6.283); TC.stroke();  // anticouple
-    TC.fillStyle=acc; TC.fillRect(cx-20,cy-3.6,3,3.4);                                         // bande de faction
-    TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';                            // patins
-    strokeP([cx-10,cy+10, cx+10,cy+10, cx+13,cy+8]); TC.stroke();
-    strokeP([cx-5,cy+5, cx-6,cy+10]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+10]); TC.stroke();
-    if (era>=2){ plateT([cx-6,cy+2, cx+4,cy+2, cx+3,cy+5, cx-5,cy+5], shade(body,0.8));          // aile courte + paniers
-      tubeT(cx-5,cy+6.2,cx+5,cy+6.2,1.7,era===4?'#c8a040':'#2a2e34');
-      TC.fillStyle=era===4?'#fff0c0':'#c84a2a'; TC.beginPath(); TC.arc(cx+5,cy+6.2,1,0,6.283); TC.fill(); }
-    plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body); // fuselage
-    TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);  // verrière
-    polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
-    TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
-    plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));                    // capot moteur
-    TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);                                // mât rotor
-    if (era===0){ TC.fillStyle=shade(body,1.25); TC.fillRect(cx-7,cy-2,5,4);                    // tôle rapiécée
-      TC.fillStyle='rgba(0,0,0,0.4)'; for (const [x,y] of [[cx-6.4,cy-1.4],[cx-2.6,cy-1.4],[cx-6.4,cy+1.4],[cx-2.6,cy+1.4]]) TC.fillRect(x,y,0.8,0.8); }
-    else if (era===1){ tubeT(cx+1,cy+3,cx+10,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6); } // porte + mitrailleuse
-    else if (era>=3){ const gc = era===4? '#fff0c0' : '#ffb35a';
-      TC.fillStyle=era===4?'#fff3c4':shade(body,1.35); TC.fillRect(cx-9,cy-0.6,18,1.2);
-      tubeT(cx+11,cy+4,cx+16,cy+4.6,1,'#2a2e34'); glowDot(cx+11,cy+4,1.4,gc,5); }               // tourelle de nez
-    if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
-  } else {
-    const lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
-    TC.strokeStyle=frame; TC.lineWidth=1.8; TC.lineCap='round';                                // bras porteurs
-    strokeP([cx-10,cy-5.6, cx-3,cy-2]); TC.stroke(); strokeP([cx+10,cy-5.6, cx+3,cy-2]); TC.stroke();
-    for (const sx of [-10,10]){ TC.fillStyle=frame; rrectT(cx+sx-2.6,cy-8,5.2,2.8,1.3); TC.fill(); }
-    for (let i=0;i<Math.min(era,3);i++)                                                        // ailerons d'ère
-      plateT([cx-12+i*3.2,cy-2, cx-10+i*3.2,cy-8-i*0.8, cx-8+i*3.2,cy-7.4-i*0.8, cx-8.6+i*3.2,cy-2], shade(plate,1.1));
-    if (era===4){ polyP([cx-14,cy-1, cx-4,cy-6, cx+10,cy-5, cx+16,cy]); TC.fillStyle=shade(plate,1.35); TC.fill();   // coque de cristal
-      polyP([cx-14,cy-1, cx+16,cy, cx+8,cy+5, cx-6,cy+4]); TC.fillStyle=shade(plate,0.75); TC.fill(); }
-    else plateT([cx-14,cy-1, cx-6,cy-5, cx+8,cy-5, cx+15,cy, cx+8,cy+5, cx-6,cy+4], plate);         // corps effilé
-    TC.fillStyle=frame; polyP([cx-6,cy+2, cx+8,cy+2, cx+8,cy+5, cx-6,cy+4]); TC.fill();
-    tubeT(cx,cy+4.6,cx+10,cy+6.2,1.2,'#3a4048');                                              // canon ventral
-    TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+9,cy-0.6,2.8,0,6.283); TC.fill();         // œil-capteur
-    glowDot(cx+9.4,cy-0.6,1.6,lite,6);
-    if (era>=2){ TC.fillStyle=rgbaC(lite,0.9); TC.fillRect(cx-5,cy-2.6,8,1); }
-    if (trans) bloomT('#39ff6a',7,()=>{ TC.strokeStyle=rgbaC('#39ff6a',0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(cx,cy-11,7,1.8,0,0,6.283); TC.stroke(); });
+    if (era===0){                                                                              // PARAPENTE ARMÉ
+      const P0=[cx-28,cy-4], P2=[cx+28,cy-4], Cu=[cx,cy-27], Cl=[cx,cy-12];
+      const B=(a,c,b,t)=>[(1-t)*(1-t)*a[0]+2*t*(1-t)*c[0]+t*t*b[0], (1-t)*(1-t)*a[1]+2*t*(1-t)*c[1]+t*t*b[1]];
+      TC.strokeStyle='rgba(30,30,36,0.7)'; TC.lineWidth=0.7; TC.lineCap='round';                   // suspentes
+      for (const t of [0.08,0.3,0.5,0.7,0.92]){ const q=B(P0,Cl,P2,t); strokeP([q[0],q[1], cx+1,cy+2]); TC.stroke(); }
+      const N=6;
+      for (let i=0;i<N;i++){ const t0=i/N, t1=(i+1)/N, pts=[];
+        for (let k=0;k<=3;k++){ const q=B(P0,Cu,P2,t0+(t1-t0)*k/3); pts.push(q[0],q[1]); }
+        for (let k=3;k>=0;k--){ const q=B(P0,Cl,P2,t0+(t1-t0)*k/3); pts.push(q[0],q[1]); }
+        plateT(pts, i%2? body : shade(acc,0.85)); }
+      // pilote assis dans son harnais, fusil sur les genoux
+      plateT([cx-4,cy+1, cx+3,cy+1, cx+4,cy+11, cx-4,cy+12], shade(body,0.8));                    // harnais / buste
+      limbT([cx+1,cy+10, cx+8,cy+11, cx+9,cy+17], 3.6, '#2a2420');                                 // jambes pendantes
+      TC.fillStyle='#e2b48a'; TC.beginPath(); TC.arc(cx,cy-2,3.4,0,6.283); TC.fill();               // tête
+      TC.fillStyle='#d8a630'; TC.beginPath(); TC.arc(cx,cy-3,3.9,Math.PI,0); TC.fill();             // casque
+      TC.fillStyle=acc; TC.fillRect(cx-3.6,cy-1.4,7.2,1.3);
+      limbT([cx+1,cy+3, cx+6,cy+6, cx+10,cy+4.5], 2.6, shade(body,0.9));                           // bras
+      TC.fillStyle=lgrad(cx+5,cy+2,cx+5,cy+7,[[0,'#9a6034'],[1,'#5a3418']]); polyP([cx+4,cy+3.6, cx+13,cy+2.6, cx+13,cy+5, cx+5,cy+6.4]); TC.fill();
+      tubeT(cx+12,cy+3.4,cx+27,cy+3.4,1.1,'#4a4e54');                                              // canon
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-0.5,cy+6,2.6,'#ff4a2a'));
+      return;
+    }
+    if (era===1){                                                                              // HÉLICO LÉGER
+      TC.fillStyle=lgrad(cx-27,cy-5,cx-27,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);
+      polyP([cx-8,cy-4.5, cx-27,cy-3.4, cx-27,cy-0.6, cx-8,cy+2]); TC.fill();
+      plateT([cx-30.5,cy-11, cx-26,cy-10, cx-24.5,cy+0.5, cx-28.5,cy+0.5], body);
+      TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-26.5,cy-4.5,4.4,0,6.283); TC.stroke();
+      TC.fillStyle=acc; TC.fillRect(cx-21,cy-3.6,3,3.4);
+      TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';
+      strokeP([cx-10,cy+11, cx+10,cy+11, cx+13,cy+9]); TC.stroke();
+      strokeP([cx-5,cy+5, cx-6,cy+11]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+11]); TC.stroke();
+      plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body);
+      TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);
+      polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
+      TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
+      plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));
+      TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);
+      tubeT(cx+1,cy+3,cx+11,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6);   // porte + mitrailleuse
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
+      return;
+    }
+    if (era===2){                                                                              // VTOL FURTIF (deux rotors carénés)
+      const dark='#2a2e38';
+      plateT([cx-24,cy+0.5, cx-14,cy-4.5, cx+14,cy-5, cx+28,cy+1.5, cx+12,cy+6, cx-14,cy+6], body);   // fuselage à facettes
+      polyP([cx-24,cy+0.5, cx-14,cy-4.5, cx-9,cy-1, cx-20,cy+3]); TC.fillStyle=shade(body,0.6); TC.fill();
+      plateT([cx-27,cy-9, cx-22,cy-8, cx-19,cy+0.5, cx-25,cy+0.5], shade(body,0.85));                  // dérive
+      TC.fillStyle='rgba(20,28,40,0.95)'; polyP([cx+9,cy-4.2, cx+19,cy-0.6, cx+10,cy+1.6, cx+5,cy-1.5]); TC.fill();   // verrière sombre
+      TC.fillStyle='rgba(150,200,240,0.55)'; polyP([cx+10,cy-3.4, cx+15,cy-1.4, cx+10,cy-0.4]); TC.fill();
+      TC.strokeStyle=dark; TC.lineWidth=2; TC.lineCap='round';                                          // mâts de nacelles
+      strokeP([cx-13,cy-2, cx-13,cy-6.5]); TC.stroke(); strokeP([cx+9,cy-3, cx+9,cy-6.5]); TC.stroke();
+      for (const px of [-13,9]){ TC.fillStyle=dark; rrectT(cx+px-8,cy-10.5,16,4.4,2); TC.fill();        // nacelles carénées
+        TC.fillStyle='rgba(180,200,220,0.18)'; TC.fillRect(cx+px-6,cy-9.8,12,1.4); }
+      tubeT(cx+2,cy+6,cx+14,cy+7.2,1.4,'#1c2026'); TC.fillStyle='#c84a2a'; TC.beginPath(); TC.arc(cx+14.4,cy+7.2,1,0,6.283); TC.fill();  // panier d'armes
+      TC.fillStyle=acc; TC.fillRect(cx-6,cy-1.2,5,1.6);
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy+2,2.6,'#ff4a2a'));
+      return;
+    }
+    if (era===3){                                                                              // CHASSEUR PLASMA (aile delta)
+      const glow='#ff9a4a';
+      plateT([cx-6,cy-3, cx-26,cy-14, cx-21,cy-3, cx-6,cy+1], shade(body,0.7));                       // dérive
+      plateT([cx-22,cy-2, cx-14,cy-6, cx+8,cy-5.6, cx+29,cy+1, cx+10,cy+5.4, cx-20,cy+4.4], body);    // fuselage effilé
+      plateT([cx-8,cy+3, cx+12,cy+3.4, cx-4,cy+12, cx-18,cy+9], shade(body,0.82));                    // aile delta
+      TC.fillStyle='rgba(18,22,32,0.96)'; polyP([cx+4,cy-5.4, cx+14,cy-4, cx+18,cy-0.6, cx+4,cy-0.8]); TC.fill();   // verrière
+      TC.fillStyle='rgba(255,255,255,0.35)'; polyP([cx+6,cy-4.6, cx+11,cy-3.8, cx+7,cy-1.6]); TC.fill();
+      TC.fillStyle='#1c2026'; rrectT(cx-8,cy+6,15,3.4,1.6); TC.fill();                                 // pod à plasma
+      glowDot(cx+7.4,cy+7.7,1.8,glow,7);
+      bloomT(glow,9,()=>{ TC.fillStyle=glow; polyP([cx-22,cy-1.4, cx-31,cy+1, cx-22,cy+3.4]); TC.fill(); });   // flamme de tuyère
+      TC.fillStyle=acc; TC.fillRect(cx-14,cy-2,6,1.5);
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-9,cy+0.5,2.4,'#ff4a2a'));
+      return;
+    }
+    // ère 4 : PLANEUR SOLAIRE — nacelle d'or sous une grande aile à cellules
+    solarT([cx-27,cy-1, cx-18,cy-12, cx+24,cy-12, cx+30,cy-1]);
+    plateT([cx-27,cy-1, cx+30,cy-1, cx+29,cy+1.6, cx-26,cy+1.6], '#c8a040', false);                   // tranche de l'aile
+    plateT([cx-9,cy+1.4, cx+12,cy+1.4, cx+18,cy+6, cx+6,cy+10, cx-9,cy+8], body);                      // nacelle
+    TC.fillStyle='rgba(20,26,40,0.95)'; polyP([cx+8,cy+2.4, cx+15,cy+5.4, cx+7,cy+7.4, cx+3,cy+3.6]); TC.fill();
+    TC.fillStyle='rgba(255,255,255,0.4)'; polyP([cx+8,cy+3.4, cx+12,cy+5, cx+8,cy+5.6]); TC.fill();
+    TC.strokeStyle='#c8a040'; TC.lineWidth=1.6; TC.lineCap='round'; strokeP([cx-8,cy+6, cx-24,cy+3, cx-30,cy-3]); TC.stroke();   // poutre de queue
+    plateT([cx-31,cy-8, cx-28,cy-8, cx-27,cy+1, cx-31,cy+1], shade(body,0.9));
+    tubeT(cx+2,cy+10,cx+14,cy+10.4,1.2,'#2e2a38'); glowDot(cx+14.4,cy+10.4,1.2,'#fff0c0',5);           // nacelle d'arme sombre
+    if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+5.5,2.4,'#ff4a2a'));
+    return;
   }
+  // ---- drones G·P·T : même famille que le gremlin (corps coque, œil-capteur, bras porte-rotors)
+  const lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
+  const rotor=(x,y,w,far)=>{                                                                       // moyeu + garde de rotor
+    TC.fillStyle=far? shade(frame,0.75) : frame; rrectT(x-1.2,y-0.2,2.4,4,1); TC.fill();
+    TC.strokeStyle=far? 'rgba(120,130,145,0.5)':'rgba(170,180,195,0.6)'; TC.lineWidth=0.8; TC.beginPath(); TC.ellipse(x,y,w,w*0.26,0,0,6.283); TC.stroke(); };
+  const eye=(x,y,r)=>{ TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(x,y,r+1.2,0,6.283); TC.fill(); glowDot(x+0.3,y,r,lite,6); };
+  if (era<=1){                                                                                      // QUADRIROTOR (0) / blindé armé (1)
+    TC.strokeStyle=frame; TC.lineWidth=2; TC.lineCap='round';
+    strokeP([cx-5,cy-1, cx-10,cy-8.5, cx-17,cy-5.5]); TC.stroke(); strokeP([cx+5,cy-1, cx+10,cy-8.5, cx+17,cy-5.5]); TC.stroke();  // bras lointains
+    for (const [x,y,w] of [[-10,-11,5.5],[10,-11,5.5]]) rotor(cx+x,cy+y+0.6,w,true);
+    TC.strokeStyle=shade(frame,1.15); strokeP([cx-5,cy+1, cx-17,cy-5]); TC.stroke(); strokeP([cx+5,cy+1, cx+17,cy-5]); TC.stroke();
+    for (const x of [-17,17]) rotor(cx+x,cy-8,8.5,false);
+    const bw = era===0? 8.5 : 10.5;
+    plateT([cx-bw,cy-3, cx-bw+3,cy-6.5, cx+bw-3,cy-6.5, cx+bw,cy-3, cx+bw-1,cy+4, cx-bw+2,cy+5], plate);          // coque
+    TC.fillStyle=frame; polyP([cx-bw+2,cy+1.5, cx+bw-1,cy+1.5, cx+bw-1,cy+4.2, cx-bw+2,cy+5]); TC.fill();
+    if (era===1){ TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.8; strokeP([cx-bw+2,cy-3.4, cx+bw-2,cy-3.4]); TC.stroke();
+      for (const sx of [-1,1]){ tubeT(cx+sx*13,cy+2.5,cx+sx*13+9,cy+3.2,1.5,'#3a4048'); TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(cx+sx*13+9,cy+3.2,1.4,0,6.283); TC.fill(); }  // pods d'armes
+      TC.strokeStyle=frame; TC.lineWidth=1.4; strokeP([cx-6,cy+4, cx-8,cy+8, cx-13,cy+8.5]); TC.stroke(); strokeP([cx+6,cy+4, cx+8,cy+8, cx+13,cy+8.5]); TC.stroke(); }   // patins
+    else { TC.strokeStyle=frame; TC.lineWidth=1.2; strokeP([cx-5,cy+5, cx-6.5,cy+8, cx-10,cy+8]); TC.stroke(); strokeP([cx+5,cy+5, cx+6.5,cy+8, cx+10,cy+8]); TC.stroke(); }
+    eye(cx+bw-3,cy-0.6,1.9);
+    glowDot(cx-bw+3,cy-4.4,0.9,'#ff5a4a',3);
+    tubeT(cx+1,cy+5.6,cx+11,cy+6.4,1.2,'#3a4048');                                                // canon ventral
+  } else if (era===2){                                                                              // DRONE À TURBINES CARÉNÉES
+    for (const sx of [-1,1]){ const x=cx+sx*16;
+      TC.fillStyle=frame; rrectT(x-9,cy-8.8,18,6.6,2.6); TC.fill();                                  // carénage
+      TC.fillStyle='#0c1218'; rrectT(x-7.2,cy-7.8,14.4,3.2,1.4); TC.fill();
+      TC.fillStyle=shade(plate,1.15); rrectT(x-9,cy-9.4,18,1.6,0.8); TC.fill();
+      TC.strokeStyle=frame; TC.lineWidth=2; TC.lineCap='round'; strokeP([x-sx*5,cy-2, x-sx*10,cy+1]); TC.stroke(); }
+    plateT([cx-11,cy-2, cx-4,cy-5, cx+8,cy-5, cx+14,cy, cx+8,cy+5.4, cx-5,cy+5], plate);            // corps losange
+    TC.strokeStyle='rgba(0,0,0,0.32)'; TC.lineWidth=0.9; strokeP([cx-8,cy-0.4, cx+11,cy-0.4]); TC.stroke();
+    TC.fillStyle=rgbaC(lite,0.85); TC.fillRect(cx-5,cy+2,9,1);
+    eye(cx+9,cy-1.2,1.8);
+    tubeT(cx+1,cy+5,cx+14,cy+6.4,1.4,'#3a4048'); glowDot(cx+14.4,cy+6.4,1.1,lite,5);
+  } else if (era===3){                                                                              // DRONE HEXA À AILERONS
+    TC.strokeStyle=frame; TC.lineWidth=1.8; TC.lineCap='round';
+    strokeP([cx-3,cy-2, cx-9,cy-12, cx-9,cy-9.5]); TC.stroke();
+    rotor(cx-9,cy-12.5,5,true);
+    for (const x of [-17,17]){ TC.strokeStyle=frame; TC.lineWidth=2.2; strokeP([cx+x*0.3,cy-1.4, cx+x*0.8,cy-5]); TC.stroke();
+      TC.fillStyle=frame; rrectT(cx+x-8.6,cy-10.4,17.2,5.4,2.4); TC.fill();
+      TC.fillStyle='#0c1218'; rrectT(cx+x-7,cy-9.4,14,2.6,1.2); TC.fill();
+      bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(cx+x-7,cy-5.6,14,0.9); }); }
+    for (let i=0;i<3;i++) plateT([cx-14+i*3.4,cy-1, cx-12.4+i*3.4,cy-8.6-i*0.6, cx-9.8+i*3.4,cy-8.2-i*0.6, cx-10.4+i*3.4,cy-1], shade(plate,1.12));   // ailerons dorsaux
+    plateT([cx-15,cy-1, cx-7,cy-5, cx+9,cy-5, cx+17,cy, cx+9,cy+5.4, cx-7,cy+4.6], plate);
+    TC.fillStyle=frame; polyP([cx-7,cy+2, cx+9,cy+2, cx+9,cy+5.4, cx-7,cy+4.6]); TC.fill();
+    bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(cx-8,cy-2.4,17,1); });
+    eye(cx+11,cy-0.8,1.9);
+    for (const sx of [-1,1]) tubeT(cx+sx*6,cy+5.4,cx+sx*6+9,cy+6.6,1.2,'#3a4048');
+  } else {                                                                                          // DRONE CRISTAL À ANNEAUX D'ÉNERGIE
+    for (const sx of [-1,1]){ const x=cx+sx*16;
+      bloomT(lite,7,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=1.6; TC.beginPath(); TC.ellipse(x,cy-8,9,2.8,0,0,6.283); TC.stroke(); });
+      for (const dy of [-1,1]){ TC.fillStyle=shade(plate,1.25); polyP([x-1.4,cy-8+dy*4.6, x,cy-8+dy*2.4, x+1.4,cy-8+dy*4.6, x,cy-8+dy*6.6]); TC.fill(); }
+      TC.strokeStyle=rgbaC(lite,0.5); TC.lineWidth=1; strokeP([cx+sx*7,cy-1, x-sx*4,cy-6.4]); TC.stroke(); }
+    polyP([cx-14,cy-1, cx-3,cy-9, cx+10,cy-8, cx+17,cy]); TC.fillStyle=shade(plate,1.35); TC.fill();      // coque de cristal
+    polyP([cx-14,cy-1, cx+17,cy, cx+8,cy+6.4, cx-5,cy+5.4]); TC.fillStyle=shade(plate,0.75); TC.fill();
+    TC.strokeStyle=rgbaC(lite,0.7); TC.lineWidth=0.8; strokeP([cx-12,cy-1, cx+2,cy-6, cx+16,cy-0.4]); TC.stroke();
+    TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+10,cy-1.2,2.8,0,6.283); TC.fill(); glowDot(cx+10.4,cy-1.2,1.8,lite,7);
+    tubeT(cx,cy+5.4,cx+11,cy+7,1.2,'#3a4048');
+    for (const [x,y] of [[cx-20,cy+6],[cx+22,cy+5]]){ TC.fillStyle=shade(plate,1.2); polyP([x,y-2.2, x+1.4,y, x,y+2.2, x-1.4,y]); TC.fill(); }
+  }
+  if (trans) bloomT('#39ff6a',7,()=>{ TC.strokeStyle=rgbaC('#39ff6a',0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(cx,cy-14,7,1.8,0,0,6.283); TC.stroke(); });
 }
 function drawAir(u, x, gy){
   const fac=u.fac, era=u.era, t=u.bob, dir=u.side, acc=FACTIONS[fac].accent;
   const spr = sprite('AIR'+fac+era+(u.trans?'T':''), 64, 44, ()=>airSprite(fac,era,u.trans));
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
-  const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
+  const AS = 1.75;                // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
   // ASSIETTE (v1.14) : l'appareil pique du nez quand il avance, se cabre au tir, se redresse en vol stationnaire
   const mvA = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
@@ -2375,23 +2487,29 @@ function drawAir(u, x, gy){
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
-  ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2.5;
-  if (fac==='HUM'){ const r=Math.abs(Math.sin(t*9))*20; ctx.beginPath(); ctx.moveTo(x-r,y-16); ctx.lineTo(x+r,y-16); ctx.stroke(); }
-  else { for(const sx2 of[-15,15]){ const r=Math.abs(Math.sin(t*10+sx2))*9; ctx.beginPath(); ctx.moveTo(x+sx2-r,y-10); ctx.lineTo(x+sx2+r,y-10); ctx.stroke(); } }
+  ctx.strokeStyle=rgbaC(fac==='HUM'? '#cfd6e0' : (era===4? FACTIONS.IA.eraCols[4] : acc),0.5); ctx.lineWidth=2.5;
+  const rots = AIR_ROT[fac][era];
+  if (rots) rots.forEach((R,i)=>{ const r=Math.abs(Math.sin(t*(fac==='HUM'?9:10)+i*1.7))*R[2]*AS; const rx=x+dir*R[0]*AS, ry=y+R[1]*AS;
+    ctx.beginPath(); ctx.moveTo(rx-r,ry); ctx.lineTo(rx+r,ry); ctx.stroke(); });
   ctx.restore();
   if (u.atkT>u.rate-0.14) attackFX(u, x, y);
 }
 // GREMLIN (essaim GPT) : petit robot-araignée mis en cache (avant : capsule néon redessinée
 // avec halos en direct à chaque frame)
 function gremlinSprite(era){
-  const cx=14, cy=12, lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
-  TC.strokeStyle='#4a525c'; TC.lineWidth=0.9; TC.lineCap='round'; TC.lineJoin='round';
-  for (const s of [-1,1]) for (let i=0;i<3;i++){ const x0=cx+s*(1+i*1.6), kx=cx+s*(7+i*1.8), fx=cx+s*(5+i*2.6);
-    strokeP([x0,cy+1, kx,cy-2+i, fx,cy+10]); TC.stroke(); }
-  TC.fillStyle=lgrad(cx-7,cy-6,cx+7,cy+5,[[0,shade(plate,1.45)],[0.5,plate],[1,shade(plate,0.55)]]);
-  TC.beginPath(); TC.ellipse(cx,cy,7.4,5.6,0,0,6.283); TC.fill();
-  TC.fillStyle='#0a1016'; rrectT(cx+1,cy-2.6,6,3.4,1.6); TC.fill();
-  glowDot(cx+3,cy-1,1.2,lite,4); glowDot(cx+5.6,cy-1,1.2,lite,4);
+  // mini-drone de la même famille que les aéronefs : coque, œil-capteur, deux petits rotors carénés sur bras, pattes d'atterrissage
+  const cx=14, cy=13, lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
+  TC.strokeStyle=frame; TC.lineWidth=1.3; TC.lineCap='round'; TC.lineJoin='round';
+  for (const s of [-1,1]){ strokeP([cx+s*2,cy+2.5, cx+s*6,cy+6.5, cx+s*9,cy+10.5]); TC.stroke();       // pattes
+    strokeP([cx+s*3.5,cy+3, cx+s*3,cy+7, cx+s*4.8,cy+10.5]); TC.stroke();
+    strokeP([cx+s*2,cy-2, cx+s*8,cy-6]); TC.stroke();                                                    // bras porte-rotor
+    TC.fillStyle=frame; TC.fillRect(cx+s*8-0.6,cy-7.4,1.2,2.2);
+    TC.strokeStyle='rgba(170,180,195,0.75)'; TC.lineWidth=0.8; TC.beginPath(); TC.ellipse(cx+s*8,cy-7.6,4.4,1.2,0,0,6.283); TC.stroke();
+    TC.strokeStyle=frame; TC.lineWidth=1.3; }
+  plateT([cx-7,cy, cx-5,cy-4.6, cx+5,cy-4.6, cx+7.4,cy, cx+6,cy+4, cx-5,cy+4.4], plate);
+  TC.fillStyle=frame; polyP([cx-5,cy+2, cx+6,cy+2, cx+6,cy+4, cx-5,cy+4.4]); TC.fill();
+  TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+3.4,cy-0.6,2.5,0,6.283); TC.fill();
+  glowDot(cx+3.6,cy-0.6,1.4,lite,5);
 }
 // HÉROS : voir 12b-hero.js (un personnage par ère, en couches animées)
 // PERF : PRÉCHAUFFE de tous les sprites d'unités possibles (2 factions × 5 rôles au sol × 5 ères
