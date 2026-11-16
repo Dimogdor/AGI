@@ -22,13 +22,12 @@ function render(dt){
   for (const u of game.p.units) drawUnit(u);
   drawPointFlags();                                          // fanions ⚑ des ordres de position (13-hud.js)
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
-  if (shots.length){ ctx.lineCap='round';
+  if (shots.length){
     if (qFx()){ ctx.save(); ctx.globalCompositeOperation='lighter';   // halo additif (sans shadowBlur — coûteux)
-      for (const s of shots){ ctx.globalAlpha=(1-s.t/s.dur)*0.4; ctx.strokeStyle=FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=5;
+      for (const s of shots){ ctx.globalAlpha=(1-s.t/s.dur)*0.3; ctx.strokeStyle=FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=4; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(s.x-camX,s.y); ctx.lineTo(s.tx-camX,s.ty); ctx.stroke(); }
       ctx.restore(); }
-    for (const s of shots){ ctx.globalAlpha=1-s.t/s.dur; ctx.strokeStyle=FACTIONS[s.fac].eraCols[s.era]; ctx.lineWidth=2.2;
-      ctx.beginPath(); ctx.moveTo(s.x-camX,s.y); ctx.lineTo(s.tx-camX,s.ty); ctx.stroke(); }
+    for (const s of shots) drawShotFx(s);
     ctx.globalAlpha=1;
   }
   // OBUS (v1.8) : vrai projectile sombre orienté selon sa trajectoire, ogive incandescente de
@@ -45,13 +44,9 @@ function render(dt){
     if (projGlow && pr._wx!=null && pr._wx!==wx2 && particles.length<500 && Math.random()<0.55)
       particles.push({k:'m', x:wx2, y:py, vx:(Math.random()-0.5)*6, vy:-6, g:-2, dr:1, life:0.55+Math.random()*0.3, t:0, r:2.4+Math.random()*1.6});
     pr._wx = wx2; pr._wy = py;
-    ctx.save(); ctx.translate(px,py); ctx.rotate(ang);
-    ctx.fillStyle='#2c2a28'; ctx.beginPath(); ctx.ellipse(0,0,5.4,2.7,0,0,6.283); ctx.fill();
-    ctx.fillStyle='#5a5652'; ctx.fillRect(-5.4,-0.8,3,1.6);
-    ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(3.6,0,2.2,1.9,0,0,6.283); ctx.fill();
-    ctx.restore();
+    drawShell(pr, px, py, ang, col);
     if (projGlow){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=rgbaC(col,0.3);
-      ctx.beginPath(); ctx.arc(px+Math.cos(ang)*3.6, py+Math.sin(ang)*3.6, 6, 0, 6.28); ctx.fill(); ctx.restore(); }
+      ctx.beginPath(); ctx.arc(px+Math.cos(ang)*6, py+Math.sin(ang)*6, 8, 0, 6.28); ctx.fill(); ctx.restore(); }
   }
   // RAGDOLLS DE MORT (par rôle) : bascule au sol · chute en vrille (volants) · effondrement (tanks)
   for (const d of deaths){

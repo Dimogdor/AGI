@@ -328,3 +328,113 @@ function iaWell(era, lvl, h, cx, G){
   tubeT(cx+7,G-h*0.5-3,cx+13,G-h*0.5-3,1.2,frame); tubeT(cx+13,G-h*0.5-3,cx+13,G,1.2,frame);
   bSign(cx-15,G-h*0.5-2,8,8,'#e8f4ff','#0b6fa8','drop');
 }
+
+/* ====== ÉPAVES : débris lisibles par camp (casque + arme au sol / châssis démonté) ====== */
+// repère : sol en y = 24, centre en x = 28 ; l'épave regarde vers +x (retournée selon le camp au tracé)
+function wreckSprite(fac, role, era){
+  return sprite('WRK'+fac+role+era, 56, 28, c=>{
+    const E = clamp(era|0,0,4), heavy = role==='tank' || role==='siege';
+    c.fillStyle = 'rgba(14,10,12,0.3)'; c.beginPath(); c.ellipse(28, 24.4, heavy? 22 : 17, 3.2, 0, 0, 6.283); c.fill();   // tache de suie
+    if (fac==='HUM'){
+      const col = shade(FACTIONS.HUM.eraCols[E], 0.7), hat = ['#2a2630','#c8302a','#5a6b3f','#d8dce0','#e8dcc0'][E];
+      dkP(c, [14,24, 17,17, 25,15.4, 34,18, 38,24], col);                                       // étoffe / gilet à terre
+      dkR(c, 20, 19.6, 8, 1.2, 'rgba(0,0,0,0.25)');
+      c.fillStyle = hat; c.beginPath(); c.arc(32, 22.6, 5.2, Math.PI, 0); c.fill(); dkR(c, 25.8, 21.8, 12.4, 2.2, shade(hat,0.78));   // casque renversé
+      dkR(c, 10, 21.4, 7, 2.8, '#2a2220'); dkR(c, 8.4, 20.2, 3, 4, '#2a2220');                    // botte
+      if (role==='siege'){ dkL(c, 34, 15, 52, 22, 4, '#5a5a52'); dkR(c, 49, 19.6, 3.6, 4.6, '#3a3a34'); dkC(c, 38, 24, 2.2, '#2a2a28'); }
+      else if (role==='tank'){ dkP(c, [34,12, 46,14, 46,23, 41,25, 34,22], E>=3? '#8aa4b4' : '#7a8088'); dkR(c, 39, 15, 1.8, 7, 'rgba(0,0,0,0.3)'); }
+      else { const gun = E===0? '#7a5a38' : E<=2? '#24242a' : E===3? '#3a4a58' : '#b8a886';
+        dkL(c, 36, 23.4, 53, 21.2, 2.6, gun); dkR(c, 41, 21, 3, 3, shade(gun,0.8)); if (E===3) dkR(c, 49, 20.6, 4, 1, '#40c8ee'); }
+      if (role==='melee' && E%2===0){ dkL(c, 18, 14, 18, 8, 1.2, '#4a4a4e'); dkP(c, [18,8, 24,10, 18,12], '#c8302a'); }   // fanion de fortune planté
+    } else {
+      const lite = FACTIONS.IA.eraCols[E], plate = iaPlate(E), dk = '#14181e';
+      dkP(c, [12,24, 14,15, 28,12, 40,16, 42,24], plate);                                         // torse éventré
+      dkR(c, 18, 17, 14, 4, dk); dkR(c, 20, 18, 10, 1, lite); dkL(c, 22, 13, 26, 18, 1.2, '#e8c84a'); dkL(c, 30, 13, 27, 19, 1.2, '#d8402a');   // câbles
+      dkC(c, 46, 21, 4.2, plate); dkC(c, 46.6, 20.6, 2.2, dk); dkC(c, 47, 20.4, 1, '#3a4a58');     // tête détachée, œil éteint
+      dkL(c, 3, 22, 12, 19, 2.8, '#3a424a'); dkR(c, 1.4, 21, 3, 3, plate);                         // membre arraché
+      dkC(c, 33, 23.4, 2.6, '#5a626a'); dkC(c, 33, 23.4, 1, dk);                                  // pignon
+      if (heavy){ dkP(c, [4,24, 6,20, 16,20, 18,24], shade(plate,0.8)); dkL(c, 38, 15, 54, 10, 4, '#3a424a'); }
+      if (E>=2) glowDot(c, 31, 19.5, 0.9, lite, 3);
+    }
+  });
+}
+const lhashW = (role,E) => lhash(role.length*3+E, 7);
+function drawWreck(w, x, gy, alpha){
+  const heavy = w.role==='tank' || w.role==='siege', S = wreckSprite(w.fac, w.role, clamp(w.era|0,0,4));
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, gy+1); ctx.scale(w.side*(heavy? 1.25 : 1), heavy? 1.25 : 1);
+  ctx.drawImage(S, -28, -24, 56, 28); ctx.restore();
+}
+
+/* ====== OBUS et TRACEURS ====== */
+// obus à ailettes : corps cerclé d'encre, ogive de l'ère, queue stabilisatrice. Repère : centre (14,8), pointe vers +x.
+function shellSprite(fac, era){
+  return sprite('SHL'+fac+era, 28, 16, c=>{
+    const col = FACTIONS[fac].eraCols[clamp(era|0,0,4)];
+    if (fac==='HUM'){
+      dkP(c, [3,8, 1,2.4, 6.4,5.2, 8,5.2, 8,10.8, 6.4,10.8, 1,13.6], '#4a4e54');             // ailettes
+      dkP(c, [6,4.4, 18,4.4, 24,8, 18,11.6, 6,11.6], '#6a7258');                              // corps
+      dkR(c, 11, 4.4, 2, 7.2, '#c8a43a'); dkP(c, [18,4.4, 24,8, 18,11.6], col);               // bague de cuivre, ogive
+    } else {
+      dkP(c, [4,8, 2,3, 8,6, 8,10, 2,13], '#2a3038');
+      dkP(c, [6,4.6, 18,4.2, 25,8, 18,11.8, 6,11.4], '#3a4250');
+      dkR(c, 9, 7.2, 8, 1.6, col); dkP(c, [18,4.2, 25,8, 18,11.8], col); glowDot(c, 21.6, 8, 1.2, '#fff', 3);
+    }
+  });
+}
+// fumée de sillage : disques clairs cerclés d'une ombre sombre (contraste sur ciel clair comme sur sol sombre)
+function drawShellTrail(pr, px, py){
+  const tr = pr._tr || (pr._tr = []);
+  const last = tr[tr.length-1];
+  if (!last || Math.hypot(last[0]-px, last[1]-py)>3.2){ tr.push([px,py]); if (tr.length>9) tr.shift(); }
+  ctx.save();
+  for (let i=0;i<tr.length;i++){ const f = (i+1)/tr.length, r = 1.8+(1-f)*3.2, a = 0.2+0.55*f;
+    ctx.globalAlpha = a*0.55; ctx.fillStyle = 'rgba(30,26,28,1)'; ctx.beginPath(); ctx.arc(tr[i][0], tr[i][1]+0.7, r+1, 0, 6.283); ctx.fill();
+    ctx.globalAlpha = a; ctx.fillStyle = '#ece7de'; ctx.beginPath(); ctx.arc(tr[i][0], tr[i][1], r, 0, 6.283); ctx.fill(); }
+  ctx.restore();
+}
+function drawShell(pr, px, py, ang, col){
+  drawShellTrail(pr, px, py);
+  const S = shellSprite(pr.fac, pr.era);
+  ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.drawImage(S, -14, -8, 28, 16); ctx.restore();
+}
+// tir d'unité : HUM = balle traçante (trait qui file) ; machine = rayon fin à noyau blanc, impulsions et rond d'impact
+function drawShotFx(s, aa){
+  const col = FACTIONS[s.fac].eraCols[s.era], k = clamp(s.t/s.dur, 0, 1), x0 = s.x-camX, x1 = s.tx-camX, y0 = s.y, y1 = s.ty;
+  ctx.save(); ctx.lineCap = 'round';
+  if (s.fac==='HUM'){
+    const h = Math.min(1, k*1.7), tl = Math.max(0, h-0.32), hx = x0+(x1-x0)*h, hy = y0+(y1-y0)*h, tx = x0+(x1-x0)*tl, ty = y0+(y1-y0)*tl;
+    const g = ctx.createLinearGradient(tx, ty, hx, hy); g.addColorStop(0, rgbaC(col,0)); g.addColorStop(1, rgbaC(col,0.95));
+    ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(hx,hy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,250,224,0.95)'; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(x0+(x1-x0)*Math.max(tl,h-0.12), y0+(y1-y0)*Math.max(tl,h-0.12)); ctx.lineTo(hx,hy); ctx.stroke();
+    if (k>0.5){ ctx.fillStyle = rgbaC(col, 0.8*(1-k)); ctx.beginPath(); ctx.arc(x1, y1, 2+4*(k-0.5), 0, 6.283); ctx.fill(); }
+  } else {
+    ctx.globalAlpha = 1-k*0.7;
+    ctx.strokeStyle = rgbaC(col,0.9); ctx.lineWidth = 1.8; ctx.setLineDash([6,3]); ctx.lineDashOffset = -k*60; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(240,252,255,0.95)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    ctx.strokeStyle = rgbaC(col, 0.7*(1-k)); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(x1, y1, 2+8*k, 2+8*k, 0, 0, 6.283); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ====== FANIONS (point d'eau, ralliement) : cuits, avec contour d'encre, 4 phases d'ondulation ====== */
+function flagSprite(col, ph, big){
+  const W = big? 36 : 30, H = big? 54 : 44;
+  return sprite('FLG'+col+ph+(big?'B':''), W, H, c=>{
+    const k = big? 1.2 : 1, top = 3, wv = [0, 2.2, 0, -2.2][ph];
+    dkR(c, 5, top, 2.4*k, H-top-2, '#5a4a3a');                                                // hampe
+    dkC(c, 6.2, top, 2.2*k, '#c8a43a');                                                       // pommeau
+    c.beginPath(); c.moveTo(7.4, top+2); c.bezierCurveTo(12*k, top+0+wv, 18*k, top+4-wv, 24*k, top+4+wv); c.lineTo(23*k, top+11*k+wv*0.5);
+    c.bezierCurveTo(17*k, top+11*k-wv, 12*k, top+13*k+wv, 7.4, top+13*k); c.closePath(); c.fillStyle = col; c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.28)'; c.fillRect(8, top+4.4, 14*k, 1.4);                 // liseré clair
+    c.fillStyle = 'rgba(0,0,0,0.22)'; c.beginPath(); c.moveTo(7.4, top+9*k); c.lineTo(22*k, top+8.4*k+wv*0.5); c.lineTo(23*k, top+11*k+wv*0.5); c.lineTo(7.4, top+13*k); c.fill();
+  });
+}
+function drawFlag(x, gy, t, col, big, hh){
+  const ph = Math.floor(t*5)%4, S = flagSprite(col, ph, big), H = big? 54 : 44;
+  ctx.drawImage(S, x-6.2, gy-(hh!=null? hh : H-4)-1, big? 36 : 30, H);
+}
+// étiquette peinte : police de libellé du jeu, cerclée d'encre
+function inkLabel(txt, x, y, px, col){
+  ctx.save(); ctx.font = HF(px||11); ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(20,14,12,0.85)'; ctx.lineWidth = Math.max(2.4, (px||11)*0.28);
+  ctx.strokeText(txt, x, y); ctx.fillStyle = col || '#f4ecd8'; ctx.fillText(txt, x, y); ctx.restore();
+}

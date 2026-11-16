@@ -1560,13 +1560,11 @@ function drawNode(n){
   ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
   // mât + drapeau
   const owner=n.owner, col=owner?(owner==='p'?game.p.fac.accent:game.e.fac.accent):'#9a8a78';
-  ctx.strokeStyle='#5a4a3a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,y-2); ctx.lineTo(x,y-46); ctx.stroke();
-  const wave=Math.sin(t*3)*3; ctx.fillStyle=col;
-  ctx.beginPath(); ctx.moveTo(x,y-46); ctx.lineTo(x+22,y-40+wave); ctx.lineTo(x,y-32); ctx.closePath(); ctx.fill();
+  drawFlag(x, y-2, t, col, true, 50);
   if (Math.abs(n.prog)<1 && n.prog!==0){
     ctx.fillStyle='#000a'; ctx.fillRect(x-22,y-58,44,5);
     ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(x-22,y-58,44*Math.abs(n.prog),5); }
-  if (n.center){ ctx.font=HF(11); ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillText(tr('oasis'), x, y-82); }
+  if (n.center) inkLabel(tr('oasis'), x, y-82, 11, '#f4ecd8');
 }
 
 /* ====== ÉCLAIRAGE & MATIÈRE — relief 2.5D sculpté + accents néon ====== */
@@ -2199,16 +2197,7 @@ function unitShadow(kind, fac, role, era, x, gy, dir){
 function drawWrecks(vw){
   for (const w of wrecks){
     const x = w.x-camX; if (x<-60||x>vw+60) continue;
-    const kind = w.fac==='HUM'? 'hum':'bot';
-    const sp = fxSprite('WRK'+kind+w.role+w.era, USP.W, USP.H, g => {
-      g.drawImage(unitPart(kind,w.fac,w.role,w.era,false,'front'), 0, 0, USP.W, USP.H);
-      g.drawImage(unitPart(kind,w.fac,w.role,w.era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H);
-      g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(22,17,20,0.66)'; g.fillRect(0,0,USP.W,USP.H); });
-    ctx.save(); ctx.globalAlpha = clamp((w.t-0.3)/0.45, 0, 1)*clamp((50-w.t)/8, 0, 1)*0.92;
-    ctx.translate(x, gY(w.x)+1);
-    if (w.role==='tank'||w.role==='siege'){ ctx.rotate(-w.side*0.35); ctx.scale(w.side, 0.5); }
-    else { ctx.rotate(-w.side*1.45); ctx.scale(w.side, 1); }
-    ctx.drawImage(sp, -USP.cx, -USP.foot, USP.W, USP.H); ctx.restore();
+    drawWreck(w, x, gY(w.x), clamp((w.t-0.3)/0.45, 0, 1)*clamp((50-w.t)/8, 0, 1)*0.95);
   }
 }
 // PREMIER PLAN EN PARALLAXE (v1.13) : herbes, barbelés et gravats sombres, très bas, qui défilent
@@ -2499,11 +2488,7 @@ function drawRally(r){
   const ph=(r.t*1.4)%1;                               // onde de choc au sol
   ctx.strokeStyle=rgbaC('#ffd34a',0.7*(1-ph)); ctx.lineWidth=2;
   ctx.beginPath(); ctx.ellipse(x,gy+2,8+ph*26,(8+ph*26)*0.34,0,0,6.283); ctx.stroke();
-  ctx.strokeStyle='#e8d8a0'; ctx.lineWidth=2.4; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(x,gy+2); ctx.lineTo(x,fy); ctx.stroke();
-  const wv=Math.sin(r.t*9)*2;
-  ctx.fillStyle='#ffd34a';
-  ctx.beginPath(); ctx.moveTo(x,fy); ctx.lineTo(x+14,fy+4+wv); ctx.lineTo(x,fy+9); ctx.closePath(); ctx.fill();
+  drawFlag(x, gy+2, r.t, '#ffd34a', false, 40+(1-drop)*34);
   ctx.restore();
 }
 /* ---------- dégâts : fumée & flammes sur bâtiments/bases amochés ---------- */
