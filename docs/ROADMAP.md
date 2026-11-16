@@ -4,7 +4,7 @@
 - v1.9 → v1.14 : jeu de base, en ligne, tutoriel, menus « tract », graphismes, campagne courte.
 - v1.15 : campagne en 5 lieux avec cinématiques, doctrines, héros refaits.
 
-## En cours — v1.16 (retours de l'auteur sur la v1.15)
+## Fait — v1.16 (retours de l'auteur sur la v1.15)
 - Gameplay : grève / mise à jour (immobiles mais se défendent), ordre de position précis, postures du héros
   distinctes, guide du jeu, explication des événements.
 - Bases cohérentes par époque (ZAD → commune ; conteneur-serveur → Singularité).
@@ -15,4 +15,6 @@
 - Scénario réécrit (bible) puis missions I–V refaites, traductions, voix générées, audit QA.
 
 ## À venir
+- v1.16.1 : voix off dans les autres langues (en, es, it, pt, zh, de, ru ; pas de voix arabe libre).
+- Équilibrage humain : mission V en Récit (acte II long pour le bot).
 - Validation à l'oreille des sons et de la voix (par l'auteur), playtests humains de la campagne.

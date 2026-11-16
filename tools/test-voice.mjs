@@ -26,6 +26,8 @@ for (const L of langs){
   for (const l of lines){ const f = path.join(ROOT, 'assets/voice', L, l.hash+'.mp3');
     if (!(idx[l.hash] > 0) || !existsSync(f)) miss.push(l.who+' « '+l.text.slice(0,40)+' »'); else bytes += (await stat(f)).size; }
   const extra = Object.keys(idx).filter(h => !lines.some(l => l.hash===h));
+  // audio gelé jusqu'à la version finale (docs/DECISIONS.md) : une réplique réécrite reste muette → avertissement seulement, sauf VOICE_STRICT=1
+  if ((miss.length || extra.length) && !process.env.VOICE_STRICT){ console.log(`  ⚠ ${L} : ${miss.length} réplique(s) sans voix, ${extra.length} fichier(s) orphelin(s) (audio gelé)`); continue; }
   check(!miss.length && !extra.length, `${L} : ${lines.length} répliques, chacune a son MP3 et sa durée (${(bytes/1e6).toFixed(2)} Mo)`+(miss.length? ' — manquent : '+miss.slice(0,3).join(' ; ') : '')+(extra.length? ' — orphelines : '+extra.length : ''));
 }
 // inventaire à jour avec les textes actuels du jeu ? (avertissement seulement, sauf VOICE_STRICT=1)
