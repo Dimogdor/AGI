@@ -778,7 +778,9 @@ function campMap(){
     g.strokeStyle = open? '#c42a1c' : 'rgba(31,27,23,0.45)'; g.lineWidth = 1.8; g.beginPath(); g.arc(x, y, 6, 0, 6.283); g.stroke();
     if (done){ g.beginPath(); g.moveTo(x-4,y-4); g.lineTo(x+4,y+4); g.moveTo(x+4,y-4); g.lineTo(x-4,y+4); g.stroke(); }
     else if (open){ g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill(); }
-    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(['I','II','III','IV','V'][i]+(open? ' · '+campWhen(CAMPAIGN[i]) : ''), x, y+(i===2||i===3? -11 : 18)); });
+    const lab = ['I','II','III','IV','V'][i]+(open? ' · '+campWhen(CAMPAIGN[i]) : ''), hw = g.measureText(lab).width/2, lx = clamp(x, hw+4, 476-hw);   // jamais coupé au bord de la carte
+    g.lineJoin = 'round'; g.lineWidth = 3.4; g.strokeStyle = 'rgba(238,228,200,0.92)'; g.strokeText(lab, lx, y+(i===2||i===3? -11 : 18));              // liseré de papier : lisible sur les montagnes
+    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(lab, lx, y+(i===2||i===3? -11 : 18)); });
   g.strokeStyle = '#1f1b17'; g.lineWidth = 1; g.beginPath(); g.moveTo(456,22); g.lineTo(456,8); g.lineTo(452,14); g.moveTo(456,8); g.lineTo(460,14); g.stroke(); g.fillStyle = '#1f1b17'; g.fillText('N', 456, 32);
   return cv;
 }
