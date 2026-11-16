@@ -344,7 +344,7 @@ function m2Prop(kind){ return fxSprite('M2P'+kind+m2L(), 110, 90, g => {
    premier point est répété), silhouette avant détail, une seule couleur d'accent, un seul mouvement, texte en Courier gras.  */
 const m2Circ = (cx, cy, r, n, a0, a1, ry) => { const o = []; a0 = a0==null? 0 : a0; a1 = a1==null? 6.2832 : a1; n = n||24;
   for (let i=0;i<=n;i++){ const a = a0 + (a1-a0)*i/n; o.push(cx+Math.cos(a)*r, cy+Math.sin(a)*(ry||r)); } return o; };
-const m2Txt = (g, s, x, y, px, col, al) => { g.fillStyle = col || '#1f1b17'; g.textAlign = al || 'center'; g.textBaseline = 'middle'; m2Fit(g, s, 340, px); g.fillText(s, x, y); };
+const m2Txt = (g, s, x, y, px, col, al, mw) => { g.fillStyle = col || '#1f1b17'; g.textAlign = al || 'center'; g.textBaseline = 'middle'; m2Fit(g, s, mw || 340, px); g.fillText(s, x, y); };
 const m2Ground = (g, y, t, a) => { inkLine(g, [10,y, 470,y], clamp(t/1.2, 0, 1), 2.4); inkHatch(g, 10, y, 460, 270-y, 7, '#1f1b17', a==null? 0.2 : a); };
 const M2_PL = {
   gate1: M2T("SITE DÉSAFFECTÉ","SITE DECOMMISSIONED","SITIO DESAFECTADO","STANDORT STILLGELEGT","SITO DISMESSO","LOCAL DESATIVADO","ОБЪЕКТ ЗАКРЫТ","厂区已停用","موقع مُعطَّل"),
@@ -387,7 +387,7 @@ const M2_PL = {
     const pn = [150,108, 330,108, 330,164, 150,164, 150,108];
     inkWash(g, pn, '#efe9db', 0.96); inkLine(g, pn, n, 1.8);
     inkLine(g, [180,96, 180,108], n, 1.2); inkLine(g, [300,96, 300,108], n, 1.2);
-    if (t>0.8){ m2Txt(g, cT(M2_PL.gate1), 240, 123, 12.5); m2Txt(g, cT(M2_PL.gate2), 240, 136, 12.5); m2Txt(g, cT(M2_PL.gate3), 240, 150, 12.5); }
+    if (t>0.8){ m2Txt(g, cT(M2_PL.gate1), 240, 123, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate2), 240, 136, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate3), 240, 150, 12.5, null, null, 168);   // le panneau fait 180 de large }
     g.fillStyle = Math.sin(t*5)>0? '#0b6fa8' : 'rgba(11,111,168,0.22)'; g.beginPath(); g.arc(360, 98, 4.6, 0, 6.283); g.fill();   // voyant bleu
     plateEnd(g, w, h); },
 
