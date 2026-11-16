@@ -2623,10 +2623,13 @@ function hazardT(x,y,w,h){
 }
 
 /* --- BÂTIMENTS (repère : cx = centre, G = sol, h = hauteur de jeu bldH) --- */
-const BSP = { W:64, H:120, cx:32, G:112 };
+const BSP = { W:96, H:150, cx:48, G:140 };
 function bldSprite(type, fk, lvl, era, h){
   const cx=BSP.cx, G=BSP.G;
+  const big = bldBig(type);
+  if (big){ TC.save(); TC.translate(cx, G); TC.scale(BLD_K, BLD_K); TC.translate(-cx, -G); }
   if (fk==='HUM') humBld(type, lvl, era, h, cx, G); else iaBld(type, lvl, era, h, cx, G);
+  if (big) TC.restore();
 }
 function humBld(type, lvl, era, h, cx, G){
   const M=HMAT[era], acc=FACTIONS.HUM.accent, y0=G-h;
@@ -2698,60 +2701,9 @@ function humBld(type, lvl, era, h, cx, G){
     TC.fillStyle=era===4? M.trim : era>=3? shade(M.wall,1.3) : '#3a3e44';
     rrectT(cx-6,hy-4.6,12,9.2,3); TC.fill();
     TC.fillStyle=acc; TC.fillRect(cx-6,hy+2.6,12,1.6);
-  } else if (type==='farmF'){
-    // champ labouré (le blé, animé, est dessiné en direct par-dessus) + abri selon l'ère
-    if (era>=3){ plateT([cx-17,G-h-6, cx-5,G-h-6, cx-5,G, cx-17,G], era===4? M.wall : '#3a3a4a');      // ferme verticale
-      for (let i=0;i<3;i++){ const yy=G-h-2+i*((h+2)/3); TC.fillStyle='#2e6a2e'; TC.fillRect(cx-16,yy,10,2.6);
-        bloomT('#d27aff',4,()=>{ TC.fillStyle='rgba(210,122,255,0.9)'; TC.fillRect(cx-16,yy-1.2,10,0.9); }); } }
-    else if (era===2){ TC.fillStyle='rgba(190,225,235,0.55)'; TC.beginPath(); TC.arc(cx-10,G,9,Math.PI,0); TC.fill();  // serre
-      TC.strokeStyle='rgba(80,90,100,0.9)'; TC.lineWidth=0.9; TC.stroke(); strokeP([cx-10,G-9, cx-10,G]); TC.stroke();
-      TC.fillStyle='rgba(255,255,255,0.5)'; TC.fillRect(cx-15,G-6,1.2,5); }
-    else if (lvl>=2){ plateT([cx-19,G-h+6, cx-7,G-h+6, cx-7,G, cx-19,G], era===0? '#9a3a2a' : '#8a3226');  // grange
-      TC.fillStyle=M.roof; polyP([cx-21,G-h+7, cx-13,G-h, cx-5,G-h+7]); TC.fill();
-      TC.strokeStyle='rgba(255,255,255,0.6)'; TC.lineWidth=0.8; strokeP([cx-16,G, cx-16,G-6, cx-10,G-6, cx-10,G]); TC.stroke(); }
-    TC.fillStyle=lgrad(0,G-5,0,G,[[0,'#7a5a3a'],[1,'#4a3422']]); rrectT(cx-18,G-4.4,36,4.4,1.5); TC.fill();
-    TC.fillStyle='rgba(0,0,0,0.25)'; for (let i=0;i<5;i++) TC.fillRect(cx-16+i*7,G-3.6,4.4,0.9);
-    TC.fillStyle='#6a4a2c'; TC.fillRect(cx+16,G-9,1.6,9); TC.fillRect(cx-19,G-9,1.6,9);
-  } else if (type==='farmM'){
-    // étal de marché : auvent rayé aux couleurs de la faction, caisses, sacs
-    const sh = Math.max(h+4, 24), top=G-sh;
-    if (era>=3){ plateT([cx-15,top+3, cx+15,top+3, cx+15,G, cx-15,G], era===4? M.wall : '#3a3a4a');
-      bloomT(M.lite,6,()=>{ TC.fillStyle=M.lite; TC.fillRect(cx-11,top+7,22,4); });
-      TC.fillStyle='#1c1814'; TC.fillRect(cx-10,top+14,20,G-top-18); TC.fillStyle=rgbaC(M.lite,0.35); TC.fillRect(cx-10,top+14,20,G-top-18); }
-    else {
-      TC.fillStyle=era===2? '#5a5e62' : '#6a4a2c'; TC.fillRect(cx-14,top+4,2,sh-4); TC.fillRect(cx+12,top+4,2,sh-4);
-      plateT([cx-15,G-10, cx+15,G-10, cx+15,G, cx-15,G], era===2? '#7c8084' : '#9a7048');
-      for (let i=0;i<6;i++){ TC.fillStyle=i%2? '#f2ece0' : acc; polyP([cx-17+i*5.7,top, cx-11.3+i*5.7,top, cx-10.6+i*5.7,top+7, cx-16.3+i*5.7,top+7]); TC.fill(); }
-      TC.fillStyle='rgba(0,0,0,0.25)'; TC.fillRect(cx-17,top+7,34,1.2);
-      TC.fillStyle='#e8c84a'; TC.beginPath(); TC.arc(cx-7,G-11.5,2.4,Math.PI,0); TC.fill();
-      TC.fillStyle='#d84a2a'; TC.beginPath(); TC.arc(cx-1,G-11.5,2.2,Math.PI,0); TC.fill();
-      TC.fillStyle='#7ab84a'; TC.beginPath(); TC.arc(cx+5,G-11.5,2.2,Math.PI,0); TC.fill();
-      if (lvl>=2){ TC.fillStyle='#b88a50'; TC.fillRect(cx+16,G-7,7,7); TC.fillStyle='rgba(0,0,0,0.3)'; TC.fillRect(cx+16,G-4,7,0.8); }
-      if (lvl>=3){ TC.fillStyle='#c8b080'; TC.beginPath(); TC.ellipse(cx-19,G-3.4,3.6,3.4,0,0,6.283); TC.fill(); }
-    }
-    bloomT('#ffd34a',5,()=>{ TC.fillStyle='#ffd34a'; TC.beginPath(); TC.arc(cx+10,top-3,3,0,6.283); TC.fill(); });   // enseigne (pièce)
-    TC.fillStyle='#8a6a1a'; TC.fillRect(cx+9.4,top-4.4,1.2,2.8);
-  } else {
-    // puits : margelle de pierre + toit (→ château d'eau → purificateur)
-    if (era<=1){
-      plateT([cx-10,G-12, cx+10,G-12, cx+10,G, cx-10,G], era===0? '#8a7a68' : M.wall); masonT(cx-10,G-12,20,12,4,6,0.25);
-      TC.fillStyle='#50a0dc'; TC.beginPath(); TC.ellipse(cx,G-12,8,2.4,0,0,6.283); TC.fill();
-      TC.fillStyle='#5a3e24'; TC.fillRect(cx-9,G-h-6,1.8,h-6); TC.fillRect(cx+7.2,G-h-6,1.8,h-6);
-      TC.fillStyle=M.roof; polyP([cx-13,G-h-4, cx,G-h-12, cx+13,G-h-4]); TC.fill();
-      TC.strokeStyle='#3a2a1a'; TC.lineWidth=0.8; strokeP([cx,G-h-4, cx,G-16]); TC.stroke();
-      TC.fillStyle='#6a5a4a'; TC.fillRect(cx-1.8,G-17,3.6,3);
-    } else if (era===2){
-      TC.strokeStyle='#4a4e54'; TC.lineWidth=1.6; strokeP([cx-8,G, cx-6,G-h+4]); TC.stroke(); strokeP([cx+8,G, cx+6,G-h+4]); TC.stroke();
-      plateT([cx-10,G-h-8, cx+10,G-h-8, cx+10,G-h+5, cx-10,G-h+5], '#6a8aa4');
-      TC.fillStyle='rgba(0,0,0,0.2)'; TC.fillRect(cx-10,G-h-2,20,0.9); tubeT(cx+4,G-h+5,cx+4,G,1,'#4a4e54');
-    } else {
-      plateT([cx-10,G-6, cx+10,G-6, cx+10,G, cx-10,G], era===4? M.trim : '#3a3a4a');
-      TC.fillStyle='rgba(200,235,255,0.35)'; rrectT(cx-7,G-h-6,14,h,4); TC.fill();
-      bloomT('#5ab8ff',6,()=>{ TC.fillStyle='rgba(90,184,255,0.85)'; rrectT(cx-5.6,G-h*0.55-6,11.2,h*0.55,3); TC.fill(); });
-      TC.fillStyle='rgba(255,255,255,0.55)'; TC.fillRect(cx-5,G-h-4,1.4,h-6);
-      plateT([cx-8,G-h-9, cx+8,G-h-9, cx+8,G-h-5, cx-8,G-h-5], era===4? M.trim : '#3a3a4a');
-    }
-  }
+  } else if (type==='farmF') humFarmF(era, lvl, h, cx, G);
+  else if (type==='farmM') humMarket(era, lvl, h, cx, G);
+  else humWell(era, lvl, h, cx, G);
 }
 function iaBld(type, lvl, era, h, cx, G){
   const lite=FACTIONS.IA.eraCols[era], plate=iaPlate(era), frame='#2a3038', dark='#14181e', y0=G-h;
@@ -2780,31 +2732,9 @@ function iaBld(type, lvl, era, h, cx, G){
       TC.fillStyle=dark; TC.beginPath(); TC.arc(cx+16+lvl*2,by-0.6,1.2,0,6.283); TC.fill(); }
     plateT([cx-8,hy-5, cx+5,hy-6, cx+9,hy, cx+5,hy+5, cx-8,hy+5], shade(plate,1.1));              // tête
     TC.fillStyle=dark; TC.beginPath(); TC.arc(cx+3,hy-0.6,2.6,0,6.283); TC.fill(); glowDot(cx+3.3,hy-0.6,1.4,lite,5);
-  } else if (type==='farmF'){
-    // champ de panneaux solaires
-    for (let i=0;i<2;i++){ const px=cx-16+i*16;
-      TC.fillStyle=frame; TC.fillRect(px+6,G-8,1.6,8);
-      TC.fillStyle=lgrad(px,G-16,px+14,G-8,[[0,'#3a5a8a'],[1,'#162a48']]); polyP([px,G-8, px+3,G-16, px+15,G-16, px+12,G-8]); TC.fill();
-      TC.strokeStyle='rgba(160,200,255,0.45)'; TC.lineWidth=0.6; strokeP([px+1.5,G-12, px+13.5,G-12]); TC.stroke();
-      strokeP([px+6,G-8, px+8,G-16]); TC.stroke(); strokeP([px+9,G-8, px+11.5,G-16]); TC.stroke(); }
-    plateT([cx+14,G-h, cx+20,G-h, cx+20,G, cx+14,G], plate);                                     // batterie (LED animées en direct)
-    if (lvl>=2) plateT([cx-20,G-6, cx-16,G-6, cx-16,G, cx-20,G], frame);
-  } else if (type==='farmM'){
-    // baie de calcul (minage) : armoire + grille de LED animées en direct
-    plateT([cx-10,G-h-6, cx+10,G-h-6, cx+10,G, cx-10,G], plate);
-    TC.fillStyle=dark; TC.fillRect(cx-7,G-h-2,14,h-2);
-    TC.fillStyle='rgba(255,255,255,0.12)'; for (let i=0;i<4;i++) TC.fillRect(cx-7,G-h+1+i*(h-4)/4,14,0.8);
-    TC.fillStyle=frame; TC.fillRect(cx-12,G-3,24,3);
-    if (lvl>=2){ plateT([cx+11,G-h+2, cx+17,G-h+2, cx+17,G, cx+11,G], shade(plate,0.85)); }
-  } else {
-    // condenseur d'eau : cuve vitrée + conduites
-    plateT([cx-9,G-5, cx+9,G-5, cx+9,G, cx-9,G], frame);
-    TC.fillStyle='rgba(200,235,255,0.3)'; rrectT(cx-6.5,G-h-6,13,h+1,5); TC.fill();
-    bloomT(lite,5,()=>{ TC.fillStyle=rgbaC(lite,0.75); rrectT(cx-5,G-h*0.6-5,10,h*0.6,4); TC.fill(); });
-    TC.fillStyle='rgba(255,255,255,0.5)'; TC.fillRect(cx-4.4,G-h-4,1.2,h-4);
-    plateT([cx-7.5,G-h-9, cx+7.5,G-h-9, cx+7.5,G-h-5, cx-7.5,G-h-5], plate);
-    tubeT(cx+7,G-h*0.5-3,cx+13,G-h*0.5-3,1.2,frame); tubeT(cx+13,G-h*0.5-3,cx+13,G,1.2,frame);
-  }
+  } else if (type==='farmF') iaFarmF(era, lvl, h, cx, G);
+  else if (type==='farmM') iaMarket(era, lvl, h, cx, G);
+  else iaWell(era, lvl, h, cx, G);
 }
 
 /* --- BASES (v1.16) : des QG qui ont le sens de leur époque ---
@@ -3662,6 +3592,7 @@ function drawSlot(slot, side, neutral){
   const bspr = sprite('B'+b.type+facKey+lvl+'e'+bera, BSP.W, BSP.H, ()=>bldSprite(b.type, facKey, lvl, bera, bh2));
   ctx.save(); ctx.translate(x, gy); ctx.scale(bs, 1); ctx.drawImage(bspr, -BSP.cx, -BSP.G, BSP.W, BSP.H);
   // animations en direct par-dessus le bâtiment cuit
+  if (bldBig(b.type)){ ctx.save(); ctx.scale(BLD_K, BLD_K); }
   if (b.type==='farmF'){
     if (facKey==='HUM'){ ctx.strokeStyle='#caa84a'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.fillStyle='#e8c84a';
       for (let i=0;i<4;i++){ const wx=-1+i*5.6, sw=Math.sin(t*2+i)*2; ctx.beginPath(); ctx.moveTo(wx,-3); ctx.lineTo(wx+sw,-16); ctx.stroke();
@@ -3674,6 +3605,12 @@ function drawSlot(slot, side, neutral){
   } else if (b.type==='turret' && b.atkT > BUILDS.turret.rate-0.1){
     bloomT('#ffd34a',8,()=>{ ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.arc(18+lvl*2,-bh2-3.6,3,0,6.283); ctx.fill(); });
   }
+  if (b.type==='farmF' && facKey==='HUM' && bera===4){          // pales de l'éolienne (moyeu cuit dans le sprite)
+    ctx.save(); ctx.translate(WIND_HUB[0], WIND_HUB[1]); ctx.rotate(t*1.6); ctx.strokeStyle=DK_INK; ctx.lineWidth=2.6; ctx.lineCap='round';
+    for (let i=0;i<3;i++){ ctx.rotate(2.0944); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-13); ctx.stroke(); }
+    ctx.strokeStyle='#f4f0e6'; ctx.lineWidth=1.3; for (let i=0;i<3;i++){ ctx.rotate(2.0944); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-12.6); ctx.stroke(); }
+    ctx.restore(); }
+  if (bldBig(b.type)) ctx.restore();
   ctx.restore();
   if (popped) ctx.restore();   // fin du pop de construction (le reste — garnison, barres — à l'échelle normale)
   // garnison : bustes par camp et par ère, arme pointée vers l'ennemi, aux créneaux
@@ -3688,7 +3625,7 @@ function drawSlot(slot, side, neutral){
   if ((b.type==='farmF'||b.type==='farmM'||b.type==='well') && SETTINGS.quality!=='low'){
     const inten = clamp((longevMul(b)-1)/2, 0, 1);
     if (inten>0.12){
-      const bh3 = bldH(b), cy = gy-bh3*0.5;
+      const bh3 = bldVisH(b), cy = gy-bh3*0.5;
       ctx.save(); ctx.globalCompositeOperation='lighter';
       ctx.fillStyle='rgba(255,206,96,'+(0.05+0.11*inten).toFixed(3)+')';
       ctx.beginPath(); ctx.arc(x, cy, 15+4*Math.sin(t*2)+9*inten, 0, 6.283); ctx.fill();
@@ -3698,27 +3635,27 @@ function drawSlot(slot, side, neutral){
     }
   }
   // niveau et garnison
-  if ((b.lvl||1)>1) levelChevrons(x, gy-bldH(b)-28, b.lvl-1);
+  if ((b.lvl||1)>1) levelChevrons(x, gy-bldVisH(b)-28, b.lvl-1);
   // défenseurs aux créneaux des murailles : buste + arme qui dépasse du rempart
   if (b.type==='wall' && b.gar && b.gar.length){
     for (let gi=0; gi<b.gar.length; gi++){ const g = b.gar[gi];
-      drawGarBust(g.fac||owner.facKey, clamp(g.era!=null? g.era : owner.era||0,0,4), g.role, g.range!=null? g.range : 100, x-7+gi*14, gy-bldH(b)+2, owner.side, g.atkT > g.rate-0.1, 0); }
+      drawGarBust(g.fac||owner.facKey, clamp(g.era!=null? g.era : owner.era||0,0,4), g.role, g.range!=null? g.range : 100, x-7+gi*14, gy-bldVisH(b)+2, owner.side, g.atkT > g.rate-0.1, 0); }
   }
-  if (b.gar && b.gar.length) garCounter(x+(owner.side>0? 22 : -22), gy-bldH(b)-4, b.gar.length, owner.facKey);
+  if (b.gar && b.gar.length) garCounter(x+(owner.side>0? 22 : -22), gy-bldVisH(b)-4, b.gar.length, owner.facKey);
   const frac = clamp(b.hp/b.maxhp,0,1);
   // DÉGÂTS VISIBLES (v1.13) : lézardes sous 60 % de PV, davantage sous 30 %, et sol noirci
-  if (frac<0.6 && qFx()){ const bh4 = bldH(b), n = frac<0.3? 4 : 2; ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+  if (frac<0.6 && qFx()){ const bh4 = bldVisH(b), n = frac<0.3? 4 : 2; ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
     ctx.strokeStyle='rgba(12,8,10,0.7)'; ctx.lineWidth=1.4;
     for (let i=0;i<n;i++){ let cx = x-12+i*8+lhash(i,slot.x)*5, cy = gy-3-lhash(i,slot.x+3)*bh4*0.25; ctx.beginPath(); ctx.moveTo(cx,cy);
       for (let k=0;k<4;k++){ cx += (lhash(i*7+k,slot.x+5)-0.5)*7; cy -= bh4*(0.1+lhash(i*5+k,9)*0.08); ctx.lineTo(cx,cy); }
       ctx.stroke(); }
     ctx.fillStyle='rgba(14,10,10,'+(0.28*(1-frac/0.6)).toFixed(3)+')'; ctx.beginPath(); ctx.ellipse(x, gy+1, 26, 4.5, 0, 0, 6.283); ctx.fill();
     ctx.restore(); }
-  dmgSmoke(x, gy-bldH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
-  if (frac<1) inkGauge(x-16, gy-bldH(b)-20, 32, 4, frac, gaugeCol(frac), owner.facKey);
+  dmgSmoke(x, gy-bldVisH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
+  if (frac<1) inkGauge(x-16, gy-bldVisH(b)-20, 32, 4, frac, gaugeCol(frac), owner.facKey);
   // nano-réparation : l'équipe se déplace sur CHAQUE bâtiment endommagé de la carte
   if (owner && owner.autoRepair && frac<1){
     if (owner.facKey==='HUM'){ const wx2 = x + 10*Math.sin(t*0.9+slot.x); drawRepairer(wx2, gy, t, owner.era||0, slot.x*0.13, wx2<x? 1 : -1); }
-    else { const dx3 = Math.cos(t*2.2)*14; drawRepairDrone(x+dx3, gy-bldH(b)-6+Math.sin(t*3)*2, x+dx3*0.6, gy-bldH(b)*0.5, t, owner.era||0, slot.x*0.1); }
+    else { const dx3 = Math.cos(t*2.2)*14; drawRepairDrone(x+dx3, gy-bldVisH(b)-6+Math.sin(t*3)*2, x+dx3*0.6, gy-bldVisH(b)*0.5, t, owner.era||0, slot.x*0.1); }
   }
 }
