@@ -1,6 +1,6 @@
 # Avancement — v1.16 (mis à jour par l'orchestrateur à chaque étape)
 
-Branche de travail : `claude/age-of-war-online-balance-xn6ump` · PR #56 (brouillon).
+Branche de travail : `claude/age-of-war-online-balance-xn6ump` (repartie de main après la fusion de #56).
 
 | Chantier | Agent | Branche wip | État | Prochaine étape |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Branche de travail : `claude/age-of-war-online-balance-xn6ump` · PR #56 (brouil
 | Moteur de campagne | campagne-socle | — | **intégré** (da629f9) : briefing, difficulté Récit/Lutte/Dernier carré, doctrines, aide « ? », radio, actes, cartes sans lacs, escorte | équilibrage fragile (II, IV, V en Dernier carré) à revoir par les missions |
 | Bible (scénario) | writer | — | **intégrée** : docs/campagne/BIBLE.md + M1…M5.md | sert de spec au lot 3 |
 | Missions I–V | 1 agent sonnet par mission | — | **intégrées** (I 4736679 · III 2ee060b · II 7e3d314 · IV 004be8a · V 7a82f4a) | équilibrage à revoir (II courte, actes de V inégaux) |
-| Traductions, voix, QA, livraison | orchestrateur | — | audit (16 constats) + QA corrigés (74c4589), v1.16.0 ; CI puis livraison ; voix en/es/it/pt/zh/de/ru en génération | suivi : équilibrage humain, mission V niveau Récit longue (acte II ~30 min pour le bot) |
+| Traductions, voix, QA, livraison | orchestrateur | — | **v1.16.0 livrée** (2dca796) : Pages OK, Android OK ; voix en/es/it/pt/zh/de/ru en génération | v1.16.1 avec les voix des autres langues |
 
 ## Lots
 1. **En cours** : bases, gameplay, voix (reprises des agents presque terminés) → intégration.
