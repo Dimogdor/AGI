@@ -314,7 +314,7 @@ function drawHUD(){
   }
   // ère : étiquette peinte au centre ; santé du monde : réglette graduée dessous
   ctx.textAlign='center';
-  { const cm = game.camp && game.camp.m, etxt = cm && cm.year? cm.year+' · '+cT(cm.place).split(/[,，،]/)[0].toUpperCase()   // campagne : l'année et le lieu de la mission, pas l'année de l'ère de la faction
+  { const cm = game.camp && game.camp.m, etxt = cm && cm.when? cT(cm.when).toUpperCase()+' · '+cT(cm.place).split(/[,，،]/)[0].toUpperCase()   // campagne : le moment (saison, champ traduit when) et le lieu de la mission, pas l'ère de la faction
       : p.trans? lTransName(p.facKey) : lEra(p.facKey,p.era);
     fitFont(etxt, 230, uiF(pal,'head',13), 8);
     const tw = Math.min(230, ctx.measureText(etxt).width), lw = tw+20;

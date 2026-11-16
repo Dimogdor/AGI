@@ -1738,7 +1738,7 @@ function armPose(role, era, cx, F){
   }
 }
 
-// ===== HUMANITÉ : survivants 2025 → milice → tactique → exo-armure → armure d'or =====
+// ===== HUMANITÉ : survivants de la Révolte → milice → tactique → exo-armure → armure d'or =====
 function drawHumSprite(fac, role, era, trans, hero){
   const cx=USP.cx, F=USP.foot, acc=FACTIONS[fac].accent;
   const uni = hero? '#55653c' : FACTIONS[fac].eraCols[era];
@@ -2587,7 +2587,7 @@ function drawRainBoon(t){
 // Désormais chaque bâtiment a sa forme (palissade, tour de guet, champ, étal, puits ; panneaux
 // solaires, baie de calcul, condenseur côté GPT) et ses MATÉRIAUX suivent l'ère du camp :
 // planches et palettes → brique et tôle industrielles → béton → blindage → bois, verre et jardins
-// (v1.16 : plus de pierre crénelée en 2028 ni de marbre doré au Paradis). Cuits une fois, puis blittés
+// (v1.16 : plus de pierre crénelée à la Grève générale ni de marbre doré à la Commune). Cuits une fois, puis blittés
 // (miroir selon le camp) : moins d'opérations canvas par frame qu'avant malgré le détail.
 const HMAT = [
   { wall:'#8a6444', roof:'#6e6a66', trim:'#4a3428', lite:'#ffcf78' },   // ère 0 : planches, palettes, tôle
@@ -2809,10 +2809,10 @@ function iaBld(type, lvl, era, h, cx, G){
 
 /* --- BASES (v1.16) : des QG qui ont le sens de leur époque ---
    Fini le château : chaque camp défend un lieu crédible qui se transforme à chaque ère.
-     HUMANITÉ  ZAD en palettes (2025) → usine occupée (2028) → quartier insurgé (2032)
-               → base militaire révolutionnaire (2038) → commune solarpunk (Paradis socialiste)
-     GPT       conteneur-serveur (2025) → datacenter (2030) → campus de verre noir (2035)
-               → arcologie-forteresse (2040) → structure impossible (Singularité)
+     HUMANITÉ  ZAD en palettes (Révolte) → usine occupée (Grève générale) → quartier insurgé (Insurrection)
+               → bunker des cellules (Les Cellules) → commune solarpunk (La Commune)
+     G·P·T     conteneur-serveur (Gestion prédictive) → datacenter (Agents autonomes) → campus de verre noir
+               (L'Arbitrage) → arcologie-forteresse (« Nous ») → structure impossible (Singularité)
    La FORTIFICATION ajoute les défenses de l'époque devant et derrière ; les DÉGÂTS sont peints
    dans le décor (vitres brisées, suie, brèches, gravats) ; la GARNISON (≤ 3) se tient au poste
    de guet central, d'où partent ses tirs (sol − 96). Le statique est cuit — une toile par état
@@ -2916,7 +2916,7 @@ function bCrack(x,y,len,seed){ let cx=x, cy=y; TC.beginPath(); TC.moveTo(cx,cy);
 /* ======== HUMANITÉ ======== */
 const BW_WOOD = ['#a07850','#8a6440','#b08a5a','#7a5636','#97806a','#6e5a48','#a89070'];
 const HUM_BASE = [
-  // ── 2025 · RÉVOLTE : la ZAD — cabane en palettes, vigie en rondins, yourte, éolienne bricolée,
+  // ── 2028 · RÉVOLTE : la ZAD — cabane en palettes, vigie en rondins, yourte, éolienne bricolée,
   //    potager, feu de camp, barricade de pneus et de touret ──
   (f, dmg) => {
     // éolienne bricolée : mât en échafaudage haubané (rotor en direct)
@@ -2977,7 +2977,7 @@ const HUM_BASE = [
     if (dmg>=1) bRubble(20,46,41,'#8a7060');
     if (dmg>=2){ bRubble(-50,-20,43,'#7a6050'); bSoot(40,-14,9); }
   },
-  // ── 2028 · GRÈVE GÉNÉRALE : l'usine occupée — halle à toit en sheds, cheminée froide peinte,
+  // ── GRÈVE GÉNÉRALE : l'usine occupée — halle à toit en sheds, cheminée froide peinte,
   //    tour de l'horloge (poste de guet), banderoles, drapeaux rouges, braseros, conteneurs ──
   (f, dmg) => {
     const BR = '#8e4a34', BR2 = '#a85a40', STONE = '#dccdb0';
@@ -3027,7 +3027,7 @@ const HUM_BASE = [
     if (f>=3){ bCtnEnd(61,-54,77,-36,'#c88a2a'); bWire(58,80,-57,2.3); }
     if (dmg>=2){ bSoot(66,-20,9); bRubble(44,78,23,'#8a6a50'); }
   },
-  // ── 2032 · INSURRECTION : quartier insurgé — immeuble barricadé, radio pirate, projecteur,
+  // ── INSURRECTION : quartier insurgé — immeuble barricadé, radio pirate, projecteur,
   //    bus renversé, sacs de sable, rideau de fer tagué ──
   (f, dmg) => {
     const PL = '#c9b394';
@@ -3080,7 +3080,7 @@ const HUM_BASE = [
     if (f>=2){ plateT([66,-4, 68,-20, 74,-20, 76,-4, 78,-4, 78,0, 64,0, 64,-4], '#a8a49a'); bTxt('A', 71, -12, 6, '#2a2a2a', null, 0, '400'); bBags(62,80,-4,1,'#b8a47a'); }
     if (f>=3){ for (const hx of [44]){ bLn([hx-6,0, hx+5,-13], 2.2, '#4a4a50'); bLn([hx+6,0, hx-5,-13], 2.2, '#3a3a40'); bLn([hx,0, hx,-14], 2.2, '#56565c'); } bWire(62,80,-24,2.4); }
   },
-  // ── 2038 · RÉVOLUTION PERMANENTE : base militaire révolutionnaire — bunker de béton coffré,
+  // ── LES CELLULES : base militaire des cellules — bunker de béton coffré,
   //    mirador à sacs de sable, filet de camouflage, antennes, radar, panneaux solaires, hesco ──
   (f, dmg) => {
     const CO = '#8c8a80';
@@ -3101,7 +3101,7 @@ const HUM_BASE = [
     bFill(-68,-3,38,0,'#6a6860');
     for (const sx of [-58,-40,-22]){ bFill(sx-1,-33,sx+11,-27,'#1a1816'); bloomT('#ffb35a',5,()=>bFill(sx,-31.6,sx+10,-28.6,'#ffb35a')); }
     bDisc(-50,-14,6.6,'#f0e8d8'); TC.save(); TC.translate(0,0); drawStar(-50,-14,5,'#c8282a'); TC.restore();
-    bTxt('QG · 38', -30, -14, 5.4, 'rgba(30,28,26,0.7)', null, 0, '800');
+    bTxt('QG', -30, -14, 5.4, 'rgba(30,28,26,0.7)', null, 0, '800');
     bBox(10,-26,26,0,'#5a5e5a'); hazardT(10,-28,16,2.6); TC.fillStyle='rgba(0,0,0,0.3)'; TC.fillRect(17.6,-25,0.8,25);
     bBox(26,-38,32,-30,'#3a3a3e'); bloomT('#ffb35a',4,()=>bFill(27,-36.6,31,-32,'#ffd890'));
     // filet de camouflage drapé sur l'arrière
@@ -3127,7 +3127,7 @@ const HUM_BASE = [
     if (f>=3){ tubeT(30,-55, 52,-57, 1.6, '#3a3e3a'); tubeT(30,-51.4, 52,-53, 1.6, '#3a3e3a');
       TC.fillStyle=lgrad(20,-60,36,-48,[[0,'#7a7e72'],[1,'#3a3e36']]); TC.beginPath(); TC.arc(28,-48,9,Math.PI,0); TC.fill(); bWire(56,80,-28,2.4); }
   },
-  // ── PARADIS SOCIALISTE : commune solarpunk — tour de terrasses en bois et verre, jardins
+  // ── LA COMMUNE : commune solarpunk — tour de terrasses en bois et verre, jardins
   //    suspendus, éolienne hélicoïdale, serre géodésique, maison commune à toit végétal ──
   (f, dmg, trans) => {
     const WOOD = '#9a6434', GLASS = '#5e9aa4', LITE = '#ffe2a8', LEAF = ['#4a8a3a','#6aaa4a','#3a7a3a','#8ac25a'];
@@ -3179,7 +3179,7 @@ const HUM_BASE = [
 ];
 /* ======== GPT ======== */
 const IA_BASE = [
-  // ── 2025 · AUBE DES LLM : conteneurs-serveurs d'une jeune pousse — baies vitrées de LED,
+  // ── 2028 · GESTION PRÉDICTIVE : conteneurs-serveurs d'une jeune pousse — baies vitrées de LED,
   //    climatiseurs, faisceaux de câbles, groupe électrogène, mât 5G, caméra qui scrute ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[0];
@@ -3198,7 +3198,7 @@ const IA_BASE = [
     for (let i=0;i<4;i++){ const rx=-55+i*11.4; bFill(rx,-26,rx+9.6,-4,'#1a2430'); TC.fillStyle='rgba(255,255,255,0.12)'; for (let j=0;j<6;j++) TC.fillRect(rx,-25+j*3.6,9.6,0.6); }
     TC.strokeStyle='rgba(160,180,200,0.35)'; TC.lineWidth=0.5; TC.beginPath(); for (let x=-56;x<-10;x+=2.4){ TC.moveTo(x,-27); TC.lineTo(x,-3); } TC.stroke();
     // conteneur B : blanc, logo de la jeune pousse
-    bCtn(-4,-30,52,0,'#d6dadc'); bTxt('GPT', 26, -15, 12, '#1a2a38', B_TERM, 0, '400');
+    bCtn(-4,-30,52,0,'#d6dadc'); bTxt('G·P·T', 26, -15, 10, '#1a2a38', B_TERM, 0, '400');
     TC.strokeStyle='#1a2a38'; TC.lineWidth=1.3; TC.beginPath(); TC.arc(8,-15,5,0,6.283); TC.stroke(); bDisc(8,-15,1.6,lite);
     bTxt('NODE-01', 26, -6, 4.2, 'rgba(26,42,56,0.7)', B_TERM, 0, '400');
     // conteneur C (au-dessus) + climatiseurs (hélices en direct)
@@ -3220,7 +3220,7 @@ const IA_BASE = [
     if (dmg>=1){ bSoot(-30,-40,10); bCrack(20,-2,22,5); bFill(-33,-26,-23,-4,'#05080c'); }
     if (dmg>=2){ bHole(-20,-48,7,9); bHole(36,-18,5,13); bSoot(10,-60,12); bRubble(-8,40,51,'#6a7480'); }
   },
-  // ── 2030 · AGENTS AUTONOMES : le datacenter — hall bardé, ouïes de ventilation, ventilateurs
+  // ── AGENTS AUTONOMES : le datacenter — hall bardé, ouïes de ventilation, ventilateurs
   //    de toiture, tour de refroidissement fumante, noyau vitré, fibres lumineuses, drones ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[1], CL = '#b8c0c8';
@@ -3234,7 +3234,7 @@ const IA_BASE = [
     bBox(-70,-46,46,0,CL); TC.fillStyle='rgba(0,0,0,0.12)'; for (let x=-68;x<46;x+=3.4) TC.fillRect(x,-44,0.8,30);
     bFill(-70,-14,46,-4,'#2a3038'); TC.fillStyle='rgba(160,200,230,0.35)'; for (let x=-68;x<46;x+=2.6) TC.fillRect(x,-13,1.2,8);
     bFill(-70,-4,46,0,'#5a626c'); bFill(-72,-48,48,-45,'#6a727c');
-    bTxt('GPT', -46, -30, 13, '#1e2a36', B_TERM, 0, '400'); bTxt('DATACENTER · 2030', -46, -20, 4.4, 'rgba(30,42,54,0.75)', B_TERM, 0, '400');
+    bTxt('G·P·T', -46, -30, 11, '#1e2a36', B_TERM, 0, '400'); bTxt('DATACENTER', -46, -20, 4.4, 'rgba(30,42,54,0.75)', B_TERM, 0, '400');
     bloomT(lite,5,()=>bFill(-66,-41,-26,-39.6,lite));
     // ventilateurs de toiture (hélices en direct)
     for (const ux of [-64,-46]){ bBox(ux,-56,ux+16,-46,'#8a929c'); bFill(ux+2,-58,ux+14,-56,'#5a626c'); }
@@ -3254,7 +3254,7 @@ const IA_BASE = [
     if (f>=2){ for (let x=56;x<=78;x+=3) plateT([x,0, x,-28, x+1,-31, x+2,-28, x+2,0], '#3a4048', false); bFill(55,-24,79,-22.6,'#3a4048'); }
     if (f>=3){ bBox(62,-46,70,-31,'#5a626c'); bBox(58,-52,72,-44,'#8a929c'); tubeT(70,-48, 84,-48.4, 1.4, '#3a4048'); bDisc(64,-48,1.6,lite); }
   },
-  // ── 2035 · ESPRITS ÉMERGENTS : campus corporate de verre noir — tour biseautée, terrasse en
+  // ── L'ARBITRAGE : campus corporate de verre noir — tour biseautée, terrasse en
   //    porte-à-faux, aile basse, pavillon d'accueil, champ de capteurs, hologramme (en direct) ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[2];
@@ -3273,7 +3273,7 @@ const IA_BASE = [
     glass(TW, '#1a1e2c');
     for (const y of [-100,-80,-60,-40]) bloomT(lite,4,()=>{ TC.fillStyle=rgbaC(lite,0.7); TC.fillRect(-46,y,40,1); });
     bFill(-49,-110,-47,0,'#3a4054'); bFill(-7,-126,-5,0,'#3a4054');
-    bTxt('GPT', -27, -114, 6, '#e8f0ff', B_TERM, -0.36, '400');
+    bTxt('G·P·T', -27, -114, 5, '#e8f0ff', B_TERM, -0.36, '400');
     // terrasse en porte-à-faux (poste de guet) — garde-corps de verre
     plateT([-8,-86, 24,-86, 22,-82, -8,-82], '#c8ccd4'); TC.fillStyle='rgba(180,220,255,0.35)'; TC.fillRect(-8,-95,32,9);
     bFill(-8,-95,24,-94,'#e8ecf4'); bLn([24,-82, 10,-62], 1.2, '#8a929c');
@@ -3290,7 +3290,7 @@ const IA_BASE = [
     if (f>=2){ for (const px of [58,78]) bBox(px-2,-30,px+2,0,'#2a2e3a'); }
     if (f>=3){ bBox(56,-6,80,0,'#c8ccd4'); bFill(56,-6,80,-5,lite); }
   },
-  // ── 2040 · PRÉ-AGI : l'arcologie-forteresse — monolithe à gradins, fentes de lumière,
+  // ── « NOUS » : l'arcologie-forteresse — monolithe à gradins, fentes de lumière,
   //    contreforts, galerie de tir, canons lourds, émetteurs de bouclier ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[3], M1 = '#2c2a3c', M2 = '#3a3650';
@@ -3315,7 +3315,7 @@ const IA_BASE = [
     plateT([60,0, 66,-18, 72,-18, 76,0], M2); plateT([68,0, 74,-12, 80,0], M1);
     if (f>=2) { plateT([58,0, 60,-44, 64,-44, 66,0], M2); glowDot(62,-46,2.2,lite,8); }
   },
-  // ── SINGULARITÉ · AGI : la structure impossible — dais de runes, pyramide inversée fractale
+  // ── SINGULARITÉ : la structure impossible — dais de runes, pyramide inversée fractale
   //    en lévitation, triangle de Penrose, colonne de lumière, éclats en orbite (en direct) ──
   (f, dmg, trans) => {
     const lite = trans? '#ffffff' : FACTIONS.IA.eraCols[4], P1 = trans? '#e8d8f0' : '#4a3a5c', P2 = trans? '#b8a0d0' : '#2a2038';
