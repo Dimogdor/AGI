@@ -378,7 +378,9 @@ function startMission(i){
   const m = CAMPAIGN[i]; if (!m) return;
   const D = campDiff(CAMP_SAVE.diff);
   if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);                // une mission peut tempérer un multiplicateur (documenté dans son fichier)
+  const keep3 = M3_RETRY && i===2, keep4 = M4_RETRY && i===3;       // reprise allégée : seulement pour LA mission perdue
   newGame('HUM', campAiLevel(m, D), false);
+  M3_RETRY = keep3; M4_RETRY = keep4;
   const g = game, c = g.camp = { i, m, D, lvl:D.i, t:0, fired:[], q:[], cur:null, log:[], objs:[], act:1, t0:0 };
   if (m.dm && m.dm[D.i]) g.d = Object.assign({}, g.d, m.dm[D.i]);          // réglage fin de l'adversaire pour cette mission
   g.eraCap = m.eraCap; g.devBase = m.dev0 || 0;

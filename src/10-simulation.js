@@ -632,6 +632,7 @@ function update(dt){
     tutTick(dt); return;
   }
   game.t += dt;
+  if (game.boomAt!==undefined && game.t>=game.boomAt){ game.boomAt = undefined; sfxAt('boom', WORLD/2); }   // détonation de la Bombe H
   const p=game.p, e=game.e, d=game.d;
   if (CHEAT.god){ p.hp=p.maxhp; for (const u of p.units) u.hp=u.maxhp; }   // MODE TRICHE : base + troupes du joueur invincibles
   // comeback RENFORCÉ : le camp qui perd produit nettement plus, recharge son ultime plus
@@ -867,7 +868,7 @@ function triggerNuclearWinter(){
   addFloater(WORLD/2, gY(WORLD/2)-150, tr('ev_winter_sub'), '#bfe6ff', 14);
   // SILENCE DRAMATIQUE puis détonation : la musique se tait, le « boom » tombe ~0,6 s après le flash.
   if (AC){ audioDuckUntil = AC.currentTime + 0.6; }
-  setTimeout(()=>{ sfxAt('boom', WORLD/2); }, 600);
+  g.boomAt = g.t + 0.6;                      // horloge de jeu (et non setTimeout : le son ne jouait plus en pause / au menu)
 }
 // malus d'hiver qui s'estompe : ÷2 au début → ×1 (normal) après 6 min
 function winterMul(){ return game.winter? clamp(0.5 + 0.5*(1-(game.winterT||0)/WINTER_DUR), 0.5, 1) : 1; }

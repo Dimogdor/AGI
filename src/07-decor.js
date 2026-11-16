@@ -102,6 +102,7 @@ function mkSide(side, facKey, x){
   };
 }
 function newGame(facKey, diff, withTuto, eFacOverride){
+  M3_RETRY = M4_RETRY = false;     // la « reprise allégée » ne survit pas à une autre partie (startMission la ré-arme pour la même mission)
   const eFac = eFacOverride || (facKey==='HUM'? 'IA':'HUM');
   game = {
     diff, d:DIFFS[diff], t:0, over:false, win:false,
