@@ -181,6 +181,9 @@ const FAC_TRAITS = {
           sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.5 },
   },
 };
+// Recalage de la difficulté de l'escarmouche : les mécaniques d'asymétrie renforcent l'IA (réseau, héros…) ; on baisse d'autant son bonus
+// caché de production à Difficile/Brutal pour garder la courbe de DIFFS (~100/88/48/25 %). Jamais en campagne, tutoriel ni en ligne.
+const AI_K = [1, 1, 0.8, 0.75];
 const ft = (fk, k) => FAC_TRAITS[fk][k];
 const fte = (fk, k) => FAC_TRAITS[fk].env[k];
 // BONUS DE LONGÉVITÉ : une ferme/marché/puits gardé en vie monte lentement en régime,

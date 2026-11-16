@@ -107,7 +107,7 @@ async function mkPage(){
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'low', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(300);
   await page.evaluate(BOTS); await page.evaluate(HARNESS);
-  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); const path = p.split('.'); let o = FAC_TRAITS; for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
+  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); let path = p.split('.'); let o = FAC_TRAITS; if (path[0]==='AI_K'){ o = AI_K; path = path.slice(1); } for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
   return page;
 }
 const pages = await Promise.all(Array.from({length:WORKERS}, mkPage));
