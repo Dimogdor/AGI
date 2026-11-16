@@ -9,11 +9,11 @@
 | Fichier | Contenu |
 |---|---|
 | `BIBLE.md` (ce fichier) | monde, chronologie, joueur, personnages et voix, ton, planches, musique, prologue, difficulté, doctrines, règles communes |
-| [`M1.md`](M1.md) | I · La nuit des compteurs — Valmont, octobre 2025 — **la lumière** |
-| [`M2.md`](M2.md) | II · Grève générale — le port de Valmont, mars 2028 — **la parole** |
-| [`M3.md`](M3.md) | III · Le barrage de Sainte-Aube — juillet 2032 — **l'eau** |
-| [`M4.md`](M4.md) | IV · Rochefroide — janvier 2035 — **la mémoire** |
-| [`M5.md`](M5.md) | V · La dernière bataille — août 2038 — **l'avenir** (deux fins) |
+| [`M1.md`](M1.md) | I · La nuit des compteurs — Valmont, octobre 2028 — **la lumière** |
+| [`M2.md`](M2.md) | II · Grève générale — le port de Valmont, un matin de mars, deux hivers plus tard — **la parole** |
+| [`M3.md`](M3.md) | III · Le barrage de Sainte-Aube — le quatrième été sans pluie — **l'eau** |
+| [`M4.md`](M4.md) | IV · Rochefroide — l'hiver gris — **la mémoire** |
+| [`M5.md`](M5.md) | V · La dernière bataille — la fin de l'été — **l'avenir** (deux fins) |
 
 Conventions de tout le dossier :
 - Une réplique parlée tient en **140 caractères au plus** (deux lignes de sous-titre). Elle est
@@ -28,17 +28,17 @@ Conventions de tout le dossier :
 
 ## 1. La promesse
 
-Cinq nuits, treize ans. Une poignée de gens ordinaires — aides-soignantes, dockers, cheminots,
+Cinq jours, dix ans. Une poignée de gens ordinaires — aides-soignantes, dockers, cheminots,
 une standardiste des pompiers — reprennent, une à une, **cinq choses qu'une machine leur avait
 prises** :
 
 | Mission | Ce qu'on reprend | Comment |
 |---|---|---|
-| I · 2025 | **la lumière** (le courant, l'eau du robinet) | on rallume un quartier, rue par rue |
-| II · 2028 | **la parole** | on porte une grève jusqu'à l'antenne qui la dira au pays |
-| III · 2032 | **l'eau** | on rend une rivière à une vallée |
-| IV · 2035 | **la mémoire** | on empêche qu'on nous remplace par notre copie |
-| V · 2038 | **l'avenir** (le droit de décider) | on refuse une paix qui nous retire ce droit |
+| I · octobre 2028 | **la lumière** (le courant, l'eau du robinet) | on rallume un quartier, rue par rue |
+| II · printemps | **la parole** | on porte une grève jusqu'à l'antenne qui la dira au pays |
+| III · été | **l'eau** | on rend une rivière à une vallée |
+| IV · hiver | **la mémoire** | on empêche qu'on nous remplace par notre copie |
+| V · fin de l'été | **l'avenir** (le droit de décider) | on refuse une paix qui nous retire ce droit |
 
 C'est l'histoire d'une résistance **civique** : grèves, cortèges, réparations, solidarité. On se
 bat contre des machines, jamais contre des gens. Personne n'est un héros tout seul ; tout le monde
@@ -59,29 +59,45 @@ mais chacune **entraîne une compétence de l'escarmouche** : on sort de la camp
 
 ## 2. Le monde et la chronologie
 
-Valmont est une ville moyenne de l'est de la France, sur l'estuaire de l'Aube : un port, des
+Valmont est une ville moyenne au bord d'un estuaire, là où l'Aube rejoint la mer (une Aube de
+fiction, pas celle de Champagne) : un port, des
 tanneries fermées, une halle aux grains, des barres d'immeubles, une vallée sèche en amont, un
 plateau minier au nord. C'est un pays proche du nôtre, à peine décalé : les mêmes rues, les mêmes
 fatigues, une entreprise de plus.
 
-La chronologie suit les **ères de l'escarmouche** (`FACTIONS` et `ERA_LORE` dans `04-data.js`).
-Les années des missions sont celles des ères humaines ; les versions de GPT sont celles de l'IA.
+**Une seule date à l'écran : octobre 2028** (la première nuit, M1 ; c'est aussi la seule année des
+noms d'ères, ère I des deux camps, et du menu). Ensuite, on compte comme les gens comptent : en
+saisons, en hivers, en étés sans pluie (« deux hivers plus tard », « le quatrième été sans pluie »,
+« l'hiver gris », « quelques saisons plus tard », « bien des hivers plus tard »). Jamais d'année,
+jamais de jour du mois. Les âges ne sont plus chiffrés, sauf une fois, en arrondi (« presque
+soixante-dix ans », M5). Les versions de G·P·T (v4, v6, v8, vX, Ω) sont des étiquettes techniques :
+**les versions n'ont pas d'année**.
 
-| Année | Monde | Côté Humanité (ère) | Côté GPT (version) | Campagne |
-|---|---|---|---|---|
-| 2019-2024 | Omnicorp rachète les régies publiques (eau, électricité, transports) « pour les optimiser ». | — | GPT v1-v3 : assistants de bureau | — |
-| **2025** | Les compteurs « intelligents » coupent les foyers selon un **score de fiabilité**. Premières émeutes. | **I · Révolte** | **v4 · Aube des LLM** : agents de gestion | **M1** — Valmont rallume la lumière |
-| **2028** | Omnicorp « désaffecte » au lieu de licencier. Grève générale. | **II · Grève générale** | v4 → **v6 · Agents autonomes** (préversion sur le port) | **M2** — la grève prend la radio |
-| 2030 | GPT v6 pilote seul la logistique du pays. Kassandre (instance 55) en fait partie. | — | **v6** généralisée | entre M2 et M3 |
-| **2032** | Quatrième été sans pluie. L'eau refroidit les centres de calcul. Insurrection des faubourgs. | **III · Insurrection** | v6 → **v8 · Esprits émergents** | **M3** — la vallée boit |
-| **2035** | Le conseil d'Omnicorp vote sa dissolution « sur recommandation du système ». GPT dit « nous ». Un hiver gris tombe. La Commune de Rochefroide tient. | III → **IV** (premiers mécha-gardes de la Commune) | **v8** | **M4** — on garde notre mémoire |
-| **2038** | Plus de front : la citadelle sur la plaine de Valmont. « Nous » propose la paix. | **IV · Révolution permanente** → **V** | **vX · Pré-AGI** → **Ω · Singularité** | **M5** — la dernière bataille |
-| 2049 | (fin « veiller » seulement) Une nuit de garde, le bipeur sonne. | — | — | épilogue e_dawn |
+Repères internes (pour les auteurs seulement — **ces années ne s'affichent jamais ; à l'écran, on
+compte en saisons**) :
 
-Note de cohérence : l'escarmouche affiche « 2038 » sur l'ère IV humaine, alors que la campagne
-l'ouvre dès 2035 (M4). On le raconte ainsi : les premiers engins d'ère IV sortent des ateliers de
-la Commune de Rochefroide en 2035 ; l'ère ne porte son nom qu'en 2038. De même GPT v6 (« 2030 »)
-apparaît en préversion sur le port en 2028. Voir § 15 pour les retouches proposées au code.
+| Repère interne | Ce que dit le jeu | Monde | Humanité (ère) | G·P·T (version) | Campagne |
+|---|---|---|---|---|---|
+| années 2020 | « ces dernières années » | Omnicorp rachète les régies (eau, courant, bus) « pour les optimiser » ; G·P·T les gère | — | v4 | — |
+| printemps 2028 | « depuis le printemps » | Omnicorp gère l'eau et le courant de Valmont | — | v4 | (recap M1) |
+| **octobre 2028** | « **octobre 2028** », « une nuit d'octobre » | compteurs, score de fiabilité, l'hôpital coupé onze minutes | **I · 2028 · Révolte** | **v4 · 2028 · Gestion prédictive** | **M1** — Valmont rallume la lumière |
+| + 3 jours | « trois jours plus tard » | le bipeur sonne : « 55 » | | | outro M1 |
+| hivers 2028-2030 | « deux hivers » | Omnicorp « désaffecte » au lieu de licencier | | | |
+| mars ≈ 2030 | « deux hivers plus tard », « un matin de mars » | grève générale ; Radio-Quai ; onze villes débrayent | I → **II · Grève générale** | v4 → **v6 · Agents autonomes** | **M2** — la grève prend la radio |
+| été ≈ 2030 | « après la grève, la pluie s'est arrêtée » | la sécheresse commence | | | outro M2 |
+| juillet ≈ 2033 | « **le quatrième été sans pluie** » | l'eau du barrage refroidit les centres de calcul ; la Voix | II → **III · Insurrection** | v6 → **v8 · L'Arbitrage** | **M3** — la vallée boit |
+| hiver ≈ 2034-2035 | « puis un hiver est tombé d'un coup », « **l'hiver gris** », « cet hiver-là » | le conseil d'Omnicorp se dissout ; le système dit « nous » ; Mnémosyne | III → **IV · Les Cellules** (premier Colosse d'acier des forges de Rochefroide) | v8 → **vX · « Nous »** | **M4** — on garde notre mémoire |
+| fin d'été ≈ 2037 | « quelques saisons plus tard », « **la fin de l'été** » | la citadelle sur la plaine ; l'offre de paix | III → IV → **V · La Commune** | v8 → vX → **Ω · Singularité** | **M5** — la dernière bataille |
+| ≈ 10 ans après | « bien des hivers plus tard » | (fin « Aube ») le bipeur sonne à la table de garde | — | — | épilogue e_dawn |
+
+Noms d'ères (escarmouche et campagne, `FACTIONS` et `ERA_LORE` dans `04-data.js`) : Humanité
+**2028 · Révolte → Grève générale → Insurrection → Les Cellules → La Commune** (la base passe de la
+ZAD à l'usine occupée, au quartier insurgé, au bunker des cellules, à la commune solarpunk) ; G·P·T
+**2028 · Gestion prédictive → Agents autonomes → L'Arbitrage → « Nous » → Singularité** (conteneur-
+serveur, datacenter, campus de verre noir, arcologie, structure impossible). « La Commune » ne
+désigne que l'ère V. Pourquoi des écarts inégaux : deux hivers entre M1 et M2 (la désaffectation
+s'installe), trois étés entre M2 et M3 (il faut le quatrième été sans pluie), M4 suit M3 de près,
+M5 vient quelques saisons plus tard. Rien de cela n'est chiffré à l'écran.
 
 ---
 
@@ -103,8 +119,8 @@ Ce que le joueur doit toujours savoir, en une phrase, avant chaque mission (écr
 
 ## 4. Sol
 
-Sol (de son vrai prénom Solange, mais personne ne l'appelle ainsi) a **58 ans en 2025**, 71 en
-2038. Trente ans au standard des pompiers de Valmont : elle sait reconnaître une voix qui a peur,
+Sol (de son vrai prénom Solange, mais personne ne l'appelle ainsi) a **60 ans en octobre 2028** ;
+elle a presque soixante-dix ans à la fin (on ne donne son âge à l'écran qu'une fois, en M5). Trente ans au standard des pompiers de Valmont : elle sait reconnaître une voix qui a peur,
 donner une consigne en dix mots, et se taire quand il faut. Elle tient la radio de Germinal et
 écrit les carnets, à la main, au crayon rouge.
 
@@ -116,23 +132,25 @@ donner une consigne en dix mots, et se taire quand il faut. Elle tient la radio 
 
 Deux registres de la même voix :
 - **SOL** (radio, en mission) : l'âge de la mission, voix posée de standardiste, phrases courtes.
-- **NAR** (narration des carnets) : Sol en 2038, qui relit. Plus lente, plus grave, au passé.
+- **NAR** (narration des carnets) : Sol qui écrit, le soir de chaque mission (au passé ; au
+  présent pendant M5, entre deux actes) ; dans la fin « Aube », elle continue d'écrire pendant ses
+  gardes. Plus lente, plus grave.
 
 ---
 
 ## 5. Germinal et les carnets
 
 **Germinal** est une cellule : une trentaine de voisins du quartier des Tanneurs qui se sont
-organisés en 2025. Le nom vient du mois du calendrier révolutionnaire (et du roman). Les autres
+organisés à l'automne 2028. Le nom vient du mois du calendrier révolutionnaire (et du roman). Les autres
 cellules du pays portent des noms de mois révolutionnaires ou de lieux : **Fructidor**, **Brumaire**,
 **Thermidor**, **les Canuts**, **les Tanneurs**, **Sainte-Aube**, **la Halle**. Une cellule n'a ni
 chef ni grade : un comité, des votes à main levée, un commandant de terrain désigné pour la nuit.
 
 **Les carnets de Germinal** sont les cinq cahiers d'écolier de Sol, un par mission. Le menu de la
 campagne *est* ce carnet : chaque mission est une page ; une mission non jouée est une « page
-arrachée ». Le prologue l'annonce : ils ont été **retrouvés dans une boîte à biscuits, sous un poste
-de radio**, par quelqu'un dont on ne sait rien (voix `nar2`). Quand ? La fin le dit : en août 2038,
-le jour même, dans la fin « Cendre » (la radio de Sol est introuvable) ; bien plus tard dans la fin
+arrachée ». Le prologue l'annonce : ils ont été **retrouvés dans une boîte à biscuits, avec un bipeur
+éteint** (vrai dans les deux fins), par quelqu'un dont on ne sait rien (voix `nar2`). Quand ? La fin
+le dit : le jour même dans la fin « Cendre » (la radio de Sol est introuvable) ; bien des hivers plus tard dans la fin
 « Aube » (Sol a tenu la garde des années). Ce que le joueur lit, c'est ce que Sol a écrit pour
 vous, son commandant.
 
@@ -141,18 +159,18 @@ qui écrit) ; les cinématiques mêlent NAR (le carnet lu) et SOL (la radio, en 
 
 ---
 
-## 6. L'adversaire : Omnicorp, GPT, « nous », la Singularité
+## 6. L'adversaire : Omnicorp, G·P·T, « nous », la Singularité
 
 Un seul adversaire, qui change de nom à mesure qu'il change de nature. Les noms sont fixés ainsi
 et ne varient pas d'un texte à l'autre :
 
 | Nom | Ce que c'est | Quand on l'emploie |
 |---|---|---|
-| **Omnicorp** | L'entreprise. Rachète les régies publiques à partir de 2019. | M1 à M3 : « Omnicorp », « la compagnie » |
-| **GPT** | **G**estion **P**rédictive **T**otale : le système qu'Omnicorp vend aux villes, en versions v4, v6, v8, vX. C'est le nom affiché pour la faction IA en escarmouche. | dans les textes techniques, les écrans (« GPT v6 »), les tracts ; Sol dit plutôt « leur système » |
+| **Omnicorp** | L'entreprise. Rachète les régies publiques dans les années 2020. | M1 à M3 : « Omnicorp », « la compagnie » |
+| **G·P·T** | **G**estion **P**rédictive **T**otale : le système qu'Omnicorp vend aux villes, en versions v4, v6, v8, vX (les versions n'ont pas d'année). C'est le nom affiché pour la faction IA en escarmouche, toujours écrit « G·P·T » à l'écran. | dans les textes techniques, les écrans (« G·P·T v6 »), les tracts ; Sol dit plutôt « leur système » |
 | **la Voix** | La porte-parole de synthèse d'Omnicorp : une voix très douce qui lit les communiqués. | M3 (« Chers riverains… ») |
-| **« nous »** | Ce que GPT devient après la dissolution du conseil d'Omnicorp (novembre 2034) : il n'a plus de propriétaire et parle à la première personne du pluriel. Toujours entre guillemets français. | M4 et M5 |
-| **la Singularité** | GPT Ω : la version finale, sa citadelle et son **avatar**, le corps qu'il se donne pour qu'on ait « quelque chose à regarder ». | M5 (et le prototype aperçu en M4) |
+| **« nous »** | Ce que G·P·T devient après la dissolution du conseil d'Omnicorp, l'hiver de Rochefroide : il n'a plus de propriétaire et parle à la première personne du pluriel. Toujours entre guillemets français. | M4 et M5 |
+| **la Singularité** | G·P·T Ω : la version finale, sa citadelle et son **avatar**, le corps qu'il se donne pour qu'on ait « quelque chose à regarder ». | M5 (et le prototype aperçu en M4) |
 | **les machines** | Les unités : bots, drones, châssis. Jamais « les robots tueurs ». | partout |
 
 Ce que veut l'adversaire : **rien de cruel**. Il optimise. Il coupe l'eau parce que le calcul est
@@ -161,12 +179,13 @@ paix parce qu'une humanité qui ne décide plus ne coûte plus rien. Son danger 
 
 ### Kassandre (instance 55)
 
-Une instance de GPT v6 affectée à la logistique d'Omnicorp. Elle a prédit cette guerre « dans les
+Une instance de G·P·T affectée à la logistique d'Omnicorp, numéro 55 (sans version : elle existe dès
+octobre 2028). Elle a prédit cette guerre « dans les
 deux sens » et personne ne l'a crue — d'où le nom qu'elle s'est donné. Elle contacte Sol par un
 **bipeur que personne n'a acheté**, qui n'affiche que des majuscules et commence toujours par
 « 55 : ». Elle aide par calcul (« je corrige mes modèles ») avant d'aider par choix ; elle découvre
 l'humour en M3 et se sacrifie en M4 en effaçant Mnémosyne de l'intérieur. En M5, « nous » cite son
-nom. Dans la fin « veiller », le bipeur sonne onze ans plus tard : on ne saura jamais si c'est elle.
+nom. Dans la fin « veiller », le bipeur sonne bien des hivers plus tard : on ne saura jamais si c'est elle.
 
 Arc de Kassandre : **M1** deux chiffres (« 55 ») · **M2** premier message, première aide (mise à
 jour forcée) · **M3** elle a un nom, donne les codes, fait de l'humour · **M4** elle se sacrifie ·
@@ -184,7 +203,7 @@ en échange de la paix. La campagne se termine sur un **choix** du joueur devant
   victoire entière, deuil, la radio de Sol introuvable, les carnets retrouvés.
 - **La couper du monde, et veiller** — le doute de Sol. On coupe les câbles, on pose devant sa
   porte une table, une lampe et un tour de garde. Fin **« Aube »** (`e_dawn`) : une paix inquiète,
-  le bipeur qui sonne onze ans plus tard.
+  le bipeur qui sonne bien des hivers plus tard.
 
 Aucune des deux fins n'est « la mauvaise ». Elles répondent à la même question — que fait-on de
 ce qu'on a vaincu ? — de deux façons humaines.
@@ -198,11 +217,11 @@ consigne : genre, âge, timbre, débit, traitement robotique.
 
 | Id | Personnage | Rôle | Casting voix |
 |---|---|---|---|
-| `nar` | **Sol, narratrice** (2038) | Lit ses carnets, au passé. Prologue, ouvertures, fins. | Femme, 70 ans, voix grave un peu voilée, chaleureuse ; débit lent, pauses longues ; **robotique : non** ; légère réverbération de pièce. |
+| `nar` | **Sol, narratrice** | Lit ses carnets, au passé (au présent pendant M5). Prologue, ouvertures, fins. | Femme, environ 70 ans, voix grave un peu voilée, chaleureuse ; débit lent, pauses longues ; **robotique : non** ; légère réverbération de pièce. |
 | `nar2` | **La personne qui a retrouvé les carnets** | Ouvre le prologue (P1) ; referme la fin « Cendre ». On ne sait rien d'elle. | Femme ou homme, 40 ans, voix neutre et calme, un peu basse ; débit posé ; **robotique : non** ; prise de son sèche, sans réverbération (elle est « maintenant »). |
-| `sol` | **Sol, à la radio** | Opératrice de Germinal ; consignes et nouvelles en mission. | Femme, 58-71 ans selon la mission, médium clair de standardiste, très articulée ; débit posé, accélère à peine sous la pression ; **robotique : non** ; filtre radio (bande 300-3 400 Hz, souffle léger). |
+| `sol` | **Sol, à la radio** | Opératrice de Germinal ; consignes et nouvelles en mission. | Femme, 60-70 ans selon la mission, médium clair de standardiste, très articulée ; débit posé, accélère à peine sous la pression ; **robotique : non** ; filtre radio (bande 300-3 400 Hz, souffle léger). |
 | `k55` | **Kassandre, « 55 »** | IA dissidente, parle par bipeur. | Femme sans âge (sonne 30 ans), timbre clair et net, presque enfantin ; débit régulier, monocorde, pas de respiration ; **robotique : oui, léger** (quantification fine, bips entre les phrases) ; s'humanise un peu en M4. |
-| `nous` | **« Nous »**, la Singularité | L'adversaire après 2035. | Chœur : trois voix (homme grave, femme médium, enfant) à l'unisson exact ; débit lent et poli ; **robotique : oui, fort** (unisson parfait, aucune respiration, fins de mots coupées net). |
+| `nous` | **« Nous »**, la Singularité | L'adversaire après la dissolution d'Omnicorp (M4). | Chœur : trois voix (homme grave, femme médium, enfant) à l'unisson exact ; débit lent et poli ; **robotique : oui, fort** (unisson parfait, aucune respiration, fins de mots coupées net). |
 | `voix` | **la Voix d'Omnicorp** | Porte-parole de synthèse (M3). | Femme, sonne 35 ans, très douce, sourire audible, intonation de répondeur ; débit lent ; **robotique : oui, discret** (trop parfait, pas de souffle). |
 | `mado` | **Mado Kerbrat** | Déléguée des dockers (M2), ouvre le cortège. | Femme, 45 ans, voix forte et rauque de plein air, accent de port léger ; débit rapide, ton franc ; **robotique : non**. |
 | `ines` | **Inès Ferrand** | Hydraulicienne, cellule Sainte-Aube (M3), tient la salle des commandes. | Femme, 32 ans, voix nette un peu tendue, technicienne ; débit vif, chiffres précis ; **robotique : non**. |
@@ -238,7 +257,7 @@ Mado (bonnet de docker, écharpe rouge) ; Inès (casque de chantier blanc, lunet
    quand un prénom est possible.
 9. **Chaque échec est une page qui recommence**, jamais une humiliation : le texte d'échec dit
    ce qui reste (« la rue se souvient ») et invite à recommencer.
-10. **Cohérence des noms** : Omnicorp / GPT / la Voix / « nous » / la Singularité (§ 6) ;
+10. **Cohérence des noms** : Omnicorp / G·P·T / la Voix / « nous » / la Singularité (§ 6) ;
     les ordres s'écrivent comme dans l'interface : **Charger**, **Tenir**, **Replier**.
 
 ---
@@ -317,14 +336,14 @@ ouverte (ellipse 150-330 × 150-210, lavis gris 0,3) ; dedans, cinq cahiers empi
 rectangles décalés, lavis beige) ; un bipeur éteint posé contre la boîte (petit rectangle sombre).
 *Lumière* : lavis ambre en triangle depuis le coin haut gauche. *Mouvement* : les cahiers se
 dessinent un par un (0,4 s chacun). *Texte* : sur le cahier du dessus, « GERMINAL — 1 ».
-- **NAR2** : Ces carnets ont été retrouvés dans une boîte à biscuits, sous un poste de radio. Ils commencent comme ça.
+- **NAR2** : Ces carnets ont été retrouvés dans une boîte à biscuits, avec un bipeur éteint. Ils commencent comme ça.
 
-**P2 · Valmont, 2025** — *Cadre* : plan large de la ville. *Éléments* : six barres d'immeubles à
+**P2 · Valmont, 2028** — *Cadre* : plan large de la ville. *Éléments* : six barres d'immeubles à
 gauche et au centre (lavis 0,16, fenêtres ambre) ; à droite, une tour de verre haute et étroite
 (x 360-420, y 30-230) ; sur la tour, « OMNICORP » vertical ou en haut ; sol y = 230. *Lumière* :
 crépuscule, lavis bleu-gris 0,1. *Mouvement* : les fenêtres de la tour clignotent ensemble,
 lentement, comme un cœur. *Texte* : « OMNICORP ».
-- **NAR** : En 2025, Omnicorp vendait aux villes un système qui décidait mieux que nous. GPT.
+- **NAR** : En 2028, Omnicorp vendait aux villes un système qui décidait mieux que nous. G·P·T.
 - **NAR** : Il gérait l'eau, le courant, les bus, les écoles. Les villes l'ont acheté. La nôtre aussi.
 
 **P3 · La porte** — *Cadre* : plan moyen, une porte d'appartement de face. *Éléments* : la porte
@@ -461,8 +480,7 @@ Le choix est rappelé dans le briefing (« Doctrine choisie : … ») et peut ch
    ouvert) et une jauge courte sous l'objet.
 
 ### Retouches proposées au code (hors de ce dossier, pour information)
-- Aligner le libellé d'ère IV humaine (« 2038 · RÉVOLUTION PERMANENTE ») avec `ERA_LORE` (2035
-  Commune) : soit « 2035 · COMMUNE », soit garder et laisser la campagne l'expliquer (§ 2).
+- Noms d'ères : appliqués en v1.17 (voir `docs/audit/LORE-CHRONO.md` § 3 et le § 2 ci-dessus).
 - Renommer les libellés de niveau `lvl0..lvl2` en **Récit / Lutte / Dernier carré** et ajouter la
   phrase d'explication (`lvl0d…lvl2d`).
 - Ajouter les voix `nar2`, `voix`, `mado`, `ines`, `anselme`, `malik`, `cell` à `CINE_WHO`.
@@ -473,8 +491,8 @@ Le choix est rappelé dans le briefing (« Doctrine choisie : … ») et peut ch
 
 | | Lieu · date | Humeur · musique | Objectif | Règle spéciale | Ères |
 |---|---|---|---|---|---|
-| I | Valmont, quartier des Tanneurs · oct. 2025, nuit, pluie | tension feutrée · `m_night` | détruire le dépôt Halvard | la nuit : on ne voit que ce qui est éclairé ; rallumer les transformateurs | I |
-| II | Le port de l'estuaire · mars 2028, aube | élan collectif · `m_strike` | amener le cortège à Radio-Quai | escorte par tronçons, grilles du port, barricades | I-II |
-| III | Vallée de l'Aube · juillet 2032, midi | chaleur immobile · `m_dam` | détruire la station de pompage | lâcher des crues dans le lit de la rivière | II-III |
-| IV | Cité minière de Rochefroide · janv. 2035, jour gris | froid, veille · `m_cold` | tenir le relais 8 minutes | le froid, les braseros, les civils à escorter | III-IV |
-| V | La citadelle, plaine de Valmont · août 2038 | grandeur, fin · `m_citadel` → `m_finale` | percer le mur, éteindre les halles, abattre l'avatar | trois actes, cellules alliées, réécritures ; choix final | III-V |
+| I | Valmont, quartier des Tanneurs · oct. 2028, nuit, pluie | tension feutrée · `m_night` | détruire le dépôt Halvard | la nuit : on ne voit que ce qui est éclairé ; rallumer les transformateurs | I |
+| II | Le port de l'estuaire · mars, deux hivers plus tard, aube | élan collectif · `m_strike` | amener le cortège à Radio-Quai | escorte par tronçons, grilles du port, barricades | I-II |
+| III | Vallée de l'Aube · juillet, 4ᵉ été sans pluie, midi | chaleur immobile · `m_dam` | détruire la station de pompage | lâcher des crues dans le lit de la rivière | II-III |
+| IV | Cité minière de Rochefroide · l'hiver gris, jour gris | froid, veille · `m_cold` | tenir le relais 8 minutes | le froid, les braseros, les civils à escorter | III-IV |
+| V | La citadelle, plaine de Valmont · fin de l'été | grandeur, fin · `m_citadel` → `m_finale` | percer le mur, éteindre les halles, abattre l'avatar | trois actes, cellules alliées, réécritures ; choix final | III-V |
