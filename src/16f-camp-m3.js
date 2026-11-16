@@ -77,7 +77,9 @@ BIOMES.dam = {
     { par:0.08, w:1024, h:230, off:0, paint(g, w, h, rnd){                          // chaîne moyenne, falaise et cascade
         const P = 6.283/w, ridge = x => h-120-34*Math.sin(x*P*2+0.6)-18*Math.sin(x*P*5+1)-9*Math.sin(x*P*11);
         g.fillStyle = '#71879a'; g.beginPath(); g.moveTo(0,h); for (let x=0;x<=w;x+=6) g.lineTo(x, ridge(x)); g.lineTo(w,h); g.closePath(); g.fill();
-        g.fillStyle = 'rgba(40,56,72,0.25)'; for (let x=0;x<w;x+=6){ const y = ridge(x); if (Math.sin(x*P*5+1) < -0.2) g.fillRect(x, y, 6, 40); }   // versants à l'ombre
+        g.fillStyle = 'rgba(40,56,72,0.25)'; { let run = null;                                  // versants à l'ombre : bandes qui suivent la crête (plus d'escalier)
+          const flush = () => { if (run){ g.beginPath(); g.moveTo(run[0][0], run[0][1]); for (const q of run) g.lineTo(q[0], q[1]); for (let k=run.length-1;k>=0;k--) g.lineTo(run[k][0], run[k][1]+40); g.closePath(); g.fill(); run = null; } };
+          for (let x=0;x<=w;x+=2){ if (Math.sin(x*P*5+1) < -0.2){ (run = run || []).push([x, ridge(x)]); } else flush(); } flush(); }
         g.strokeStyle = 'rgba(40,56,72,0.3)'; g.lineWidth = 0.8; g.beginPath(); for (let i=0;i<60;i++){ const x = rnd()*w, y = ridge(x)+10+rnd()*60; g.moveTo(x,y); g.lineTo(x+8,y+6); } g.stroke();
         const cx = 640, cy = ridge(cx)+16;                                                 // la cascade (le trait d'eau est animé à part)
         g.fillStyle = '#566a7a'; g.beginPath(); g.moveTo(cx-22, h-40); g.lineTo(cx-14, cy-6); g.lineTo(cx-4, cy-12); g.lineTo(cx+8, cy-4); g.lineTo(cx+18, cy+30); g.lineTo(cx+24, h-40); g.closePath(); g.fill();   // falaise

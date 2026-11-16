@@ -119,7 +119,7 @@ BIOMES.rochefroide = {
         g.fillStyle = 'rgb(158,168,182)'; g.beginPath(); g.moveTo(0,h); g.lineTo(0,h-70);
         let x = 0, y = h-70; while (x<w){ x += 30+rnd()*50; y = clamp(y+(rnd()-0.5)*26, h-128, h-50); if (x>560 && x<900) y = h-120; g.lineTo(Math.min(x,w), x>=w? h-70 : y); }
         g.lineTo(w,h); g.closePath(); g.fill();
-        m4Hatch(g, 0, h-120, w, 120, 9, 'rgba(96,108,126,0.22)');
+        g.save(); g.clip(); m4Hatch(g, 0, h-128, w, 128, 9, 'rgba(96,108,126,0.22)'); g.restore();       // hachures dans la silhouette seulement (plus de bande rectangulaire dans le ciel)
         g.fillStyle = 'rgba(214,218,224,0.5)'; g.fillRect(0, h-44, w, 44); } },
     { par:0.12, w:1024, h:220, off:4, paint(g, w, h, rnd){                               // terrils et chevalements
         const ink = 'rgb(98,108,126)';
