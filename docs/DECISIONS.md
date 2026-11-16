@@ -9,3 +9,8 @@
   fichiers indexés par empreinte (langue + locuteur + texte) pour une régénération incrémentale.
 - **2026-11 · Campagne** : chaque mission autonome dans son fichier `src/16d…16h` ; actes avec règles
   explicites de ce qui est conservé / remis à zéro ; pas de lacs d'escarmouche hors mission qui les prévoit.
+- **2026-11 · Audio et voix gelés** : consigne de l'auteur — ne plus retoucher les sons ni les voix avant la
+  version « finale finale » ; il demandera lui-même une refonte complète (voix procédurale, accent correct
+  par langue). Les audits peuvent signaler des bugs de logique audio, pas de qualité sonore.
+- **2026-11 · Fable en conseiller** : la vérification finale de v1.17 est confiée à un agent Fable en lecture
+  seule (il conseille, ne code rien).
