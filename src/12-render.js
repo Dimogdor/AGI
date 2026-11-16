@@ -1639,7 +1639,7 @@ function bandT(x0,y0,x1,y1,t,w,col){
   TC.save(); TC.translate(x,y); TC.rotate(Math.atan2(y1-y0,x1-x0)); TC.fillStyle=col; TC.fillRect(-1.3,-w/2,2.6,w); TC.restore();
 }
 // bouche de l'arme [avance, hauteur] par rôle : tirs, éclairs et obus partent enfin du canon
-const MZ_DEF=[10,-26], MZ_MEL=[8,-36], MZ_HR=[29,-40], MZ_HS=[25,-47], MZ_BS=[7,-55], MZ_BR=[0,1,2,3,4].map(e=>[22+e,-35.5]);
+const MZ_DEF=[10,-26], MZ_MEL=[8,-36], MZ_HR=[29,-40], MZ_HS=[25,-47], MZ_BS=[28,-57], MZ_BR=[0,1,2,3,4].map(e=>[30+e,-34.5]);
 function muzzleOf(u){
   if (u.fly || u.role==='hero' || u.role==='gremlin') return MZ_DEF;
   const hum = u.fac==='HUM';
@@ -1654,7 +1654,7 @@ function muzzleOf(u){
 let SPART = 'full', SPOSE = 0;
 const LEGS = { W:48, H:40, ox:-24, oy:-34 };          // position de la toile des jambes / pieds
 const unitHeavy = (kind, role) => role==='tank' || (kind==='bot' && role==='siege');
-const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || (kind==='hum' && era>=3);
+const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || era>=3;
 function bakePart(kind, fac, role, era, trans, part, pose){
   SPART = part; SPOSE = pose||0;
   try { drawUnitSprite(kind, fac, role, era, trans); } finally { SPART = 'full'; SPOSE = 0; }
@@ -2007,10 +2007,12 @@ function drawHumSprite(fac, role, era, trans, hero){
 // ===== GPT : robots industriels → coque → blindés → effilés → cristal =====
 function drawBotSprite(fac, role, era, trans, hero){
   const cx=USP.cx, F=USP.foot;
-  const lite = hero? '#ff6ad6' : FACTIONS[fac].eraCols[era];         // couleur de l'ère : lumières
+  const RTINT = { melee:'#ff5a5a', tank:'#8a7bff', ranged:'#5ad8ff', siege:'#ffb040', support:'#6aff9a' };   // teinte de rôle (ères III-IV)
+  const lite = hero? '#ff6ad6' : era>=3? mix(FACTIONS[fac].eraCols[era], RTINT[role]||'#ffffff', era===4? 0.45 : 0.25) : FACTIONS[fac].eraCols[era];   // couleur de l'ère : lumières
   const plate = mix(lite,'#4a5260',0.5), frame='#2a3038', joint='#15181d';
-  const tank = role==='tank', heavy = tank || role==='siege', sw = tank? 11 : role==='siege'? 9.5 : 8.5;
-  const lw = heavy? 6.4 : 5, hy0 = tank? 4 : 0;
+  const tank = role==='tank', heavy = tank || role==='siege', melee = role==='melee';
+  const sw = tank? 11 : role==='siege'? 9.5 : melee? 9.5 : role==='ranged'? 7.5 : 8.5;      // mêlée : trapu et large ; tireur : fin
+  const lw = heavy? 6.4 : 5, hy0 = tank? 4 : melee? 3 : 0;
   const P = armPose(hero?'hero':role, era, cx, F);
   if (!hero){ P.f[0]+=1; P.f[1]-=2; P.b[1]-=2; }                       // épaules de châssis plus hautes
   const doBack = SPART==='full' || SPART==='back';
@@ -2024,6 +2026,22 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.fillStyle=joint; TC.beginPath(); TC.arc(cx+7,F-15,2.4,0,6.283); TC.fill();
     plateT([cx-2,F, cx+11,F, cx+8.5,F-4, cx+1,F-5], shade(plate,0.9)); };
   if (SPART==='legs'){ const a=SPOSE*0.3; rot(cx-2,F-25,a,legB); rot(cx+2,F-25,-a,legF); return; }
+  // --- ères III-IV : ailerons dorsaux (III) / éclats de cristal en ailes (IV), pour tous les rôles
+  if (doBack && era===3){
+    for (const [dx,h] of [[0,15],[4,11]]){ plateT([cx-4-dx,F-46, cx-9-dx-h*0.35,F-46-h, cx-7-dx,F-46-h*0.9, cx-1-dx,F-45], shade(plate,1.1));
+      TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=0.8; strokeP([cx-4-dx,F-46, cx-9-dx-h*0.35,F-46-h]); TC.stroke(); }
+    TC.fillStyle=frame; rrectT(cx-12,F-36,5,7,1.5); TC.fill(); glowDot(cx-11.5,F-28.6,1.4,lite,5);              // tuyère
+  } else if (doBack && era===4){
+    for (const [x1,y1,x2,y2] of [[cx-9,F-70,cx-1,F-46],[cx-17,F-60,cx-3,F-42],[cx-14,F-46,cx-3,F-36]]){
+      polyP([x2,y2, x1,y1, x2-8,y2-3, x2-5,y2+4]); TC.fillStyle=shade(plate,1.28); TC.fill(); TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=0.8; TC.stroke(); }
+  }
+  // --- soutien : mât d'antenne et parabole de relais
+  if (doBack && role==='support'){
+    TC.strokeStyle=frame; TC.lineWidth=1.6; strokeP([cx-8,F-45, cx-10,F-69]); TC.stroke();
+    TC.fillStyle=shade(plate,1.15); TC.beginPath(); TC.ellipse(cx-10,F-66,5,1.7,-0.2,0,6.283); TC.fill();
+    glowDot(cx-10,F-70,1.4,lite,5);
+    if (era>=3){ TC.strokeStyle=frame; TC.lineWidth=1.2; strokeP([cx-8,F-52, cx-14,F-60]); TC.stroke(); glowDot(cx-14,F-60.6,1.1,lite,4); }
+  }
   // --- drone de réparation (soutien), derrière
   if (doBack && role==='support'){
     TC.fillStyle=lgrad(cx-16,F-66,cx-4,F-60,[[0,shade(plate,1.4)],[1,shade(plate,0.6)]]);
@@ -2031,14 +2049,21 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.fillStyle=frame; TC.fillRect(cx-17,F-66,14,1.2);
     glowDot(cx-10,F-60.6,1.4,lite,5);
   }
-  // --- nacelle lance-missiles (siège), sur l'épaule arrière
+  // --- siège : dos large, affût et gros canon par-dessus l'épaule (le plus gros gabarit des machines)
   if (doBack && role==='siege'){
-    plateT([cx-14,F-55, cx+2,F-60, cx+4,F-49, cx-12,F-45], plate);
-    TC.fillStyle=frame; polyP([cx+2,F-60, cx+5,F-61, cx+7,F-50, cx+4,F-49]); TC.fill();
-    const n = 2 + Math.min(era,2);
-    for (let i=0;i<n;i++){ const t=(i+0.5)/n; const x=cx+5.5+t*1.6, y=F-60.5+t*10.5;
-      TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(x,y,1.9,0,6.283); TC.fill();
-      TC.fillStyle=era>=2? lite : '#e04a3a'; TC.beginPath(); TC.arc(x+0.3,y,1.2,0,6.283); TC.fill(); }
+    plateT([cx-18,F-60, cx+2,F-62, cx+4,F-40, cx-16,F-36], shade(plate,0.92));                          // affût large
+    TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.9; strokeP([cx-17,F-48, cx+3,F-50]); TC.stroke();
+    TC.fillStyle=frame; rrectT(cx-21,F-54,5,14,1.6); TC.fill();                                       // culasse
+    const bc = era===0? '#6e6a60' : shade(plate,0.82), by1=F-52, by2=F-58;
+    tubeT(cx-8,by1,cx+27,by2,3.5,bc);
+    const along=(t,fn)=>{ TC.save(); TC.translate(cx-8+35*t, by1+(by2-by1)*t); TC.rotate(Math.atan2(by2-by1,35)); fn(); TC.restore(); };
+    if (era===0){ for (const t of [0.35,0.6]) along(t,()=>{ TC.fillStyle='#c4c8cc'; TC.fillRect(-1.6,-4.6,3.2,9.2); }); }  // rafistolé au chatterton
+    else if (era===1){ along(0.5,()=>{ TC.fillStyle=frame; TC.fillRect(-1.6,-5.2,3.2,3.2); tubeT(-14,-5.4,10,-5.4,1.2,shade(bc,0.8)); }); }   // fût de recul
+    else if (era===2){ for (let i=0;i<4;i++){ TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(cx-10+(i%2)*6.4,F-56+Math.floor(i/2)*7,2.2,0,6.283); TC.fill();
+        TC.fillStyle='#e04a3a'; TC.beginPath(); TC.arc(cx-9.7+(i%2)*6.4,F-56+Math.floor(i/2)*7,1.3,0,6.283); TC.fill(); } }   // batterie de missiles
+    else if (era===3){ for (const t of [0.4,0.6,0.8]) along(t,()=>bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(-0.8,-4.8,1.6,9.6); })); }   // bobines
+    else { along(1,()=>{ bloomT(lite,8,()=>{ TC.fillStyle=lite; polyP([0,-4.6, 6,0, 0,4.6, -3,0]); TC.fill(); }); }); }                  // prisme
+    along(1,()=>{ TC.fillStyle=joint; TC.fillRect(-1,-4.2,3.2,8.4); });                                // frein de bouche
     TC.fillStyle=joint; TC.fillRect(cx-6,F-47,4,4);
   }
   if (SPART==='back') return;
@@ -2046,7 +2071,13 @@ function drawBotSprite(fac, role, era, trans, hero){
   if (SPART==='full') legB();
   // --- bras arrière (couche 'armb')
   if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, 4.4, shade(frame,0.85));
-    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill(); }
+    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill();
+    if (melee && !hero){ TC.save(); TC.translate(P.b[4],P.b[5]); TC.rotate(-0.55);                       // lame de l'avant-bras arrière
+      if (era===0){ TC.fillStyle='#c8ccd0'; polyP([0,-1.6, 9,-3.4, 6,0, 9,3.4, 0,1.6]); TC.fill(); }      // cisaille
+      else { TC.fillStyle=lgrad(0,-2,0,2,[[0,'#e8ecf0'],[1,'#6a727c']]); polyP([0,-1.6, 14,-0.8, 17,0.2, 14,1, 0,1.8]); TC.fill();
+        if (era>=3) bloomT(lite,5,()=>{ TC.strokeStyle=lite; TC.lineWidth=0.9; strokeP([1,0, 16,0.2]); TC.stroke(); }); }
+      TC.restore(); }
+  }
   if (SPART==='armb') return;
   // --- jambe avant : cuisse blindée, genou articulé, vérin
   if (SPART==='full') legF();
@@ -2081,6 +2112,13 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.strokeStyle=rgbaC(lite,0.7); TC.lineWidth=0.8; strokeP([cx-sw+1,ct+1.5, cx+2,F-38, cx+sw+1,ct+2.5]); TC.stroke();
     glowDot(cx+2,F-40,2.2,lite,7);
     for (const [x,y] of [[cx-sw-4,F-46],[cx-sw-2,F-30]]){ TC.fillStyle=shade(plate,1.2); polyP([x,y-2.6, x+1.6,y, x,y+2.6, x-1.6,y]); TC.fill(); }  // éclats en orbite
+  }
+  if (tank){                                                                                            // bloc blindé : plastron massif, jupe, deuxième épaulière
+    plateT([cx-sw-2,ct+5, cx+sw+2,ct+5, cx+sw+2,F-33, cx-sw-2,F-33], shade(plate,0.95));
+    TC.strokeStyle='rgba(0,0,0,0.38)'; TC.lineWidth=1; for (let i=0;i<3;i++){ strokeP([cx-sw+1,ct+10+i*3.6, cx+sw-1,ct+10+i*3.6]); TC.stroke(); }
+    TC.fillStyle='rgba(255,255,255,0.45)'; for (const [x,y] of [[cx-sw-0.6,ct+6.6],[cx+sw+0.6,ct+6.6],[cx-sw-0.6,F-35],[cx+sw+0.6,F-35]]){ TC.beginPath(); TC.arc(x,y,0.8,0,6.283); TC.fill(); }
+    plateT([cx-9,F-31, cx+10,F-31, cx+11,F-20, cx-10,F-20], shade(plate,0.85));
+    plateT([cx-sw-5,ct-2, cx-2,ct-1, cx-2,ct+7, cx-sw-6,ct+6], shade(plate,1.0));
   }
   if (heavy || era>=2){                                                                                // épaulière
     const g = era===3? 1.5 : 0;
@@ -2158,16 +2196,28 @@ function drawBotSprite(fac, role, era, trans, hero){
     arm(P.f);
     TC.save(); TC.translate(fh[0],fh[1]); TC.fillStyle='#8a929c'; TC.rotate(-0.5); TC.fillRect(0,-2.6,6,1.6); TC.rotate(0.9); TC.fillRect(0,1,6,1.6); TC.restore();   // pince
     glowDot(fh[0]+6.5,fh[1]-0.2,1.3,lite,6);
-    bloomT(lite,5,()=>crossT(cx-3,F-41,3.6,lite));                                                     // marquage réparateur
+    TC.fillStyle='#f2f4f2'; rrectT(cx-6,F-45,9.5,9.5,1.6); TC.fill();                                    // panneau de soin
+    crossT(cx-1.2,F-40.2,6.6,'#e0443a'); bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(cx-6,F-35.4,9.5,1); });
   } else {
-    // tireur : canon de bras ; siège : canon court de visée sous la nacelle
+    // tireur : long fusil à deux mains, crosse, lunette, bipied ; siège : bras sur la poignée du canon dorsal
     const sh=P.f; limbT([sh[0],sh[1], sh[2],sh[3]], 4.6, frame);
-    const L = role==='siege'? 12 : 19+era;
-    tubeT(sh[2],sh[3]-1, sh[2]+L,sh[3]-1.5, 3.3, plate);
-    TC.fillStyle=frame; TC.fillRect(sh[2]+L*0.3,sh[3]-4.6,1.4,6.4); TC.fillRect(sh[2]+L*0.55,sh[3]-4.6,1.4,6.4);
-    TC.fillStyle=joint; TC.beginPath(); TC.arc(sh[2]+L,sh[3]-1.5,2,0,6.283); TC.fill();
-    glowDot(sh[2]+L,sh[3]-1.5,1.3,lite,6);
-    if (era>=3 && role!=='siege') for (let i=0;i<2;i++) glowDot(sh[2]+L*0.42+i*4,sh[3]-1.2,0.8,lite,4);
+    if (role==='siege'){
+      TC.fillStyle=joint; rrectT(sh[2]-1.5,sh[3]-4,4,8,1.4); TC.fill();                                // poignée
+      glowDot(sh[2]+3.5,sh[3]-2,1.2,lite,5);
+    } else {
+      const L = 27+era, y0=sh[3]-1, rc = era>=3? shade(plate,0.8) : plate;
+      plateT([cx-9,F-44, sh[2]+3,y0-2.4, sh[2]+3,y0+2, cx-7,F-37], frame);                              // crosse sur l'épaule
+      tubeT(sh[2],y0,sh[2]+L,y0-0.5,2.6,rc);
+      tubeT(sh[2]+L*0.62,y0-0.3,sh[2]+L+1.5,y0-0.8,1.7,shade(rc,0.7));                                 // volée amincie
+      TC.fillStyle=frame; TC.fillRect(sh[2]+L*0.25,y0-3.8,1.4,5.4); TC.fillRect(sh[2]+L*0.5,y0-3.8,1.4,5.4);
+      tubeT(sh[2]+L*0.35,y0+1,sh[2]+L*0.5,y0+6,0.8,frame);                                              // bipied
+      if (era>=1){ tubeT(sh[2]+4,y0-4.8,sh[2]+L*0.52,y0-4.8,1.5,'#1c2024');                              // lunette
+        glowDot(sh[2]+L*0.52,y0-4.8,0.9,lite,4); }
+      if (era===3) for (let i=0;i<3;i++) bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(sh[2]+L*0.3+i*5,y0-2.8,1.2,5.4); });           // rails
+      if (era===4) bloomT(lite,8,()=>{ TC.fillStyle=lite; polyP([sh[2]+L+1,y0-0.8-3.4, sh[2]+L+6,y0-0.8, sh[2]+L+1,y0-0.8+3.4, sh[2]+L-1.5,y0-0.8]); TC.fill(); });  // prisme
+      TC.fillStyle=joint; TC.beginPath(); TC.arc(sh[2]+L+1.5,y0-0.8,1.5,0,6.283); TC.fill();
+      glowDot(sh[2]+L+1.6,y0-0.8,1,lite,5);
+    }
   }
 }
 function attackFX(u, x, bodyY, imp, mx){
