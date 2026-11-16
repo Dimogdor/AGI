@@ -77,7 +77,9 @@ BIOMES.dam = {
     { par:0.08, w:1024, h:230, off:0, paint(g, w, h, rnd){                          // chaîne moyenne, falaise et cascade
         const P = 6.283/w, ridge = x => h-120-34*Math.sin(x*P*2+0.6)-18*Math.sin(x*P*5+1)-9*Math.sin(x*P*11);
         g.fillStyle = '#71879a'; g.beginPath(); g.moveTo(0,h); for (let x=0;x<=w;x+=6) g.lineTo(x, ridge(x)); g.lineTo(w,h); g.closePath(); g.fill();
-        g.fillStyle = 'rgba(40,56,72,0.25)'; for (let x=0;x<w;x+=6){ const y = ridge(x); if (Math.sin(x*P*5+1) < -0.2) g.fillRect(x, y, 6, 40); }   // versants à l'ombre
+        g.fillStyle = 'rgba(40,56,72,0.25)'; { let run = null;                                  // versants à l'ombre : bandes qui suivent la crête (plus d'escalier)
+          const flush = () => { if (run){ g.beginPath(); g.moveTo(run[0][0], run[0][1]); for (const q of run) g.lineTo(q[0], q[1]); for (let k=run.length-1;k>=0;k--) g.lineTo(run[k][0], run[k][1]+40); g.closePath(); g.fill(); run = null; } };
+          for (let x=0;x<=w;x+=2){ if (Math.sin(x*P*5+1) < -0.2){ (run = run || []).push([x, ridge(x)]); } else flush(); } flush(); }
         g.strokeStyle = 'rgba(40,56,72,0.3)'; g.lineWidth = 0.8; g.beginPath(); for (let i=0;i<60;i++){ const x = rnd()*w, y = ridge(x)+10+rnd()*60; g.moveTo(x,y); g.lineTo(x+8,y+6); } g.stroke();
         const cx = 640, cy = ridge(cx)+16;                                                 // la cascade (le trait d'eau est animé à part)
         g.fillStyle = '#566a7a'; g.beginPath(); g.moveTo(cx-22, h-40); g.lineTo(cx-14, cy-6); g.lineTo(cx-4, cy-12); g.lineTo(cx+8, cy-4); g.lineTo(cx+18, cy+30); g.lineTo(cx+24, h-40); g.closePath(); g.fill();   // falaise
@@ -375,21 +377,13 @@ function m3DrawIntake(n, t, vw){
   const col = own? (own==='p'? game.p.fac.accent : game.e.fac.accent) : '#9a8a78';
   ctx.save(); ctx.translate(x, y);
   ctx.fillStyle = 'rgba(10,8,8,0.25)'; ctx.beginPath(); ctx.ellipse(0, 2, 44, 6, 0, 0, 6.283); ctx.fill();
-  ctx.fillStyle = '#3d6f88'; ctx.beginPath(); ctx.ellipse(-30, 2, 22, 4, 0, 0, 6.283); ctx.fill();                                 // flaque de la prise
+  blitObj('M3INT', 90, 66, 50, 60, paintIntake);
   ctx.fillStyle = 'rgba(232,242,246,0.6)'; ctx.fillRect(-44, 1+Math.sin(t*2+n.x)*0.7, 28, 1.2);
-  ctx.fillStyle = '#9a9a92'; ctx.fillRect(-12, -9, 42, 9); ctx.fillStyle = 'rgba(40,46,52,0.3)'; ctx.fillRect(18, -9, 12, 9);        // socle de béton
-  ctx.fillStyle = '#7d8a90'; ctx.beginPath(); ctx.ellipse(-30, -5, 11, 5, 0, 0, 6.283); ctx.fill();                                // la crépine (cylindre percé)
-  ctx.strokeStyle = M3_INK; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(-30, -5, 11, 5, 0, 0, 6.283); ctx.stroke();
-  for (let k=-2;k<=2;k++){ ctx.beginPath(); ctx.moveTo(-30+k*4, -9); ctx.lineTo(-30+k*4, -1); ctx.stroke(); }
-  ctx.strokeStyle = '#5a6268'; ctx.lineWidth = 3.4; ctx.beginPath(); ctx.moveTo(-19, -5); ctx.lineTo(-4, -5); ctx.lineTo(-4, -22); ctx.stroke();   // tuyau jusqu'à la pompe
-  ctx.fillStyle = '#4c5a62'; ctx.fillRect(-9, -42, 10, 30); ctx.fillStyle = '#2f3a40'; ctx.fillRect(-11, -45, 14, 4);               // corps de pompe
-  ctx.fillStyle = '#4c5a62'; ctx.beginPath(); ctx.moveTo(1,-36); ctx.lineTo(14,-33); ctx.lineTo(14,-29); ctx.lineTo(1,-30); ctx.closePath(); ctx.fill();   // bec
   const sw = own==='p'? Math.sin(t*3.2)*0.32 : 0.1;                                                                                 // le balancier grince quand la pompe est tenue
-  ctx.save(); ctx.translate(-4, -46); ctx.rotate(sw); ctx.strokeStyle = '#3a3028'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-18, 2); ctx.lineTo(12, -2); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.translate(-4, -46); ctx.rotate(sw); ctx.strokeStyle = DK_INK; ctx.lineWidth = 4.2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-18, 2); ctx.lineTo(12, -2); ctx.stroke(); ctx.strokeStyle = '#6a5a44'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(-18, 2); ctx.lineTo(12, -2); ctx.stroke(); ctx.restore();
   if (own==='p'){ ctx.fillStyle = 'rgba(232,244,248,0.9)'; for (let i=0;i<4;i++){ const ph = (t*2.4+i*0.25)%1; ctx.fillRect(14+ph*4, -31+ph*ph*26, 2, 3); } }   // l'eau coule
-  ctx.strokeStyle = '#3a3028'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(26, -9); ctx.lineTo(26, -52); ctx.stroke();           // fanion
-  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(26, -52); ctx.lineTo(44, -48+Math.sin(t*3)*2); ctx.lineTo(26, -42); ctx.closePath(); ctx.fill();
+  drawFlag(26, -9+1, t, col, false, 44);                                                                                       // fanion cuit
   if (Math.abs(n.prog) > 0.01 && Math.abs(n.prog) < 1){ ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(-22, -64, 44, 5); ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(-22, -64, 44*Math.abs(n.prog), 5); }
   m3Label(cT(M3_UI.intake), 15);
   ctx.restore();

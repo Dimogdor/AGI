@@ -278,9 +278,7 @@ DECOR_THEMES.citadel1 = ['wreck','debris','hedgehog','barricade','hedgehog','deb
 DECOR_THEMES.citadel2 = ['spool','crate5','cable','spool','crate5','debris','cable'];
 DECOR_THEMES.citadel3 = ['shard','shard','cable','shard'];
 DECOR_EXTRA.hedgehog = (d, s) => {                                    // hérisson antichar
-  dShadow(13*s); ctx.strokeStyle = '#3a3632'; ctx.lineWidth = 3.2*s; ctx.lineCap = 'round'; ctx.beginPath();
-  ctx.moveTo(-12*s,0); ctx.lineTo(10*s,-20*s); ctx.moveTo(12*s,0); ctx.lineTo(-10*s,-20*s); ctx.moveTo(-3*s,-2*s); ctx.lineTo(4*s,-22*s); ctx.stroke();
-  ctx.strokeStyle = 'rgba(230,200,160,0.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-11*s,-1); ctx.lineTo(9*s,-20*s); ctx.stroke();
+  dShadow(13*s); blitObj('M5HH', 40, 34, 20, 32, paintHedgehog, s);
 };
 DECOR_EXTRA.spool = (d, s) => {                                       // touret de fibre
   dShadow(12*s); ctx.fillStyle = '#2a3442'; ctx.beginPath(); ctx.ellipse(-8*s,-12*s,4*s,12*s,0,0,6.283); ctx.fill();
@@ -726,14 +724,7 @@ function m5Tag(x, txt, dy, col){                                      // légend
 const m5Lines = (g, pts) => { g.beginPath(); pts.forEach((p,i)=> i? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); };
 // ----- nos camps (repère local : pieds de la base en (0,0), la citadelle à droite) -----
 function m5Camp1(t, frac){                                            // les cellules : deux tentes, le camion-radio de Germinal, une banderole
-  for (const [x,w,h,col] of [[-92,46,38,'#6c7a58'],[-48,54,46,'#7a8664']]){
-    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x-w/2,0); ctx.lineTo(x,-h); ctx.lineTo(x+w/2,0); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(20,16,10,0.4)'; ctx.beginPath(); ctx.moveTo(x-4,0); ctx.lineTo(x,-h*0.58); ctx.lineTo(x+7,0); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = 'rgba(20,16,10,0.55)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x-w/2,0); ctx.lineTo(x,-h); ctx.lineTo(x+w/2,0); ctx.stroke(); }
-  ctx.fillStyle = '#4a5846'; ctx.fillRect(-4,-40,64,32); ctx.fillStyle = '#3a4638'; ctx.fillRect(60,-32,22,24); ctx.fillStyle = '#9fc0d0'; ctx.fillRect(64,-29,13,10);            // caisse, cabine, pare-brise
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(-4,-14,86,6);
-  ctx.fillStyle = '#1c1a18'; for (const wx of [8,40,70]){ ctx.beginPath(); ctx.arc(wx,-6,7,0,6.283); ctx.fill(); ctx.fillStyle = '#6a6a66'; ctx.beginPath(); ctx.arc(wx,-6,3,0,6.283); ctx.fill(); ctx.fillStyle = '#1c1a18'; }
-  ctx.strokeStyle = '#2a2622'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(20,-40); ctx.lineTo(20,-84); ctx.moveTo(12,-70); ctx.lineTo(28,-70); ctx.stroke();                   // l'antenne
+  blitObj('M5CAMP1', 220, 96, 120, 90, paintCamp1);
   ctx.fillStyle = '#c42a1c'; const wv = Math.sin(t*3)*2; ctx.beginPath(); ctx.moveTo(20,-84); ctx.lineTo(54,-80+wv); ctx.lineTo(54,-68+wv); ctx.lineTo(20,-72); ctx.closePath(); ctx.fill();   // la banderole
   ctx.fillStyle = 'rgba(255,240,220,0.85)'; ctx.fillRect(26,-79+wv*0.4,22,2);
   for (let k=0;k<2;k++){ const ph = (t*0.8+k*0.5)%1; ctx.strokeStyle = 'rgba(196,42,28,'+(0.5*(1-ph)).toFixed(2)+')'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(20,-84, 8+ph*16, -2.3, -0.8); ctx.stroke(); }

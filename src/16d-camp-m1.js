@@ -756,12 +756,7 @@ campMission(0, {
     const x = z.x-camX; if (x<-80 || x>vw+80) return; const y = gY(z.x), mine = z.owner==='p', foe = z.owner==='e';
     ctx.save(); ctx.translate(x, y);
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(2,1,26,5,0,0,6.283); ctx.fill();
-    ctx.fillStyle = '#4c5058'; ctx.fillRect(-18,-40,36,40); ctx.fillStyle = '#3a3d45'; ctx.fillRect(-20,-44,40,5); ctx.fillRect(12,-40,6,40);   // armoire
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'; for (let i=0;i<5;i++) ctx.fillRect(-14,-34+i*4,14,1.4);                                                  // ouïes
-    ctx.fillStyle = '#e8b830'; ctx.beginPath(); ctx.moveTo(4,-14); ctx.lineTo(10,-26); ctx.lineTo(-2,-14); ctx.closePath(); ctx.fill();           // danger
-    ctx.fillStyle = '#1f1b17'; ctx.beginPath(); ctx.moveTo(4.6,-23); ctx.lineTo(2.6,-19.4); ctx.lineTo(4.6,-19.4); ctx.lineTo(3.2,-15.6); ctx.lineTo(6.4,-20.4); ctx.lineTo(4.4,-20.4); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#22232b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-8,-44); ctx.lineTo(-8,-78); ctx.moveTo(-18,-70); ctx.lineTo(2,-70); ctx.stroke();   // poteau
-    ctx.fillStyle = '#8a8f98'; for (const ix of [-16,-8,0]) ctx.fillRect(ix-1.5,-76,3,6);                                                         // isolateurs
+    blitObj('M1TRF', 64, 92, 32, 88, paintTransformer);
     const col = mine? '#ffd98a' : foe? '#5ad0ff' : '#6a6f78';
     ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-8,-81,3.4,0,6.283); ctx.fill();
     if (mine || foe){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22+0.06*Math.sin(t*6+z.x); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-8,-81,15,0,6.283); ctx.fill(); ctx.restore(); }
@@ -775,12 +770,7 @@ campMission(0, {
     ctx.save(); ctx.translate(x, y);
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(1,1,15,3.6,0,0,6.283); ctx.fill();
     if (mine){ ctx.fillStyle = 'rgba(110,170,205,0.35)'; ctx.beginPath(); ctx.ellipse(-16,1,17,3,0,0,6.283); ctx.fill(); }              // flaque
-    ctx.fillStyle = '#7d1d15'; ctx.fillRect(-8,-3,16,3);                                                                                    // embase
-    ctx.fillStyle = '#c0301f'; ctx.fillRect(-5.5,-26,11,24);                                                                                // fût
-    ctx.fillStyle = '#d8402c'; ctx.fillRect(-5.5,-26,3,24);
-    ctx.fillStyle = '#c0301f'; ctx.beginPath(); ctx.arc(0,-26,6.5,Math.PI,0); ctx.fill();                                                   // dôme
-    ctx.fillStyle = '#8e1d14'; ctx.fillRect(-10,-19,5,6); ctx.fillRect(5,-19,5,6);                                                          // buses
-    ctx.fillStyle = '#e8c04a'; ctx.beginPath(); ctx.arc(0,-33,2.2,0,6.283); ctx.fill(); ctx.fillRect(-0.8,-33,1.6,7);                         // clé des pompiers
+    blitObj('M1HYD', 30, 46, 15, 42, paintHydrant);
     if (mine){ ctx.strokeStyle = 'rgba(150,205,235,0.8)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
       for (let i=0;i<4;i++){ const ph = (t*1.7+i/4)%1; ctx.globalAlpha = 1-ph; ctx.beginPath(); ctx.moveTo(-10, -16); ctx.quadraticCurveTo(-10-ph*8, -22+ph*6, -10-ph*16, -16+ph*18); ctx.stroke(); } ctx.globalAlpha = 1; }
     const col = mine? '#ffd98a' : foe? '#5ad0ff' : '#6a6f78'; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(8,-30,2.4,0,6.283); ctx.fill();
