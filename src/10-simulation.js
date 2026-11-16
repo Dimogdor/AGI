@@ -398,12 +398,16 @@ function heroFollow(u, side, dt, gap, targets){
   if (gap===0 && front!==null && targets && side.stance==='charge'){   // armée en « tenir » : il reste sur la ligne
     let near = null, nd = 220;
     for (const f of targets){ if (f.hp<=0 && !f.isBase) continue; const dx = (f.x-front)*side.side; if (dx>-12 && dx<nd){ nd = dx; near = f; } }
-    if (near){ const w2 = near.x - side.side*u.range*0.5; if ((w2-want)*side.side>0) want = w2; }
-  }
+    // le contact est GARDÉ ~1,5 s après sa disparition (mort de l'ennemi, relève d'une cible) : sans cette mémoire
+    // il bondissait devant le front dès qu'un ennemi passait sous 220 px, puis reculait à reculons
+    if (near){ u._cx = near.x - side.side*u.range*0.5; u._cT = game.t; }
+    else if (u._cx!==undefined && game.t-u._cT>1.5) u._cx = undefined;
+    if (u._cx!==undefined && (u._cx-want)*side.side>0) want = u._cx;
+  } else u._cx = undefined;
   const d = (want-u.x)*side.side;
   const sp = u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*dt;
   if (d>1e-3) u.x += side.side*Math.min(d, sp);                      // pas de zone morte : le front avance de < 1 px/image
-  else if (d<-1) u.x -= side.side*Math.min(-d, sp*1.2);
+  else if (d<-24) u.x -= side.side*Math.min(-d-12, sp*1.2);        // ne recule que s'il est vraiment trop en avant (> 24 px)
   u.x = clamp(u.x, 30, WORLD-30);
 }
 function heroAdvance(u, side, dt){   // même vitesse que tryMove, sans la file d'attente derrière les unités de mêlée
