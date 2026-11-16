@@ -3511,24 +3511,11 @@ function drawIAEye(c, s, t, d, ex, ey, kind){
 const HUM_GAR_HAT = ['#1e1c22','#c8302a','#5a6b3f','#4a4e5a','#e8dcc0'];   // cagoule, casquette, casque, casque à visière, casque clair
 function drawBaseGarrison(s, x, gy, d, deck){
   const n = s.gar.length; if (!n) return;
-  const hum = s.facKey==='HUM';
   for (let gi=0; gi<n; gi++){
-    const g = s.gar[gi] || {}, era = g.era!=null? g.era : s.era, gx = x + (gi-(n-1)/2)*10, top = gy + deck;
-    const bob = Math.sin((g.bob||gi)*0.6)*0.5, hy = top - 4 + bob;
+    const g = s.gar[gi] || {}, era = g.era!=null? g.era : s.era, gx = x + (gi-(n-1)/2)*13, top = gy + deck;
+    const bob = Math.sin((g.bob||gi)*0.6)*0.5;
     const recoil = g.atkT!=null && g.rate!=null && g.atkT > g.rate-0.12;
-    const col = (FACTIONS[g.fac||s.facKey]||s.fac).eraCols[clamp(era,0,4)];
-    // épaules + tête
-    ctx.fillStyle = hum? shade(col,0.8) : '#3a4450'; ctx.beginPath(); ctx.ellipse(gx, top+1.5+bob, 4.4, 3, 0, Math.PI, 0); ctx.fill();
-    if (hum){ ctx.fillStyle='#d8a880'; ctx.beginPath(); ctx.arc(gx, hy, 2.9, 0, 6.283); ctx.fill();
-      ctx.fillStyle=HUM_GAR_HAT[clamp(era,0,4)]; ctx.beginPath(); ctx.arc(gx, hy-0.6, 3.2, Math.PI, 0); ctx.fill();
-      if (era===0){ ctx.fillRect(gx-3.2, hy-0.8, 6.4, 1.6); } }
-    else { ctx.fillStyle='#d8e4ee'; rr(gx-3.2, hy-3.2, 6.4, 6, 2); ctx.fill();
-      ctx.fillStyle=col; ctx.fillRect(gx-0.4+d*0.8, hy-1.4, 2.6*d, 1.6); }
-    // arme
-    const siege = g.role==='siege', ang = siege? -0.45 : -0.06, L = siege? 9 : 10;
-    ctx.strokeStyle = siege? '#5a5a52' : '#24242a'; ctx.lineWidth = siege? 2.6 : 1.7; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(gx+d*1.5, top-1+bob); ctx.lineTo(gx+d*(1.5+L*Math.cos(ang)), top-1+bob+L*Math.sin(ang)); ctx.stroke();
-    if (recoil){ ctx.fillStyle = hum? '#ffd34a' : '#bff'; ctx.beginPath(); ctx.arc(gx+d*(2+L*Math.cos(ang)), top-1+bob+L*Math.sin(ang), 2.4, 0, 6.283); ctx.fill(); }
+    drawGarBust(g.fac||s.facKey, clamp(era,0,4), g.role, g.range!=null? g.range : 100, gx, top+1.5, d, recoil, bob);
   }
 }
 
@@ -3583,18 +3570,14 @@ function drawBase(side){
   drawBaseGarrison(side, x, gy, d, meta.deck);
   // nano-réparation : ouvriers (HUM) / drones (IA)
   if (side.autoRepair){
-    if (hum){ for (let i=0;i<2;i++){ const wx=x+Math.sin(t*0.7+i*2.6)*52, wy=gy-1;
-      ctx.fillStyle='#caa84a'; ctx.beginPath(); ctx.arc(wx,wy-12,2.6,0,6.283); ctx.fill(); ctx.fillStyle='#8a6a3a'; ctx.fillRect(wx-2,wy-10,4,8);
-      if (Math.sin(t*8+i)>0.5){ ctx.fillStyle='#ffd34a'; ctx.fillRect(wx+2,wy-13,2,2); } } }
+    if (hum){ for (let i=0;i<2;i++){ const wx=x+Math.sin(t*0.7+i*2.6)*52; drawRepairer(wx, gy, t, era, i*1.7+side.x*0.01, wx<x? 1 : -1); } }
     else { for (let i=0;i<2;i++){ const a=t*1.4+i*3.14, dx2=Math.cos(a)*46, dy2=-58+Math.sin(a*1.7)*16;
-      ctx.fillStyle='#5ad0ff'; ctx.beginPath(); ctx.moveTo(x+dx2+4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2-3); ctx.lineTo(x+dx2-4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2+3); ctx.closePath(); ctx.fill(); } }
+      drawRepairDrone(x+dx2, gy+dy2, x+dx2*0.55, gy-26, t, era, i*2.3); } }
   }
   // base amochée : panaches de fumée puis flammes, aux points sensibles de CHAQUE base
   if (frac<0.55){ const S = meta.smoke; for (let i=0;i<S.length;i++) dmgSmoke(x+S[i][0]*d, gy+S[i][1], frac, t, side.x+i*31); }
-  const w=110, by=gy-140;
-  ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(x-w/2,by,w,8);
-  ctx.fillStyle=col; ctx.fillRect(x-w/2,by,w*frac,8);
-  ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.strokeRect(x-w/2,by,w,8);
+  const w=100, by=gy-140;
+  inkGauge(x-w/2, by, w, 7, frac, col, fk);
   if (side===game.p && frac<0.95){
     ctx.font=HF(12); ctx.textAlign='center';
     ctx.fillStyle='rgba(255,255,255,'+(0.5+0.3*Math.sin(t*3))+')';
@@ -3693,33 +3676,11 @@ function drawSlot(slot, side, neutral){
   }
   ctx.restore();
   if (popped) ctx.restore();   // fin du pop de construction (le reste — garnison, barres — à l'échelle normale)
-  // garnison : silhouettes animées selon le rôle, aux créneaux
+  // garnison : bustes par camp et par ère, arme pointée vers l'ennemi, aux créneaux
   if (b.gar && b.gar.length){
     for (let gi=0; gi<b.gar.length; gi++){
-      const g = b.gar[gi], gx = x + (gi? 8:-8), gyTop = gy - bh2 - 2;
-      const col = FACTIONS[g.fac].eraCols[g.era];
-      const recoil = g.atkT > g.rate-0.12;
-      // tête qui dépasse
-      if (g.fac==='HUM'){ ctx.fillStyle='#edc39a'; ctx.beginPath(); ctx.arc(gx, gyTop-3, 3.2, 0, 6.28); ctx.fill();
-        ctx.fillStyle=col; ctx.beginPath(); ctx.arc(gx, gyTop-4, 3.5, Math.PI, 0); ctx.fill(); }
-      else { ctx.fillStyle='#e8f4ff'; ctx.beginPath(); ctx.arc(gx, gyTop-3, 3.4, 0, 6.28); ctx.fill();
-        ctx.fillStyle='#1a1a2e'; ctx.beginPath(); ctx.arc(gx+1, gyTop-3, 1.3, 0, 6.28); ctx.fill(); }
-      if (g.range>60){
-        // canon qui suit la cadence + flash au tir
-        ctx.strokeStyle = g.role==='siege'? '#e8d8a0':'#2c2c34'; ctx.lineWidth=2;
-        const ang = g.role==='siege'? -0.5 : -0.08;
-        ctx.beginPath(); ctx.moveTo(gx, gyTop-2);
-        ctx.lineTo(gx + owner.side*10*Math.cos(ang), gyTop-2+10*Math.sin(ang)); ctx.stroke();
-        if (recoil){ ctx.fillStyle = g.fac==='HUM'? '#ffd34a':'#aef';
-          ctx.beginPath(); ctx.arc(gx + owner.side*11, gyTop-3, 2.6, 0, 6.28); ctx.fill(); }
-      } else {
-        // mêlée/tank : lame ou bouclier qui veille à la porte
-        if (g.role==='tank'){ ctx.fillStyle=col; rr(gx + owner.side*4-2, gyTop-6, 3.4, 8, 1); ctx.fill(); }
-        else { ctx.strokeStyle=col; ctx.lineWidth=2;
-          const sw = recoil? 0.8 : Math.sin(g.bob)*0.2;
-          ctx.beginPath(); ctx.moveTo(gx, gyTop-2);
-          ctx.lineTo(gx + owner.side*8*Math.cos(sw-0.4), gyTop-2-8*Math.sin(sw+0.4)); ctx.stroke(); }
-      }
+      const g = b.gar[gi], gx = x + (b.gar.length>1? (gi? 8:-8) : 0), gyTop = gy - bh2 + 2;
+      drawGarBust(g.fac, clamp(g.era,0,4), g.role, g.range, gx, gyTop, owner.side, g.atkT > g.rate-0.12, 0);
     }
   }
   // v1.5 — halo doré « plein régime » : une ferme/marché/puits qui a vieilli sans mourir
@@ -3737,25 +3698,13 @@ function drawSlot(slot, side, neutral){
     }
   }
   // niveau et garnison
-  if ((b.lvl||1)>1){ ctx.font=HF(10); ctx.textAlign='center';
-    ctx.fillStyle='#ffd34a'; ctx.fillText('★'.repeat(b.lvl-1), x, gy-bldH(b)-22); }
-  // défenseurs aux créneaux des murailles : tête + fusil qui dépasse du rempart
+  if ((b.lvl||1)>1) levelChevrons(x, gy-bldH(b)-28, b.lvl-1);
+  // défenseurs aux créneaux des murailles : buste + arme qui dépasse du rempart
   if (b.type==='wall' && b.gar && b.gar.length){
-    for (let gi=0; gi<b.gar.length; gi++){
-      const gx = x-7+gi*14, gTop = gy-bldH(b);
-      ctx.fillStyle = owner.facKey==='HUM'? '#e0b890':'#e8f4ff';
-      ctx.beginPath(); ctx.arc(gx, gTop-4, 3, 0, 6.28); ctx.fill();
-      ctx.strokeStyle='#2c2c34'; ctx.lineWidth=1.8;
-      ctx.beginPath(); ctx.moveTo(gx, gTop-3); ctx.lineTo(gx+owner.side*9, gTop-6); ctx.stroke();
-      if (b.gar[gi].atkT > b.gar[gi].rate-0.1){
-        ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.arc(gx+owner.side*10, gTop-6, 2.2, 0, 6.28); ctx.fill();
-      }
-    }
+    for (let gi=0; gi<b.gar.length; gi++){ const g = b.gar[gi];
+      drawGarBust(g.fac||owner.facKey, clamp(g.era!=null? g.era : owner.era||0,0,4), g.role, g.range!=null? g.range : 100, x-7+gi*14, gy-bldH(b)+2, owner.side, g.atkT > g.rate-0.1, 0); }
   }
-  if (b.gar && b.gar.length){
-    ctx.font=HF(11); ctx.textAlign='center';
-    ctx.fillStyle='#fff'; ctx.fillText('🚪'+b.gar.length, x+20, gy-bldH(b)-12);
-  }
+  if (b.gar && b.gar.length) garCounter(x+(owner.side>0? 22 : -22), gy-bldH(b)-4, b.gar.length, owner.facKey);
   const frac = clamp(b.hp/b.maxhp,0,1);
   // DÉGÂTS VISIBLES (v1.13) : lézardes sous 60 % de PV, davantage sous 30 %, et sol noirci
   if (frac<0.6 && qFx()){ const bh4 = bldH(b), n = frac<0.3? 4 : 2; ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
@@ -3766,23 +3715,10 @@ function drawSlot(slot, side, neutral){
     ctx.fillStyle='rgba(14,10,10,'+(0.28*(1-frac/0.6)).toFixed(3)+')'; ctx.beginPath(); ctx.ellipse(x, gy+1, 26, 4.5, 0, 0, 6.283); ctx.fill();
     ctx.restore(); }
   dmgSmoke(x, gy-bldH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
-  if (frac<1){ const hy = gy-bldH(b)-18;
-    ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-16,hy,32,3.4);
-    ctx.fillStyle = frac>0.4?'#7dd84a':'#ff5a4a'; ctx.fillRect(x-16,hy,32*frac,3.4); }
+  if (frac<1) inkGauge(x-16, gy-bldH(b)-20, 32, 4, frac, gaugeCol(frac), owner.facKey);
   // nano-réparation : l'équipe se déplace sur CHAQUE bâtiment endommagé de la carte
   if (owner && owner.autoRepair && frac<1){
-    if (owner.facKey==='HUM'){
-      const wx2 = x + Math.sin(t*3)*8;
-      ctx.fillStyle='#caa84a'; ctx.beginPath(); ctx.arc(wx2, gy-13, 2.6, 0, 6.28); ctx.fill();
-      ctx.fillStyle='#8a6a3a'; ctx.fillRect(wx2-2, gy-11, 4, 8);
-      if (Math.sin(t*9)>0.6){ ctx.fillStyle='#ffd34a'; ctx.fillRect(wx2+3, gy-14, 1.8, 1.8); }
-    } else {
-      const a2 = t*2.2, dx3 = Math.cos(a2)*14;
-      ctx.fillStyle='#5ad0ff'; ctx.beginPath();
-      ctx.moveTo(x+dx3+4, gy-26); ctx.lineTo(x+dx3, gy-29); ctx.lineTo(x+dx3-4, gy-26); ctx.lineTo(x+dx3, gy-23);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle='rgba(90,208,255,0.4)'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(x+dx3, gy-23); ctx.lineTo(x+dx3, gy-12); ctx.stroke();
-    }
+    if (owner.facKey==='HUM'){ const wx2 = x + 10*Math.sin(t*0.9+slot.x); drawRepairer(wx2, gy, t, owner.era||0, slot.x*0.13, wx2<x? 1 : -1); }
+    else { const dx3 = Math.cos(t*2.2)*14; drawRepairDrone(x+dx3, gy-bldH(b)-6+Math.sin(t*3)*2, x+dx3*0.6, gy-bldH(b)*0.5, t, owner.era||0, slot.x*0.1); }
   }
 }
