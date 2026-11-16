@@ -132,12 +132,65 @@ const ERA_COST = [1.0, 1.35, 1.85, 2.60, 3.70];   // ratios successifs : ×1.35 
 const statMul = e => ERA_STAT[e] ?? (1 + e*0.85);
 const costMul = e => ERA_COST[e] ?? (1 + e*0.5);
 const lvlF = b => Math.pow(1.5, (b.lvl||1)-1); // facteur de niveau bâtiment
+// ================= ASYMÉTRIE DES FACTIONS (docs/audit/FACTIONS.md · bancs : tools/test-factions.mjs) =================
+// Un interrupteur par mécanique. Désactivé = comportement d'avant, à l'identique.
+//   fatigue : la fatigue humaine se déclenche enfin (récupération plus lente, lot 0)
+//   hero : la Singularité reçoit une aura de réparation (comme l'aura de soin du Che) — le banc a montré que sans elle l'Humanité gagnait ~80 %
+//   env : M10, chaque événement a un effet propre à chaque faction   terrain : M8 occupation (HUM) / extraction (IA)
+//   bld : M5 barricades populaires (HUM) / tourelles autonomes (IA)   econ : M1 économie populaire (HUM) / effet réseau (IA)
+const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true };
+// Les tests coupent une mécanique seule avec game.asym = {econ:false}. En CAMPAGNE, aucune mécanique par défaut : une mission
+// s'inscrit à la carte avec `asym:{env:true}` dans sa définition. Le tutoriel n'en a aucune.
+function asymOn(k){
+  const g = (typeof game!=='undefined')? game : null; if (!g || g.tut) return false;
+  if (g.asym && g.asym[k]!==undefined) return !!g.asym[k];
+  if (g.camp) return !!(g.camp.m && g.camp.m.asym && g.camp.m.asym[k]);
+  return !!ASYM[k];
+}
+// Constantes par faction (un seul endroit ; leviers de réglage : FACTIONS.md §5).
+const FAC_TRAITS = {
+  HUM: {
+    heroDmg:0.7, heroAura:14,                        // Che : dégâts ×0,7, aura de soin 14·ère/s à 150 px
+    infCost:0.95,                                    // passif de coût : l'infanterie (mêlée, tireur, tank) coûte 5 % de moins
+    healBase:45, healLvl:10, healPeriod:1,           // médic : soin 45 + 10 par niveau, toutes les 1,3 − 0,2·niveau s
+    texD:0.82, texR:0.82,                            // texture de frappe : dégâts ×0,82, cadence ×0,82 (rapide et léger)
+    heatGain:0.045, tiredT:3, tiredDmg:0.8, tiredRate:1.3,   // effort : +0,045 de fatigue par coup, 3 s de fatigue à −20 % de dégâts et cadence ×1,3
+    heatRec:0.04,                                    // fatigue : récupération /s (0,05 avant : la fatigue ne se déclenchait presque jamais)
+    longevT:600,                                     // M1 : bonus de longévité à plein régime en 10 min (15 min pour la machine)
+    rebuildK:0.5, rebuildT:90,                       // M1 : rebâtir le même type sur une ruine de moins de 90 s coûte −50 %
+    occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
+    wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
+    env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
+          frozen:0.5, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
+          acidUnit:18, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
+          sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:100 },
+  },
+  IA: {
+    heroDmg:1.3, heroAura:6,                         // Singularité : dégâts ×1,3, aura de réparation 6·ère/s à 150 px (`hero`)
+    infCost:1,
+    healBase:40, healLvl:9, healPeriod:1.35,         // ruche : soin 40 + 9 par niveau, 35 % plus lent (elle produit aussi des drones)
+    texD:1.22, texR:1.22,                            // texture de frappe : dégâts ×1,22, cadence ×1,22 (lent et lourd)
+    heatGain:0.065, tiredT:4, tiredDmg:0.7, tiredRate:1.5,   // effort : +0,065 de chaleur par coup, 4 s de surchauffe à −30 % de dégâts et cadence ×1,5
+    hpMul:1.05, heatRec:0.030,                       // +5 % PV de base (« robustesse industrielle ») ; refroidissement /s
+    netStep:0.06, netMax:0.24, netCut:12,            // M1 : +6 % de production par autre bâtiment éco (max +24 %), coupé 12 s si l'un d'eux tombe
+    terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
+    turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
+    env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
+          frozen:0.25, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
+          acidUnit:22, acidBld:20, heatUnit:16, heatTired:0.12, heatEco:0.8,
+          sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.5 },
+  },
+};
+const ft = (fk, k) => FAC_TRAITS[fk][k];
+const fte = (fk, k) => FAC_TRAITS[fk].env[k];
 // BONUS DE LONGÉVITÉ : une ferme/marché/puits gardé en vie monte lentement en régime,
-// jusqu'à +200 % de production (×3) au bout de 15 min. Indépendant du niveau d'upgrade :
-// récompense le fait de protéger et réparer ses bâtiments plutôt que de les laisser tomber.
+// jusqu'à +200 % de production (×3) au bout de 15 min (10 min pour l'Humanité si `econ` est actif). Indépendant du niveau
+// d'upgrade : récompense le fait de protéger et réparer ses bâtiments plutôt que de les laisser tomber.
 const LONGEV_MAX_T = 900;                       // 15 minutes pour atteindre le plein régime
-const longevMul = b => 1 + 2*clamp((b&&b.age||0)/LONGEV_MAX_T, 0, 1);
+const longevMul = b => 1 + 2*clamp((b&&b.age||0)/((b && b.fk==='HUM' && asymOn('econ'))? FAC_TRAITS.HUM.longevT : LONGEV_MAX_T), 0, 1);
 const GAR_MAX = 2;
+// places de garnison d'un bâtiment (M5 : la muraille humaine en offre 3)
+const garMax = b => (b && b.type==='wall' && b.fk==='HUM' && asymOn('bld'))? FAC_TRAITS.HUM.wallGar : GAR_MAX;
 // structures pouvant accueillir une garnison : tourelles ET murailles (créneaux)
 const canGar = b => !!b && (b.type==='turret' || b.type==='wall');
 const ROLE_FR = {melee:'Mêlée', tank:'Tank', ranged:'Tireur', siege:'Artilleur', air:'Aviation', support:'Soutien'};

@@ -302,17 +302,18 @@ function homeBuff(u){
 function calcRates(side){
   const dwindle = 1 - 0.65*game.dev;
   let rf=4, rm=2.5, rw=0.6;
+  const net = ecoMul(side);                       // M1 : effet réseau de la machine (même formule que updateBuildings)
   for (const s of sideBuildSlots(side)){
     if (!s.b) continue;
-    if (s.b.type==='farmF') rf += BUILDS.farmF.rate*lvlF(s.b)*longevMul(s.b);
-    else if (s.b.type==='farmM') rm += BUILDS.farmM.rate*lvlF(s.b)*longevMul(s.b);
-    else if (s.b.type==='well') rw += BUILDS.well.rate*lvlF(s.b)*longevMul(s.b)*(1-0.5*game.dev);
+    if (s.b.type==='farmF') rf += BUILDS.farmF.rate*lvlF(s.b)*longevMul(s.b)*net;
+    else if (s.b.type==='farmM') rm += BUILDS.farmM.rate*lvlF(s.b)*longevMul(s.b)*net;
+    else if (s.b.type==='well') rw += BUILDS.well.rate*lvlF(s.b)*longevMul(s.b)*(1-0.5*game.dev)*net;
   }
   const key = side===game.p? 'p':'e';
   for (const n of game.nodes) if (n.owner===key){
-    rw += (n.center? 3.5:2.2)*dwindle;
+    rw += (n.center? 3.5:2.2)*dwindle*terrK(side);   // M8 : la machine tire +40 % de ses lacs
     if (n.center){ rf += 2*dwindle; rm += 2*dwindle; }
   }
-  const pm = side.prodMul||1, wM = winterMul();   // même malus dégressif que la vraie production
-  return {f:rf*pm*wM, m:rm*pm*wM, w:rw*pm};
+  const pm = side.prodMul||1;                      // même malus dégressif que la vraie production (hiver : par faction avec M10)
+  return {f:rf*pm*winterK(side,'f'), m:rm*pm*winterK(side,'m'), w:rw*pm};
 }

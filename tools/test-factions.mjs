@@ -25,6 +25,7 @@ const ONLY = new Set(arg('only', 'A,B,C,D,E').split(','));
 const WORKERS = +arg('workers', 4);
 const LABEL = arg('label', '');
 const ASYM_ARG = arg('asym', '') ? Object.fromEntries(arg('asym','').split(',').map(kv => { const [k,v] = kv.split(':'); return [k, v==='1'||v==='true']; })) : null;   // ex. --asym=env:0,econ:0 (B et E)
+const TUNE = arg('tune', '');                       // --tune=IA.netStep=0.08,HUM.texD=0.85 : surcharge FAC_TRAITS (hors .env) avant chaque partie — réglage sans reconstruire
 const SEED0 = +arg('seed', 0);                      // décale toutes les graines (mesures indépendantes)
 const JSON_OUT = arg('json', '');
 
@@ -74,8 +75,11 @@ function __runE(cfg){
   __seed(cfg.seed);
   newGame(cfg.left, 1, false, cfg.right); game.d = __neutralD(); game.e.hp = game.e.maxhp = 1500;
   if (cfg.asym) game.asym = cfg.asym;
+  // sans cataclysme (coupés ici) la partie est DÉTERMINISTE : la graine ne change rien. On la fait donc varier dans le « cerveau » des bots
+  // (mélange d'unités, taille de la vague, phase de décision) et dans l'heure de l'événement.
   const st1={}, st2={}, lv = __LV[2]; let n=0, forced=false, tEnd=1e9, kind='';
-  const T = cfg.tf||300, M = 60;
+  const jm = () => [3,2,4,1,2,1].map(v => v*(0.6+0.8*Math.random())), o1 = {pushN:7+((cfg.seed%5)|0)+2, mix:jm()}, o2 = {pushN:7+((cfg.seed%7)%5)+2, mix:jm()}, ph = (cfg.seed%lv.every)|0;
+  const T = (cfg.tf||240) + (cfg.seed%9)*10, M = 60;
   while (!game.over && game.t < T+M){
     game.aiThink = 1e9;
     const inWin = forced && game.t < tEnd;
@@ -84,11 +88,11 @@ function __runE(cfg){
     if (!game.cata) game.cataCd = 1e9;
     if (!forced && cfg.ev && game.t >= T){ forced = true; const r = __EV[cfg.ev](game); kind = r[0]; tEnd = game.t + r[1] + 0.2; }
     update(0.05); n++;
-    if (n%lv.every===0){ __competentSide(game.p, game.e, st1, {pushN:lv.pushN}); __competentSide(game.e, game.p, st2, {pushN:lv.pushN}); }
+    if (n%lv.every===ph){ __competentSide(game.p, game.e, st1, o1); __competentSide(game.e, game.p, st2, o2); }
   }
   const out = {};
   for (const s of [game.p, game.e]) out[s.facKey+(s===game.p?'':'2')] = { army:__armyVal(s), stock:s.f+s.m+s.w, hp:Math.max(0,s.hp), n:s.units.length };
-  return { over:game.over, v:out };
+  return { over:game.over, hb:!!game.hbombDone, v:out };   // hb : une base est déjà tombée (Bombe H, hiver) — paire écartée du bilan
 }
 `;
 
@@ -103,6 +107,7 @@ async function mkPage(){
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'low', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(300);
   await page.evaluate(BOTS); await page.evaluate(HARNESS);
+  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); const path = p.split('.'); let o = FAC_TRAITS; for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
   return page;
 }
 const pages = await Promise.all(Array.from({length:WORKERS}, mkPage));
@@ -178,7 +183,7 @@ if (ONLY.has('B')){
 /* ---------- C : miroirs de contrôle ---------- */
 if (ONLY.has('C')){
   const n = N*2, jobs = [];
-  for (const flat of [false, true]) for (const fac of ['HUM','IA']) for (let s=0;s<n;s++) jobs.push({mode:'bot', left:fac, right:fac, lv:2, flat, seed:SEED0+9000+s*19});
+  for (const flat of [false, true]) for (const fac of ['HUM','IA']) for (let s=0;s<n;s++) jobs.push({mode:'bot', left:fac, right:fac, lv:2, flat, seed:SEED0+9000+s*19, asym:ASYM_ARG});
   const res = await runAll(jobs, '__runGame', 'C');
   console.log('\nC — miroirs de contrôle (victoire du camp de GAUCHE, bot niveau 2 ; cible 50 ± 6). Le relief (gY) n\'est pas symétrique : « carte plate » l\'isole.');
   REPORT.C = {};
@@ -209,24 +214,24 @@ if (ONLY.has('D') && FULL){
 if (ONLY.has('E')){
   const evs = FULL? ['rain','signal','strike','patch','acid','heat','sand','flood','winter'] : ['rain','strike','acid'];
   const n = FULL? Math.max(N, 24) : 6, jobs = [];
-  for (const left of ['HUM','IA']) for (let s=0;s<n;s++) for (const ev of [null, ...evs]) jobs.push({left, right:left==='HUM'?'IA':'HUM', seed:SEED0+700+s*23, ev, tf:300, asym:ASYM_ARG});
+  for (const left of ['HUM','IA']) for (let s=0;s<n;s++) for (const ev of [null, ...evs]) jobs.push({left, right:left==='HUM'?'IA':'HUM', seed:SEED0+700+s*23, ev, tf:240, asym:ASYM_ARG});
   const res = await runAll(jobs, '__runE', 'E');
   const key = new Map(); res.forEach((r,i)=>{ if (r) key.set(jobs[i].left+'|'+jobs[i].seed+'|'+jobs[i].ev, r); });
   const val = (r, fac) => { const side = r.v[fac] || r.v[fac+'2']; return side; };
   const tot = o => o.army + o.stock + 0.5*o.hp;
-  console.log(`\nE — coût d'un événement forcé à 5:00 (valeur = armée + ressources + ½ PV de base, mesurée 60 s plus tard ; Δ vs sans événement, en % de la valeur moyenne du camp)`);
+  console.log(`\nE — coût d'un événement forcé vers 4:00–5:30 (valeur = armée + ressources + ½ PV de base, mesurée 60 s plus tard ; Δ vs sans événement, en % de la valeur moyenne du camp)`);
   console.log('  événement   Δ HUM %    Δ IA %     (armée HUM/IA, stock HUM/IA, base HUM/IA en Δ absolu)');
-  REPORT.E = {}; let sumH = 0, sumI = 0, cyc = 0;
-  let ref = []; for (const [k,r] of key) if (k.endsWith('|null')){ for (const fac of ['HUM','IA']) ref.push(tot(val(r,fac))); }
+  REPORT.E = {}; let sumH = 0, sumI = 0, cyc = 0; const nOk = {};
+  let ref = []; for (const [k,r] of key) if (k.endsWith('|null') && !r.hb){ for (const fac of ['HUM','IA']) ref.push(tot(val(r,fac))); }
   const refMean = mn(ref);
   for (const ev of evs){
     const d = { HUM:[], IA:[] }, da = { HUM:[], IA:[] }, ds = { HUM:[], IA:[] }, dh = { HUM:[], IA:[] };
-    for (const [k,r] of key){ if (!k.endsWith('|'+ev)) continue; const c = key.get(k.replace('|'+ev, '|null')); if (!c) continue;
+    for (const [k,r] of key){ if (!k.endsWith('|'+ev)) continue; const c = key.get(k.replace('|'+ev, '|null')); if (!c || r.hb || c.hb) continue; nOk[ev] = (nOk[ev]||0)+1;
       for (const fac of ['HUM','IA']){ const a = val(r,fac), b = val(c,fac); d[fac].push(tot(a)-tot(b)); da[fac].push(a.army-b.army); ds[fac].push(a.stock-b.stock); dh[fac].push(a.hp-b.hp); } }
     const H = mn(d.HUM)/refMean*100, I = mn(d.IA)/refMean*100;
     REPORT.E[ev] = { HUM:H, IA:I };
     if (['rain','signal','strike','patch','acid','heat','sand'].includes(ev)){ sumH += H; sumI += I; cyc++; }
-    console.log(`  ${ev.padEnd(9)}  ${((H>=0?'+':'')+f1(H)).padStart(7)}   ${((I>=0?'+':'')+f1(I)).padStart(7)}     (${Math.round(mn(da.HUM))}/${Math.round(mn(da.IA))}, ${Math.round(mn(ds.HUM))}/${Math.round(mn(ds.IA))}, ${Math.round(mn(dh.HUM))}/${Math.round(mn(dh.IA))})`);
+    console.log(`  ${ev.padEnd(9)}  ${((H>=0?'+':'')+f1(H)).padStart(7)}   ${((I>=0?'+':'')+f1(I)).padStart(7)}   n=${nOk[ev]||0}  (${Math.round(mn(da.HUM))}/${Math.round(mn(da.IA))}, ${Math.round(mn(ds.HUM))}/${Math.round(mn(ds.IA))}, ${Math.round(mn(dh.HUM))}/${Math.round(mn(dh.IA))})`);
   }
   console.log(`  Σ cycle (pluie, signal, couvre-feu, mise à jour, acide, canicule, sable) : HUM ${f1(sumH)} %  IA ${f1(sumI)} %  écart ${f1(sumH-sumI)} pts (cible ≤ 3)`);
   REPORT.E.cycle = { HUM:sumH, IA:sumI, ref:refMean };

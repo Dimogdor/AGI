@@ -24,6 +24,7 @@ function dealDmg(target, dmg, attacker){
     out /= homeBuff(target);
     const dside = target.side===1?game.p:game.e;
     out /= (1 + 0.15*(dside.combatBuff||0)) * (1 + (dside.zoneBuff||0)); // comeback + zones : le perdant encaisse mieux
+    out *= piquetK(target);                                              // couvre-feu (M10) : le piquet humain encaisse −20 %
     target.hp -= out; target.flash = 0.15;
     if (target.role==='hero') heroSfx(target.fac, 'hurt', target.x);
     if (attacker && attacker.role) target.lastHit = attacker;        // pour la vétérance
@@ -36,6 +37,43 @@ function dealDmg(target, dmg, attacker){
 // tirent. (Avant : la faction figée ne ciblait plus RIEN et se laissait massacrer sans réagir.)
 const FROZEN_DMG = 0.5;   // force de riposte d'une faction figée (l'événement doit rester un vrai handicap)
 function facFrozen(fac){ return !!game && ((fac==='HUM' && game.weather==='strike') || (fac==='IA' && game.weather==='patch')); }
+// ---- M10 · ENVIRONNEMENT PAR FACTION (asymOn('env') ; sinon les valeurs d'avant, identiques pour les deux camps) ----
+// Principe : aucun événement n'est neutre, mais la somme sur un cycle l'est (FACTIONS.md §2 M10 ; mesuré par le banc E).
+const envOn = () => asymOn('env');
+const frozenDmg = fk => envOn()? fte(fk,'frozen') : FROZEN_DMG;                       // riposte d'un camp figé : humains ×0,5, machines ×0,25
+const rainBaseK = fk => game.boon!=='rain'? 1 : envOn()? fte(fk,'rainBase') : 1.3;     // pluie fertile : revenu de base 🌾/⚡
+const rainFarmK = fk => (game.boon==='rain' && envOn())? fte(fk,'rainFarm') : 1;       // … et production des fermes / panneaux
+const sigK = fk => game.boon!=='signal'? 1 : envOn()? fte(fk,'sigCd') : 1.3;            // signal renforcé : recharge du pouvoir ✸
+const piquetK = u => (u.fac==='HUM' && game.weather==='strike' && envOn())? fte('HUM','piquet') : 1;   // couvre-feu : le piquet encaisse mieux
+function sandK(fk, tur){ return game.cata!=='sand'? 1 : envOn()? fte(fk, tur? 'sandTur':'sand') : 0.78; }   // tempête de sable : portée longue / tourelles
+// hiver nucléaire : ÷2 → ×1 en 6 min pour les humains (🌾 et 🪙) ; la machine ne perd que son ⚡ (÷2,5 → ×1), ◈ intact
+function winterK(side, res){
+  if (!game.winter) return 1;
+  if (envOn() && side.facKey==='IA'){ if (res==='m') return 1;
+    const lo = fte('IA','winterF'); return lo + (1-lo)*clamp(1-(game.winterT||0)/WINTER_DUR, 0, 1); }
+  return winterMul();
+}
+// vitesse de marche : hiver (HUM ×0,82 / IA ×0,95) et canicule (HUM ×0,9). Sans `env` : ×0,82 en hiver pour tous.
+function envSpd(side){ let k = 1;
+  if (game.winter) k *= envOn()? fte(side.facKey,'winterSpd') : 0.82;
+  if (game.cata==='heat' && envOn() && side.facKey==='HUM') k *= fte('HUM','heatSpd');
+  return k; }
+// ---- M1 · ÉCONOMIE : « effet réseau » de G·P·T (asymOn('econ')) : +6 % de production par AUTRE bâtiment éco vivant (max +24 %) ----
+const ECO_TYPES = {farmF:1, farmM:1, well:1};
+function ecoCount(side){ let n=0; for (const s of sideBuildSlots(side)) if (s.b && ECO_TYPES[s.b.type] && s.b.hp>0) n++; return n; }
+function ecoMul(side){
+  if (side.facKey!=='IA' || !asymOn('econ') || game.t < (side.netT||0)) return 1;   // netT : resynchronisation après la perte d'un nœud
+  return 1 + Math.min(ft('IA','netMax'), ft('IA','netStep')*Math.max(0, ecoCount(side)-1));
+}
+// ---- M8 · TERRITOIRE (asymOn('terrain')) : l'Humanité OCCUPE (chaque unité compte ×1,5 pour capturer), la machine EXTRAIT (+25 % de rendement) ----
+const capW = u => (u.fac==='HUM' && asymOn('terrain'))? FAC_TRAITS.HUM.occupy : 1;
+const terrK = side => (side.facKey==='IA' && asymOn('terrain'))? FAC_TRAITS.IA.terrK : 1;
+// ---- M5 · BÂTIMENTS (asymOn('bld')) : une tourelle IA à ≤ 300 px d'une autre tourelle IA est « liée » (cadence +10 %) ----
+function turretLinked(side, slot){
+  const R = ft('IA','turLinkR');
+  for (const o of sideBuildSlots(side)) if (o!==slot && o.b && o.b.type==='turret' && Math.abs(o.x-slot.x)<=R) return true;
+  return false;
+}
 function updateUnits(side, foe, dt){
   const targets = foeTargets(foe);
   const m = statMul(side.era);
@@ -45,6 +83,10 @@ function updateUnits(side, foe, dt){
   side.heroAlive = side.units.some(u=>u.role==='hero');
   side.heroPow = side.heroAlive ? (side.units.find(u=>u.role==='hero').heroPow||1) : 0;
   const frozen = facFrozen(side.facKey);
+  const envA = envOn();
+  // M10 : pluie et hiver évacuent la chaleur des machines ×2 ; « correctif » de la mise à jour : cadence +10 % pendant 30 s
+  const coolK = (envA && side.facKey==='IA' && (game.boon==='rain' || game.winter))? fte('IA','rainCool') : 1;
+  const fixK = (envA && side.facKey==='IA' && (side.afterT||0)>game.t)? fte('IA','fixK') : 1;
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
     if (u.tiredT>0) u.tiredT -= dt;                       // fatigue / surchauffe
@@ -55,16 +97,20 @@ function updateUnits(side, foe, dt){
       u.farFatigued = true; u.farT = 8;
       addFloater(u.x, gY(u.x)-58-(u.fly?u.flyH:0), '😮‍💨', '#d8a06a', 11);
     }
-    // récupération hors combat : les humains soufflent plus vite que les machines ne refroidissent
-    if (u.heat>0) u.heat = Math.max(0, u.heat-(u.fac==='IA'?0.030:0.05)*dt);
+    // récupération : les humains soufflent plus vite que les machines ne refroidissent. v1.17 (`fatigue`) : 0,05 → 0,035
+    // pour l'Humanité — à 0,05/s la fatigue humaine ne se déclenchait quasiment jamais (tireur/tank : jamais), seule la
+    // machine surchauffait ; elle devient un vrai rythme d'effort (mêlée ~25 s, tireur ~1 min), plus doux que la surchauffe.
+    if (u.heat>0) u.heat = Math.max(0, u.heat-(u.fac==='IA'? FAC_TRAITS.IA.heatRec*coolK : (asymOn('fatigue')? FAC_TRAITS.HUM.heatRec : 0.05))*dt);
     if (u.role==='support') u.supT -= dt;
     // aura du héros humain (Che) : soigne en continu les alliés proches, en plus de combattre
-    if (u.role==='hero' && u.fac==='HUM'){
+    // (v1.17 : la Singularité en a une aussi, plus faible — sans elle, bot contre bot, l'Humanité gagnait ~80 % des parties)
+    const aura = u.role==='hero'? (u.fac==='HUM'? FAC_TRAITS.HUM.heroAura : (asymOn('hero')? FAC_TRAITS.IA.heroAura : 0)) : 0;
+    if (aura>0){
       u.auraT = (u.auraT||0) - dt;
       if (u.auraT<=0){ u.auraT = 1;
         for (const a of side.units) if (a!==u && a.hp<a.maxhp && Math.abs(a.x-u.x)<150){
-          a.hp = Math.min(a.maxhp, a.hp + 14*m);   // v1.12 : 28 → 14 (parité des camps)
-          addFloater(a.x, gY(a.x)-50, '+❤', '#6dff8a', 11);
+          a.hp = Math.min(a.maxhp, a.hp + aura*m);   // v1.12 : 28 → 14 (parité des camps)
+          addFloater(a.x, gY(a.x)-50, u.fac==='HUM'? '+❤' : '+🔧', u.fac==='HUM'? '#6dff8a' : '#5ad0ff', 11);
         }
       }
     }
@@ -79,7 +125,7 @@ function updateUnits(side, foe, dt){
     if (u.task){
       const sl = u.task.slot;
       const okB = sl && sl.b && u.task.kind==='build' && sl.b.type==='site' && sl.owner===side;
-      const okG = sl && canGar(sl.b) && u.task.kind==='garrison' && sl.owner===side && sl.b.gar.length<GAR_MAX;
+      const okG = sl && canGar(sl.b) && u.task.kind==='garrison' && sl.owner===side && sl.b.gar.length<garMax(sl.b);
       const okC = u.task.kind==='gbase' && side.gar.length<3;   // garde du château
       if (!okB && !okG && !okC){ u.task = null; }
       else if (frozen){ /* grève / mise à jour : le chantier attend la reprise */ }
@@ -119,7 +165,7 @@ function updateUnits(side, foe, dt){
       // la ruche GPT spawn des drones (hors cap global) sur un timer séparé et plus lent
       if (isHive){
         if (u.droneT===undefined) u.droneT = 2;
-        u.droneT -= dt;
+        u.droneT -= dt * ((envOn() && game.boon==='signal')? fte('IA','sigDrone') : 1);   // signal renforcé (M10) : ruches ×1,5 plus rapides
         if (u.droneT<=0){
           u.droneT = Math.max(2.6, 4.5 - 0.5*lvl);
           if (droneCount(side) < droneCap(side)){
@@ -133,8 +179,9 @@ function updateUnits(side, foe, dt){
       if (best && u.supT<=0 && Math.abs(best.x-u.x)<=hr){
         // la ruche soigne un peu plus lentement que le médic (elle produit aussi des drones)
         const base = Math.max(0.5, 1.3 - 0.2*lvl);
-        u.supT = isHive? base*1.35 : base;
-        const heal = (isHive? 40+9*lvl : 45+10*lvl)*m;
+        const HT = FAC_TRAITS[u.fac];
+        u.supT = base*HT.healPeriod;
+        const heal = (HT.healBase + HT.healLvl*lvl)*m;
         best.hp = Math.min(best.maxhp, best.hp+heal);
         addFloater(best.x, gY(best.x)-52, hicon, hcol);
         burst(best.x, gY(best.x)-36, hcol, 4, 0.5);
@@ -207,7 +254,7 @@ function updateUnits(side, foe, dt){
     // dégâts — récompense le contrôle des collines. elev : 0 en plaine → 1 au sommet.
     const elev = u.fly? 0 : clamp((GROUND - gY(u.x))/26, 0, 1);
     const meleeGround = u.range<=24 && !u.fly;
-    const eRange = u.range * (game.cata==='sand' && u.range>60? 0.78 : 1) * (1 + 0.14*elev) * (game.camp && game.camp.rangeMul? game.camp.rangeMul(u) : 1);
+    const eRange = u.range * (u.range>60? sandK(u.fac,false) : 1) * (1 + 0.14*elev) * (game.camp && game.camp.rangeMul? game.camp.rangeMul(u) : 1);
     let target=null, best=1e9;
     for (const f of targets){
       if (f.hp<=0 && !f.isBase) continue;
@@ -237,16 +284,17 @@ function updateUnits(side, foe, dt){
         const tired = u.tiredT>0;
         const isIA = u.fac==='IA';
         // pénalité d'épuisement : GPT surchauffe DUR (sprint), HUM fatigue en douceur (marathon)
-        u.atkT = u.rate * (tired? (isIA?1.5:1.3) : 1);
+        const T = FAC_TRAITS[u.fac];
+        u.atkT = u.rate * (tired? T.tiredRate : 1) / fixK;
         if (u.role==='hero'){ heroSfx(u.fac, HERO_SEQ[(u.atkN|0)&7]? 'atkB' : 'atkA', u.x); u.atkN = (u.atkN|0)+1; }   // alterne ses deux attaques (visuel + son)
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? (isIA?0.7:0.8) : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? FROZEN_DMG : 1);   // figé : riposte, mais sans l'élan d'une troupe libre
+        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1);   // figé : riposte, mais sans l'élan d'une troupe libre
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         // (v1.12 : surchauffe GPT adoucie — 0,08/6 s/−45 % donnaient ~18 % de DPS soutenu en moins que
         //  l'Humanité ; le même joueur gagnait 88 % en Humanité contre 25 % en GPT)
-        u.heat = (u.heat||0) + (isIA? 0.065 : 0.045);
+        u.heat = (u.heat||0) + T.heatGain;
         if (u.heat>=1){
-          u.heat = 0; u.tiredT = isIA? 4 : 3;
+          u.heat = 0; u.tiredT = T.tiredT;
           addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0),
             tr(isIA? 'f_overheat':'f_tired'), '#d8a06a', 11);
         }
@@ -295,7 +343,7 @@ function updateUnits(side, foe, dt){
   for (const gm of garMoves){
     let entered = false;
     if (gm.base && side.gar.length<3){ side.gar.push(gm.u); entered = true; }
-    else if (!gm.base && canGar(gm.sl.b) && gm.sl.b.gar.length<GAR_MAX){
+    else if (!gm.base && canGar(gm.sl.b) && gm.sl.b.gar.length<garMax(gm.sl.b)){
       gm.sl.b.gar.push(gm.u); entered = true;
     }
     if (entered){
@@ -332,6 +380,12 @@ function updateUnits(side, foe, dt){
       if (qFx() && !u.fly && u.role!=='gremlin' && u.role!=='hero' && !wrecks.some(w=>Math.abs(w.x-(u.x-u.side*6))<16)){ wrecks.push({x:u.x-u.side*6, fac:u.fac, era:u.era, role:u.role, side:u.side, t:0}); if (wrecks.length>26) wrecks.shift(); }
       // journal des morts : alimente la carte thermique (pause) et le récit de fin de partie
       if (game.killLog){ game.killLog.push({x:u.x, s:u.side}); if (game.killLog.length>140) game.killLog.shift(); }
+      // inondation (M10) : « sauvegarde » — la machine noyée rembourse 30 % de son coût
+      if (u.drownT>0 && game.cata==='flood' && envOn() && u.fac==='IA' && u.role!=='hero' && u.role!=='gremlin'){
+        const ri = ROLES.findIndex(r=>r.key===u.role);
+        if (ri>=0){ const c = unitCost(side, ri), k = fte('IA','floodRefund'); for (const r in c){ if (r==='m' && side.trans) continue; side[r] += c[r]*k; }
+          if (side===game.p) addFloater(u.x, gY(u.x)-40, tr('f_backup'), '#5ad0ff', 11); }
+      }
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
       if (foe===game.p){ game.kills++; addFloater(u.x, gY(u.x)-50, "+"+u.xpv+"✦", "#cdb4ff"); sfx('die'); }
       else game.eKills++;
@@ -405,20 +459,20 @@ function heroFollow(u, side, dt, gap, targets){
     if (u._cx!==undefined && (u._cx-want)*side.side>0) want = u._cx;
   } else u._cx = undefined;
   const d = (want-u.x)*side.side;
-  const sp = u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*dt;
+  const sp = u.spd*(1+(side.heroPow||1))*envSpd(side)*dt;
   if (d>1e-3) u.x += side.side*Math.min(d, sp);                      // pas de zone morte : le front avance de < 1 px/image
   else if (d<-24) u.x -= side.side*Math.min(-d-12, sp*1.2);        // ne recule que s'il est vraiment trop en avant (> 24 px)
   u.x = clamp(u.x, 30, WORLD-30);
 }
 function heroAdvance(u, side, dt){   // même vitesse que tryMove, sans la file d'attente derrière les unités de mêlée
-  u.x += u.spd*(1+(side.heroPow||1))*(game.winter?0.82:1)*side.side*dt;
+  u.x += u.spd*(1+(side.heroPow||1))*envSpd(side)*side.side*dt;
   u.x = clamp(u.x, 30, WORLD-30);
 }
 // ordre de position : avance vers u.px à l'allure de l'armée (aura du héros, neige) et s'y POSE
 // exactement (sans le seuil de 8 px de moveToward) ; renvoie true une fois arrivée
 function pointStep(u, side, dt, k){
   const d = u.px - u.x;
-  const step = u.spd*(k||1)*(side.heroAlive? (1+(side.heroPow||1)) : 1)*(game.winter?0.82:1)*dt;
+  const step = u.spd*(k||1)*(side.heroAlive? (1+(side.heroPow||1)) : 1)*envSpd(side)*dt;
   if (Math.abs(d) <= step){ u.x = u.px; return true; }
   u.x = clamp(u.x + Math.sign(d)*step, 30, WORLD-30);
   return false;
@@ -479,7 +533,7 @@ function tryMove(u, side, dt){
     }
     if (ahead >= stackMax(side, u)) return;
   }
-  u.x += u.spd*(side.heroAlive? (1+(side.heroPow||1)) :1)*(game.winter?0.82:1)*side.side*dt;   // ×2 sous l'aura d'un héros (réduite si la légende est affaiblie) ; neige → léger ralentissement
+  u.x += u.spd*(side.heroAlive? (1+(side.heroPow||1)) :1)*envSpd(side)*side.side*dt;   // ×2 sous l'aura d'un héros (réduite si la légende est affaiblie) ; neige → léger ralentissement
   u.x = clamp(u.x, 30, WORLD-30);
 }
 function moveBack(u, side, dt){
@@ -495,6 +549,15 @@ function moveToward(u, tx, dt, sp=1){
   return false;
 }
 function updateBuildings(side, foe, dt){
+  // production : M1 (réseau IA), M10 (couvre-feu / acquis sociaux / canicule / pluie / hiver), jamais appliqué en campagne sauf mission inscrite
+  let pk = 1, rk = 1;                              // pk : tous les bâtiments éco ; rk : fermes / panneaux seuls (pluie)
+  if (envOn()){
+    if (side.facKey==='HUM'){ if (game.weather==='strike') pk = fte('HUM','strikeProd'); else if ((side.afterT||0)>game.t) pk = fte('HUM','acqK'); }
+    else if (game.cata==='heat') pk = fte('IA','heatEco');
+    rk = rainFarmK(side.facKey);
+  }
+  const netK = ecoMul(side), wf = winterK(side,'f'), wm = winterK(side,'m');
+  const iaBld = asymOn('bld') && side.facKey==='IA';
   for (const s of sideBuildSlots(side)){
     if (!s.b) continue;
     if (s.b.hp<=0){ explode(s.x, gY(s.x)-16, 1.2, '#cfc6b8'); demolish(s, true); sfx('boom'); continue; }
@@ -508,20 +571,21 @@ function updateBuildings(side, foe, dt){
     if (b.age!==undefined) b.age += dt;                                       // ancienneté → bonus de longévité
     if (side.autoRepair && b.hp<b.maxhp) b.hp = Math.min(b.maxhp, b.hp+4*dt); // nano-réparation
     if (b.type==='turret'){
-      b.atkT -= dt;
+      // cadence de la tourelle : on accélère le DÉCOMPTE (le délai affiché reste BUILDS.turret.rate) — liaison IA (M5) et signal (M10)
+      b.atkT -= dt * ((iaBld && turretLinked(side, s))? 1/ft('IA','turLink') : 1) * ((envOn() && side.facKey==='IA' && game.boon==='signal')? fte('IA','sigTur') : 1);
       if (b.atkT<=0){
-        const tRange = BUILDS.turret.range * (game.cata==='sand'?0.78:1);
+        const tRange = BUILDS.turret.range * sandK(side.facKey, true) * (iaBld? ft('IA','turRange') : 1);
         let target=null, best=1e9;
         for (const f of foe.units){ const d=Math.abs(f.x-s.x); if (d<tRange && d<best){best=d;target=f;} }
         if (target){ b.atkT = BUILDS.turret.rate;
-          target.hp -= BUILDS.turret.dmg*(1+side.era*0.6)*lvlF(b); target.flash=0.15;
+          target.hp -= BUILDS.turret.dmg*(1+side.era*0.6)*lvlF(b)*(iaBld? ft('IA','turDmg') : 1)*piquetK(target); target.flash=0.15;
           shots.push({x:s.x, y:gY(s.x)-58, tx:target.x, ty:gY(target.x)-22, t:0, dur:0.14, fac:side.facKey, era:side.era});
           if (side===game.p) sfx('shoot', 2);
         }
       }
-    } else if (b.type==='farmF') side.f += BUILDS.farmF.rate*lvlF(b)*longevMul(b)*(side.prodMul||1)*winterMul()*dt;
-    else if (b.type==='farmM') side.m += BUILDS.farmM.rate*lvlF(b)*longevMul(b)*(side.prodMul||1)*winterMul()*dt;
-    else if (b.type==='well') side.w += BUILDS.well.rate*lvlF(b)*longevMul(b)*(side.prodMul||1)*dt*(1-0.5*game.dev);
+    } else if (b.type==='farmF') side.f += BUILDS.farmF.rate*lvlF(b)*longevMul(b)*(side.prodMul||1)*wf*dt*pk*rk*netK;
+    else if (b.type==='farmM') side.m += BUILDS.farmM.rate*lvlF(b)*longevMul(b)*(side.prodMul||1)*wm*dt*pk*netK;
+    else if (b.type==='well') side.w += BUILDS.well.rate*lvlF(b)*longevMul(b)*(side.prodMul||1)*dt*(1-0.5*game.dev)*pk*netK;
     // garnison : chaque rôle défend à sa façon
     if (b.gar) for (let gi=0; gi<b.gar.length; gi++){
       const g = b.gar[gi];
@@ -583,8 +647,8 @@ function updateNodes(dt){
   const dwindle = 1 - 0.65*game.dev;
   for (const n of game.nodes){
     let np=0, ne=0;
-    for (const u of game.p.units) if (Math.abs(u.x-n.x)<70) np++;
-    for (const u of game.e.units) if (Math.abs(u.x-n.x)<70) ne++;
+    for (const u of game.p.units) if (Math.abs(u.x-n.x)<70) np += capW(u);
+    for (const u of game.e.units) if (Math.abs(u.x-n.x)<70) ne += capW(u);
     const push = capPush(np, ne, 0.12*dt);
     if (push!==0){
       n.prog = clamp(n.prog + push, -1, 1);
@@ -595,7 +659,7 @@ function updateNodes(dt){
     }
     if (n.owner){
       const s = n.owner==='p'? game.p : game.e;
-      s.w += (n.center? 3.5 : 2.2)*dwindle*dt;
+      s.w += (n.center? 3.5 : 2.2)*dwindle*terrK(s)*dt;
       if (n.center){ s.f += 2*dwindle*dt; s.m += 2*dwindle*dt; s.xp += 1.5*dt; } // l'oasis nourrit aussi l'XP
     }
   }
@@ -604,15 +668,15 @@ function updateZones(dt){
   const p=game.p, e=game.e;
   for (const z of game.zones){
     let np=0, ne=0;
-    for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
-    for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
+    for (const u of p.units) if (Math.abs(u.x-z.x)<80) np += capW(u);
+    for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne += capW(u);
     const push = capPush(np, ne, 0.10*dt);
     if (push!==0){
       z.prog = clamp(z.prog+push, -1, 1);
       if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; announce(tr('ev_zone'), '#9dd88a'); evExplain('zone'); }
       if (z.prog<=-1 && z.owner!=='e'){ z.owner='e'; }
     }
-    if (z.owner==='p') p.xp += 0.5*dt; else if (z.owner==='e') e.xp += 0.5*dt;
+    if (z.owner==='p') p.xp += 0.5*terrK(p)*dt; else if (z.owner==='e') e.xp += 0.5*terrK(e)*dt;
   }
   // catch-up : le perdant (base la plus basse) gagne +5% atk/déf par zone qu'il NE tient PAS (max +15%)
   const pf=p.hp/p.maxhp, ef=e.hp/e.maxhp;
@@ -639,12 +703,12 @@ function update(dt){
   // vite, frappe plus fort (combatBuff) et encaisse un peu mieux.
   const lp = losing01(p), le = losing01(e);
   p.combatBuff = lp; e.combatBuff = le;
-  const wM = winterMul();                      // hiver nucléaire : malus nourriture/énergie dégressif (÷2 → ×1 en 6 min)
-  const rainMul = game.boon==='rain'? 1.3 : 1; // PLUIE FERTILE : +30 % nourriture (les deux camps)
+  // hiver nucléaire : malus dégressif (÷2 → ×1 en 6 min ; M10 : la machine ne perd que son ⚡) · PLUIE FERTILE : revenu de base
+  // 🌾/⚡ +30 % pour tous (M10 : humains +40 %, machines −20 %)
   p.prodMul = 1 + 0.9*lp;
   e.prodMul = (1 + 0.9*le) * (d.cheat||1);     // triche IA selon la difficulté
-  p.f += 4*p.prodMul*wM*rainMul*dt; p.m += 2.5*p.prodMul*wM*dt; p.w += 0.6*p.prodMul*dt;
-  e.f += 4*d.inc*e.prodMul*wM*rainMul*dt; e.m += 2.5*d.inc*e.prodMul*wM*dt; e.w += 0.6*d.inc*e.prodMul*dt;
+  p.f += 4*p.prodMul*winterK(p,'f')*rainBaseK(p.facKey)*dt; p.m += 2.5*p.prodMul*winterK(p,'m')*dt; p.w += 0.6*p.prodMul*dt;
+  e.f += 4*d.inc*e.prodMul*winterK(e,'f')*rainBaseK(e.facKey)*dt; e.m += 2.5*d.inc*e.prodMul*winterK(e,'m')*dt; e.w += 0.6*d.inc*e.prodMul*dt;
   // XP passive de base + bonus par niveau de fortification de la base principale
   p.xp += (2.2 + ((p.fortLvl||1)-1)*1.3)*dt; e.xp += (2.2 + ((e.fortLvl||1)-1)*1.3)*dt;
   for (let i=0;i<6;i++){ if(p.cd[i]>0)p.cd[i]-=dt; if(e.cd[i]>0)e.cd[i]-=dt; }
@@ -652,9 +716,9 @@ function update(dt){
   // nano-réparation passive de la base
   if (p.autoRepair && p.hp<p.maxhp) p.hp = Math.min(p.maxhp, p.hp+8*dt);
   if (e.autoRepair && e.hp<e.maxhp) e.hp = Math.min(e.maxhp, e.hp+8*dt);
-  const sigMul = game.boon==='signal'? 1.3 : 1;   // SIGNAL RENFORCÉ : ultime se recharge plus vite
-  if (p.specialCd>0) p.specialCd -= dt*(1+1.8*lp)*sigMul;
-  if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le)*sigMul;
+  // SIGNAL RENFORCÉ : ultime se recharge plus vite (+30 % pour tous ; M10 : humains +10 %, machines +50 %)
+  if (p.specialCd>0) p.specialCd -= dt*(1+1.8*lp)*sigK(p.facKey);
+  if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le)*sigK(e.facKey);
   if (p.siegeT>0) p.siegeT -= dt; if (e.siegeT>0) e.siegeT -= dt;   // MODE SIÈGE (héros) : décompte
   // la santé du monde use les vivants : le camp qui DOMINE s'use plus vite (catch-up)
   if (game.dev>0.12){
@@ -678,7 +742,15 @@ function update(dt){
     const newW = (game.wClock>=30 && game.wClock<45)? 'strike'
                : (game.wClock>=90 && game.wClock<105)? 'patch' : null;
     if (newW !== game.weather){
+      const oldW = game.weather;
       game.weather = newW;
+      if (envOn() && oldW){          // fin d'événement : « acquis sociaux » (humains, +20 % de production 30 s) / « correctif » (machines : chaleur remise à 0, cadence +10 %)
+        for (const sd of [p,e]){
+          if (oldW==='strike' && sd.facKey==='HUM'){ sd.afterT = game.t + fte('HUM','acqT'); addFloater(sd.x, gY(sd.x)-120, tr('f_acq'), '#9dc88a', 14); }
+          if (oldW==='patch' && sd.facKey==='IA'){ sd.afterT = game.t + fte('IA','fixT'); addFloater(sd.x, gY(sd.x)-120, tr('f_fix'), '#5ad0ff', 14);
+            for (const u of sd.units){ u.heat = 0; u.tiredT = 0; } }
+        }
+      }
       if (newW==='strike') announce(tr('ev_strike'), '#ff9d45');
       else if (newW==='patch') announce(tr('ev_patch'), '#5ad0ff');
     }
@@ -706,12 +778,12 @@ function update(dt){
   if (game.bonusZone){
     const z=game.bonusZone; z.t+=dt;
     let np=0,ne=0;
-    for (const u of p.units) if (Math.abs(u.x-z.x)<80) np++;
-    for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne++;
+    for (const u of p.units) if (Math.abs(u.x-z.x)<80) np += capW(u);
+    for (const u of e.units) if (Math.abs(u.x-z.x)<80) ne += capW(u);
     z.prog = clamp(z.prog + capPush(np, ne, 0.12*dt), -1, 1);
     z.owner = z.prog>=0.6?'p': z.prog<=-0.6?'e':null;
     z.contested = (np>0 && ne>0);                         // grésille/oscille à l'écran
-    if (z.owner==='p') p.xp += 1.4*dt; else if (z.owner==='e') e.xp += 1.4*dt;
+    if (z.owner==='p') p.xp += 1.4*terrK(p)*dt; else if (z.owner==='e') e.xp += 1.4*terrK(e)*dt;
     if (z.t>60) game.bonusZone = null;                    // disparaît
   }
   // ---- siège final : sous 20 % de PV, le pouvoir désespéré se débloque ----
@@ -835,16 +907,21 @@ function update(dt){
 const EV_TITLE = { strike:['ev_strike','#ff9d45'], patch:['ev_patch','#5ad0ff'], rain:['ev_rain','#7fd0ff'], signal:['ev_signal','#b9ff9d'] };
 function evWatch(){
   const g = game; if (!g || g.tut) return;
-  const w = g._evW || (g._evW = {we:null, bo:null, ca:null});
+  const w = g._evW || (g._evW = {we:null, bo:null, ca:null, wi:false});
   if (g.weather!==w.we){ w.we = g.weather; if (g.weather) evExplain(g.weather); }
   if (g.boon!==w.bo){ w.bo = g.boon; if (g.boon) evExplain(g.boon); }
   if (g.cata!==w.ca){ w.ca = g.cata; if (g.cata) evExplain(g.cata); }
+  if (!!g.winter!==w.wi){ w.wi = !!g.winter; if (g.winter) evExplain('winter'); }
 }
 function evExplain(key){
   const g = game; if (!g) return;
   const seen = g.evSeen || (g.evSeen = {});
   if (seen[key]) return;
-  const sub = tr('evx_'+key); if (!sub || sub==='evx_'+key) return;
+  // ligne propre à la faction du joueur (clé evx_<ev>_hum / _ia) quand l'asymétrie d'environnement est active, repli sur evx_<ev>
+  const fsuf = (g.p && g.p.facKey==='IA')? '_ia' : '_hum', kf = 'evx_'+key+fsuf;
+  let sub = asymOn(/^(lake|zone|bonuszone)$/.test(key)? 'terrain' : 'env')? tr(kf) : tr('evx_'+key);
+  if (!sub || sub===kf || sub==='evx_'+key) sub = tr('evx_'+key);
+  if (!sub || sub==='evx_'+key) return;
   seen[key] = 1;
   // l'annonce vient d'être faite (même pas de simulation) : on la complète ; sinon on la fait ici
   if (!g.msg || !(g.msgT > 2.3)){
