@@ -20,11 +20,13 @@ document.querySelectorAll('.tab').forEach(tb=>{
   });
 });
 // choix du camp : le menu entier change d'identité (tract de la Résistance ↔ listing d'Omnicorp)
-function setMenuFac(f){ menuFac = f;
+function refreshFacTr(){ const el = $('facTr'); if (el) el.textContent = tr(menuFac==='IA'? 'fac_ia_tr' : 'fac_hum_tr'); }   // trois puces d'identité sous le choix du camp
+function setMenuFac(f){ menuFac = f; refreshFacTr();
   $('cardHum').classList.toggle('sel', f==='HUM'); $('cardIA').classList.toggle('sel', f==='IA');
   $('menu').classList.toggle('fac-ia', f==='IA'); }
 $('cardHum').addEventListener('click', ()=>setMenuFac('HUM'));
 $('cardIA').addEventListener('click', ()=>setMenuFac('IA'));
+refreshFacTr();
 document.querySelectorAll('.diffBtn').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.diffBtn').forEach(x=>x.classList.remove('sel'));

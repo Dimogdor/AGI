@@ -73,6 +73,29 @@ check(g.msgs[2]===g.en[2], '« l\'adversaire évolue » devient « tu évolues �
 check(g.floater===g.en[3], 'flotteur traduit : '+g.floater);
 check(g.msgs[4]==='repli hôte', 'clé piégée (__proto__) : repli sur le texte brut');
 check(g.msgs[5]==='☄ '+g.en[4]+' ☄', 'nom de cataclysme : '+g.msgs[5]);
+
+console.log('\nASYMÉTRIE DES FACTIONS (v1.17 : ancienneté des bâtiments, réseau coupé, ruines à −50 %)');
+// hôte = Humanité (p), invité = G·P·T (e canonique = p local chez l'invité)
+await A.page.evaluate(() => { const e = game.e; e.f = e.m = e.w = 9000;
+  e.slots.forEach((s,i) => { if (s.b) demolish(s); tryBuild(e, s, ['farmF','farmM','well'][i]); if (s.b){ s.b.age = 420; } }); e.netT = 0; });
+await tick(2);
+const rate = async (P, side) => P.page.evaluate((side) => { const r = calcRates(side==='p'? game.p : game.e); return [r.f, r.m, r.w]; }, side);
+const near = (a, b) => a.every((v,i) => Math.abs(v-b[i]) <= 0.03*Math.max(1, Math.abs(v)));
+let hr = await rate(A, 'e'), gr = await rate(B, 'p');
+check(near(hr, gr) && hr[0] > 6, `revenus de G·P·T identiques chez l'hôte et chez l'invité, longévité et effet réseau compris (${hr.map(v=>v.toFixed(1))} / ${gr.map(v=>v.toFixed(1))})`);
+await A.page.evaluate(() => { game.e.netT = game.t + 9; }); await tick(1);
+const cutH = await rate(A, 'e'), cutG = await rate(B, 'p');
+check(near(cutH, cutG) && cutH[0] < hr[0], `réseau coupé : la baisse se voit aussi chez l'invité (${hr[0].toFixed(1)} → ${cutH[0].toFixed(1)} / invité ${cutG[0].toFixed(1)})`);
+// ruine humaine : l'hôte détruit un bâtiment, l'invité voit le même prix réduit
+await A.page.evaluate(() => { const p = game.p, s = p.slots[0]; if (s.b) demolish(s); p.f = p.m = p.w = 9000; tryBuild(p, s, 'farmF'); demolish(s, true); });
+await tick(2);
+const cp = await A.page.evaluate(() => buildCost(game.p, 'farmF', game.p.slots[0]).m), cg = await B.page.evaluate(() => buildCost(game.e, 'farmF', game.e.slots[0]).m);
+check(cp === 35 && cg === 35, `ruine : reconstruction à moitié prix chez l'hôte (${cp}) et chez l'invité (${cg})`);
+check(await B.page.evaluate(() => game.e.slots[0].b===null || game.e.slots[0].b===undefined), 'le socle détruit est vide chez l\'invité');
+const garH = await A.page.evaluate(() => { const p = game.p, s = p.slots[1]; if (s.b) demolish(s); p.f = p.m = 9000; tryBuild(p, s, 'wall'); return garMax(s.b); });
+await tick(2);
+check(garH === 3 && await B.page.evaluate(() => garMax(game.e.slots[1].b)) === 3, 'muraille humaine : 3 places de garnison des deux côtés');
+check(await A.page.evaluate(() => NET_PROTO) >= 4, 'NET_PROTO incrémenté');
 check(!A.errs.length && !B.errs.length, 'aucune erreur JS'+((A.errs[0]||B.errs[0])? ' — '+(A.errs[0]||B.errs[0]) : ''));
 await browser.close();
 if (fails){ console.log('\n'+fails+' échec(s)'); process.exit(1); }

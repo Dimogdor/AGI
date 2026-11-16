@@ -300,7 +300,7 @@ function drawHUD(){
   for (const sx of [90,178,256]) ctx.fillRect(sx, 6, 1, 24);
   ctx.textAlign='left';
   const nx = p.era<4? EVOLVE_XP[p.era+1] : (!p.trans? TRANS_XP : null);
-  const xpr = 2.2 + ((p.fortLvl||1)-1)*1.3 + (game.nodes.some(n=>n.center&&n.owner==='p')?1.5:0) + 0.5*game.zones.reduce((n,z)=>n+(z.owner==='p'?1:0),0);
+  const xpr = 2.2 + ((p.fortLvl||1)-1)*1.3 + (game.nodes.some(n=>n.center&&n.owner==='p')?1.5:0) + 0.5*terrK(p)*game.zones.reduce((n,z)=>n+(z.owner==='p'?1:0),0);
   const cells = [
     [8,   fac.icons.f, '#e3c878', String(Math.floor(p.f)), fmtRate(rates.f)+'/s'],
     [96,  fac.icons.m, '#c7d3d6', p.trans? '∞' : String(Math.floor(p.m)), p.trans? '∞' : fmtRate(rates.m)+'/s'],
@@ -391,6 +391,11 @@ function drawHUD(){
     const wt = game.weather==='strike'? tr('ev_strike_short') : tr('ev_patch_short');
     ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(wt, W/2+1, 72);
     ctx.fillStyle = game.weather==='strike'? '#ff9d45':'#5ad0ff'; ctx.fillText(wt, W/2, 71);
+  } else if ((p.afterT||0) > game.t && asymOn('env')){     // « acquis sociaux » (humains) / « correctif » (machines) : bonus de 30 s après l'événement
+    ctx.font=HF(10); ctx.textAlign='center';
+    const at = fmt(p.facKey==='HUM'? 'ev_after_hum' : 'ev_after_ia', {n:Math.ceil(p.afterT-game.t)});
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(at, W/2+1, 72);
+    ctx.fillStyle = p.facKey==='HUM'? '#9dc88a' : '#5ad0ff'; ctx.fillText(at, W/2, 71);
   }
   // ---- annonce (y=100) + ligne d'explication éventuelle (1re occurrence d'un événement, posture du héros) ----
   if (game.msgT>0 && game.msg){
@@ -741,7 +746,7 @@ function buildOptions(side, slot){
     if ((slot.b.lvl||1)<3)
       opts.push({key:'upgrade', label:fmt('bm_upgrade',{n:(slot.b.lvl||1)+1}), cost:upgBuildCost(slot)});
     // garnison : RÉSERVÉE aux tourelles et murailles, unités à distance uniquement
-    if (canGar(slot.b) && slot.b.gar.length<GAR_MAX){
+    if (canGar(slot.b) && slot.b.gar.length<garMax(slot.b)){
       if ([...game.sel].some(u=>u.range>60 && !u.fly))
         opts.push({key:'garrison', label:tr('bm_garrisonsel'), cost:{}});
       const pool = {};
@@ -761,11 +766,11 @@ function buildOptions(side, slot){
     return opts;
   }
   return [
-    {key:'wall',  label:tr('bm_wall'), cost:BUILDS.wall.cost},
-    {key:'turret',label:tr('bm_turret'), cost:BUILDS.turret.cost},
-    {key:'farmF', label:(side.facKey==='HUM'?tr('bm_farmH'):tr('bm_farmI')), cost:BUILDS.farmF.cost, prod:'+'+BUILDS.farmF.rate+' 🌾/s'},
-    {key:'farmM', label:(side.facKey==='HUM'?tr('bm_marketH'):tr('bm_marketI')), cost:BUILDS.farmM.cost, prod:'+'+BUILDS.farmM.rate+' 🪙/s'},
-    {key:'well',  label:tr('bm_well'), cost:BUILDS.well.cost, prod:'+'+BUILDS.well.rate+' 💧/s'},
+    {key:'wall',  label:tr('bm_wall'), cost:buildCost(side,'wall',slot)},
+    {key:'turret',label:tr('bm_turret'), cost:buildCost(side,'turret',slot)},
+    {key:'farmF', label:(side.facKey==='HUM'?tr('bm_farmH'):tr('bm_farmI')), cost:buildCost(side,'farmF',slot), prod:'+'+BUILDS.farmF.rate+' 🌾/s'},
+    {key:'farmM', label:(side.facKey==='HUM'?tr('bm_marketH'):tr('bm_marketI')), cost:buildCost(side,'farmM',slot), prod:'+'+BUILDS.farmM.rate+' 🪙/s'},
+    {key:'well',  label:tr('bm_well'), cost:buildCost(side,'well',slot), prod:'+'+BUILDS.well.rate+' 💧/s'},
   ];
 }
 function drawBuildMenu(){

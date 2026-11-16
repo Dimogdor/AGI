@@ -49,12 +49,15 @@ function aiUpdate(dt){
     const order = e.trans? ['turret','farmF','well'] : ['farmM','turret','farmF'];
     tryBuild(e, empty, order[e.slots.indexOf(empty)] || 'well');
   } else if (!empty && !heroSave){
-    for (const n of game.neut) if (!n.b && Math.random()<0.6){
+    // asymétrie (M1) : l'Humanité rebâtit en priorité une ruine récente (−50 %) — avant, le choix du spot neutre était aléatoire
+    const ruined = e.facKey==='HUM'? game.neut.find(n=>!n.b && ruinActive(e, n, n.ruin && n.ruin.type)) : null;
+    const spots = ruined? [ruined, ...game.neut.filter(n=>n!==ruined)] : game.neut;
+    for (const n of spots) if (!n.b && (n===ruined || Math.random()<0.6)){
       // macro : capitalise d'abord (fermes), tour seulement si menacé
       const threatened = game.p.units.some(u=>Math.abs(u.x-n.x)<400);
       const eco = e.trans? (Math.random()<0.5?'farmF':'well')
                          : (game.dev>0.4? 'well' : Math.random()<0.5?'farmM':'farmF');
-      tryBuild(e, n, threatened? 'turret' : eco); break;
+      tryBuild(e, n, n===ruined? n.ruin.type : threatened? 'turret' : eco); break;
     }
   }
   // améliore ses fermes et tours quand la caisse le permet
@@ -94,7 +97,11 @@ function aiUpdate(dt){
   const myN = e.units.filter(u=>u.role!=='support').length;
   let danger=false;
   for (const u of p.units) if (Math.abs(u.x-e.x)<600){ danger=true; break; }
-  if (danger || (e.mode!=='push' && myN >= Math.min(wave, e.cap-4))){
+  // asymétrie (M10) : on profite de l'événement de l'adversaire — il est figé (couvre-feu / mise à jour) ou on est dans la fenêtre
+  // « acquis sociaux » / « correctif » de 30 s qui suit le nôtre : on pousse
+  const pushWin = asymOn('env') && (facFrozen(p.facKey) || (e.afterT||0)>game.t);
+  if (asymOn('env') && e.facKey==='IA' && game.boon==='signal' && e.specialCd<=0 && p.units.length>=3) trySpecial(e);   // « le jour de l'IA » : pouvoir ✸ +50 %
+  if (danger || pushWin || (e.mode!=='push' && myN >= Math.min(wave, e.cap-4))){
     e.mode='push'; setStance(e,'charge');
   } else if (e.mode==='push' && myN < Math.max(3, wave*0.3)){
     e.mode='build'; setStance(e,'hold');

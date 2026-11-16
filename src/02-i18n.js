@@ -62,6 +62,7 @@ function applyLang(){
   if (typeof refreshOpts==='function') refreshOpts();
   if (typeof refreshTutoPage==='function') refreshTutoPage();
   if (typeof refreshGuidePage==='function') refreshGuidePage();   // onglet GUIDE (21b-guide.js)
+  if (typeof refreshFacTr==='function') refreshFacTr();           // puces d'identité de la faction (menu)
   if (typeof buildKeysBox==='function') buildKeysBox();     // libellés de touches + noms de touches
   if (typeof refreshFsBtn==='function') refreshFsBtn();      // info-bulle du bouton plein écran
   // BUG CORRIGÉ : layoutHUD() ne construisait HUD.btns (avec les libellés ordre/lasso/

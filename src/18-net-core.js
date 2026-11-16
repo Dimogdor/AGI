@@ -10,7 +10,15 @@ function serBld(b){
   if (!b) return 0;
   return [bcode(b), Math.round(b.hp), Math.round(b.maxhp), b.lvl||1,
     (b.type==='site'? (BCODE_TYPE.indexOf(b.buildType)) : 0),
-    (b.gar||[]).map(g=>[ROLE_CODES[g.role]||0, g.era, g.fac==='HUM'?0:1])];
+    (b.gar||[]).map(g=>[ROLE_CODES[g.role]||0, g.era, g.fac==='HUM'?0:1]),
+    Math.round(b.age||0)];             // 7e champ : ancienneté (bonus de longévité, v1.17 — l'invité affichait des revenus sans lui)
+}
+// asymétrie des factions (v1.17) : état visible qui doit voyager — réseau coupé (secondes restantes), « acquis / correctif » en cours,
+// ruines reconstruisibles à −50 % (code = type·1000 + secondes restantes ; 0 = aucune)
+function ruinCode(slot, side){
+  const r = slot.ruin; if (!r || r.side!==side.side) return 0;
+  const left = ft('HUM','rebuildT') - (game.t - r.t); if (left<=0) return 0;
+  return bcode({type:r.type})*1000 + Math.ceil(left);
 }
 function serSide(s){
   return { hp:Math.round(s.hp), mh:Math.round(s.maxhp), f:Math.round(s.f), m:Math.round(s.m),
@@ -18,7 +26,9 @@ function serSide(s){
     fl:s.fortLvl||1, ar:s.autoRepair?1:0, scd:Math.round(s.specialCd*10)/10, lr:s.lastReady?1:0,
     lu:s.lastUsed?1:0, fm:s.formation?1:0, pm:Math.round((s.prodMul||1)*100)/100,
     hcd:Math.round(s.heroCd||0), hs:Math.max(0, HERO_STANCES.indexOf(s.heroStance)), q:s.queue?s.queue.length:0,
-    upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)) };
+    upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)),
+    nt:Math.max(0, Math.ceil((s.netT||0)-game.t)), at:Math.max(0, Math.ceil((s.afterT||0)-game.t)),
+    rn:s.slots.map(sl=>ruinCode(sl, s)) };
 }
 function serialize(){
   // héros : un 15e champ — n° d'attaque (3 bits, choisit l'animation), repli prudent (8), geste de ralliement (16)
@@ -34,7 +44,7 @@ function serialize(){
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
     pu:game.p.units.map(u2), eu:game.e.units.map(u2),
-    neut:game.neut.map(n=>[n.owner===game.p?1:n.owner===game.e?-1:0, serBld(n.b)]),
+    neut:game.neut.map(n=>[n.owner===game.p?1:n.owner===game.e?-1:0, serBld(n.b), ruinCode(n, game.p)||-ruinCode(n, game.e)]),
     nodes:game.nodes.map(n=>[n.owner==='p'?1:n.owner==='e'?-1:0, Math.round(n.prog*100)/100]),
     zones:game.zones.map(z=>[z.owner==='p'?1:z.owner==='e'?-1:0, Math.round(z.prog*100)/100]),
     bz:game.bonusZone? [Math.round(game.bonusZone.x), game.bonusZone.owner==='p'?1:game.bonusZone.owner==='e'?-1:0, Math.round(game.bonusZone.prog*100)/100,
@@ -75,7 +85,7 @@ function applyStanceIds(side, st, ids){
   }
 }
 function garrisonByIds(side, slot, ids){
-  const free = GAR_MAX - slot.b.gar.length; if (free<=0) return;
+  const free = garMax(slot.b) - slot.b.gar.length; if (free<=0) return;
   const set = new Set(ids||[]);
   const elig = side.units.filter(u=>set.has(u.id) && u.range>60 && !u.fly && u.role!=='support'
     && Math.abs(u.x-slot.x)<260).slice(0, free);
@@ -134,11 +144,15 @@ function deBld(sb, ownerSide){
   if (!Array.isArray(sb) || !isIdx(sb[0], BCODE_TYPE.length) || !sb[0]) return null;
   const type = BCODE_TYPE[sb[0]];
   const maxhp = SN(sb[2], 1, 1e6, 100);
-  const b = { type, hp:SN(sb[1], 0, maxhp), maxhp, lvl:SN(sb[3], 1, 3, 1)|0, atkT:0, gar:[] };
+  const b = { type, hp:SN(sb[1], 0, maxhp), maxhp, lvl:SN(sb[3], 1, 3, 1)|0, atkT:0, gar:[], age:SN(sb[6], 0, 1e5), fk:ownerSide? ownerSide.facKey : undefined };
   if (type==='site') b.buildType = BCODE_TYPE[isIdx(sb[4], BCODE_TYPE.length)? sb[4] : 1] || 'wall';
-  b.gar = SA(sb[5], GAR_MAX).filter(g => Array.isArray(g) && CODE_ROLES[g[0]])
+  b.gar = SA(sb[5], 3).filter(g => Array.isArray(g) && CODE_ROLES[g[0]])
     .map(g=>({role:CODE_ROLES[g[0]], era:SN(g[1],0,4)|0, fac:g[2]?'IA':'HUM', atkT:0, rate:1, bob:0}));
   return b;
+}
+function ruinDecode(code, side){
+  const c = SN(code, 0, 9999)|0, ty = BCODE_TYPE[(c/1000)|0]; if (!c || !ty || ty==='site') return null;
+  return { type:ty, side:side.side, t:game.t - (ft('HUM','rebuildT') - (c%1000)) };
 }
 function applySnapshot(snap){
   if (!game || game.net!=='guest' || !snap || typeof snap!=='object') return;
@@ -165,6 +179,8 @@ function applySnapshot(snap){
     loc.upg = upg;
     if (!(loc._hsLock>performance.now())) loc.heroStance = HERO_STANCES[SN(ser.hs, 0, 2, 1)|0];
     loc.heroCd=SN(ser.hcd, 0, 1e4); loc.queueLen=SN(ser.q, 0, 99)|0;
+    loc.netT = g.t + SN(ser.nt, 0, 60); loc.afterT = g.t + SN(ser.at, 0, 120);          // réseau coupé · acquis sociaux / correctif
+    const rn = SA(ser.rn, 8); for (let i=0;i<loc.slots.length;i++) loc.slots[i].ruin = ruinDecode(rn[i], loc);
     loc.gar = new Array(SN(ser.gn, 0, 3)|0).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
     const sl = SA(ser.slots, 64);
     for (let i=0;i<loc.slots.length;i++){ loc.slots[i].b = deBld(sl[i], loc);
@@ -213,7 +229,9 @@ function applySnapshot(snap){
   const sn = SA(snap.neut, 16), sd = SA(snap.nodes, 16), sz = SA(snap.zones, 16);
   for (let i=0;i<g.neut.length;i++){ const ns=sn[i]; if (!Array.isArray(ns)) continue;
     const own = ns[0]===-1? g.p : ns[0]===1? g.e : null;
-    g.neut[i].owner = own; g.neut[i].b = deBld(ns[1], own); }
+    g.neut[i].owner = own; g.neut[i].b = deBld(ns[1], own);
+    const rc = SN(ns[2], -9999, 9999)|0;                                  // ruine d'un spot neutre : + = hôte (local e), − = invité (local p)
+    g.neut[i].ruin = rc>0? ruinDecode(rc, g.e) : rc<0? ruinDecode(-rc, g.p) : null; }
   for (let i=0;i<g.nodes.length;i++){ const nd=sd[i]; if (!Array.isArray(nd)) continue;
     g.nodes[i].owner = nd[0]===-1? 'p' : nd[0]===1? 'e' : null;
     g.nodes[i].prog = -SN(nd[1], -1, 1); }

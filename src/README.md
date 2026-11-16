@@ -24,6 +24,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `00-core.js` | canvas, `resize`, conversions écran↔monde, relief |
 | `01-settings.js` | réglages + touches reconfigurables |
 | `02-i18n.js` | tables de traduction (fr/en/es/de/it/pt/ru/zh/ar) |
+| `02b-i18n-asym.js` | textes de l'asymétrie des factions : lignes d'explication d'événement par faction (`evx_*_hum/_ia`), libellés flottants, puces d'identité du menu |
 | `03-audio.js` | moteur audio : bus (musique / effets / ambiances, limiteur, réverbération), synthèse de repli, musique d'escarmouche, ambiance |
 | `03b-samples.js` | sons enregistrés CC0 (`assets/audio/`, manifeste) : chargement par lots, effets, héros, boucles d'ambiance par lieu — repli synthèse hors ligne |
 | `03c-music.js` | thèmes de campagne joués aux instruments échantillonnés (`m_night`… `e_ash`), ritournelles ; refaire les sons : `tools/audio/build.py`, banc : `tools/test-audio.mjs` |
@@ -51,6 +52,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `20-net-online.js` | pause négociée, transport PeerJS, salons publics |
 | `21-menu.js` | menu (DOM), plein écran, navigation en ligne |
 | `21b-guide.js` | onglet GUIDE du menu : rubriques dépliables (9 langues), raccourcis générés depuis les touches réelles |
+| `21c-guide-fac.js` | rubrique « Deux factions, deux styles » du guide (insérée dans chaque langue de `GUIDE`) |
 | `22-input.js` | clavier, souris/tactile, amorçage du tutoriel |
 
 ## Campagne (v1.16) — moteur, schéma de mission, flux
@@ -74,6 +76,9 @@ saute jamais la doctrine ni l'ouverture). Musique du briefing : thème `c_map` s
   suivi par `hud().goal2 = {done, label}` ou `c.goal2Done = true`), `rule`, `tips:[…]`, `doctrines:[idA, idB]`,
   `docWhy:{id: texte}` (« utile ici parce que… »), `debrief`, `fail`. Le debrief de la mission précédente est repris
   dans « Ce qui s'est passé ».
+- **Asymétrie des factions** (facultatif) : `asym:{env:true, terrain:true, bld:true, econ:true, fatigue:true}` inscrit la mission aux mécaniques
+  de `FAC_TRAITS` (`04-data.js`, `docs/audit/FACTIONS.md`). Par défaut aucune ne s'applique en campagne (`asymOn(k)`) ; rejouer `npm run test:camp`
+  et ajuster `dAdj` avant d'en activer une.
 - **Règles** : `biome`, `theme`, `map` (ci-dessous), `eraCap`, `era0`, `oneLife`, `dev0`, `ai:[Récit, Lutte, Dernier carré]`
   (index `DIFFS`), `dm:[…]` (réglages fins d'IA par niveau), `dAdj:[…]` (tempère un multiplicateur commun, à justifier).
 - **Crochets** : `setup(g,c)`, `tick(g,c,dt)` → `'win'`/`'lose'`, `hud(g,c)` → `{prog,label,clock,warn,goal2}`,

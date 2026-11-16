@@ -170,6 +170,7 @@
   #menu .row { display:flex; gap:4px 12px; flex-wrap:wrap; align-items:center; }
   #menu .fRow { display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap; padding:clamp(3px,.9vh,7px) 0; border-bottom:1px dashed var(--line); }
   #menu .fRow.tight { border:0; padding:0; }
+  #menu .facTr { flex-basis:100%; font-size:clamp(10px,1.7vh,12.5px); letter-spacing:.05em; color:var(--ink2); }
   #menu .fLbl { min-width:5.6em; font-size:clamp(11px,1.8vh,13px); letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); }
   /* cases à cocher tracées à l'encre ; la croix rouge « au feutre » marque le choix */
   #menu .pick { position:relative; cursor:pointer; font-family:inherit; font-size:clamp(14px,2.5vh,18px); color:var(--ink);
@@ -465,7 +466,8 @@
             <div class="row">
               <button class="pick hum sel" id="cardHum" data-i18n="fac_hum">HUMANITÉ</button>
               <button class="pick ia" id="cardIA">G·P·T</button>
-            </div></div>
+            </div>
+            <div class="facTr" id="facTr"></div></div>
           <div class="fRow"><span class="fLbl" data-i18n="menu_threat">Menace</span>
             <div class="row">
               <button class="pick diffBtn" data-diff="0" data-i18n="diff_0">Facile</button>

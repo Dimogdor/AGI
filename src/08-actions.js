@@ -6,7 +6,7 @@ function unitCost(side, ri){
   for (const r in c){
     let v = c[r]*k;
     // PASSIF HUM — ferveur de la révolte : l'infanterie coûte 5 % de moins (production populaire).
-    if (side.facKey==='HUM' && inf) v *= 0.95;
+    if (inf) v *= FAC_TRAITS[side.facKey].infCost;
     out[r] = Math.round(v);
   }
   return out;
@@ -68,7 +68,7 @@ function unitStats(side, ri){
   // HUM frappe vite & léger, GPT fort & lent. dégât×cadence inchangé. Siège & Soutien exemptés.
   let cdmg=1, crate=1;
   if (r.key!=='support' && r.key!=='siege'){
-    if (side.facKey==='HUM'){ cdmg=0.82; crate=0.82; } else { cdmg=1.22; crate=1.22; }
+    const T = FAC_TRAITS[side.facKey]; cdmg = T.texD; crate = T.texR;
   }
   // ARCHÉTYPES DE MÊLÉE (valable à chaque ère) : le Tank (mêlée DÉFENSIVE) devient un vrai mur —
   // beaucoup de PV, dégâts faibles, plus lent ; la Mêlée (OFFENSIVE) devient un assaillant
@@ -78,9 +78,11 @@ function unitStats(side, ri){
   else if (r.key==='melee'){ ahp=0.82; admg=1.34; aspd=1.14; }
   const rate = r.rate*Math.max(0.55, 1-0.05*side.era-0.04*lvl)*crate;
   let hp = r.hp*m*up*ahp;
-  // PASSIF GPT — robustesse industrielle : châssis blindés, +5 % de PV de base (asymétrie subtile ;
-  // contrepartie = électricité un peu plus chère, voir unitCost). DPS strictement miroir inchangé.
-  if (side.facKey==='IA') hp *= 1.05;
+  // PASSIF GPT — robustesse industrielle : châssis blindés, +5 % de PV de base (FAC_TRAITS.IA.hpMul). Il n'a PAS de
+  // contrepartie de coût (le commentaire d'origine en promettait une, jamais codée) : sa contrepartie est la surchauffe,
+  // plus dure que la fatigue humaine (updateUnits) et, avec `econ`, une économie plus lente à démarrer. Premier levier de
+  // réglage de la balance (FACTIONS.md §5) : on le retire si l'IA prend l'avantage au banc.
+  if (side.facKey==='IA') hp *= FAC_TRAITS.IA.hpMul;
   return { hp, dmg:r.dmg*m*up*cdmg*admg, spd:r.spd*aspd, range, rate,
            arc:r.arc, aoe:r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
 }
@@ -156,7 +158,9 @@ function checkTrans(side){
   if (side===game.p) sfx('trans');
 }
 const SPECIAL_CD = 45;
-// PASSIF HUM — adaptabilité de la résistance : les capacités spéciales se rechargent 10 % plus vite.
+// PASSIF COMMUN aux deux camps : les capacités spéciales se rechargent 5 % plus vite (v1.17 : le commentaire d'origine
+// promettait « −10 % pour l'Humanité » alors que le code l'appliquait aux deux camps ; on garde le comportement mesuré,
+// sans écart de faction — le pouvoir ✸ se différencie par son effet, voir FACTIONS.md M7).
 function specialCd(side){ return SPECIAL_CD * 0.95; }
 // l'ultime demande du temps ET de l'XP accumulée ; il ne peut JAMAIS one-shot une unité
 function specialXpCost(side){ return 60 + side.era*40; }
@@ -208,11 +212,27 @@ function castLastStand(side){
 }
 function mkB(side, type){
   const b = BUILDS[type];
-  return { type, hp:b.hp*(1+side.era*0.4), maxhp:b.hp*(1+side.era*0.4), atkT:0, lvl:1, gar:[], age:0 };
+  return { type, hp:b.hp*(1+side.era*0.4), maxhp:b.hp*(1+side.era*0.4), atkT:0, lvl:1, gar:[], age:0, fk:side.facKey };
 }
+// coût d'une construction pour CE camp sur CE socle : M5 (muraille humaine −25 %) et M1 (rebâtir le même type sur une ruine
+// de moins de 90 s : −50 % pour l'Humanité). Sert au paiement, au remboursement et à tous les menus.
+function ruinActive(side, slot, type){
+  const r = slot && slot.ruin;
+  return !!(r && side.facKey==='HUM' && asymOn('econ') && r.side===side.side && r.type===type && game.t-r.t <= ft('HUM','rebuildT'));
+}
+function buildCost(side, type, slot){
+  const base = BUILDS[type].cost; let k = 1;
+  if (side.facKey==='HUM' && type==='wall' && asymOn('bld')) k *= ft('HUM','wallCost');
+  if (ruinActive(side, slot, type)) k *= ft('HUM','rebuildK');
+  if (k===1) return base;
+  const out = {}; for (const r in base) out[r] = Math.round(base[r]*k);
+  return out;
+}
+const siteMax = side => (side.facKey==='HUM' && asymOn('bld'))? ft('HUM','siteMax') : 2;
 function tryBuild(side, slot, type){
   if (isGuest(side)){ guestCmd({c:'build', ref:slotRef(side,slot), type}); sfx('build'); return true; }
-  if (slot.b || !canPay(side, BUILDS[type].cost)) return false;
+  const cost = buildCost(side, type, slot);
+  if (slot.b || !canPay(side, cost)) return false;
   let near = side.slots.includes(slot);
   if (!near) for (const u of side.units) if (Math.abs(u.x-slot.x)<110){ near=true; break; }
   if (!near){
@@ -223,19 +243,22 @@ function tryBuild(side, slot, type){
     }
     let sites=0;
     for (const s2 of sideBuildSlots(side)) if (s2.b && s2.b.type==='site') sites++;
-    if (sites>=2){
+    if (sites>=siteMax(side)){
       if (side===game.p) announce(tr('a_twosites'), "#d88");
       return false;
     }
   }
-  pay(side, BUILDS[type].cost);
+  pay(side, cost);
+  if (cost!==BUILDS[type].cost && ruinActive(side, slot, type) && side===game.p) addFloater(slot.x, gY(slot.x)-44, tr('f_rebuild'), '#9dc88a', 12);
+  slot.ruin = null;
   slot.owner = side;
   if (near){
     slot.b = mkB(side, type);
     burst(slot.x, gY(slot.x)-14, '#cdbf9a', 8, 0.7);   // poussière de chantier (accompagne le pop)
   } else {
     // chantier fragile : une troupe du pool viendra le terminer
-    slot.b = { type:'site', buildType:type, hp:140, maxhp:140, lvl:1, gar:[] };
+    const sh = (side.facKey==='HUM' && asymOn('bld'))? ft('HUM','siteHp') : 140;
+    slot.b = { type:'site', buildType:type, hp:sh, maxhp:sh, lvl:1, gar:[], paid:cost, fk:side.facKey };
     if (side===game.p) announce(tr('a_siteopen'), "#e8d8a0");
   }
   if (side===game.p) sfx('build');
@@ -260,7 +283,7 @@ function dispatchGarrison(side, slot, role){
   // tourelles et murailles, unités à distance uniquement. Les places déjà PROMISES (unités en
   // route vers ce bâtiment) comptent : des taps rapides envoyaient 5 recrues vers 2 places libres.
   const enRoute = side.units.filter(u=>u.task && u.task.kind==='garrison' && u.task.slot===slot).length;
-  if (!canGar(slot.b) || slot.b.gar.length+enRoute>=GAR_MAX) return false;
+  if (!canGar(slot.b) || slot.b.gar.length+enRoute>=garMax(slot.b)) return false;
   if (role!=='ranged' && role!=='siege') role = 'ranged';
   let best=null, bd=1e9;
   for (const u of side.units){
@@ -325,7 +348,7 @@ function tryAutoRepair(side){
 function demolish(slot, killGar=false){
   // chantier ANNULÉ par le joueur : le coût est rendu (un chantier qui s'effondre seul ne rend rien)
   if (slot.b && slot.b.type==='site' && !killGar && slot.owner && slot.b.buildType && BUILDS[slot.b.buildType]){
-    const c = BUILDS[slot.b.buildType].cost, sd = slot.owner;
+    const c = slot.b.paid || BUILDS[slot.b.buildType].cost, sd = slot.owner;
     for (const r in c){ if (r==='m' && sd.trans) continue; sd[r] += c[r]; }
   }
   if (slot.b && slot.b.gar && slot.b.gar.length && slot.owner){
@@ -335,6 +358,13 @@ function demolish(slot, killGar=false){
       g.x = slot.x + (Math.random()*30-15);
       slot.owner.units.push(g);
     }
+  }
+  // M1 : un bâtiment DÉTRUIT (killGar) laisse une ruine — l'Humanité la rebâtit à moitié prix pendant 90 s ; la machine
+  // qui perd un nœud éco voit son bonus réseau tomber à 0 pendant 12 s (« resynchronisation »)
+  if (killGar && slot.b && slot.b.type!=='site' && slot.owner && asymOn('econ')){
+    const ow = slot.owner;
+    if (ow.facKey==='HUM') slot.ruin = { type:slot.b.type, t:game.t, side:ow.side };
+    else if (ECO_TYPES[slot.b.type] && ow.facKey==='IA'){ ow.netT = game.t + ft('IA','netCut'); if (ow===game.p) addFloater(slot.x, gY(slot.x)-44, tr('f_netcut'), '#5ad0ff', 12); }
   }
   slot.b = null; slot._w = null;
   for (const sd of [game.p, game.e]) for (const u of sd.units) if (u.task && u.task.slot===slot) u.task = null;
@@ -383,7 +413,7 @@ function tryUpgBuild(side, slot){
 function tryGarrison(side, slot){
   if (isGuest(side)){ guestCmd({c:'garsel', ref:slotRef(side,slot), ids:[...game.sel].map(u=>u.id)}); return true; }
   if (!canGar(slot.b) || slot.owner!==side) return false;
-  const free = GAR_MAX - slot.b.gar.length;
+  const free = garMax(slot.b) - slot.b.gar.length;
   if (free<=0) return false;
   const eligible = [...game.sel].filter(u=>u.range>60 && !u.fly && u.role!=='support' && Math.abs(u.x-slot.x)<260).slice(0, free);
   if (!eligible.length){ announce(tr('a_nogar'), "#d88"); return false; }
@@ -431,7 +461,7 @@ function spawnHero(side, power){
   // soin ; Singularité = frappeuse. v1.12 : PV alignés (1,45 contre 0,7 donnait 88 % de victoires
   // au même joueur en Humanité contre 25 % en GPT, mesuré par simulation).
   const hp = HERO.hp*mm*(hum? 1.2 : 1.2)*power;
-  const dmg = HERO.dmg*mm*(hum? 0.7 : 1.3)*power;
+  const dmg = HERO.dmg*mm*FAC_TRAITS[side.facKey].heroDmg*power;
   const u = { role:'hero', hp, maxhp:hp, dmg, spd:HERO.spd,
     range:HERO.range, rate:HERO.rate, fly:false, xpv:Math.round(140*(1+side.era*0.7)) };
   u.x = side.x + side.side*60;
