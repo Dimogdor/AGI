@@ -27,21 +27,25 @@ function __buyMix(p, mix, maxBuys, reserve, anyOk){
   }
   return bought;
 }
-function __competent(st, o){
-  const p=game.p, e=game.e;
+/* __competentSide(side, foe, st, o) : le même cerveau peut jouer les DEUX camps (côté gauche side.side=1, droit -1) —
+   utilisé par tools/test-factions.mjs (bot contre bot) ; __competent(st, o) = le joueur humain (game.p) contre game.e. */
+function __competentSide(p, e, st, o){
+  o = o || {};
+  const sd = p.side;                                   // +1 : base à gauche, -1 : base à droite
   const mix = o.mix || [3,2,4,1,2,1];
   const pushN = o.pushN || 10;
-  if (p.lastReady && !p.lastUsed && e.units.some(u=>Math.abs(u.x-p.x)<600)) trySpecial(p);
+  const near = (u, x, d) => Math.abs(u.x-x) < d;
+  if (p.lastReady && !p.lastUsed && e.units.some(u=>near(u,p.x,600))) trySpecial(p);
   tryEvolve(p);
   p.formation = true;
-  const threatened = e.units.some(u=>u.x-p.x<750);
+  const threatened = e.units.some(u=>(u.x-p.x)*sd<750);
   // --- economy first ---
   const ord=['farmF','farmM','well']; let ecoDone=true;
   for (let i=0;i<3;i++){ const s=p.slots[i]; if (!s.b){ tryBuild(p,s,ord[i]); if (!s.b) ecoDone=false; } }
   if (ecoDone){
-    const n0=game.neut[0], n1=game.neut[1];
+    const n0 = sd===1? game.neut[0] : game.neut[3], n1 = sd===1? game.neut[1] : game.neut[2];
     if (!n0.b) tryBuild(p,n0,'turret');
-    if (!n1.b) tryBuild(p,n1,'wall');
+    if (!n1.b) tryBuild(p,n1, o.n1Type || 'wall');
   }
   const N = __armyN(p);
   // --- hero ---
@@ -51,8 +55,8 @@ function __competent(st, o){
   // --- army ---
   if (ecoDone || threatened || game.t>40) __buyMix(p, mix, 2, saving? HERO_COST : null, threatened || N<4);
   // --- ultimate : >=4 enemies in range of the front ---
-  let front = p.x; for (const u of p.units) if (u.x>front) front=u.x;
-  let nNear=0; for (const u of e.units) if (Math.abs(u.x-front)<330) nNear++;
+  let front = p.x; for (const u of p.units) if ((u.x-front)*sd>0) front=u.x;
+  let nNear=0; for (const u of e.units) if (near(u,front,330)) nNear++;
   if (nNear>=4 && !(p.lastReady&&!p.lastUsed)) trySpecial(p);
   // --- upgrades ---
   if (ecoDone && !saving){
@@ -72,6 +76,7 @@ function __competent(st, o){
   if (st.mode===undefined){ st.mode='gather'; setStance(p,'hold'); }
   if (st.mode==='gather'){
     if (N>=pushN || p.heroAlive){ st.mode='push'; setStance(p,'charge'); }
-    else if (p.stance==='retreat' && !p.units.some(u=>u.x-p.x>320)) setStance(p,'hold');
+    else if (p.stance==='retreat' && !p.units.some(u=>(u.x-p.x)*sd>320)) setStance(p,'hold');
   } else if (N < Math.max(2,pushN/3) && !p.heroAlive){ st.mode='gather'; setStance(p,'retreat'); }
 }
+function __competent(st, o){ __competentSide(game.p, game.e, st, o || {}); }
