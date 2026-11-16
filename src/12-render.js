@@ -2403,8 +2403,7 @@ function warmTick(budgetMs){
 }
 function drawUnit(u){
   const x = u.x-camX;
-  if (game.camp && game.camp.hidden && game.camp.hidden(u)) return;      // campagne : unité dans le noir
-  if (x<-40 || x>VW()+40) return;
+  if ((game.camp && game.camp.hidden && game.camp.hidden(u)) || x<-40 || x>VW()+40){ u._wx = u.x; return; }   // dans le noir / hors champ : la démarche ne se « rejoue » pas à l'entrée
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;
   const top = u.role==='gremlin'? 26 : u.fly? 44 : u.role==='hero'? heroTop(u) : 70;   // au-dessus de la tête
@@ -2436,8 +2435,9 @@ function drawUnit(u){
     ctx.restore(); ctx.globalAlpha=1;
   }
   // APPARITION (v1.14) : l'unité sort de l'ombre de sa base en 0,4 s, dans un nuage de poussière
-  if (u._born===undefined){ u._born = game.t;
-    if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
+  if (u._born===undefined) u._born = game.t;                            // filet (créée hors spawnUnit/spawnHero)
+  if (!u._dust){ u._dust = 1;                                            // poussière une seule fois, et seulement si on la voit naître
+    if (game.t-u._born<0.25 && qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
       for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
   // AURA DU HÉROS : un petit repère à l'encre sous chaque allié au sol galvanisé (remplace les faisceaux)
   if (sideU.heroAlive && u.role!=='hero' && !u.fly && u.role!=='gremlin' && qFx()) heroPip(u.fac, x, gy);

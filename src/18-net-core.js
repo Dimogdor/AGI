@@ -190,10 +190,11 @@ function applySnapshot(snap){
     if (role==='hero'){ const hb = SN(a[14], 0, 31)|0; u.atkN = hb&7; u.hstate = (hb&8)? 'flee' : null; u._hg = !!(hb&16); }
     const pv = GV[id];
     if (role==='hero'){ if (pv){ u._h = pv._h; u.gestT = pv.gestT; } if (u._hg && !(pv && pv._hg)) u.gestT = g.t; }
-    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
+    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._dust = pv._dust; u._mvT = pv._mvT; u._bk = pv._bk; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
       if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
       // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
       if (!(a[13] && pv.atkT<0.75)) u.atkT = pv.atkT; }
+    else u._born = g.t;                                        // nouvelle venue : l'apparition se joue à sa création, pas à son entrée dans le champ
     GV2[id] = u;
     loc.units.push(u);
   };

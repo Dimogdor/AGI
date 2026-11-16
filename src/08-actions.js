@@ -116,7 +116,7 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
   u.ord = null; u.holdX = null; u.task = null;
   u.heat = 0; u.tiredT = 0; u.kills = 0; u.vet = false; u.lastHit = null;
   u.farFatigued = false; u.farT = 0;   // fatigue de traversée (déclenchée une fois, loin de la base)
-  u.id = UID++;
+  u.id = UID++; u._born = game.t;      // l'entrée en scène se joue à la naissance, pas à l'arrivée dans le champ
   side.units.push(u);
 }
 function tryUpgRole(side, ri){
@@ -437,7 +437,7 @@ function spawnHero(side, power){
   u.side=side.side; u.era=side.era; u.fac=side.facKey; u.trans=side.trans;
   u.atkT=0; u.bob=Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord=null; u.holdX=null; u.task=null; u.heat=0; u.tiredT=0;
-  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
+  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++; u._born = game.t;
   u.atkN = 0; u.hstate = null; u.barkT = 5+Math.random()*5;
   warmHero(side); heroSfx(side.facKey, 'spawn', u.x);
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie
