@@ -138,8 +138,9 @@ const lvlF = b => Math.pow(1.5, (b.lvl||1)-1); // facteur de niveau bâtiment
 //   hero : la Singularité reçoit une aura de réparation (comme l'aura de soin du Che) — le banc a montré que sans elle l'Humanité gagnait ~80 %
 //   env : M10, chaque événement a un effet propre à chaque faction   terrain : M8 occupation (HUM) / extraction (IA)
 //   bld : M5 barricades populaires (HUM) / tourelles autonomes (IA)   econ : M1 économie populaire (HUM) / effet réseau (IA)
+//   heal : M3 brancardiers (HUM : relève d'un allié mourant, réparations −30 %) / recyclage (IA : 5-12 % du coût rendu, nano-réparation moins chère)
 //   unit : M2 coude à coude (HUM, +dégâts par voisin) / verrouillage de cible (IA : tireurs sur le plus entamé, exécution, siège large)
-const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true };
+const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true };
 // Les tests coupent une mécanique seule avec game.asym = {econ:false}. En CAMPAGNE, aucune mécanique par défaut : une mission
 // s'inscrit à la carte avec `asym:{env:true}` dans sa définition. Le tutoriel n'en a aucune.
 function asymOn(k){
@@ -160,6 +161,7 @@ const FAC_TRAITS = {
     longevT:750,                                     // M1 : bonus de longévité à plein régime en 12,5 min (15 min pour la machine)
     rebuildK:0.5, rebuildT:90,                       // M1 : rebâtir le même type sur une ruine de moins de 90 s coûte −50 %
     texDU:0.82, packStep:0.05, packMax:0.15, packR:50,   // M2 : +5 % de dégâts par allié au sol à ≤ 50 px, max +15 % (texture inchangée : le banc ne supportait pas de la baisser)
+    reliefCd:25, reliefCd2:18, reliefHp:0.25, repairK:0.7,   // M3 : relève (recharge 25 s, 18 s au niveau 2 du soutien) à 25 % de PV ; réparations −30 %
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
@@ -176,6 +178,7 @@ const FAC_TRAITS = {
     hpMul:1.05, heatRec:0.030,                       // +5 % PV de base (« robustesse industrielle ») ; refroidissement /s
     netStep:0.07, netMax:0.28, netCut:12,            // M1 : +7 % de production par autre bâtiment éco (max +28 %), coupé 12 s si l'un d'eux tombe
     texDU:1.06, execK:1.1, execHp:0.5, siegeAoe:1.14,   // M2 : texture ×1,06 (au lieu de ×1,22 : le ciblage concentré vaut beaucoup) ; tireurs/aériens : cible la plus entamée, +10 % sous 50 % de PV ; zone du siège ×1,14
+    recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,

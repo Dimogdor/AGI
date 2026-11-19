@@ -86,6 +86,31 @@ function unitK(u, target, side){
   if ((u.role==='ranged' || u.role==='air') && target && target.role && target.hp/target.maxhp < ft('IA','execHp')) return ft('IA','execK');
   return 1;
 }
+// ---- M3 · SOIN ET RÉCUPÉRATION (asymOn('heal')) : l'Humanité RELÈVE un allié qui tombe (médic), la machine RECYCLE ses pertes ----
+function healSave(side, u){
+  if (u.fac!=='HUM' || !asymOn('heal') || u.role==='hero' || u.role==='gremlin') return false;
+  const lvl = side.upg.support||0;
+  for (const a of side.units){
+    if (a===u || a.role!=='support' || a.hp<=0 || (a.relAt||0)>game.t) continue;
+    if (Math.abs(a.x-u.x) > a.range+40*lvl) continue;
+    a.relAt = game.t + (lvl>=2? ft('HUM','reliefCd2') : ft('HUM','reliefCd'));
+    u.hp = u.maxhp*ft('HUM','reliefHp'); u.lastHit = null; u.flash = 0.2;
+    addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0), tr('f_relief'), '#6dff8a', 12);
+    burst(u.x, gY(u.x)-30, '#6dff8a', 8, 0.8);
+    return true;
+  }
+  return false;
+}
+function healSalvage(side, u){
+  if (u.fac!=='IA' || !asymOn('heal') || u.role==='hero' || u.role==='gremlin') return;
+  let k = ft('IA','recycFar');
+  if (Math.abs(u.x-side.x) <= ft('IA','recycR')) k = ft('IA','recycNear');
+  else for (const a of side.units) if (a.role==='support' && a.hp>0 && Math.abs(a.x-u.x)<=a.range+40*(side.upg.support||0)){ k = ft('IA','recycNear'); break; }
+  const ri = ROLES.findIndex(r=>r.key===u.role); if (ri<0) return;
+  const c = unitCost(side, ri);
+  for (const r in c){ if (r==='m' && side.trans) continue; side[r] += c[r]*k; }
+  if (side===game.p && k>ft('IA','recycFar')) addFloater(u.x, gY(u.x)-44, tr('f_recycle'), '#5ad0ff', 11);
+}
 function updateUnits(side, foe, dt){
   const targets = foeTargets(foe);
   const m = statMul(side.era);
@@ -378,6 +403,7 @@ function updateUnits(side, foe, dt){
   for (let i=side.units.length-1;i>=0;i--){
     const u=side.units[i];
     if (u.hp<=0){
+      if (healSave(side, u)) continue;               // M3 : relevé par un médic
       // vétérance : 5 éliminations → +8 % de dégâts à vie
       const k = u.lastHit;
       if (k && k.hp>0 && k.side!==u.side && k.role){
@@ -408,6 +434,7 @@ function updateUnits(side, foe, dt){
         if (ri>=0){ const c = unitCost(side, ri), k = fte('IA','floodRefund'); for (const r in c){ if (r==='m' && side.trans) continue; side[r] += c[r]*k; }
           if (side===game.p) addFloater(u.x, gY(u.x)-40, tr('f_backup'), '#5ad0ff', 11); }
       }
+      healSalvage(side, u);                          // M3 : la machine récupère une part du coût
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
       if (foe===game.p){ game.kills++; addFloater(u.x, gY(u.x)-50, "+"+u.xpv+"✦", "#cdb4ff"); sfx('die'); }
       else game.eKills++;
@@ -591,7 +618,7 @@ function updateBuildings(side, foe, dt){
       continue;
     }
     if (b.age!==undefined) b.age += dt;                                       // ancienneté → bonus de longévité
-    if (side.autoRepair && b.hp<b.maxhp) b.hp = Math.min(b.maxhp, b.hp+4*dt); // nano-réparation
+    if (side.autoRepair && b.hp<b.maxhp) b.hp = Math.min(b.maxhp, b.hp+autoRepRate(side,false)*dt); // nano-réparation
     if (b.type==='turret'){
       // cadence de la tourelle : on accélère le DÉCOMPTE (le délai affiché reste BUILDS.turret.rate) — liaison IA (M5) et signal (M10)
       b.atkT -= dt * ((iaBld && turretLinked(side, s))? 1/ft('IA','turLink') : 1) * ((envOn() && side.facKey==='IA' && game.boon==='signal')? fte('IA','sigTur') : 1);
@@ -736,8 +763,8 @@ function update(dt){
   for (let i=0;i<6;i++){ if(p.cd[i]>0)p.cd[i]-=dt; if(e.cd[i]>0)e.cd[i]-=dt; }
   if (p.heroCd>0) p.heroCd -= dt; if (e.heroCd>0) e.heroCd -= dt;
   // nano-réparation passive de la base
-  if (p.autoRepair && p.hp<p.maxhp) p.hp = Math.min(p.maxhp, p.hp+8*dt);
-  if (e.autoRepair && e.hp<e.maxhp) e.hp = Math.min(e.maxhp, e.hp+8*dt);
+  if (p.autoRepair && p.hp<p.maxhp) p.hp = Math.min(p.maxhp, p.hp+autoRepRate(p,true)*dt);
+  if (e.autoRepair && e.hp<e.maxhp) e.hp = Math.min(e.maxhp, e.hp+autoRepRate(e,true)*dt);
   // SIGNAL RENFORCÉ : ultime se recharge plus vite (+30 % pour tous ; M10 : humains +10 %, machines +50 %)
   if (p.specialCd>0) p.specialCd -= dt*(1+1.8*lp)*sigK(p.facKey);
   if (e.specialCd>0) e.specialCd -= dt*(1+1.8*le)*sigK(e.facKey);

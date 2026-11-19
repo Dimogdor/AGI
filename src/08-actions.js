@@ -339,7 +339,7 @@ function tryFortify(side){
 function tryAutoRepair(side){
   if (isGuest(side)){ guestCmd({c:'autorep'}); return true; }
   if (side.autoRepair) return false;
-  const c = {m:380, w:100};
+  const c = autoRepCost(side);
   if (!canPay(side,c)) return false;
   pay(side,c); side.autoRepair = true;
   if (side===game.p){ sfx('cap'); announce(tr('bm_autorep_on'), '#9dc88a'); }
@@ -370,13 +370,17 @@ function demolish(slot, killGar=false){
   for (const sd of [game.p, game.e]) for (const u of sd.units) if (u.task && u.task.slot===slot) u.task = null;
   if (!game.p.slots.includes(slot) && !game.e.slots.includes(slot)) slot.owner=null;
 }
-function repairCost(curHp, maxHp, scale){
+function repairCost(curHp, maxHp, scale, side){
   const miss = clamp(1-curHp/maxHp, 0, 1);
+  if (side && side.facKey==='HUM' && asymOn('heal')) scale *= FAC_TRAITS.HUM.repairK;   // M3 : réparations −30 % pour l'Humanité
   return {f:Math.ceil(miss*scale), m:Math.ceil(miss*scale)};
 }
+// M3 : coût et vitesse de la nano-réparation (moins chère et plus rapide pour la machine)
+const autoRepCost = side => (side.facKey==='IA' && asymOn('heal'))? FAC_TRAITS.IA.arCost : {m:380, w:100};
+const autoRepRate = (side, base) => (side.facKey==='IA' && asymOn('heal'))? (base? FAC_TRAITS.IA.arBase : FAC_TRAITS.IA.arBld) : (base? 8 : 4);
 function tryRepair(side, slot){
   if (isGuest(side)){ guestCmd({c:'srep', ref:slotRef(side,slot)}); return true; }
-  const c = repairCost(slot.b.hp, slot.b.maxhp, 60);
+  const c = repairCost(slot.b.hp, slot.b.maxhp, 60, side);
   if (!canPay(side,c)) return false;
   pay(side,c); slot.b.hp = slot.b.maxhp;
   if (side===game.p) sfx('build');

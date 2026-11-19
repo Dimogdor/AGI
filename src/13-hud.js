@@ -742,7 +742,7 @@ function buildOptions(side, slot){
     if (slot.b.type==='site')
       return [{key:'demolish', label:tr('bm_cancelsite'), cost:{}}];
     if (slot.b.hp < slot.b.maxhp)
-      opts.push({key:'repair', label:tr('bm_repair'), cost:repairCost(slot.b.hp, slot.b.maxhp, 60)});
+      opts.push({key:'repair', label:tr('bm_repair'), cost:repairCost(slot.b.hp, slot.b.maxhp, 60, p)});
     if ((slot.b.lvl||1)<3)
       opts.push({key:'upgrade', label:fmt('bm_upgrade',{n:(slot.b.lvl||1)+1}), cost:upgBuildCost(slot)});
     // garnison : RÉSERVÉE aux tourelles et murailles, unités à distance uniquement
@@ -796,7 +796,7 @@ function drawBuildMenu(){
     if ((p.fortLvl||1)<3)
       opts.push({key:'fortify', label:fmt('bm_fortify',{n:(p.fortLvl||1)+1}), cost:{f:250*(p.fortLvl||1), m:250*(p.fortLvl||1)}});
     if (!p.autoRepair)
-      opts.push({key:'autorep', label:tr('bm_autorep'), cost:{m:380, w:100}});
+      opts.push({key:'autorep', label:tr('bm_autorep'), cost:autoRepCost(p)});
     if (!opts.length)
       opts.push({key:'noop', label:tr('bm_noop'), cost:{}});
   } else {
