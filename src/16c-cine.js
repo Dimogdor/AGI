@@ -165,11 +165,12 @@ function cineFont(who, fs){
 // de ponctuation fermante en début de ligne. La somme des longueurs des lignes = caractères tapés.
 function cineWrap(text, maxW){
   const out = [];
-  for (const para of String(text).split('\n')){
-    const toks = para.match(/[⺀-鿿豈-﫿＀-￯]|[^\s⺀-鿿豈-﫿＀-￯]+|\s+/g) || [];
+  for (const para of frTypo(String(text)).split('\n')){
+    // l'insécable (typographie française) reste DANS son mot : jamais une coupure de ligne, jamais remplacée par une espace ordinaire
+    const toks = para.match(/[⺀-鿿豈-﫿＀-￯]|(?:[^\s⺀-鿿豈-﫿＀-￯]|\u00A0)+|[^\S\u00A0]+/g) || [];
     let cur = '', sp = false;
     for (const tk of toks){
-      if (/^\s+$/.test(tk)){ sp = true; continue; }
+      if (/^[^\S\u00A0]+$/.test(tk)){ sp = true; continue; }
       const cand = cur? cur + (sp? ' ' : '') + tk : tk;
       const closing = /^[，。！？、；：」』”’）》〉…,.;:!?)\]»%—–-]+$/.test(tk);
       if (cur && !closing && ctx.measureText(cand).width > maxW){ out.push(cur); cur = tk; }
@@ -202,7 +203,6 @@ function cineFrame(){
   ctx.font = sf.toFixed(1)+'px '+UI_TYPE;
   const lbl = cT(CINE_UI.skip)+' ▸▸', hint = cineTouch()? '' : '  [Esc]';
   const sw = Math.round(ctx.measureText(lbl+hint).width + sf*2.4), y = Math.round(Math.max(5, (bh-sh)/2));
-  const FS_W = 44;                                                  // le bouton plein écran occupe le coin haut droit
   const skip = { x: rtl? 10 : W-10-FS_W-8-sw, y, w:sw, h:sh, lbl, hint, f:sf };
   const vok = typeof voiceIndex==='function' && !!voiceIndex();
   const vbtn = vok? { x: rtl? skip.x+sw+8 : skip.x-sh-8, y, w:sh, h:sh } : null;

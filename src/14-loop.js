@@ -9,6 +9,7 @@ function render(dt){
   if (game.shake>0.3 && SETTINGS.shake) ctx.translate((Math.random()-0.5)*game.shake,(Math.random()-0.5)*game.shake);
   ctx.translate(0, zTY());
   ctx.scale(zoom, zoom);
+  FIELD_LBLS.length = 0;                      // étiquettes de terrain : réenregistrées chaque frame (posées plus bas, par-dessus les unités)
   drawBG();
   SLOT_LABELS.length = 0;                    // étiquettes de socles : remises à zéro chaque frame
   for (const n of game.nodes) drawNode(n);
@@ -20,6 +21,7 @@ function render(dt){
   if (wrecks.length) drawWrecks(VW());                       // épaves des unités tombées (sous les vivants)
   for (const u of game.e.units) drawUnit(u);
   for (const u of game.p.units) drawUnit(u);
+  drawFieldLabels();
   drawPointFlags();                                          // fanions ⚑ des ordres de position (13-hud.js)
   if (game.tut && game.tutBarrier!=null) drawTutBarrier();   // barrière d'énergie du tutoriel
   if (shots.length){
@@ -196,7 +198,7 @@ let lastFsHidden = null;        // dernier état du bouton plein écran flottant
 function loop(now){
   // bouton ⛶ : masqué en partie et pendant l'intro (il chevauchait le HUD) ; on ne touche au
   // DOM qu'aux transitions (début/fin de partie, intro), pas à chaque frame
-  const fsH = fsBtnHidden(); if (fsH!==lastFsHidden){ lastFsHidden = fsH; refreshFsBtn(); }
+  const fsH = fsBtnHidden(); if (fsH!==lastFsHidden){ lastFsHidden = fsH; refreshFsBtn(); layoutHUD(); }   // layoutHUD : la réserve FS_W du HUD suit le bouton
   const raw = (now-last)/1000;              // pas de temps RÉEL, non borné
   const dt = Math.min(raw, 0.05); last=now;
   // L'adaptation de qualité se mesure en temps RÉEL, jamais en temps de JEU : `game.t` n'avance

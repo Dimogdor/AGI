@@ -1060,8 +1060,35 @@ function drawZone(z, dev, t, vw){
   ctx.restore();
   // étiquette de contrôle
   const zl = owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral');
-  ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
-  ctx.strokeText(zl, x, y-64); ctx.fillStyle=owner? acc : '#e6dcc4'; ctx.fillText(zl, x, y-64);
+  fieldLabel(x, y-64, z.x, zl, owner? acc : null, 1);                 // dessinée par-dessus les unités, empilée avec les autres étiquettes de la zone
+}
+// ÉTIQUETTES DE TERRAIN (v1.17) : nom de l'oasis, « ZONE … », « CONSTRUIRE / TERRAIN LIBRE » — enregistrées pendant le décor, puis posées EN UN SEUL PASSAGE
+// au-dessus des unités, sur un petit fond papier ; celles d'une même zone s'empilent verticalement au lieu de se superposer.
+let FIELD_LBLS = [];
+function fieldLabel(x, y, wx, txt, col, rank){ if (FIELD_LBLS.length<64) FIELD_LBLS.push({x, y, wx, txt, col, rank}); }
+function drawFieldLabels(){
+  if (!FIELD_LBLS.length) return;
+  const L = FIELD_LBLS.slice().sort((a,b)=>a.x-b.x), groups = [];
+  for (const l of L){
+    if (l.rank===2 && (game.p.units.some(u=>Math.abs(u.x-l.wx)<30) || game.e.units.some(u=>Math.abs(u.x-l.wx)<30))) continue;   // « CONSTRUIRE » / « TERRAIN LIBRE » : masqué dès qu'une unité s'y tient
+    const g = groups[groups.length-1];
+    if (g && Math.abs(l.x-g.x1)<84){ g.items.push(l); g.x1 = l.x; } else groups.push({ x0:l.x, x1:l.x, items:[l], });
+  }
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  const fpx = Math.max(9.5, 9/(uiK()*zoom)), hh = Math.round(fpx*1.35); ctx.font=HF(fpx);          // téléphone : étiquettes relevées (≈ 9 px réels)
+  for (const g of groups){
+    const cx = g.items.reduce((a,l)=>a+l.x,0)/g.items.length, bottom = Math.max(...g.items.map(l=>l.y));
+    g.items.sort((a,b)=>a.rank-b.rank);                                  // du haut (nom du lieu) au bas (zone, puis socle)
+    g.items.forEach((l,i)=>{
+      const y = bottom - (g.items.length-1-i)*(hh+2), tw = ctx.measureText(l.txt).width, w = tw+10+(l.col? 7 : 0), x0 = cx-w/2;
+      ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(x0+1.2, y-hh/2+1.8, w, hh);
+      ctx.fillStyle='rgba(233,224,202,0.94)'; ctx.fillRect(x0, y-hh/2, w, hh);
+      ctx.strokeStyle='rgba(31,27,23,0.55)'; ctx.lineWidth=1; ctx.strokeRect(x0+0.5, y-hh/2+0.5, w-1, hh-1);
+      if (l.col){ ctx.fillStyle=l.col; ctx.fillRect(x0+1, y-hh/2+1, 4, hh-2); }
+      ctx.fillStyle='#1f1b17'; ctx.fillText(l.txt, cx+(l.col? 3 : 0), y+0.5);
+    });
+  }
+  ctx.restore();
 }
 // chaîne de montagnes lointaine : silhouette dentelée, très embrumée, parallaxe ultra-lente.
 // neige sur les sommets quand le monde est sain ; teinte cendrée quand il agonise.
@@ -1564,7 +1591,7 @@ function drawNode(n){
   if (Math.abs(n.prog)<1 && n.prog!==0){
     ctx.fillStyle='#000a'; ctx.fillRect(x-22,y-58,44,5);
     ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(x-22,y-58,44*Math.abs(n.prog),5); }
-  if (n.center) inkLabel(tr('oasis'), x, y-82, 11, '#f4ecd8');
+  if (n.center) fieldLabel(x, y-82, n.x, tr('oasis'), null, 0);
 }
 
 /* ====== ÉCLAIRAGE & MATIÈRE — relief 2.5D sculpté + accents néon ====== */
@@ -2729,6 +2756,12 @@ function drawUnit(u){
     ctx.globalAlpha = 1-k*0.6; ctx.fillStyle='#8fd4ff'; ctx.strokeStyle='rgba(30,70,110,0.7)'; ctx.lineWidth=0.7;
     ctx.beginPath(); ctx.moveTo(sx,sy-4); ctx.bezierCurveTo(sx+2.6,sy-1,sx+2.4,sy+2.2,sx,sy+2.2); ctx.bezierCurveTo(sx-2.4,sy+2.2,sx-2.6,sy-1,sx,sy-4); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
   }
+  // événement qui fige ce camp (couvre-feu : humains ; mise à jour forcée : machines) : petit cadenas / petite clé au-dessus de la tête
+  if (u.role!=='gremlin' && facFrozen(u.fac)){
+    const fy = gy-top-fh-(frac<1? 12 : 8)-Math.sin(game.t*3+u.bob)*0.8, ic = u.fac==='HUM'? 'lock' : 'wrench';
+    ctx.fillStyle = 'rgba(14,10,9,0.62)'; ctx.beginPath(); ctx.arc(x, fy, 6.2, 0, 6.283); ctx.fill();
+    ctx.fillStyle = u.fac==='HUM'? '#ff9d45' : '#5ad0ff'; drawIcon(ic, x, fy, 9.5);
+  }
   if (drowning) ctx.restore();
 }
 /* ---------- marqueur d'ordre de position (⚑) ---------- */
@@ -3802,8 +3835,7 @@ function drawSlot(slot, side, neutral){
       if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){
         SLOT_LABELS.push(slot.x);
         const lb = neutral?tr('free_land'):tr('build_here');
-        ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
-        ctx.strokeText(lb, x, gy-40); ctx.fillStyle=ac; ctx.fillText(lb, x, gy-40);
+        fieldLabel(x, gy-40, slot.x, lb, null, 2);
       }
     }
     return;

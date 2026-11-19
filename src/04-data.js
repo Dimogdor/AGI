@@ -80,7 +80,7 @@ const FACTIONS = {
       air:["Parapente armé","Hélico léger","VTOL furtif","Chasseur plasma","Planeur solaire"],
       support:["Secouriste","Infirmier de rue","Médic de guerre","Bio-ingénieur","Guérisseur solaire"],
     },
-    specials:["Frappe aérienne","Barrage EMP","Pluie d'obus","Lance orbitale","Jugement solaire"],
+    specials:["Pluie de pavés","Brouilleurs","Mortiers de fortune","Coupure du réseau","Miroirs solaires"],   // A6 : noms civiques (un comité de quartier n'a pas d'aviation)
     supportKind:'medic',
     transName:"COMMUNISME À VISAGE HUMAIN", transTxt:"L'argent est aboli — 🪙 n'est plus nécessaire",
   },
@@ -326,7 +326,9 @@ function lUnit(fk,key,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const
 // nom d'affichage de faction : « HUMANITÉ » se traduit (clé fac_hum), « G·P·T » est une marque
 function lFacName(fk){ return fk==='HUM' ? tr('fac_hum') : FACTIONS[fk].name; }
 function lEra(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].eras; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].eras[era].name; }
-function lSpecial(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
+// A6 : un seul nom par pouvoir — avec l'asymétrie « power » (escarmouche), c'est « Soulèvement » / « Frappe chirurgicale » partout (bouton, annonce, guide) ;
+// sinon (campagne, tutoriel) le nom propre à l'ère.
+function lSpecial(fk,era){ if (typeof asymOn==='function' && asymOn('power') && typeof tr==='function') return tr(fk==='HUM'?'a_pw_hum':'a_pw_ia'); const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
 // LORE D'ÈRE : courte phrase historique affichée au passage d'ère (récit, par faction & langue).
 function lEraLore(fk,era){
   const L = ERA_LORE[SETTINGS.lang] || ERA_LORE.fr || {};

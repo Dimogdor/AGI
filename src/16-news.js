@@ -196,7 +196,7 @@ function newsTick(dt){
 }
 // dépêche de démonstration (tutoriel) : affichée immédiatement
 function newsDemo(o){ NEWSF.game = game; NEWSF.cur = { txt:newsText(o), ev:false, t:0, dur:1e9, demo:true }; }
-function newsWrap(text, maxW){ const words = text.split(' '), lines = []; let cur = '';
+function newsWrap(text, maxW){ const words = frTypo(String(text)).split(' '), lines = []; let cur = '';
   for (const w of words){ const t2 = cur? cur+' '+w : w;
     if (ctx.measureText(t2).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t2; }
   if (cur) lines.push(cur);
@@ -211,7 +211,7 @@ function drawNews(){
   if (!game || game.over || (!NEWSF.cur && !closed)) return;
   // sous la file de production (même coin) quand elle est visible, pour ne jamais la masquer
   const qn = (game.p && game.p.queue)? game.p.queue.length : 0;
-  const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 100 - 34 - x0, 200, 470);
+  const x0 = 6, y0 = 43 + (HUD.tlH||0) + (qn? 30 : 0), maxW = clamp(W/2 - 100 - 34 - x0, 200, 470);
   let txt, a = 1, ev = false;
   if (closed){ txt = tr('news_closed'); a = Math.min(1, NEWSF.closedT/0.5); }
   else { const c = NEWSF.cur; txt = c.txt; ev = c.ev; a = Math.min(1, c.t/0.45, (c.dur - c.t)/0.7); }
@@ -220,8 +220,9 @@ function drawNews(){
   // d'imprimante en mode G·P·T — même identité papier que le menu et les panneaux
   const pal = uiPal(), fontK = pal.ia? 'type' : 'cond';
   const padL = 16, padR = closed? 9 : 22, inner = maxW - padL - padR;
-  let fs = 11.5; ctx.font = uiF(pal, fontK, fs); let lines = newsWrap(txt, inner);
-  if (lines.length > 2){ fs = 10.5; ctx.font = uiF(pal, fontK, fs); lines = newsWrap(txt, inner); }
+  const kk = fontK==='type'? pal.k : 1, fsMin = uiK()<1? 11/(uiK()*kk) : 0;       // téléphone : au moins 11 px réels
+  let fs = Math.max(11.5, fsMin); ctx.font = uiF(pal, fontK, fs); let lines = newsWrap(txt, inner);
+  if (lines.length > 2){ fs = Math.max(10.5, fsMin); ctx.font = uiF(pal, fontK, fs); lines = newsWrap(txt, inner); }
   if (lines.length > 2){ lines = lines.slice(0,2); let l = lines[1]; while (l.length>1 && ctx.measureText(l+'…').width > inner) l = l.slice(0,-1); lines[1] = l+'…'; }
   const lh = fs*(pal.ia? 1.15 : 1) + 3.5, h = 9 + lines.length*lh;
   let tw = 0; for (const l of lines) tw = Math.max(tw, ctx.measureText(l).width);

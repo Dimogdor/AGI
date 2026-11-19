@@ -143,7 +143,7 @@ console.log('\nGRÈVE GÉNÉRALE / MISE À JOUR FORCÉE');
     for (let i=0;i<4;i++) update(0.05); const sub1 = game.msg && game.msg.sub;
     game.wClock = 29.9 + 150 - 0.1; for (let i=0;i<20*16;i++){ game.aiThink = 1e9; update(0.05); }
     game.msg = null; for (let i=0;i<20*140 && game.weather!=='strike';i++){ game.aiThink = 1e9; update(0.05); }
-    out.sub1 = sub1 === tr('evx_strike_hum');   // asymétrie (v1.17) : ligne propre à la faction du joueur
+    out.sub1 = sub1 === tr('evx_strike_hum').replace(/\{(\w+)\}/g, (m,k)=>evNums()[k]);   // les valeurs ({dmg}, {acq}…) viennent de FAC_TRAITS   // asymétrie (v1.17) : ligne propre à la faction du joueur
     out.sub2 = !(game.msg && game.msg.sub);
     return out; });
   for (const k of ['hum','ia']){ const o = r[k];

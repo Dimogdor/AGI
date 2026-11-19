@@ -2,7 +2,7 @@
    Insérée dans chaque langue de GUIDE (21b-guide.js) juste après « Ressources ». Les chiffres sont ceux de FAC_TRAITS (04-data.js) :
    à tenir à jour si l'équilibrage change. Les rubriques voisines donnent les valeurs de BASE ; celle-ci donne ce que chaque camp y change. */
 const GUIDE_FAC = {
-fr:["☭ Ω Deux factions, deux styles", `<p><b>Humanité, « la Commune »</b> : le nombre, la solidarité, le tempo précoce. <b>G·P·T, « Omnicorp »</b> : la précision, le réseau, la montée en puissance. Rôles et coûts de base identiques ; voici ce qui change.</p><ul>
+fr:["☭ Ω Deux factions, deux styles", `<p><b>Humanité, « la Résistance »</b> : le nombre, la solidarité, le tempo précoce. <b>G·P·T, « Omnicorp »</b> : la précision, le réseau, la montée en puissance. Rôles et coûts de base identiques ; voici ce qui change.</p><ul>
 <li>🌾 <b>Économie</b> — Humanité : le bonus de longévité atteint son plein régime en 12,5 min (15 pour G·P·T) ; rebâtir un bâtiment détruit depuis moins de 90 s coûte −50 %. G·P·T : +7 % de production par autre bâtiment éco (max +28 %), coupé 12 s si l'un d'eux tombe : raider un seul nœud suffit à couper le réseau.</li>
 <li>🏗 <b>Bâtiments</b> — Humanité : muraille −25 %, 3 places de garnison sur les murailles, 3 chantiers à la fois. G·P·T : tourelles +20 % de dégâts, +10 % de portée, et +10 % de cadence si une autre tourelle se trouve à 300 px ou moins.</li>
 <li>💧 <b>Territoire</b> — Humanité : chaque unité compte ×1,5 pour capturer lacs, zones et zone bonus. G·P·T : lacs, zones et zone bonus rapportent +25 %.</li>
@@ -15,7 +15,7 @@ fr:["☭ Ω Deux factions, deux styles", `<p><b>Humanité, « la Commune »</b> 
 <li>★ <b>Héros</b> — Che : soigne les alliés proches (14 PV par ère et par seconde), rallie la troupe à l'invocation (fatigue effacée, moral 100), martyr à sa mort (+20 % de dégâts 20 s). Singularité : répare (6), frappe plus fort (×1,3 contre ×0,7), chaleur évacuée ×2, un drone par ennemi tué près d'elle, 5 drones à sa mort.</li>
 <li>∞ <b>Transcendance</b> — Humanité : un médic de plus, moral ≥ 70. G·P·T : plus aucune surchauffe.</li></ul>
 <p>Dans la campagne et le tutoriel, ces différences ne s'appliquent pas.</p>`],
-en:["☭ Ω Two factions, two styles", `<p><b>Humanity, “the Commune”</b>: numbers, solidarity, early tempo. <b>G·P·T, “Omnicorp”</b>: precision, network, late-game scaling. Roles and base costs are identical; here is what changes.</p><ul>
+en:["☭ Ω Two factions, two styles", `<p><b>Humanity, “the Resistance”</b>: numbers, solidarity, early tempo. <b>G·P·T, “Omnicorp”</b>: precision, network, late-game scaling. Roles and base costs are identical; here is what changes.</p><ul>
 <li>🌾 <b>Economy</b> — Humanity: the longevity bonus reaches full strength in 12.5 min (15 for G·P·T); rebuilding a building destroyed less than 90 s ago costs −50%. G·P·T: +7% production per other economy building (max +28%), cut for 12 s if one of them falls: raiding a single node is enough to cut the network.</li>
 <li>🏗 <b>Buildings</b> — Humanity: walls −25%, 3 garrison slots on walls, 3 construction sites at once. G·P·T: turrets +20% damage, +10% range, and +10% fire rate if another turret is within 300 px.</li>
 <li>💧 <b>Territory</b> — Humanity: each unit counts ×1.5 to capture lakes, zones and the bonus zone. G·P·T: lakes, zones and the bonus zone yield +25%.</li>
@@ -28,7 +28,7 @@ en:["☭ Ω Two factions, two styles", `<p><b>Humanity, “the Commune”</b>: n
 <li>★ <b>Hero</b> — Che: heals nearby allies (14 HP per era per second), rallies the troops on summon (fatigue cleared, morale 100), martyr on death (+20% damage for 20 s). Singularity: repairs (6), hits harder (×1.3 vs ×0.7), heat vents ×2, a drone per enemy killed near it, 5 drones on death.</li>
 <li>∞ <b>Transcendence</b> — Humanity: one more medic, morale ≥ 70. G·P·T: no more overheating.</li></ul>
 <p>In the campaign and the tutorial, these differences do not apply.</p>`],
-es:["☭ Ω Dos facciones, dos estilos", `<p><b>Humanidad, «la Comuna»</b>: el número, la solidaridad, el ritmo temprano. <b>G·P·T, «Omnicorp»</b>: la precisión, la red, el crecimiento tardío. Roles y costes base idénticos; esto es lo que cambia.</p><ul>
+es:["☭ Ω Dos facciones, dos estilos", `<p><b>Humanidad, «la Resistencia»</b>: el número, la solidaridad, el ritmo temprano. <b>G·P·T, «Omnicorp»</b>: la precisión, la red, el crecimiento tardío. Roles y costes base idénticos; esto es lo que cambia.</p><ul>
 <li>🌾 <b>Economía</b> — Humanidad: el bonus de longevidad llega a pleno rendimiento en 12,5 min (15 para G·P·T); reconstruir un edificio destruido hace menos de 90 s cuesta −50 %. G·P·T: +7 % de producción por cada otro edificio económico (máx. +28 %), cortado 12 s si cae uno: basta asaltar un solo nodo para cortar la red.</li>
 <li>🏗 <b>Edificios</b> — Humanidad: muralla −25 %, 3 plazas de guarnición en las murallas, 3 obras a la vez. G·P·T: torretas +20 % de daño, +10 % de alcance y +10 % de cadencia si hay otra torreta a 300 px o menos.</li>
 <li>💧 <b>Territorio</b> — Humanidad: cada unidad cuenta ×1,5 para capturar lagos, zonas y la zona bonus. G·P·T: lagos, zonas y zona bonus rinden +25 %.</li>
@@ -41,7 +41,7 @@ es:["☭ Ω Dos facciones, dos estilos", `<p><b>Humanidad, «la Comuna»</b>: el
 <li>★ <b>Héroe</b> — Che: cura a los aliados cercanos (14 PV por era y segundo), arenga a la tropa al invocarse (fatiga borrada, moral 100), mártir al morir (+20 % de daño 20 s). Singularidad: repara (6), golpea más fuerte (×1,3 frente a ×0,7), calor ×2, un dron por enemigo abatido cerca, 5 drones al morir.</li>
 <li>∞ <b>Trascendencia</b> — Humanidad: un médico más, moral ≥ 70. G·P·T: sin más sobrecalentamiento.</li></ul>
 <p>En la campaña y el tutorial, estas diferencias no se aplican.</p>`],
-de:["☭ Ω Zwei Fraktionen, zwei Stile", `<p><b>Menschheit, „die Kommune“</b>: Masse, Solidarität, früher Takt. <b>G·P·T, „Omnicorp“</b>: Präzision, Netz, starkes Spätspiel. Rollen und Grundkosten sind gleich; das ändert sich.</p><ul>
+de:["☭ Ω Zwei Fraktionen, zwei Stile", `<p><b>Menschheit, „der Widerstand“</b>: Masse, Solidarität, früher Takt. <b>G·P·T, „Omnicorp“</b>: Präzision, Netz, starkes Spätspiel. Rollen und Grundkosten sind gleich; das ändert sich.</p><ul>
 <li>🌾 <b>Wirtschaft</b> — Menschheit: Der Langlebigkeitsbonus erreicht nach 12,5 min die volle Stärke (15 bei G·P·T); der Wiederaufbau eines vor weniger als 90 s zerstörten Gebäudes kostet −50 %. G·P·T: +7 % Produktion pro weiterem Wirtschaftsgebäude (max. +28 %), 12 s unterbrochen, wenn eines fällt: Ein einziger Überfall genügt, um das Netz zu kappen.</li>
 <li>🏗 <b>Gebäude</b> — Menschheit: Mauer −25 %, 3 Besatzungsplätze auf Mauern, 3 Baustellen gleichzeitig. G·P·T: Türme +20 % Schaden, +10 % Reichweite und +10 % Feuerrate, wenn ein anderer Turm höchstens 300 px entfernt ist.</li>
 <li>💧 <b>Gebiet</b> — Menschheit: Jede Einheit zählt ×1,5 für die Eroberung von Seen, Zonen und Bonuszone. G·P·T: Seen, Zonen und Bonuszone bringen +25 %.</li>
@@ -54,7 +54,7 @@ de:["☭ Ω Zwei Fraktionen, zwei Stile", `<p><b>Menschheit, „die Kommune“</
 <li>★ <b>Held</b> — Che: heilt Verbündete in der Nähe (14 LP pro Ära und Sekunde), sammelt die Truppe beim Rufen (Ermüdung weg, Moral 100), Märtyrer beim Tod (+20 % Schaden 20 s). Singularität: repariert (6), schlägt härter zu (×1,3 gegenüber ×0,7), Hitze ×2 schneller abgeführt, eine Drohne je nahem Abschuss, 5 Drohnen beim Tod.</li>
 <li>∞ <b>Transzendenz</b> — Menschheit: ein Sanitäter mehr, Moral ≥ 70. G·P·T: keine Überhitzung mehr.</li></ul>
 <p>In Kampagne und Tutorial gelten diese Unterschiede nicht.</p>`],
-it:["☭ Ω Due fazioni, due stili", `<p><b>Umanità, «la Comune»</b>: numero, solidarietà, ritmo precoce. <b>G·P·T, «Omnicorp»</b>: precisione, rete, crescita tardiva. Ruoli e costi base identici; ecco cosa cambia.</p><ul>
+it:["☭ Ω Due fazioni, due stili", `<p><b>Umanità, «la Resistenza»</b>: numero, solidarietà, ritmo precoce. <b>G·P·T, «Omnicorp»</b>: precisione, rete, crescita tardiva. Ruoli e costi base identici; ecco cosa cambia.</p><ul>
 <li>🌾 <b>Economia</b> — Umanità: il bonus di longevità raggiunge il pieno regime in 12.5 min (15 per G·P·T); ricostruire un edificio distrutto da meno di 90 s costa −50 %. G·P·T: +7 % di produzione per ogni altro edificio economico (max +28 %), interrotto per 12 s se ne cade uno: basta colpire un solo nodo per tagliare la rete.</li>
 <li>🏗 <b>Edifici</b> — Umanità: muro −25 %, 3 posti di guarnigione sui muri, 3 cantieri contemporanei. G·P·T: torrette +20 % di danni, +10 % di gittata e +10 % di cadenza se un'altra torretta è entro 300 px.</li>
 <li>💧 <b>Territorio</b> — Umanità: ogni unità conta ×1,5 per catturare laghi, zone e zona bonus. G·P·T: laghi, zone e zona bonus rendono +25 %.</li>
@@ -67,7 +67,7 @@ it:["☭ Ω Due fazioni, due stili", `<p><b>Umanità, «la Comune»</b>: numero,
 <li>★ <b>Eroe</b> — Che: cura gli alleati vicini (14 PV per era al secondo), raduna la truppa all'evocazione (fatica azzerata, morale 100), martire alla morte (+20 % di danni 20 s). Singolarità: ripara (6), colpisce più forte (×1,3 contro ×0,7), calore ×2, un drone per nemico ucciso vicino, 5 droni alla morte.</li>
 <li>∞ <b>Trascendenza</b> — Umanità: un medico in più, morale ≥ 70. G·P·T: niente più surriscaldamento.</li></ul>
 <p>Nella campagna e nel tutorial queste differenze non si applicano.</p>`],
-pt:["☭ Ω Duas facções, dois estilos", `<p><b>Humanidade, «a Comuna»</b>: número, solidariedade, ritmo inicial. <b>G·P·T, «Omnicorp»</b>: precisão, rede, crescimento tardio. Papéis e custos base idênticos; eis o que muda.</p><ul>
+pt:["☭ Ω Duas facções, dois estilos", `<p><b>Humanidade, «a Resistência»</b>: número, solidariedade, ritmo inicial. <b>G·P·T, «Omnicorp»</b>: precisão, rede, crescimento tardio. Papéis e custos base idênticos; eis o que muda.</p><ul>
 <li>🌾 <b>Economia</b> — Humanidade: o bónus de longevidade atinge o pleno regime em 12,5 min (15 para o G·P·T); reconstruir um edifício destruído há menos de 90 s custa −50 %. G·P·T: +7 % de produção por cada outro edifício económico (máx. +28 %), cortado 12 s se um cair: basta atacar um só nó para cortar a rede.</li>
 <li>🏗 <b>Edifícios</b> — Humanidade: muralha −25 %, 3 lugares de guarnição nas muralhas, 3 obras em simultâneo. G·P·T: torres +20 % de dano, +10 % de alcance e +10 % de cadência se outra torre estiver a 300 px ou menos.</li>
 <li>💧 <b>Território</b> — Humanidade: cada unidade conta ×1,5 para capturar lagos, zonas e a zona bónus. G·P·T: lagos, zonas e zona bónus rendem +25 %.</li>
@@ -80,7 +80,7 @@ pt:["☭ Ω Duas facções, dois estilos", `<p><b>Humanidade, «a Comuna»</b>: 
 <li>★ <b>Herói</b> — Che: cura os aliados próximos (14 PV por era e por segundo), reúne a tropa ao ser invocado (fadiga apagada, moral 100), mártir ao morrer (+20 % de dano 20 s). Singularidade: repara (6), bate mais forte (×1,3 contra ×0,7), calor ×2, um drone por inimigo abatido perto, 5 drones ao morrer.</li>
 <li>∞ <b>Transcendência</b> — Humanidade: mais um médico, moral ≥ 70. G·P·T: sem mais sobreaquecimento.</li></ul>
 <p>Na campanha e no tutorial, estas diferenças não se aplicam.</p>`],
-ru:["☭ Ω Две фракции — два стиля", `<p><b>Человечество, «Коммуна»</b>: числом, солидарностью, ранним темпом. <b>G·P·T, «Омникорп»</b>: точностью, сетью, набором силы к концу партии. Роли и базовые цены одинаковы; вот что отличается.</p><ul>
+ru:["☭ Ω Две фракции — два стиля", `<p><b>Человечество, «Сопротивление»</b>: числом, солидарностью, ранним темпом. <b>G·P·T, «Омникорп»</b>: точностью, сетью, набором силы к концу партии. Роли и базовые цены одинаковы; вот что отличается.</p><ul>
 <li>🌾 <b>Экономика</b> — Человечество: бонус долголетия достигает максимума за 12,5 мин (у G·P·T — за 15); восстановление здания, разрушенного менее 90 с назад, стоит −50 %. G·P·T: +7 % производства за каждое другое экономическое здание (макс. +28 %), на 12 с отключается, если одно падает: хватит одного рейда, чтобы разорвать сеть.</li>
 <li>🏗 <b>Постройки</b> — Человечество: стена −25 %, 3 места гарнизона на стенах, 3 стройки одновременно. G·P·T: башни +20 % урона, +10 % дальности и +10 % скорострельности, если другая башня в пределах 300 px.</li>
 <li>💧 <b>Территория</b> — Человечество: каждый юнит считается ×1,5 при захвате озёр, зон и бонус-зоны. G·P·T: озёра, зоны и бонус-зона дают +25 %.</li>
@@ -93,7 +93,7 @@ ru:["☭ Ω Две фракции — два стиля", `<p><b>Человеч�
 <li>★ <b>Герой</b> — Че: лечит союзников рядом (14 ОЗ за эпоху в секунду), сплачивает войска при призыве (усталость снята, мораль 100), мученик после гибели (+20 % урона 20 с). Сингулярность: чинит (6), бьёт сильнее (×1,3 против ×0,7), жар отводится ×2, дрон за каждого убитого рядом врага, 5 дронов при гибели.</li>
 <li>∞ <b>Трансценденция</b> — Человечество: ещё один медик, мораль ≥ 70. G·P·T: перегрева больше нет.</li></ul>
 <p>В кампании и обучении эти различия не действуют.</p>`],
-zh:["☭ Ω 两个阵营，两种风格", `<p><b>人类“公社”</b>：靠人数、团结和前期节奏。<b>G·P·T“Omnicorp”</b>：靠精准、联网和后期增长。职业与基础造价相同，不同之处如下。</p><ul>
+zh:["☭ Ω 两个阵营，两种风格", `<p><b>人类“抵抗运动”</b>：靠人数、团结和前期节奏。<b>G·P·T“Omnicorp”</b>：靠精准、联网和后期增长。职业与基础造价相同，不同之处如下。</p><ul>
 <li>🌾 <b>经济</b> — 人类：长寿加成 12.5 分钟达到满值（G·P·T 为 15 分钟）；重建 90 秒内被毁的建筑造价 −50%。G·P·T：每有一座其他经济建筑，产出 +7%（最多 +28%），其中一座被毁则中断 12 秒：突袭一个节点就能切断网络。</li>
 <li>🏗 <b>建筑</b> — 人类：城墙 −25%，城墙可驻守 3 名单位，可同时建造 3 个工地。G·P·T：炮塔伤害 +20%，射程 +10%，若 300 像素内还有另一座炮塔，射速 +10%。</li>
 <li>💧 <b>领土</b> — 人类：每个单位在占领湖泊、区域和奖励区时按 ×1.5 计算。G·P·T：湖泊、区域和奖励区收益 +25%。</li>
@@ -106,7 +106,7 @@ zh:["☭ Ω 两个阵营，两种风格", `<p><b>人类“公社”</b>：靠人
 <li>★ <b>英雄</b> — 切：治疗身边的盟友（每时代每秒 14 点生命），召唤时集结部队（清除疲劳，士气 100），阵亡时殉道（20 秒内伤害 +20%）。奇点：修复（6），打击更重（×1.3 对 ×0.7），散热 ×2，附近每击杀一名敌人生成一架无人机，阵亡时生成 5 架。</li>
 <li>∞ <b>超越</b> — 人类：多一名医护兵，士气不低于 70。G·P·T：不再过热。</li></ul>
 <p>战役和教程中不应用这些差异。</p>`],
-ar:["☭ Ω فصيلان، أسلوبان", `<p><b>البشرية «الكومونة»</b>: الكثرة والتضامن والإيقاع المبكر. <b>G·P·T «أومنيكورب»</b>: الدقة والشبكة والنمو المتأخر. الأدوار والتكاليف الأساسية متطابقة؛ وهذا ما يختلف.</p><ul>
+ar:["☭ Ω فصيلان، أسلوبان", `<p><b>البشرية «المقاومة»</b>: الكثرة والتضامن والإيقاع المبكر. <b>G·P·T «أومنيكورب»</b>: الدقة والشبكة والنمو المتأخر. الأدوار والتكاليف الأساسية متطابقة؛ وهذا ما يختلف.</p><ul>
 <li>🌾 <b>الاقتصاد</b> — البشرية: مكافأة العمر تبلغ ذروتها خلال 12.5 دقيقة (15 لدى G·P·T)؛ وإعادة بناء مبنى دُمّر منذ أقل من 90 ث تكلّف −50٪. G·P·T: +7٪ إنتاج لكل مبنى اقتصادي آخر (حتى +28٪)، ويُقطع 12 ث إذا سقط أحدها: غارة على عقدة واحدة تكفي لقطع الشبكة.</li>
 <li>🏗 <b>المباني</b> — البشرية: السور −25٪، و3 أماكن حامية على الأسوار، و3 ورشات بناء معًا. G·P·T: الأبراج +20٪ ضرر و+10٪ مدى و+10٪ معدل إطلاق إذا وُجد برج آخر ضمن 300 بكسل.</li>
 <li>💧 <b>الأرض</b> — البشرية: تُحسب كل وحدة ×1.5 للاستيلاء على البحيرات والمناطق والمنطقة الإضافية. G·P·T: البحيرات والمناطق والمنطقة الإضافية تدرّ +25٪.</li>

@@ -148,15 +148,15 @@ function refreshGuidePage(){
   let g; try { g = guideTbl(); } catch(e){ return; }   // applyLang() du chargement (21-menu.js) passe avant ce module
   const open = new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.i));
   box.innerHTML = '';
-  const h = document.createElement('div'); h.className = 'gHead'; h.textContent = g.title; box.appendChild(h);
-  const intro = document.createElement('div'); intro.className = 'fNote'; intro.textContent = g.intro; box.appendChild(intro);
+  const h = document.createElement('div'); h.className = 'gHead'; h.textContent = frTypo(g.title); box.appendChild(h);
+  const intro = document.createElement('div'); intro.className = 'fNote'; intro.textContent = frTypo(g.intro); box.appendChild(intro);
   const add = (i, title, fill) => {
     const d = document.createElement('details'); d.className = 'gSec'; d.dataset.i = i; if (open.has(String(i))) d.open = true;
-    const s = document.createElement('summary'); s.textContent = title; d.appendChild(s);
+    const s = document.createElement('summary'); s.textContent = frTypo(title); d.appendChild(s);
     const body = document.createElement('div'); body.className = 'gBody'; fill(body); d.appendChild(body);
     box.appendChild(d);
   };
-  g.s.forEach(([title, html], i) => add(i, title, b => { b.innerHTML = html; }));   // textes statiques du jeu (aucune donnée extérieure)
+  g.s.forEach(([title, html], i) => add(i, title, b => { b.innerHTML = frTypo(html); }));   // textes statiques du jeu (aucune donnée extérieure)
   // RACCOURCIS : générés depuis les touches réellement attribuées (reconfigurables) + gestes souris/tactile
   add('keys', g.keysHead, b => {
     const grid = document.createElement('div'); grid.className = 'gKeys';
@@ -164,6 +164,6 @@ function refreshGuidePage(){
     for (const k in DEFKEYS) row(keyLabel(k), SETTINGS.keys[k]? keyName(SETTINGS.keys[k]) : '—');
     for (const [a, k] of g.gestures) row(k, a);
     b.appendChild(grid);
-    const n = document.createElement('div'); n.className = 'fNote'; n.textContent = g.keysNote; b.appendChild(n);
+    const n = document.createElement('div'); n.className = 'fNote'; n.textContent = frTypo(g.keysNote); b.appendChild(n);
   });
 }

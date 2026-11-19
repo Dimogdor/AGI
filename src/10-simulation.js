@@ -825,8 +825,8 @@ function update(dt){
       game.weather = newW;
       if (envOn() && oldW){          // fin d'événement : « acquis sociaux » (humains, +20 % de production 30 s) / « correctif » (machines : chaleur remise à 0, cadence +10 %)
         for (const sd of [p,e]){
-          if (oldW==='strike' && sd.facKey==='HUM'){ moraleAdd(sd, 10); sd.afterT = game.t + fte('HUM','acqT'); addFloater(sd.x, gY(sd.x)-120, tr('f_acq'), '#9dc88a', 14); }
-          if (oldW==='patch' && sd.facKey==='IA'){ sd.afterT = game.t + fte('IA','fixT'); addFloater(sd.x, gY(sd.x)-120, tr('f_fix'), '#5ad0ff', 14);
+          if (oldW==='strike' && sd.facKey==='HUM'){ moraleAdd(sd, 10); sd.afterT = game.t + fte('HUM','acqT'); addFloater(sd.x, gY(sd.x)-120, fmt('f_acq',evNums()), '#9dc88a', 14); }
+          if (oldW==='patch' && sd.facKey==='IA'){ sd.afterT = game.t + fte('IA','fixT'); addFloater(sd.x, gY(sd.x)-120, fmt('f_fix',evNums()), '#5ad0ff', 14);
             for (const u of sd.units){ u.heat = 0; u.tiredT = 0; } }
         }
       }
@@ -994,6 +994,9 @@ function evWatch(){
   if (g.cata!==w.ca){ w.ca = g.cata; if (g.cata) evExplain(g.cata); }
   if (!!g.winter!==w.wi){ w.wi = !!g.winter; if (g.winter) evExplain('winter'); }
 }
+// valeurs réelles (FAC_TRAITS) injectées dans les textes d'événement : {dmg} {acq} {acqT} {fix} {fixT}
+function evNums(){ return { dmg:Math.round((1-fte('HUM','piquet'))*100), acq:Math.round((fte('HUM','acqK')-1)*100), acqT:fte('HUM','acqT'),
+  fix:Math.round((fte('IA','fixK')-1)*100), fixT:fte('IA','fixT') }; }
 function evExplain(key){
   const g = game; if (!g) return;
   const seen = g.evSeen || (g.evSeen = {});
@@ -1004,6 +1007,7 @@ function evExplain(key){
   if (!sub || sub===kf || sub==='evx_'+key) sub = tr('evx_'+key);
   if (!sub || sub==='evx_'+key) return;
   seen[key] = 1;
+  { const N = evNums(); sub = String(sub).replace(/\{(\w+)\}/g,(m,k)=>N[k]!=null? N[k] : m); }
   // l'annonce vient d'être faite (même pas de simulation) : on la complète ; sinon on la fait ici
   if (!g.msg || !(g.msgT > 2.3)){
     const tt = EV_TITLE[key], c = CATAS[key];
