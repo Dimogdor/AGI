@@ -44,7 +44,7 @@ const frozenDmg = fk => envOn()? fte(fk,'frozen') : FROZEN_DMG;                 
 const rainBaseK = fk => game.boon!=='rain'? 1 : envOn()? fte(fk,'rainBase') : 1.3;     // pluie fertile : revenu de base 🌾/⚡
 const rainFarmK = fk => (game.boon==='rain' && envOn())? fte(fk,'rainFarm') : 1;       // … et production des fermes / panneaux
 const sigK = fk => game.boon!=='signal'? 1 : envOn()? fte(fk,'sigCd') : 1.3;            // signal renforcé : recharge du pouvoir ✸
-const piquetK = u => (u.fac==='HUM' && game.weather==='strike' && envOn())? fte('HUM','piquet') : 1;   // couvre-feu : le piquet encaisse mieux
+const piquetK = u => !envOn()? 1 : (u.fac==='HUM' && game.weather==='strike')? fte('HUM','piquet') : (u.fac==='IA' && game.weather==='patch')? fte('IA','safe') : 1;   // couvre-feu : le piquet encaisse mieux
 function sandK(fk, tur){ return game.cata!=='sand'? 1 : envOn()? fte(fk, tur? 'sandTur':'sand') : 0.78; }   // tempête de sable : portée longue / tourelles
 // hiver nucléaire : ÷2 → ×1 en 6 min pour les humains (🌾 et 🪙) ; la machine ne perd que son ⚡ (÷2,5 → ×1), ◈ intact
 function winterK(side, res){

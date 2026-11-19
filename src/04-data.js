@@ -173,8 +173,8 @@ const FAC_TRAITS = {
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
-          frozen:0.5, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
-          acidUnit:18, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
+          frozen:0.3, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
+          acidUnit:19, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
           sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
   },
   IA: {
@@ -193,8 +193,8 @@ const FAC_TRAITS = {
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
-          frozen:0.25, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
-          acidUnit:16, acidBld:20, heatUnit:12, heatTired:0.12, heatEco:0.9,
+          frozen:0.5, safe:1, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
+          acidUnit:15, acidBld:18, heatUnit:12, heatTired:0.12, heatEco:0.9,
           sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.7 },
   },
 };
