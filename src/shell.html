@@ -340,6 +340,33 @@
   .esBar i { display:block; height:100%; background:repeating-linear-gradient(-45deg, var(--red) 0 3px, transparent 3px 6px); }
   .esJournal { display:block; margin-top:6px; padding-top:6px; border-top:1px dashed var(--line); color:var(--ink2); font-style:italic; line-height:1.45; }
   #endscreen .go { margin-top:12px; }
+  /* ---- campagne : l'écran de fin est une page de carnet (vignette collée à gauche, tampon, trois lignes, objectifs) ---- */
+  #endscreen.camp #endart { width:min(340px,70vw); height:auto; aspect-ratio:16/9; margin-bottom:-22px; background:#efe7d2; border:7px solid #efe7d2; border-bottom-width:24px;
+    box-shadow:0 10px 26px rgba(0,0,0,.6); transform:rotate(-1.6deg); }
+  #endscreen.camp .endSheet { transform:rotate(.5deg); }
+  #endscreen.camp #endtitle { font-size:clamp(30px,6.4vh,52px); margin:16px 0 14px; }
+  #endscreen.camp .endHead { gap:10px; } #endscreen.camp .endHead span:last-child { text-align:end; letter-spacing:.06em; }
+  .esOpt { margin:8px 0 2px; padding-top:6px; border-top:1px dashed var(--line); }
+  .esOpt h4 { margin:0 0 3px; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:.95em; letter-spacing:.08em; text-transform:uppercase; color:var(--red); }
+  .esOpt ul { list-style:none; margin:0; padding:0; } .esOpt li { margin:0 0 2px; } .esOpt .box { display:inline-block; width:1.5em; font-size:1.1em; line-height:1; }
+  .esOpt li.ok { color:var(--ink); font-weight:bold; } .esOpt li.lost { color:var(--ink2); text-decoration:line-through; }
+  #endscreen.camp .esJournal { font-size:.92em; }
+  @media (min-width:900px) and (min-height:521px){ #endscreen.camp { flex-direction:row; align-items:center; justify-content:safe center; gap:0; }
+    #endscreen.camp #endart { width:300px; margin:0 -20px 0 0; flex:none; transform:rotate(-2.2deg); position:relative; z-index:2; }
+    #endscreen.camp .endSheet { width:min(540px,60vw); } }
+  @media (max-height:520px){ #endscreen.camp #endart { width:min(250px,32vw); margin:0 -20px 0 0; position:relative; z-index:2; border-width:5px; border-bottom-width:16px; }
+    #endscreen.camp #endtitle { font-size:clamp(22px,7vh,34px); margin:8px 0 8px; } #endscreen.camp .endSheet { width:min(520px,64vw); } }
+  /* crédits (après la mission V) */
+  #credits { position:absolute; inset:0; z-index:14; display:none; align-items:center; justify-content:center; padding:10px 14px; overflow-y:auto;
+    background:radial-gradient(ellipse at 50% 35%, rgba(26,16,14,.9) 0%, rgba(6,5,5,.98) 75%); font-family:'AGI Type','Courier New',monospace; color:#1f1b17; }
+  #credits .crSheet { width:min(520px,94vw); margin:auto; padding:18px clamp(16px,4vw,32px) 20px; text-align:center; transform:rotate(-.5deg);
+    background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); box-shadow:0 18px 40px rgba(0,0,0,.6); }
+  #credits .crHead { font-size:11px; letter-spacing:.16em; color:#4d453b; border-bottom:3px double #1f1b17; padding-bottom:5px; }
+  #credits .crTitle { margin:16px 0 14px; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:clamp(28px,6vh,44px); letter-spacing:.06em; color:#c42a1c; }
+  #credits .crRow { margin:0 0 12px; line-height:1.4; font-size:clamp(12px,2vh,14.5px); }
+  #credits .crRow b { display:block; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:.9em; letter-spacing:.1em; text-transform:uppercase; color:#4d453b; }
+  #credits .crEnd { display:block; margin:16px 0 10px; padding-top:10px; border-top:1px dashed rgba(31,27,23,.35); color:#4d453b; line-height:1.45; }
+  #credits .go { margin-top:6px; }
   #endscreen.fac-ia .go { font-family:'AGI Term','Courier New',monospace; font-weight:400; background:var(--red); transform:none; border-radius:0; box-shadow:4px 4px 0 var(--ink); }
   /* écrans bas (≈ 1280×720) : illustration réduite et boutons côte à côte, tout tient sans défiler */
   @media (min-height:521px) and (max-height:800px){ #endart { width:min(250px,60vw); margin-bottom:-18px; }
@@ -625,13 +652,16 @@
   <div id="endscreen" class="panel">
     <canvas id="endart" width="1040" height="400" aria-hidden="true"></canvas>
     <div class="endSheet">
-      <div class="endHead"><span data-i18n="end_comm">COMMUNIQUÉ</span><span id="endNo">#0451</span></div>
+      <div class="endHead"><span id="endComm" data-i18n="end_comm">COMMUNIQUÉ</span><span id="endNo">#0451</span></div>
       <div id="endtitle"></div>
       <div id="endstats"></div>
       <button class="go" id="campNextBtn" style="display:none"></button>
+      <button class="go" id="creditsBtn" style="display:none"></button>
       <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
     </div>
   </div>
+  <!-- CRÉDITS (après la mission V ; rempli par campCredits, 16b-campaign.js) -->
+  <div id="credits" role="dialog" aria-modal="true"></div>
   <!-- BRIEFING DE CAMPAGNE : dossier de mission plein écran (rempli par campBriefRender, 16b-campaign.js) -->
   <div id="campBrief" class="panel" role="dialog" aria-modal="true"></div>
 </div>

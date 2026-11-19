@@ -18,12 +18,15 @@ function showEnd(){
   // v1.11 : COMMUNIQUÉ tapé à la machine (lignes à points de conduite, jauge hachurée), tamponné
   // du verdict — même papier que le menu ; listing d'imprimante si l'on jouait G·P·T
   const es = document.getElementById('endscreen');
-  es.classList.toggle('fac-ia', game.p.facKey==='IA');
+  es.classList.toggle('fac-ia', game.p.facKey==='IA' && !camp);          // campagne : toujours le papier du carnet de Sol
+  es.classList.remove('camp'); { const cb = document.getElementById('creditsBtn'); if (cb) cb.style.display = 'none'; }
+  { const ec = document.getElementById('endComm'); if (ec) ec.textContent = t('end_comm'); }
   et.style.color = game.win? 'var(--red)' : 'var(--ink)';
   const no = document.getElementById('endNo'); if (no) no.textContent = '#'+String(73 + (Math.floor(gt)%900)).padStart(4,'0');
   s.innerHTML = cells.map(([l,v])=>'<div class="esLine"><span>'+escH(l)+'</span><i></i><b>'+escH(v)+'</b></div>').join('')+
     '<div class="esWorld"><span>'+escH(t('end_world'))+'</span><div class="esBar"><i style="width:'+wh+'%"></i></div><b>'+wh+'%</b></div>'+
     '<i class="esJournal">'+escH(camp? campResult() : warJournal()).replace(/\n/g, '<br>')+'</i>';
+  if (camp) campEndFill();               // en campagne : page de carnet (campResult ci-dessus enregistre la progression) à la place du communiqué
   // campagne : mission suivante / réessayer → BRIEFING de la mission (21-menu appelle campLaunch, qui ouvre le dossier :
   // difficulté, doctrine, puis cinématique d'ouverture — on ne saute jamais rien) ; et retour au carnet
   const nb = document.getElementById('campNextBtn'), rb = document.getElementById('replayBtn');
@@ -31,7 +34,7 @@ function showEnd(){
     nb.style.display = ''; nb.dataset.i = nxt? camp.i+1 : camp.i;
     nb.textContent = cT(game.win? (nxt? CAMP_UI.next : CAMP_UI.again) : CAMP_UI.retry); rb.textContent = cT(CAMP_UI.notebook); }
   else { nb.style.display = 'none'; rb.textContent = t('replay'); }
-  try { drawEndArt(); } catch(e){}
+  if (!camp) try { drawEndArt(); } catch(e){}
   document.getElementById('endscreen').style.display = 'flex';
 }
 // ILLUSTRATION DE FIN (v1.9), dessinée avec les vrais sprites : victoire — ton héros entouré
@@ -39,6 +42,7 @@ function showEnd(){
 // est à terre.
 function drawEndArt(){
   const cv = document.getElementById('endart'); if (!cv) return;
+  if (cv.width!==1040){ cv.width = 1040; cv.height = 400; }           // la vignette de campagne a un autre format
   const c = cv.getContext('2d'), k = cv.width/520;
   c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,cv.width,cv.height); c.scale(k,k);
   const win = game.win, side = win? game.p : game.e, fk = side.facKey, kind = fk==='HUM'? 'hum':'bot';
