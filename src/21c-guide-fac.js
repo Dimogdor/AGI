@@ -11,7 +11,7 @@ fr:["☭ Ω Deux factions, deux styles", `<p><b>Humanité, « la Commune »</b> 
 <li>🪖 <b>Troupes</b> — Humanité : +5 % de dégâts par allié au sol à moins de 50 px (max +15 %). G·P·T : tireurs et aériens visent l'unité la plus entamée à portée et font +10 % sous 50 % de PV ; zone du siège +14 %.</li>
 <li>🩹 <b>Soins</b> — Humanité : un médic relève un allié qui tombe (25 % de PV, recharge 25 s, 18 s au niveau 2) ; réparations −30 %. G·P·T : une unité perdue rend 6 % de son coût près de la base ou d'une ruche, 2,5 % ailleurs ; nano-réparation 260 ◈ / 70 💧, plus rapide.</li>
 <li>✊ <b>Rythme</b> — Humanité : jauge de moral 0-100 (tuer, prendre une zone, invoquer le héros la montent ; les pertes et le couvre-feu la baissent) : dégâts ±12 %, élan à 80, débandade à 20. G·P·T : avec au moins 40 💧 la chaleur retombe plus vite (0,04 💧/s par unité chaude) ; au-delà de 75 % de chaleur, +8 % de dégâts.</li>
-<li>✸ <b>Pouvoir</b> — Humanité, Soulèvement : dégâts ×0,7 sur toute l'armée ennemie, vos troupes soignées de 20 % et reposées. G·P·T, Frappe chirurgicale : ×2,2 sur les 5 unités les plus précieuses (le héros d'abord), ×0,3 sur les autres, bâtiments ×1,2.</li>
+<li>✸ <b>Pouvoir</b> — Humanité, Soulèvement : dégâts ×0,7 sur toute l'armée ennemie, vos troupes soignées de 50 % et reposées. G·P·T, Frappe chirurgicale : ×1,4 sur les 5 unités les plus précieuses (le héros d'abord), ×0,4 sur les autres, bâtiments ×1,2.</li>
 <li>★ <b>Héros</b> — Che : soigne les alliés proches (14 PV par ère et par seconde), rallie la troupe à l'invocation (fatigue effacée, moral 100), martyr à sa mort (+20 % de dégâts 20 s). Singularité : répare (7), frappe plus fort (×1,3 contre ×0,7), chaleur évacuée ×2, un drone par ennemi tué près d'elle, 5 drones à sa mort.</li>
 <li>∞ <b>Transcendance</b> — Humanité : un médic de plus, moral ≥ 70. G·P·T : plus aucune surchauffe.</li></ul>
 <p>Dans la campagne et le tutoriel, ces différences ne s'appliquent pas.</p>`],
@@ -24,7 +24,7 @@ en:["☭ Ω Two factions, two styles", `<p><b>Humanity, “the Commune”</b>: n
 <li>🪖 <b>Troops</b> — Humanity: +5% damage per ground ally within 50 px (max +15%). G·P·T: shooters and flyers target the most wounded unit in range and deal +10% below 50% HP; siege blast radius +14%.</li>
 <li>🩹 <b>Healing</b> — Humanity: a medic pulls up a falling ally (25% HP, 25 s cooldown, 18 s at level 2); repairs −30%. G·P·T: a lost unit refunds 6% of its cost near the base or a hive, 2.5% elsewhere; nano-repair 260 ◈ / 70 💧, faster.</li>
 <li>✊ <b>Rhythm</b> — Humanity: morale gauge 0-100 (kills, captured zones and the hero raise it; losses and curfew lower it): damage ±12%, momentum at 80, rout at 20. G·P·T: with at least 40 💧 heat drops faster (0.04 💧/s per hot unit); above 75% heat, +8% damage.</li>
-<li>✸ <b>Power</b> — Humanity, Uprising: damage ×0.7 on the whole enemy army, your troops healed 20% and rested. G·P·T, Surgical strike: ×2.2 on the 5 most valuable units (hero first), ×0.3 on the rest, buildings ×1.2.</li>
+<li>✸ <b>Power</b> — Humanity, Uprising: damage ×0.7 on the whole enemy army, your troops healed 50% and rested. G·P·T, Surgical strike: ×1.4 on the 5 most valuable units (hero first), ×0.4 on the rest, buildings ×1.2.</li>
 <li>★ <b>Hero</b> — Che: heals nearby allies (14 HP per era per second), rallies the troops on summon (fatigue cleared, morale 100), martyr on death (+20% damage for 20 s). Singularity: repairs (7), hits harder (×1.3 vs ×0.7), heat vents ×2, a drone per enemy killed near it, 5 drones on death.</li>
 <li>∞ <b>Transcendence</b> — Humanity: one more medic, morale ≥ 70. G·P·T: no more overheating.</li></ul>
 <p>In the campaign and the tutorial, these differences do not apply.</p>`],
@@ -37,7 +37,7 @@ es:["☭ Ω Dos facciones, dos estilos", `<p><b>Humanidad, «la Comuna»</b>: el
 <li>🪖 <b>Tropas</b> — Humanidad: +5 % de daño por aliado terrestre a ≤ 50 px (máx. +15 %). G·P·T: tiradores y aéreos apuntan a la unidad más herida a su alcance y hacen +10 % por debajo del 50 % de PV; área del asedio +14 %.</li>
 <li>🩹 <b>Curación</b> — Humanidad: un médico levanta a un aliado que cae (25 % de PV, recarga 25 s, 18 s en nivel 2); reparaciones −30 %. G·P·T: una unidad perdida devuelve 6 % de su coste cerca de la base o de una colmena, 2,5 % en otro sitio; nanorreparación 260 ◈ / 70 💧, más rápida.</li>
 <li>✊ <b>Ritmo</b> — Humanidad: medidor de moral 0-100 (matar, capturar zonas e invocar al héroe lo suben; las bajas y el toque de queda lo bajan): daño ±12 %, impulso a 80, desbandada a 20. G·P·T: con 40 💧 o más el calor baja más rápido (0,04 💧/s por unidad caliente); por encima del 75 % de calor, +8 % de daño.</li>
-<li>✸ <b>Poder</b> — Humanidad, Levantamiento: daño ×0,7 a todo el ejército enemigo, tus tropas curadas un 20 % y descansadas. G·P·T, Ataque quirúrgico: ×2,2 a las 5 unidades más valiosas (el héroe primero), ×0,3 al resto, edificios ×1,2.</li>
+<li>✸ <b>Poder</b> — Humanidad, Levantamiento: daño ×0,7 a todo el ejército enemigo, tus tropas curadas un 50 % y descansadas. G·P·T, Ataque quirúrgico: ×1,4 a las 5 unidades más valiosas (el héroe primero), ×0,4 al resto, edificios ×1,2.</li>
 <li>★ <b>Héroe</b> — Che: cura a los aliados cercanos (14 PV por era y segundo), arenga a la tropa al invocarse (fatiga borrada, moral 100), mártir al morir (+20 % de daño 20 s). Singularidad: repara (7), golpea más fuerte (×1,3 frente a ×0,7), calor ×2, un dron por enemigo abatido cerca, 5 drones al morir.</li>
 <li>∞ <b>Trascendencia</b> — Humanidad: un médico más, moral ≥ 70. G·P·T: sin más sobrecalentamiento.</li></ul>
 <p>En la campaña y el tutorial, estas diferencias no se aplican.</p>`],
@@ -50,7 +50,7 @@ de:["☭ Ω Zwei Fraktionen, zwei Stile", `<p><b>Menschheit, „die Kommune“</
 <li>🪖 <b>Truppen</b> — Menschheit: +5 % Schaden pro Bodenverbündetem im Umkreis von 50 px (max. +15 %). G·P·T: Schützen und Flieger zielen auf die am stärksten verwundete Einheit in Reichweite und machen +10 % unter 50 % LP; Belagerungsradius +14 %.</li>
 <li>🩹 <b>Heilung</b> — Menschheit: Ein Sanitäter richtet einen fallenden Verbündeten auf (25 % LP, 25 s Abklingzeit, 18 s auf Stufe 2); Reparaturen −30 %. G·P·T: Eine verlorene Einheit erstattet 6 % ihrer Kosten nahe der Basis oder einem Stock, sonst 2,5 %; Nanoreparatur 260 ◈ / 70 💧, schneller.</li>
 <li>✊ <b>Rhythmus</b> — Menschheit: Moralanzeige 0-100 (Kills, Zonen und der Held steigern sie; Verluste und Ausgangssperre senken sie): Schaden ±12 %, Schwung ab 80, Auflösung ab 20. G·P·T: Mit mindestens 40 💧 sinkt die Hitze schneller (0,04 💧/s je heißer Einheit); über 75 % Hitze +8 % Schaden.</li>
-<li>✸ <b>Kraft</b> — Menschheit, Aufstand: Schaden ×0,7 auf das ganze gegnerische Heer, deine Truppen werden zu 20 % geheilt und ausgeruht. G·P·T, Chirurgischer Schlag: ×2,2 auf die 5 wertvollsten Einheiten (zuerst der Held), ×0,3 auf den Rest, Gebäude ×1,2.</li>
+<li>✸ <b>Kraft</b> — Menschheit, Aufstand: Schaden ×0,7 auf das ganze gegnerische Heer, deine Truppen werden zu 50 % geheilt und ausgeruht. G·P·T, Chirurgischer Schlag: ×1,4 auf die 5 wertvollsten Einheiten (zuerst der Held), ×0,4 auf den Rest, Gebäude ×1,2.</li>
 <li>★ <b>Held</b> — Che: heilt Verbündete in der Nähe (14 LP pro Ära und Sekunde), sammelt die Truppe beim Rufen (Ermüdung weg, Moral 100), Märtyrer beim Tod (+20 % Schaden 20 s). Singularität: repariert (7), schlägt härter zu (×1,3 gegenüber ×0,7), Hitze ×2 schneller abgeführt, eine Drohne je nahem Abschuss, 5 Drohnen beim Tod.</li>
 <li>∞ <b>Transzendenz</b> — Menschheit: ein Sanitäter mehr, Moral ≥ 70. G·P·T: keine Überhitzung mehr.</li></ul>
 <p>In Kampagne und Tutorial gelten diese Unterschiede nicht.</p>`],
@@ -63,7 +63,7 @@ it:["☭ Ω Due fazioni, due stili", `<p><b>Umanità, «la Comune»</b>: numero,
 <li>🪖 <b>Truppe</b> — Umanità: +5 % di danni per alleato a terra entro 50 px (max +15 %). G·P·T: tiratori e aerei puntano l'unità più ferita a portata e fanno +10 % sotto il 50 % di PV; area dell'assedio +14 %.</li>
 <li>🩹 <b>Cure</b> — Umanità: un medico rialza un alleato che cade (25 % di PV, ricarica 25 s, 18 s al livello 2); riparazioni −30 %. G·P·T: un'unità persa rende il 6 % del costo vicino alla base o a un alveare, 2,5 % altrove; nanoriparazione 260 ◈ / 70 💧, più rapida.</li>
 <li>✊ <b>Ritmo</b> — Umanità: indicatore di morale 0-100 (uccisioni, zone e l'eroe lo alzano; perdite e coprifuoco lo abbassano): danni ±12 %, slancio a 80, sbandamento a 20. G·P·T: con almeno 40 💧 il calore cala più in fretta (0,04 💧/s per unità calda); oltre il 75 % di calore, +8 % di danni.</li>
-<li>✸ <b>Potere</b> — Umanità, Insurrezione: danni ×0,7 a tutto l'esercito nemico, le tue truppe curate del 20 % e riposate. G·P·T, Attacco chirurgico: ×2,2 sulle 5 unità più preziose (prima l'eroe), ×0,3 sulle altre, edifici ×1,2.</li>
+<li>✸ <b>Potere</b> — Umanità, Insurrezione: danni ×0,7 a tutto l'esercito nemico, le tue truppe curate del 50 % e riposate. G·P·T, Attacco chirurgico: ×1,4 sulle 5 unità più preziose (prima l'eroe), ×0,4 sulle altre, edifici ×1,2.</li>
 <li>★ <b>Eroe</b> — Che: cura gli alleati vicini (14 PV per era al secondo), raduna la truppa all'evocazione (fatica azzerata, morale 100), martire alla morte (+20 % di danni 20 s). Singolarità: ripara (7), colpisce più forte (×1,3 contro ×0,7), calore ×2, un drone per nemico ucciso vicino, 5 droni alla morte.</li>
 <li>∞ <b>Trascendenza</b> — Umanità: un medico in più, morale ≥ 70. G·P·T: niente più surriscaldamento.</li></ul>
 <p>Nella campagna e nel tutorial queste differenze non si applicano.</p>`],
@@ -76,7 +76,7 @@ pt:["☭ Ω Duas facções, dois estilos", `<p><b>Humanidade, «a Comuna»</b>: 
 <li>🪖 <b>Tropas</b> — Humanidade: +5 % de dano por aliado terrestre a ≤ 50 px (máx. +15 %). G·P·T: atiradores e aéreos visam a unidade mais ferida ao alcance e causam +10 % abaixo de 50 % de PV; área do cerco +14 %.</li>
 <li>🩹 <b>Cura</b> — Humanidade: um médico levanta um aliado que cai (25 % de PV, recarga 25 s, 18 s no nível 2); reparações −30 %. G·P·T: uma unidade perdida devolve 6 % do custo perto da base ou de uma colmeia, 2,5 % noutro lado; nanorreparação 260 ◈ / 70 💧, mais rápida.</li>
 <li>✊ <b>Ritmo</b> — Humanidade: medidor de moral 0-100 (abates, zonas e o herói sobem-no; baixas e toque de recolher descem-no): dano ±12 %, ímpeto aos 80, debandada aos 20. G·P·T: com pelo menos 40 💧 o calor desce mais depressa (0,04 💧/s por unidade quente); acima de 75 % de calor, +8 % de dano.</li>
-<li>✸ <b>Poder</b> — Humanidade, Levante: dano ×0,7 a todo o exército inimigo, as suas tropas curadas em 20 % e descansadas. G·P·T, Ataque cirúrgico: ×2,2 nas 5 unidades mais valiosas (o herói primeiro), ×0,3 nas restantes, edifícios ×1,2.</li>
+<li>✸ <b>Poder</b> — Humanidade, Levante: dano ×0,7 a todo o exército inimigo, as suas tropas curadas em 50 % e descansadas. G·P·T, Ataque cirúrgico: ×1,4 nas 5 unidades mais valiosas (o herói primeiro), ×0,4 nas restantes, edifícios ×1,2.</li>
 <li>★ <b>Herói</b> — Che: cura os aliados próximos (14 PV por era e por segundo), reúne a tropa ao ser invocado (fadiga apagada, moral 100), mártir ao morrer (+20 % de dano 20 s). Singularidade: repara (7), bate mais forte (×1,3 contra ×0,7), calor ×2, um drone por inimigo abatido perto, 5 drones ao morrer.</li>
 <li>∞ <b>Transcendência</b> — Humanidade: mais um médico, moral ≥ 70. G·P·T: sem mais sobreaquecimento.</li></ul>
 <p>Na campanha e no tutorial, estas diferenças não se aplicam.</p>`],
@@ -89,7 +89,7 @@ ru:["☭ Ω Две фракции — два стиля", `<p><b>Человеч�
 <li>🪖 <b>Войска</b> — Человечество: +5 % урона за каждого наземного союзника в 50 px (макс. +15 %). G·P·T: стрелки и авиация бьют самого раненого в зоне досягаемости и наносят +10 % ниже 50 % ОЗ; радиус осады +14 %.</li>
 <li>🩹 <b>Лечение</b> — Человечество: медик поднимает падающего союзника (25 % ОЗ, перезарядка 25 с, 18 с на 2-м уровне); ремонт −30 %. G·P·T: потерянный юнит возвращает 6 % стоимости у базы или улья, 2,5 % в других местах; нано-ремонт 260 ◈ / 70 💧, быстрее.</li>
 <li>✊ <b>Ритм</b> — Человечество: шкала морали 0-100 (убийства, зоны и герой повышают её; потери и комендантский час снижают): урон ±12 %, подъём при 80, паника при 20. G·P·T: при 40 💧 и более жар спадает быстрее (0,04 💧/с на горячий юнит); выше 75 % жара +8 % урона.</li>
-<li>✸ <b>Сила</b> — Человечество, Восстание: урон ×0,7 по всей вражеской армии, ваши войска лечатся на 20 % и отдыхают. G·P·T, Хирургический удар: ×2,2 по 5 самым ценным юнитам (герой первым), ×0,3 по остальным, здания ×1,2.</li>
+<li>✸ <b>Сила</b> — Человечество, Восстание: урон ×0,7 по всей вражеской армии, ваши войска лечатся на 50 % и отдыхают. G·P·T, Хирургический удар: ×1,4 по 5 самым ценным юнитам (герой первым), ×0,4 по остальным, здания ×1,2.</li>
 <li>★ <b>Герой</b> — Че: лечит союзников рядом (14 ОЗ за эпоху в секунду), сплачивает войска при призыве (усталость снята, мораль 100), мученик после гибели (+20 % урона 20 с). Сингулярность: чинит (7), бьёт сильнее (×1,3 против ×0,7), жар отводится ×2, дрон за каждого убитого рядом врага, 5 дронов при гибели.</li>
 <li>∞ <b>Трансценденция</b> — Человечество: ещё один медик, мораль ≥ 70. G·P·T: перегрева больше нет.</li></ul>
 <p>В кампании и обучении эти различия не действуют.</p>`],
@@ -102,7 +102,7 @@ zh:["☭ Ω 两个阵营，两种风格", `<p><b>人类“公社”</b>：靠人
 <li>🪖 <b>部队</b> — 人类：50 像素内每有一名地面盟友，伤害 +5%（最多 +15%）。G·P·T：射手和空中单位优先攻击射程内最受伤的单位，对低于 50% 生命者伤害 +10%；攻城范围 +14%。</li>
 <li>🩹 <b>治疗</b> — 人类：医护兵可救起倒下的盟友（25% 生命，冷却 25 秒，2 级时 18 秒）；修理费用 −30%。G·P·T：阵亡单位在基地或蜂巢附近返还 6% 造价，其他地方 2.5%；纳米修复 260 ◈ / 70 💧，速度更快。</li>
 <li>✊ <b>节奏</b> — 人类：士气条 0-100（击杀、占领区域和召唤英雄会提高，伤亡和宵禁会降低）：伤害 ±12%，80 以上势如破竹，20 以下军心涣散。G·P·T：💧 不少于 40 时热量散得更快（每个过热单位 0.04 💧/秒）；热量超过 75% 时伤害 +8%。</li>
-<li>✸ <b>技能</b> — 人类“起义”：对整个敌军造成 0.7 倍伤害，己方恢复 20% 生命并消除疲劳。G·P·T“精确打击”：对最有价值的 5 个单位（英雄优先）造成 2.2 倍伤害，其余 0.3 倍，建筑 ×1.2。</li>
+<li>✸ <b>技能</b> — 人类“起义”：对整个敌军造成 0.7 倍伤害，己方恢复 50% 生命并消除疲劳。G·P·T“精确打击”：对最有价值的 5 个单位（英雄优先）造成 1.4 倍伤害，其余 0.4 倍，建筑 ×1.2。</li>
 <li>★ <b>英雄</b> — 切：治疗身边的盟友（每时代每秒 14 点生命），召唤时集结部队（清除疲劳，士气 100），阵亡时殉道（20 秒内伤害 +20%）。奇点：修复（7），打击更重（×1.3 对 ×0.7），散热 ×2，附近每击杀一名敌人生成一架无人机，阵亡时生成 5 架。</li>
 <li>∞ <b>超越</b> — 人类：多一名医护兵，士气不低于 70。G·P·T：不再过热。</li></ul>
 <p>战役和教程中不应用这些差异。</p>`],
@@ -115,7 +115,7 @@ ar:["☭ Ω فصيلان، أسلوبان", `<p><b>البشرية «الكومو
 <li>🪖 <b>القوات</b> — البشرية: +٥٪ ضرر لكل حليف أرضي ضمن ٥٠ بكسل (حتى +١٥٪). G·P·T: يستهدف الرماة والطيران أكثر وحدة مصابة في المدى ويضرّون +١٠٪ دون ٥٠٪ من الصحة؛ نطاق الحصار +١٤٪.</li>
 <li>🩹 <b>العلاج</b> — البشرية: يُنهض المسعف حليفًا يسقط (٢٥٪ من الصحة، تهدئة ٢٥ ث، ١٨ ث في المستوى ٢)؛ الإصلاحات −٣٠٪. G·P·T: وحدة مفقودة تُعيد ٦٪ من كلفتها قرب القاعدة أو الخلية، و٢٫٥٪ في غيرها؛ الإصلاح النانوي ٢٦٠ ◈ / ٧٠ 💧 وأسرع.</li>
 <li>✊ <b>الإيقاع</b> — البشرية: مقياس معنويات ٠-١٠٠ (القتل والمناطق والبطل ترفعه، والخسائر وحظر التجول تخفضه): الضرر ±١٢٪، اندفاع عند ٨٠ وتشتت عند ٢٠. G·P·T: مع ٤٠ 💧 أو أكثر تنخفض الحرارة أسرع (٠٫٠٤ 💧/ث لكل وحدة ساخنة)؛ فوق ٧٥٪ حرارة +٨٪ ضرر.</li>
-<li>✸ <b>القدرة</b> — البشرية «الانتفاضة»: ضرر ×٠٫٧ على كل جيش العدو، وقواتك تُشفى ٢٠٪ وتستريح. G·P·T «ضربة جراحية»: ×٢٫٢ على أغلى ٥ وحدات (البطل أولًا)، ×٠٫٣ على الباقي، المباني ×١٫٢.</li>
+<li>✸ <b>القدرة</b> — البشرية «الانتفاضة»: ضرر ×٠٫٧ على كل جيش العدو، وقواتك تُشفى ٥٠٪ وتستريح. G·P·T «ضربة جراحية»: ×١٫٤ على أغلى ٥ وحدات (البطل أولًا)، ×٠٫٤ على الباقي، المباني ×١٫٢.</li>
 <li>★ <b>البطل</b> — تشي: يشفي الحلفاء القريبين (١٤ نقطة صحة لكل عصر في الثانية)، ويحشد القوات عند استدعائه (يزول التعب، معنويات ١٠٠)، ويستشهد عند موته (+٢٠٪ ضرر ٢٠ ث). الشذوذ: يُصلح (٧)، يضرب أقوى (×١٫٣ مقابل ×٠٫٧)، تبريد ×٢، طائرة مسيّرة لكل عدو يُقتل قربه، و٥ عند موته.</li>
 <li>∞ <b>التسامي</b> — البشرية: مسعف إضافي ومعنويات ≥ ٧٠. G·P·T: لا مزيد من السخونة الزائدة.</li></ul>
 <p>في الحملة والتدريب لا تُطبَّق هذه الفروق.</p>`],

@@ -167,7 +167,7 @@ const FAC_TRAITS = {
     texDU:0.82, packStep:0.05, packMax:0.15, packR:50,   // M2 : +5 % de dégâts par allié au sol à ≤ 50 px, max +15 % (texture inchangée : le banc ne supportait pas de la baisser)
     reliefCd:25, reliefCd2:18, reliefHp:0.25, repairK:0.7,   // M3 : relève (recharge 25 s, 18 s au niveau 2 du soutien) à 25 % de PV ; réparations −30 %
     moraleKill:2, moraleLoss:1.5, moraleNode:5, moraleHero:15, moraleStrike:10, moraleDmg:0.12, moraleHi:80, moraleLo:20, moraleHiK:0.7, moraleLoSpd:0.9,   // M4 : jauge de moral 0-100 (départ 50, retour à 50 à 1/s)
-    upDmg:0.7, upHeal:0.2,                           // M7 : Soulèvement — 0,7·D sur toutes les unités ennemies, soin de 20 % des PV max et fin de fatigue pour tous les alliés
+    upDmg:0.7, upHeal:0.5,                           // M7 : Soulèvement — 0,7·D sur toutes les unités ennemies, soin de 50 % des PV max et fin de fatigue pour tous les alliés
     martyrK:1.2, martyrT:20,                         // M6 : à la mort du Che, +20 % de dégâts pendant 20 s et moral à 100 ; à l'invocation : fatigue effacée, moral à 100
     transSup:1, transMorale:70,                      // M9 : transcendance — quota de médics +1, plancher de moral 70
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
@@ -188,7 +188,7 @@ const FAC_TRAITS = {
     texDU:1.06, execK:1.1, execHp:0.5, siegeAoe:1.14,   // M2 : texture ×1,06 (au lieu de ×1,22 : le ciblage concentré vaut beaucoup) ; tireurs/aériens : cible la plus entamée, +10 % sous 50 % de PV ; zone du siège ×1,14
     recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
     coolRec:0.05, coolW:0.04, coolMin:40, overHeat:0.75, overK:1.08,   // M4 : si 💧 ≥ 40, refroidissement 0,05/s (0,04 💧/s par unité chaude) ; chaleur ≥ 0,75 : +8 % de dégâts (surrégime)
-    strikeN:5, strikeK:2.2, strikeRest:0.3, strikeBld:1.2,   // M7 : Frappe chirurgicale — 2,2·D sur les 5 unités les plus précieuses (héros d'abord), 0,3·D sur les autres, bâtiments ×1,2
+    strikeN:5, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres, bâtiments ×1,2
     heroCool:2, assimR:200, fragN:5,                 // M6 : Singularité vivante, chaleur ×2 plus vite évacuée ; un ennemi tué à ≤ 200 px fait naître un drone ; à sa mort 5 drones hors plafond
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
