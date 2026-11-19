@@ -682,11 +682,11 @@ function hk(action){ const c = SETTINGS.keys[action]; return (HK_TOUCH || !c)? '
 // infobulle simple (souris) : une fiche de papier au-dessus du bouton, texte renvoyé à la ligne
 function drawTextTooltip(b, txt){
   const pal = uiPal(), f = uiF(pal,'cond',12.5); ctx.font = f;
-  const lines = newsWrap(txt, 250), tw = Math.max(...lines.map(l=>ctx.measureText(l).width)), w = tw+24, h = 14+lines.length*16;
+  const pd = pal.ia? 22 : 12, lines = newsWrap(txt, 250), tw = Math.max(...lines.map(l=>ctx.measureText(l).width)), w = tw+pd*2, h = 14+lines.length*16;   // G·P·T : marge de listing perforé
   const x = clamp(b.x+b.w/2-w/2, 8, W-w-8), y = b.y-h-8;
   paperPanel(x, y, w, h, pal);
   ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle = pal.ink;
-  lines.forEach((l,i)=> ctx.fillText(l, x+12, y+14+i*16));
+  lines.forEach((l,i)=> ctx.fillText(l, x+pd, y+14+i*16));
 }
 // ---- POSTURE DU HÉROS : pictogramme, et fiche explicative au survol du bouton ----
 const HST_ICON = { prudent:'🛡 ', normal:'★ ', offensive:'⚔ ' };
