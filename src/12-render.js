@@ -1906,7 +1906,7 @@ function drawHumSprite(fac, role, era, trans, hero){
   function drawArm(){
     limbT(P.f, aw, shade(uni,0.95));
     if (era>=3) plateT([P.f[2]-3,P.f[3]-3, P.f[2]+3,P.f[3]-2.5, P.f[4]+1,P.f[5]+1.5, P.f[4]-2.5,P.f[5]+2], shade(uni,1.08));
-    const band = role==='support'? '#f4f4f0' : trans? '#e8302a' : hero? '#e8302a' : (era===1||era===2)? acc : null;
+    const band = role==='support'? '#f4f4f0' : trans? '#e8302a' : hero? '#e8302a' : (era===1||era===2||era===3)? acc : null;
     if (band){ bandT(P.f[0],P.f[1],P.f[2],P.f[3],0.5,aw+0.6,band); if (role==='support') crossT((P.f[0]+P.f[2])/2,(P.f[1]+P.f[3])/2,2.6,RED); }
     TC.fillStyle=lgrad(fh[0]-2,fh[1]-2,fh[0]+2,fh[1]+2,[[0,shade(glove,1.2)],[1,shade(glove,0.75)]]);
     TC.beginPath(); TC.arc(fh[0],fh[1],aw*0.5,0,6.283); TC.fill();
@@ -2777,7 +2777,7 @@ const HMAT = [
   { wall:'#8a6444', roof:'#6e6a66', trim:'#4a3428', lite:'#ffcf78' },   // ère 0 : planches, palettes, tôle
   { wall:'#8e4a34', roof:'#6e6a66', trim:'#4e4840', lite:'#ffcf78' },   // ère 1 : brique et tôle d'usine
   { wall:'#7c8084', roof:'#4e5256', trim:'#3a3e42', lite:'#fff0c0' },   // ère 2 : béton
-  { wall:'#4a4560', roof:'#2e2a3c', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
+  { wall:'#4e5640', roof:'#2c3226', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
   { wall:'#e8dcc4', roof:'#5a9a3a', trim:'#9a6434', lite:'#ffe2a8' },   // ère 4 : bois clair, verre, toits végétaux
 ];
 const iaPlate = era => mix(FACTIONS.IA.eraCols[era],'#4a5260',0.55);
