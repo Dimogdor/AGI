@@ -346,6 +346,28 @@ const m2Circ = (cx, cy, r, n, a0, a1, ry) => { const o = []; a0 = a0==null? 0 : 
   for (let i=0;i<=n;i++){ const a = a0 + (a1-a0)*i/n; o.push(cx+Math.cos(a)*r, cy+Math.sin(a)*(ry||r)); } return o; };
 const m2Txt = (g, s, x, y, px, col, al, mw) => { g.fillStyle = col || '#1f1b17'; g.textAlign = al || 'center'; g.textBaseline = 'middle'; m2Fit(g, s, mw || 340, px); g.fillText(s, x, y); };
 const m2Ground = (g, y, t, a) => { inkLine(g, [10,y, 470,y], clamp(t/1.2, 0, 1), 2.4); inkHatch(g, 10, y, 460, 270-y, 7, '#1f1b17', a==null? 0.2 : a); };
+// gant à plat (doigts vers le haut) : paume, manchette, quatre doigts, pouce ; (x, y) = bas de la manchette
+function m2Glove(g, x, y, flip, rot, n){
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(flip, 1);
+  const fing = [[-7.5,13],[-2.5,17],[2.5,16],[7.5,12]], fill = '#b08a52';
+  const fl = (pts, wd) => { g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#1f1b17'; g.lineWidth = wd+2; g.beginPath(); pts.forEach((p,i)=> i? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); g.stroke();
+    g.strokeStyle = fill; g.lineWidth = wd; g.stroke(); };
+  for (const [fx,fl2] of fing) fl([[fx,-26],[fx+(fx>0? 0.6 : -0.6)*0.5,-26-fl2]], 4.6);
+  fl([[9,-14],[17,-22],[20,-30]], 5);                                                          // le pouce
+  g.fillStyle = fill; g.fillRect(-10,-26,20,18); g.strokeStyle = '#1f1b17'; g.lineWidth = 1.8; g.strokeRect(-10,-26,20,18);
+  g.fillStyle = '#6b5a44'; g.fillRect(-11,-8,22,9); g.strokeRect(-11,-8,22,9);                 // la manchette
+  inkLine(g, [-6,-12, 6,-12], n, 0.9);
+  g.restore(); }
+// clé plate : tête ouverte (deux mâchoires), manche
+function m2Wrench(g, cx, cy, n){
+  const r = 13, hw = 3.6, sw = 4.6, pts = [];
+  const a0 = Math.PI + Math.asin(sw/r), a1 = 2*Math.PI - Math.asin(hw/r), a2 = 2*Math.PI + Math.asin(hw/r), a3 = 2*Math.PI + Math.PI - Math.asin(sw/r);
+  pts.push(cx + r*Math.cos(a0), cy + r*Math.sin(a0));
+  for (let a=a0; a<=a1; a+=0.12) pts.push(cx + r*Math.cos(a), cy + r*Math.sin(a));
+  pts.push(cx+r+4, cy-hw, cx+66, cy-hw, cx+70, cy-hw*0.4, cx+70, cy+hw*0.4, cx+66, cy+hw, cx+r+4, cy+hw);
+  for (let a=a2; a<=a3; a+=0.12) pts.push(cx + r*Math.cos(a), cy + r*Math.sin(a));
+  pts.push(cx+2, cy+sw, cx+2, cy-sw, pts[0], pts[1]);                                          // le fond de la fente : les mâchoires restent ouvertes à gauche
+  inkWash(g, pts, '#1f1b17', 0.3); inkLine(g, pts, n, 1.9); }
 const M2_PL = {
   gate1: M2T("SITE DÉSAFFECTÉ","SITE DECOMMISSIONED","SITIO DESAFECTADO","STANDORT STILLGELEGT","SITO DISMESSO","LOCAL DESATIVADO","ОБЪЕКТ ЗАКРЫТ","厂区已停用","موقع مُعطَّل"),
   gate2: M2T("CONTINUITÉ DE SERVICE","SERVICE CONTINUITY","CONTINUIDAD DEL SERVICIO","DIENSTKONTINUITÄT","CONTINUITÀ DI SERVIZIO","CONTINUIDADE DO SERVIÇO","НЕПРЕРЫВНОСТЬ РАБОТЫ","服务连续性","استمرارية الخدمة"),
@@ -354,27 +376,29 @@ const M2_PL = {
   banner:M2T("ON NE DÉSAFFECTE PAS LES GENS","YOU CAN'T SCRAP PEOPLE","A LA GENTE NO SE LA DESECHA","MENSCHEN SIND KEIN SCHROTT","LE PERSONE NON SI DISMETTONO","GENTE NÃO SE DESATIVA","ЛЮДЕЙ НЕ СПИСЫВАЮТ","人不是报废品","البشر ليسوا خردة"),
   frag:  M2T("…DÉSAFFECTE PAS…","…CAN'T SCRAP…","…NO SE DESECHA…","…KEIN SCHROTT…","…NON SI DISMETTONO…","…NÃO SE DESATIVA…","…НЕ СПИСЫВАЮТ…","…不是报废品…","…ليسوا خردة…"),
   noon:  M2T("12 h 00","12:00","12:00","12:00","12:00","12h00","12:00","12:00","12:00"),
+  six:   M2T("6 h 00","6:00","6:00","6:00","6:00","6h00","6:00","6:00","6:00"),
 
   // P1 · Les outils posés : un établi, trois outils à plat, l'horloge du mur — l'aiguille des minutes arrive sur 12 (6 h 00) et s'arrête
   tools(g, w, h, t){ plateBase(g, w, h, 'rgba(232,120,130,0.08)');
     const n = clamp(t/1.4, 0, 1);
     m2Ground(g, 190, t, 0.22);
-    const hm = [78,182, 132,182, 132,190, 78,190, 78,182];                                       // marteau : manche, tête
-    inkWash(g, hm, '#8a6a3a', 0.5); inkLine(g, hm, n, 1.8);
-    const hh = [128,170, 152,170, 152,190, 128,190, 128,170];
-    inkWash(g, hh, '#1f1b17', 0.7); inkLine(g, hh, n, 1.8); inkLine(g, [152,174, 160,190], n, 1.8);
-    const wr = [204,178, 238,180, 238,188, 204,190, 204,178];                                    // clé plate : manche et deux mâchoires
-    inkWash(g, wr, '#1f1b17', 0.3); inkLine(g, wr, n, 1.8);
-    const wj = m2Circ(198,182,10,16, 0.5, 5.8); inkLine(g, wj, n, 1.8); inkLine(g, m2Circ(244,184,8,14), n, 1.8);
-    const hat = m2Circ(330,190,28,20, 3.1416, 6.2832, 26).concat([302,190]);                      // casque de chantier : dôme, visière
+    g.save(); g.translate(-20, -47.5); g.scale(1.25, 1.25);                                     // les objets, plus gros
+    m2Glove(g, 76, 190, 1, -0.12, n); m2Glove(g, 116, 190, -1, 0.12, n);                           // une paire de gants
+    m2Wrench(g, 190, 184, n);                                                                      // clé plate à mâchoires ouvertes
+    const hat = m2Circ(330,190,30,20, 3.1416, 6.2832, 28);                                         // casque de chantier : dôme, visière, nervure
     inkWash(g, hat, '#1f1b17', 0.32); inkLine(g, hat, n, 2);
-    inkLine(g, [294,190, 366,190, 366,194, 294,194, 294,190], n, 1.8); inkLine(g, [330,166, 330,180], n, 1.4);
-    const ring = m2Circ(400,70,22,28);                                                           // horloge ronde au mur
-    inkWash(g, ring, '#efe6cf', 0.8); inkLine(g, ring, n, 2.2);
-    for (let i=0;i<12;i++){ const a = i*Math.PI/6; inkLine(g, [400+Math.cos(a)*18, 70+Math.sin(a)*18, 400+Math.cos(a)*21, 70+Math.sin(a)*21], n, 1.2); }
-    inkLine(g, [400,70, 400,85], n, 2.4);                                                        // petite aiguille sur 6
-    const ang = -Math.PI/2 - (1 - ease(clamp((t-0.6)/3, 0, 1)))*1.1;                              // grande aiguille : arrive sur 12 puis s'arrête
-    inkLine(g, [400,70, 400+Math.cos(ang)*17, 70+Math.sin(ang)*17], n, 2.2, '#c42a1c');
+    const vis = [302,190, 296,191, 284,194, 284,196, 302,196]; inkWash(g, vis, '#1f1b17', 0.5); inkLine(g, vis, n, 1.8);   // la visière (à gauche)
+    inkLine(g, [300,196, 362,196, 362,190], n, 1.8);
+    inkWash(g, m2Circ(330,190,9,10, 3.1416, 6.2832, 28).concat(m2Circ(330,190,14,10, 6.2832, 3.1416, 28)), '#1f1b17', 0.45);   // la nervure : une bande sur le dôme
+    inkLine(g, m2Circ(330,190,9,10, 3.1416, 6.2832, 28), n, 1.2); inkLine(g, m2Circ(330,190,14,10, 3.1416, 6.2832, 28), n, 1.2);
+    g.restore();
+    // la pointeuse murale : boîtier, afficheur (6 h 00), fente avec sa carte, voyant
+    const pt = [372,40, 448,40, 448,128, 372,128, 372,40];
+    inkWash(g, pt, '#3d4a5a', 0.4); inkLine(g, pt, n, 2.2);
+    inkWash(g, [380,48, 440,48, 440,76, 380,76], '#9db79a', 0.95); inkLine(g, [380,48, 440,48, 440,76, 380,76, 380,48], n, 1.4);
+    if (n>=1) m2Txt(g, cT(M2_PL.six), 410, 63, 17, '#1b2a1c', null, 54);
+    inkLine(g, [388,96, 432,96], n, 3.2); inkWash(g, [394,84, 426,84, 426,96, 394,96], '#efe9db', 0.95); inkLine(g, [394,84, 426,84, 426,96], n, 1.2);   // la carte à demi engagée
+    g.fillStyle = Math.sin(t*4)>0? '#c42a1c' : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(440, 118, 3.2, 0, 6.283); g.fill();
     plateEnd(g, w, h); },
 
   // P2 · Désaffecté : une grille d'usine fermée, un panneau, un voyant bleu qui clignote
@@ -393,9 +417,14 @@ const M2_PL = {
 
   // P3 · Radio-Quai à l'aube : le quai, l'eau, la maisonnette de briques, le mât, le soleil à demi levé, une mouette
   dawn(g, w, h, t){ plateBase(g, w, h, 'rgba(250,150,100,0.12)');
-    const n = clamp(t/1.8, 0, 1), sy = 204 - ease(clamp(t/8, 0, 1))*8;                          // le soleil monte de 8 px
-    inkWash(g, m2Circ(86,sy,40,24, 3.1416, 6.2832, 38), '#e8a53c', 0.5);
-    inkLine(g, m2Circ(86,sy,40,24, 3.1416, 6.2832, 38), n, 1.6, '#e8a53c');
+    const n = clamp(t/1.8, 0, 1), HY = 150, up = ease(clamp(t/8, 0, 1))*4;                          // l'horizon de la mer ; le soleil monte de 4 px
+    inkLine(g, [10,HY, 470,HY], n, 1.8);
+    g.save(); g.beginPath(); g.rect(0, 0, 480, HY); g.clip();                                          // le demi-disque du soleil, posé sur l'horizon
+    g.fillStyle = 'rgba(232,165,60,0.6)'; g.beginPath(); g.arc(96, HY-up+0, 36, 0, 6.283); g.fill();
+    g.strokeStyle = '#e8a53c'; g.lineWidth = 1.6; g.beginPath(); g.arc(96, HY-up, 36, 0, 6.283); g.stroke(); g.restore();
+    for (let i=0;i<6;i++){ const y = HY+6+i*8, wd = 56-i*7 + Math.sin(t*1.5+i)*4, off = Math.sin(t*0.9+i*1.7)*5;      // reflets : tirets sur l'eau
+      inkLine(g, [96-wd/2+off,y, 96+wd/2+off,y], n, 2, 'rgba(232,165,60,'+(0.85-i*0.1).toFixed(2)+')'); }
+    for (let i=0;i<3;i++){ const y = 168+i*11, wv = []; for (let x=150;x<=470;x+=20) wv.push(x, y+Math.sin(x*0.08+i*2+t*0.8)*1.6); inkLine(g, wv, n, 1, 'rgba(31,27,23,0.5)'); }
     inkLine(g, [10,200, 470,200], n, 2.6);
     inkWash(g, [10,200, 470,200, 470,206, 10,206], '#1f1b17', 0.35);                              // lèvre du quai
     for (let i=0;i<3;i++){ const y = 218+i*13, wv = []; for (let x=10;x<=470;x+=20) wv.push(x, y+Math.sin(x*0.08+i*2+t*0.8)*2.2); inkLine(g, wv, n, 1.2); }
@@ -422,10 +451,16 @@ const M2_PL = {
     const poly = []; for (let i=0;i<top.length;i+=2) poly.push(top[i], top[i+1]); for (let i=bot.length-2;i>=0;i-=2) poly.push(bot[i], bot[i+1]);
     inkWash(g, poly, '#efe6cf', 0.95); inkLine(g, poly.concat([poly[0], poly[1]]), n, 2);
     if (t>0.9) m2Txt(g, cT(M2_PL.banner), 240, 91+Math.sin(t*1.8+4)*wv, 15, '#1f1b17');
-    inkFolk(g, 240, 230, 90, '#1f1b17', 0.7);                                                    // Mado : silhouette agrandie, bras levé
-    inkWash(g, [222,142, 224,132, 240,126, 256,132, 258,142, 248,138, 232,138], '#2f4a6a', 0.9);   // bonnet
-    inkWash(g, [226,146, 240,151, 254,146, 258,152, 240,160, 222,152], '#c42a1c', 0.95);           // écharpe : le seul rouge
-    inkWash(g, [270,138, 292,124, 300,134, 280,148], '#c8b27a', 1); inkLine(g, [270,138, 292,124, 300,134, 280,148, 270,138], n, 1.6);   // mégaphone
+    inkFolk(g, 240, 230, 90, '#1f1b17', 0.45);                                                   // Mado : silhouette agrandie, bras plié, main au mégaphone
+    g.fillStyle = '#ecd9b6'; g.beginPath(); g.ellipse(240, 155, 10.2, 12, 0, 0, 6.283); g.fill();   // le visage : un ovale clair
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.stroke();
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(236, 154, 1.4, 0, 6.283); g.arc(244.5, 154, 1.4, 0, 6.283); g.fill();   // les yeux
+    inkLine(g, [236.5,160.5, 240,162, 244,160.5], 1, 1.3);                                         // la bouche
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(240, 147, 13, 9.5, 0, Math.PI, 6.283); g.fill();   // la casquette, à l'encre
+    g.beginPath(); g.moveTo(240, 148); g.lineTo(264, 149); g.lineTo(262, 152.5); g.lineTo(240, 151.5); g.closePath(); g.fill();
+    inkWash(g, [226,165.5, 240,171, 254,165.5, 255,172, 240,178, 225,172], '#c42a1c', 0.95);       // l'écharpe, sous le menton : le seul rouge
+    inkWash(g, [246.3,153.1, 287.4,134.3, 292.6,155.7, 247.7,158.9], '#c8b27a', 1); inkLine(g, [246.3,153.1, 287.4,134.3, 292.6,155.7, 247.7,158.9, 246.3,153.1], n, 1.6);   // le mégaphone en cône
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(262, 150, 4.2, 0, 6.283); g.fill();             // la main qui le tient
     plateEnd(g, w, h); },
 
   // P5 · L'antenne : contre-plongée sur le mât, une petite silhouette sur l'échelle, des ondes rouges vers la droite
@@ -459,17 +494,15 @@ const M2_PL = {
   // P7 · Le bipeur, 3 % : le bipeur de la mission I (même cadre), « 55 · 3 % » défile de droite à gauche, deux fois
   pager(g, w, h, t){ plateBase(g, w, h);
     const n = clamp(t/1.2, 0, 1);
-    inkLine(g, [30,210, 450,210], n, 3); inkHatch(g, 30, 210, 420, 30, 6);
-    const body = [170,210, 176,150, 304,150, 310,210, 170,210];
-    inkWash(g, body, '#23292b', 0.9); inkLine(g, body, n, 2);
-    inkWash(g, [190,160, 290,160, 290,190, 190,190], '#9db79a', 1); inkLine(g, [190,160, 290,160, 290,190, 190,190, 190,160], n, 1.4);
-    inkLine(g, [70,210, 84,184, 150,184, 160,210], n, 2);
-    const s = '55 · 3 %'; g.save(); g.beginPath(); g.rect(192,162,96,26); g.clip();
-    g.fillStyle = '#1b2a1c'; g.font = '700 20px "Courier New",monospace'; g.textBaseline = 'middle'; g.textAlign = 'left';
+    inkLine(g, [10,214, 470,214], n, 3); inkHatch(g, 10, 214, 460, 28, 6);
+    inkNotebook(g, 170, 214, 290, n);                                                              // le carnet ; le bipeur est posé dessus
+    const pg = inkPager(g, 232, 201, 124, { led: Math.sin(t*5)>0? '#0b6fa8' : null });
+    const s = '55 · 3 %'; g.save(); g.beginPath(); g.rect(pg.x+1, pg.y+1, pg.w-2, pg.h-2); g.clip();
+    g.fillStyle = '#1b2a1c'; g.font = '700 17px "Courier New",monospace'; g.textBaseline = 'middle'; g.textAlign = 'left';
     const u = clamp((t-1.0)/6, 0, 1)*2, tw = g.measureText(s).width;
-    if (u<2){ const x = 288 - (u%1)*(96+tw); g.fillText(s, x, 176); } else { g.textAlign = 'center'; g.fillText(s, 240, 176); }
+    if (u<2){ const x = pg.x+pg.w - (u%1)*(pg.w+tw); g.fillText(s, x, pg.cy); } else { g.textAlign = 'center'; g.fillText(s, pg.cx, pg.cy); }
     g.restore();
-    if (t>0.6) for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.5*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 150, 20+r*70, 3.5, 5.9); g.stroke(); }
+    if (t>0.6) for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.5*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(232, pg.top+22, 78+r*46, 3.6, 5.8); g.stroke(); }
     plateEnd(g, w, h); },
 
   // P8 · La rivière sèche : une vallée, un barrage au fond, le lit craquelé au premier plan, brume de chaleur
@@ -497,8 +530,7 @@ const M2_PL = {
     inkWash(g, bn, '#c42a1c', 0.78); inkLine(g, bn, n, 2);
     inkLine(g, [120,178, 130,226], n, 1.2); inkLine(g, [210,186, 214,232], n, 1.2);              // plis
     g.save(); g.translate(166, 208); g.rotate(-0.08); m2Txt(g, cT(M2_PL.frag), 0, 0, 16, '#efe6cf'); g.restore();
-    inkLine(g, [320,140, 378,150, 410,168], n, 2.6); inkLine(g, [410,168, 440,176, 448,190], n, 2.6);   // le bâton cassé
-    inkLine(g, [410,168, 418,162], n, 1.2);
+    inkLine(g, [60,252, 150,246, 210,248], n, 3.4); inkLine(g, [222,248, 300,256, 372,252], n, 3.4); inkLine(g, [210,248, 216,243, 222,248], n, 1.4);   // le bâton cassé, à terre, en deux morceaux
     plateEnd(g, w, h); },
 };
 
