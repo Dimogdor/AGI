@@ -33,7 +33,7 @@ const ROLES = [
 ];
 const GREMLIN = {hp:34, dmg:7, spd:78, range:14, rate:0.7, xp:3};
 // pictogrammes par vocation (file d'attente, repères visuels)
-const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'✚', gremlin:'•', hero:'★' };
+const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'♥', gremlin:'•', hero:'★' };
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
