@@ -68,7 +68,7 @@ function unitStats(side, ri){
   // HUM frappe vite & léger, GPT fort & lent. dégât×cadence inchangé. Siège & Soutien exemptés.
   let cdmg=1, crate=1;
   if (r.key!=='support' && r.key!=='siege'){
-    const T = FAC_TRAITS[side.facKey]; cdmg = T.texD; crate = T.texR;
+    const T = FAC_TRAITS[side.facKey]; cdmg = asymOn('unit')? T.texDU : T.texD; crate = T.texR;
   }
   // ARCHÉTYPES DE MÊLÉE (valable à chaque ère) : le Tank (mêlée DÉFENSIVE) devient un vrai mur —
   // beaucoup de PV, dégâts faibles, plus lent ; la Mêlée (OFFENSIVE) devient un assaillant
@@ -84,7 +84,7 @@ function unitStats(side, ri){
   // réglage de la balance (FACTIONS.md §5) : on le retire si l'IA prend l'avantage au banc.
   if (side.facKey==='IA') hp *= FAC_TRAITS.IA.hpMul;
   return { hp, dmg:r.dmg*m*up*cdmg*admg, spd:r.spd*aspd, range, rate,
-           arc:r.arc, aoe:r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
+           arc:r.arc, aoe:(r.aoe && side.facKey==='IA' && asymOn('unit'))? r.aoe*FAC_TRAITS.IA.siegeAoe : r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
 }
 function spawnUnit(side, ri, gremlin=false, atX=null){
   const m = statMul(side.era);

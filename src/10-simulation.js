@@ -74,6 +74,18 @@ function turretLinked(side, slot){
   for (const o of sideBuildSlots(side)) if (o!==slot && o.b && o.b.type==='turret' && Math.abs(o.x-slot.x)<=R) return true;
   return false;
 }
+// ---- M2 · UNITÉS (asymOn('unit')) : l'Humanité frappe plus fort en groupe (« coude à coude »), la machine EXÉCUTE les cibles entamées ----
+function unitK(u, target, side){
+  if (!asymOn('unit')) return 1;
+  if (u.fac==='HUM'){
+    if (u.fly || u.role==='support' || u.role==='hero' || u.role==='gremlin') return 1;
+    let n = 0; const R = ft('HUM','packR');
+    for (const a of side.units) if (a!==u && !a.fly && a.role!=='support' && a.role!=='hero' && a.role!=='gremlin' && Math.abs(a.x-u.x)<=R) n++;
+    return 1 + Math.min(ft('HUM','packMax'), ft('HUM','packStep')*n);
+  }
+  if ((u.role==='ranged' || u.role==='air') && target && target.role && target.hp/target.maxhp < ft('IA','execHp')) return ft('IA','execK');
+  return 1;
+}
 function updateUnits(side, foe, dt){
   const targets = foeTargets(foe);
   const m = statMul(side.era);
@@ -279,6 +291,16 @@ function updateUnits(side, foe, dt){
       }
       if (alt){ target = alt; best = Math.abs(alt.x-u.x); }
     }
+    // M2 · verrouillage de cible (IA) : tireurs et aériens visent, parmi les unités à portée, la plus entamée
+    if (target && best<=eRange && u.fac==='IA' && (u.role==='ranged' || u.role==='air') && asymOn('unit')){
+      let bf = target.role? target.hp/target.maxhp : 1, bt = null;
+      for (const f of targets){
+        if (!f.role || f.hp<=0 || (f.fly && meleeGround)) continue;
+        if ((f.x-u.x)*u.side<-12 || Math.abs(f.x-u.x)>eRange) continue;
+        const fr = f.hp/f.maxhp; if (fr<bf-0.02){ bf = fr; bt = f; }
+      }
+      if (bt){ target = bt; best = Math.abs(bt.x-u.x); }
+    }
     if (target && best<=eRange){
       if (u.atkT<=0){
         const tired = u.tiredT>0;
@@ -288,7 +310,7 @@ function updateUnits(side, foe, dt){
         u.atkT = u.rate * (tired? T.tiredRate : 1) / fixK;
         if (u.role==='hero'){ heroSfx(u.fac, HERO_SEQ[(u.atkN|0)&7]? 'atkB' : 'atkA', u.x); u.atkN = (u.atkN|0)+1; }   // alterne ses deux attaques (visuel + son)
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1);   // figé : riposte, mais sans l'élan d'une troupe libre
+        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1) * unitK(u, target, side);   // figé : riposte, mais sans l'élan d'une troupe libre
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         // (v1.12 : surchauffe GPT adoucie — 0,08/6 s/−45 % donnaient ~18 % de DPS soutenu en moins que
         //  l'Humanité ; le même joueur gagnait 88 % en Humanité contre 25 % en GPT)
