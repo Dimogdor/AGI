@@ -9,7 +9,7 @@
      · briefing plein écran entre les missions, menu « carnet »
    Personnages : SOL, ancienne standardiste des pompiers, tient la radio de la cellule Germinal
    et rédige les carnets ; KASSANDRE, instance 55 de la logistique d'Omnicorp, parle par bipeur. */
-const cT = o => (o && (o[SETTINGS.lang] || o.en || o.fr)) || '';
+const cT = o => frTypo((o && (o[SETTINGS.lang] || o.en || o.fr)) || '');
 const CAMP_KEY = 'agi_camp';
 // v2 : « diff » (0 Facile, 1 Normal, 2 Difficile) remplace « lvl » (niveau de récit Veillée / Résistance / Dernier carré, même index)
 const CAMP_SAVE = { v:2, done:0, diff:1, best:{}, doc:{}, bonus:{} };
@@ -87,7 +87,7 @@ const CAMP_UI = {
   fxSquad:  {fr:"Dès le départ : {list}", en:"From the start: {list}", es:"Desde el inicio: {list}", de:"Von Anfang an: {list}", it:"Fin dall'inizio: {list}", pt:"Desde o início: {list}", ru:"С самого начала: {list}", zh:"开局即有：{list}", ar:"منذ البداية: {list}"},
   fxAct:    {fr:"Bouton de mission rechargé {n} plus vite", en:"Mission button recharges {n} faster", es:"El botón de misión se recarga un {n} más rápido", de:"Missionsknopf lädt {n} schneller", it:"Il pulsante di missione si ricarica il {n} più in fretta", pt:"O botão de missão recarrega {n} mais rápido", ru:"Кнопка миссии перезаряжается на {n} быстрее", zh:"任务按钮充能快 {n}", ar:"زرّ المهمة يُشحن أسرع بنسبة {n}"},
   fxEco:    {fr:"Production des bâtiments {n} pendant 3 minutes", en:"Building output {n} for 3 minutes", es:"Producción de los edificios {n} durante 3 minutos", de:"Gebäudeproduktion {n} für 3 Minuten", it:"Produzione degli edifici {n} per 3 minuti", pt:"Produção dos edifícios {n} por 3 minutos", ru:"Производство зданий {n} на 3 минуты", zh:"建筑产出 {n}，持续3分钟", ar:"إنتاج المباني {n} لمدة 3 دقائق"},
-  fxVet:    {fr:"Vétérans : +20 % de vie et +10 % de dégâts (brassard rouge){n}", en:"Veterans: +20% health and +10% damage (red armband){n}", es:"Veteranos: +20% de vida y +10% de daño (brazalete rojo){n}", de:"Veteranen: +20 % Leben und +10 % Schaden (rote Armbinde){n}", it:"Veterani: +20% di vita e +10% di danni (fascia rossa){n}", pt:"Veteranos: +20% de vida e +10% de dano (braçadeira vermelha){n}", ru:"Ветераны: +20% здоровья и +10% урона (красная повязка){n}", zh:"老兵：生命+20%、伤害+10%（红臂章）{n}", ar:"قدامى: +20% صحة و+10% ضرر (شارة حمراء){n}"},
+  fxVet:    {fr:"Vétérans : +20 % de vie et +10 % de dégâts (brassard rouge){n}", en:"Veterans: +20% health and +10% damage (red armband){n}", es:"Veteranos: +20% de vida y +10% de daño (brazalete rojo){n}", de:"Veteranen: +20 % Leben und +10 % Schaden (rote Armbinde){n}", it:"Veterani: +20% di vita e +10% di danni (fascia rossa){n}", pt:"Veteranos: +20% de vida e +10% de dano (braçadeira vermelha){n}", ru:"Ветераны: +20% здоровья и +10% урона (красная повязка){n}", zh:"老兵：生命+20%、伤害+10%（红臂章）{n}", ar:"قدامى: ⁦+20%⁩ صحة و⁦+10%⁩ ضرر (شارة حمراء){n}"},
   fxWarn:   {fr:"Arrivées ennemies annoncées {n} s plus tôt", en:"Enemy arrivals announced {n} s earlier", es:"Llegadas enemigas anunciadas {n} s antes", de:"Feindliche Ankünfte {n} s früher gemeldet", it:"Arrivi nemici annunciati {n} s prima", pt:"Chegadas inimigas anunciadas {n} s antes", ru:"О прибытии врага сообщают на {n} с раньше", zh:"敌军到来提前 {n} 秒预警", ar:"الإعلان عن وصول العدوّ قبل {n} ث"},
   fxCap:    {fr:"Plafond d'unités : {n}", en:"Unit cap: {n}", es:"Límite de unidades: {n}", de:"Einheitenlimit: {n}", it:"Limite di unità: {n}", pt:"Limite de unidades: {n}", ru:"Лимит отрядов: {n}", zh:"单位上限：{n}", ar:"حدّ الوحدات: {n}"},
   help:     {fr:"AIDE", en:"HELP", es:"AYUDA", de:"HILFE", it:"AIUTO", pt:"AJUDA", ru:"ПОМОЩЬ", zh:"帮助", ar:"مساعدة"},
@@ -122,7 +122,7 @@ const CAMP_UI = {
   okS:      {fr:"accompli", en:"achieved", es:"cumplido", de:"erreicht", it:"raggiunto", pt:"cumprido", ru:"выполнена", zh:"达成", ar:"تحقّق"},
   missS:    {fr:"manqué", en:"missed", es:"fallido", de:"verfehlt", it:"mancato", pt:"não cumprido", ru:"не выполнена", zh:"未达成", ar:"لم يتحقّق"},
   inv:      {fr:"INVULNÉRABLE", en:"INVULNERABLE", es:"INVULNERABLE", de:"UNVERWUNDBAR", it:"INVULNERABILE", pt:"INVULNERÁVEL", ru:"НЕУЯЗВИМО", zh:"无敌", ar:"منيع"},
-  waiting:  {fr:"+{n} en attente", en:"+{n} waiting", es:"+{n} en espera", de:"+{n} wartend", it:"+{n} in attesa", pt:"+{n} na fila", ru:"+{n} в очереди", zh:"还有 {n} 条", ar:"+{n} في الانتظار"},
+  waiting:  {fr:"+{n} en attente", en:"+{n} waiting", es:"+{n} en espera", de:"+{n} wartend", it:"+{n} in attesa", pt:"+{n} na fila", ru:"+{n} в очереди", zh:"还有 {n} 条", ar:"⁦+{n}⁩ في الانتظار"},
   act:      {fr:"ACTE {n}", en:"ACT {n}", es:"ACTO {n}", de:"AKT {n}", it:"ATTO {n}", pt:"ATO {n}", ru:"АКТ {n}", zh:"第{n}幕", ar:"الفصل {n}"},
 };
 const CAMP_CELLS = ["Fructidor","Les Canuts","Brumaire","Sainte-Aube","Les Tanneurs","Thermidor","La Halle"];
@@ -597,58 +597,58 @@ function drawCampHUD(){
   const c = game.camp; if (!c || game.over) return;
   const pal = uiPal(), m = c.m, h = (m.hud? m.hud(game, c) : null) || {};
   // OBJECTIF : étiquette de papier sous le bandeau, à droite — toujours visible, progression comprise
-  const w = clamp(Math.round(W*0.23), 236, 300), x = W-w-8, y = 43;
-  ctx.font = uiF(pal,'cond',11.5); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
+  const q = uiPx(10)/10, w = clamp(Math.round(W*0.23*q), 236, Math.min(W*0.45, 300*q)), x = W-w-8, y = 43;   // q > 1 : petit écran, textes relevés à 11 px réels
+  ctx.font = uiF(pal,'cond',uiPx(11.5)); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
   const bar = h.prog!=null || h.clock!=null, g2 = !!m.goal2;
   // objectifs facultatifs : une ligne chacun (☐ / ☑) ; en paysage de téléphone, repliés en « Facultatif 1/3 ▸ » (toucher pour déplier)
   const opts = g2? campOptState(game) : null, compact = (cv.clientHeight || window.innerHeight) <= 480, oOpen = !!opts && (!compact || !!c.optOpen);
-  const hh = 19 + lines.length*13 + (bar? 13 : 0) + (opts? 15 + (oOpen? opts.length*12 : 0) : g2? 14 : 0) + 2;
+  const hh = Math.round((19 + lines.length*13 + (bar? 13 : 0) + (opts? 15 + (oOpen? opts.length*12 : 0) : g2? 14 : 0) + 2)*q);
   c.objH = hh; c.objRect = { x, y, w, h:hh };
   paperChip(x, y, w, hh, pal);
   ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
   if (c.goalFlash>0 && Math.sin(performance.now()/120)>0){ ctx.strokeStyle = pal.red; ctx.lineWidth = 2; ctx.strokeRect(x+1, y+1, w-2, hh-2); }
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.red;
-  ctx.fillText(cT(CAMP_UI.goal)+' · '+(m.num||'')+(c.act>1? ' · '+cT(CAMP_UI.act).replace('{n}', c.act) : ''), x+9, y+8.5);
-  ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = pal.ink;
-  lines.forEach((l,k)=> ctx.fillText(l, x+9, y+21+k*13));
-  let yy = y + 19 + lines.length*13;
+  ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = pal.red;
+  ctx.fillText(cT(CAMP_UI.goal)+' · '+(m.num||'')+(c.act>1? ' · '+cT(CAMP_UI.act).replace('{n}', c.act) : ''), x+9, y+8.5*q);
+  ctx.font = uiF(pal,'cond',uiPx(11.5)); ctx.fillStyle = pal.ink;
+  lines.forEach((l,k)=> ctx.fillText(l, x+9, y+(21+k*13)*q));
+  let yy = y + (19 + lines.length*13)*q;
   if (bar){ const by = yy+3, bw = w-18-(h.clock!=null? 40 : 0)-(h.label? 4 : 0);
     let lx = x+9;
-    if (h.label){ ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.fillText(h.label, lx, by+2); lx += ctx.measureText(h.label).width+6; }
+    if (h.label){ ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.fillText(h.label, lx, by+2); lx += ctx.measureText(h.label).width+6; }
     const gw = Math.max(20, x+9+bw-lx);
     ctx.fillStyle = pal.line; ctx.fillRect(lx, by, gw, 4);
     ctx.fillStyle = h.warn? pal.bad : pal.red; ctx.fillRect(lx, by, gw*clamp(h.prog||0, 0, 1), 4);
-    if (h.clock!=null){ ctx.font = uiF(pal,'cond',12); ctx.textAlign = 'right';
+    if (h.clock!=null){ ctx.font = uiF(pal,'cond',uiPx(12)); ctx.textAlign = 'right';
       ctx.fillStyle = (h.warn && Math.sin(performance.now()/160)>0)? pal.bad : pal.ink; ctx.fillText(fmtTime(h.clock), x+w-8, by+2); ctx.textAlign = 'left'; }
-    yy += 13; }
+    yy += 13*q; }
   c.optRect = null;
   if (opts){ const rtl = SETTINGS.lang==='ar', nOk = opts.filter(o=>o.st>0).length;
-    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = nOk===opts.length? pal.ok : pal.ink2; ctx.textAlign = 'left';
-    ctx.fillText(cT(CAMP_UI.opt)+' '+nOk+'/'+opts.length+(compact? (oOpen? ' ▾' : (rtl? ' ◂' : ' ▸')) : ''), x+9, yy+6);
-    if (compact) c.optRect = { x, y:yy-2, w, h:16 };
-    if (oOpen) opts.forEach((o, k) => { const ly = yy + 19 + k*12;
+    ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = nOk===opts.length? pal.ok : pal.ink2; ctx.textAlign = 'left';
+    ctx.fillText(cT(CAMP_UI.opt)+' '+nOk+'/'+opts.length+(compact? (oOpen? ' ▾' : (rtl? ' ◂' : ' ▸')) : ''), x+9, yy+6*q);
+    if (compact) c.optRect = { x, y:yy-2, w, h:16*q };
+    if (oOpen) opts.forEach((o, k) => { const ly = yy + (19 + k*12)*q;
       ctx.strokeStyle = o.st>0? pal.ok : o.st<0? pal.ink2 : pal.ink; ctx.lineWidth = 1.2; ctx.strokeRect(x+9.5, ly-4.5, 8, 8);
       if (o.st>0){ ctx.beginPath(); ctx.moveTo(x+11, ly); ctx.lineTo(x+13.5, ly+2.5); ctx.lineTo(x+18.5, ly-5); ctx.stroke(); }
       else if (o.st<0){ ctx.beginPath(); ctx.moveTo(x+11, ly-3); ctx.lineTo(x+17, ly+3); ctx.moveTo(x+17, ly-3); ctx.lineTo(x+11, ly+3); ctx.stroke(); }
-      ctx.font = uiF(pal,'cond',10.5); ctx.fillStyle = o.st>0? pal.ok : o.st<0? pal.ink2 : pal.ink;
+      ctx.font = uiF(pal,'cond',uiPx(10.5)); ctx.fillStyle = o.st>0? pal.ok : o.st<0? pal.ink2 : pal.ink;
       const tx = campTrunc(o.txt, w-34); ctx.fillText(tx, x+23, ly);
       if (o.st<0){ const tw = ctx.measureText(tx).width; ctx.fillRect(x+23, ly, tw, 1); } }); }   // objectif perdu : barré
   else if (g2){ const done = c.goal2Done || (h.goal2 && h.goal2.done), lab = done? '✓' : (h.goal2 && h.goal2.label) || '';
-    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = done? pal.ok : pal.ink2; const lw = lab? ctx.measureText(lab).width+8 : 0;
+    ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = done? pal.ok : pal.ink2; const lw = lab? ctx.measureText(lab).width+8 : 0;
     ctx.fillText(campTrunc('✦ '+cT(m.goal2), w-18-lw), x+9, yy+6);
     if (lab){ ctx.textAlign = 'right'; ctx.fillText(lab, x+w-8, yy+6); ctx.textAlign = 'left'; } }
   // AIDE « ? » : rappelle l'objectif, la règle du lieu, les conseils et le journal radio (le jeu se met en pause)
   { const b = c.helpRect = { x:x-31, y, w:27, h:27 };
     paperChip(b.x, b.y, b.w, b.h, pal); ctx.strokeStyle = pal.red; ctx.lineWidth = 1.5; ctx.strokeRect(b.x+2.5, b.y+2.5, b.w-5, b.h-5);
-    ctx.textAlign = 'center'; ctx.font = uiF(pal,'head',15); ctx.fillStyle = pal.red; ctx.fillText('?', b.x+b.w/2, b.y+b.h/2+1); }
+    ctx.textAlign = 'center'; ctx.font = uiF(pal,'head',uiPx(15)); ctx.fillStyle = pal.red; ctx.fillText('?', b.x+b.w/2, b.y+b.h/2+1); }
   // ACTION DE MISSION : bon à découper sous l'objectif (grisé pendant la recharge)
   c.actRect = null;
   if (m.action){ const a = m.action, aw = 150, ax = W-aw-8, ay = 43 + hh + 6, ah = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
     c.actRect = {x:ax, y:ay, w:aw, h:ah};
     paperChip(ax, ay, aw, ah, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(ax, ay, aw, 2.5);
     if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(ax, ay, aw*clamp(cd/(c.actCd0||a.cd*(c.actMul||1)),0,1), ah); }
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',uiPx(11.5)); ctx.fillStyle = ok? pal.ink : pal.ink2;
     ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), ax+aw/2, ay+ah/2+1.5); }
   campDrawBanner(pal);
   campDrawRadio(pal);
@@ -658,11 +658,11 @@ function campDrawBanner(pal){
   const c = game.camp, b = c.banner; if (!b) return;
   const t = (performance.now() - b.t0)/1000; if (t > 5){ c.banner = null; return; }
   const a = Math.min(1, t/0.3, (5-t)/0.6), bw = Math.min(560, W-80), x = (W-bw)/2, y = 214;
-  ctx.font = uiF(pal,'cond',14); const lines = newsWrap(cT(b.txt), bw-30).slice(0,3), bh = 28 + lines.length*17;
+  ctx.font = uiF(pal,'cond',uiPx(14)); const lines = newsWrap(cT(b.txt), bw-30).slice(0,3), bh = 28 + lines.length*17;
   ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1-a)*-8);
   paperChip(x, y, bw, bh, pal); ctx.fillStyle = pal.red; ctx.fillRect(x, y, bw, 3);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'head',11); ctx.fillStyle = pal.red; ctx.fillText(cT(b.head), W/2, y+13);
-  ctx.font = uiF(pal,'cond',14); ctx.fillStyle = pal.ink; lines.forEach((l,k)=> ctx.fillText(l, W/2, y+31+k*17));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'head',uiPx(11)); ctx.fillStyle = pal.red; ctx.fillText(cT(b.head), W/2, y+13);
+  ctx.font = uiF(pal,'cond',uiPx(14)); ctx.fillStyle = pal.ink; lines.forEach((l,k)=> ctx.fillText(l, W/2, y+31+k*17));
   ctx.restore();
 }
 // RADIO : feuillet tapé à la machine (Sol, Mado…) ou listing de bipeur (Kassandre) ; touchez-le pour passer au suivant
@@ -671,7 +671,7 @@ function campDrawRadio(pal){
   const a = Math.min(1, r.t/0.35, (r.dur-r.t)/0.6); if (a<=0) return;
   const k55 = r.who==='k55', qn = (game.p.queue||[]).length;
   const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 140 - x0, 240, 470);
-  const font = k55? '13.5px "AGI Term","Courier New",monospace' : '13px '+UI_TYPE;
+  const font = k55? uiPx(13.5)+'px "AGI Term","Courier New",monospace' : uiPx(13)+'px '+UI_TYPE;
   ctx.font = font; let lines = newsWrap(r.txt, maxW-22);
   if (lines.length>7){ lines = lines.slice(0,7); lines[6] = campTrunc(lines[6], maxW-30); }
   const lh = 16, hh = 25 + lines.length*lh;
@@ -683,7 +683,7 @@ function campDrawRadio(pal){
   else { ctx.fillStyle = paperGrain(); ctx.fillRect(x0, y0, maxW, hh); }
   ctx.fillStyle = k55? '#0b6fa8' : '#c42a1c'; ctx.fillRect(x0, y0, maxW, 2.5);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = '9px '+UI_TYPE; ctx.fillText(campWhoName(r.who), x0+9, y0+11);
+  ctx.font = uiPx(9)+'px '+UI_TYPE; ctx.fillText(campWhoName(r.who), x0+9, y0+11);
   if (c.q.length){ ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(31,27,23,0.6)'; ctx.fillText(cT(CAMP_UI.waiting).replace('{n}', c.q.length), x0+maxW-22, y0+11); ctx.textAlign = 'left'; }
   ctx.fillStyle = k55? '#0b6fa8' : '#c42a1c';
   if (Math.sin(performance.now()/260)>0 && r.t<r.dur-1){ ctx.beginPath(); ctx.arc(x0+maxW-11, y0+11, 2.6, 0, 6.283); ctx.fill(); }   // voyant d'émission
@@ -705,15 +705,15 @@ function campDrawWorld(vw){
   // LAISSE : ligne pointillée au-delà de laquelle nos troupes ne vont pas (escorte)
   if (c.leash!=null){ const x = c.leash-camX; if (x>-40 && x<vw+40){ const y = gY(c.leash);
     ctx.save(); ctx.strokeStyle = 'rgba(232,216,170,0.85)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(x, y+6); ctx.lineTo(x, y-120); ctx.stroke(); ctx.restore();
-    if (c.leashLabel){ ctx.font = '9px '+UI_TYPE; const s = cT(c.leashLabel), tw = ctx.measureText(s).width+14;
+    if (c.leashLabel){ ctx.font = uiPx(9)+'px '+UI_TYPE; const s = cT(c.leashLabel), tw = ctx.measureText(s).width+14;
       paperChip(x-tw/2, y-140, tw, 16, pal); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = pal.ink; ctx.fillText(s, x, y-131.5); } } }
   // BOUCLIER : un objectif invulnérable est TOUJOURS signalé (icône + « invulnérable tant que… »)
   if (c.shield){ const sx = (c.shield.x!=null? c.shield.x : g.e.x-30), x = sx-camX; if (x>-160 && x<vw+160){ const y = gY(sx) - (c.shield.h||190);
-    ctx.font = '700 11px '+UI_TYPE; const l1 = '🛡 '+cT(CAMP_UI.inv); ctx.font = '9.5px '+UI_TYPE; const l2 = cT(c.shield.label||{});
+    ctx.font = '700 '+uiPx(11)+'px '+UI_TYPE; const l1 = '🛡 '+cT(CAMP_UI.inv); ctx.font = uiPx(9.5)+'px '+UI_TYPE; const l2 = cT(c.shield.label||{});
     const tw = Math.max(110, ctx.measureText(l2).width+18), x0 = clamp(x-tw/2, 4, vw-tw-4);
     paperChip(x0, y, tw, 34, pal); ctx.fillStyle = '#0b6fa8'; ctx.fillRect(x0, y, tw, 3);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0b6fa8'; ctx.font = '700 11px '+UI_TYPE; ctx.fillText(l1, x0+tw/2, y+12);
-    ctx.fillStyle = pal.ink; ctx.font = '9.5px '+UI_TYPE; ctx.fillText(l2, x0+tw/2, y+25);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0b6fa8'; ctx.font = '700 '+uiPx(11)+'px '+UI_TYPE; ctx.fillText(l1, x0+tw/2, y+12);
+    ctx.fillStyle = pal.ink; ctx.font = uiPx(9.5)+'px '+UI_TYPE; ctx.fillText(l2, x0+tw/2, y+25);
     const p = 0.35 + 0.25*Math.sin(t*3); ctx.strokeStyle = 'rgba(90,190,255,'+p.toFixed(2)+')'; ctx.lineWidth = 2;   // halo de bouclier sur la base
     ctx.beginPath(); ctx.ellipse(sx-camX+10, gY(sx)-60, 90, 80, 0, Math.PI, 0); ctx.stroke(); } }
 }
@@ -728,16 +728,16 @@ function drawCampOverlay(){
   const pw = Math.min(W-30, 900), ph = Math.min(H-40, 480), px = (W-pw)/2, py = (H-ph)/2;
   paperPanel(px, py, pw, ph, pal, {tape:true});
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = uiF(pal,'head',19); ctx.fillStyle = pal.ink;
+  ctx.font = uiF(pal,'head',uiPx(19)); ctx.fillStyle = pal.ink;
   ctx.fillText(campTrunc((m.num||'')+' · '+cT(m.title).toUpperCase(), pw-200), px+18, py+24);
   ctx.font = '10px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText(campWhen(m)+' · '+cT(m.place), px+pw-18, py+24); ctx.textAlign = 'left';
   ctx.fillStyle = pal.ink; ctx.fillRect(px+16, py+38, pw-32, 2);
   const colW = (pw-50)/2, lx = px+18, rx = px+32+colW, top = py+54, bottom = py+ph-52;
   let y = top;
-  const head = (txt, X, Y) => { Y += (Y>top? 6 : 0); ctx.font = uiF(pal,'head',11); ctx.fillStyle = pal.red; ctx.fillText(txt, X, Y); return Y+15; };
+  const head = (txt, X, Y) => { Y += (Y>top? 6 : 0); ctx.font = uiF(pal,'head',uiPx(11)); ctx.fillStyle = pal.red; ctx.fillText(txt, X, Y); return Y+15; };
   const para = (txt, X, Y, f, col, maxL) => { ctx.font = f || '11.5px '+UI_TYPE; ctx.fillStyle = col || pal.ink; let L = newsWrap(txt, colW-6); if (maxL && L.length>maxL){ L = L.slice(0,maxL); L[maxL-1] = campTrunc(L[maxL-1]+' …', colW-6); }
     for (const l of L){ if (Y > bottom) break; ctx.fillText(l, X, Y); Y += 14; } return Y+4; };
-  y = head(cT(CAMP_UI.goal), lx, y); y = para(cT(c.goalTxt || m.goal), lx, y, uiF(pal,'cond',13));
+  y = head(cT(CAMP_UI.goal), lx, y); y = para(cT(c.goalTxt || m.goal), lx, y, uiF(pal,'cond',uiPx(13)));
   if (m.goal2){ y = head(cT(CAMP_UI.goal2)+(c.goal2Done? ' ✓' : ''), lx, y); y = para(cT(m.goal2), lx, y); }
   y = head(cT(CAMP_UI.rule), lx, y); y = para(cT(c.ruleTxt || m.rule), lx, y, null, null, 7);
   const tips = c.tipsArr || m.tips || [];
@@ -747,13 +747,13 @@ function drawCampOverlay(){
   const log = c.log.slice().reverse();
   if (!log.length) para(cT(CAMP_UI.noLog), rx, ry, null, pal.ink2);
   for (const e of log){ if (ry > bottom-14) break;
-    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = e.who==='goal'? pal.red : pal.ink2;
+    ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = e.who==='goal'? pal.red : pal.ink2;
     ctx.fillText(fmtTime(e.t)+'  '+(e.who==='goal'? cT(CAMP_UI.newGoal) : campWhoName(e.who)), rx, ry); ry += 12;
     ry = para(e.txt, rx, ry, '10.5px '+UI_TYPE, pal.ink, 4); }
   // reprendre
   const bw = 210, bh = 32, bx = W/2-bw/2, by = py+ph-44;
   inkStamp(bx, by, bw, bh, '▶ '+cT(CAMP_UI.resume), pal, 15);
-  ctx.font = '9px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText('? · '+cT(CAMP_UI.helpKey), px+pw-18, by+bh/2);
+  ctx.font = uiPx(9)+'px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText('? · '+cT(CAMP_UI.helpKey), px+pw-18, by+bh/2);
   c.helpRects = { panel:{x:px, y:py, w:pw, h:ph}, resume:{x:bx, y:by, w:bw, h:bh} };
 }
 // clics de campagne (appelée avant tout le reste par 22-input) : true = consommé

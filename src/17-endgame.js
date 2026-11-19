@@ -24,7 +24,7 @@ function showEnd(){
   et.style.color = game.win? 'var(--red)' : 'var(--ink)';
   const no = document.getElementById('endNo'); if (no) no.textContent = '#'+String(73 + (Math.floor(gt)%900)).padStart(4,'0');
   s.innerHTML = cells.map(([l,v])=>'<div class="esLine"><span>'+escH(l)+'</span><i></i><b>'+escH(v)+'</b></div>').join('')+
-    '<div class="esWorld"><span>'+escH(t('end_world'))+'</span><div class="esBar"><i style="width:'+wh+'%"></i></div><b>'+wh+'%</b></div>'+
+    '<div class="esWorld"><span>'+escH(t('end_world'))+'</span><div class="esBar"><i style="width:'+wh+'%;--bc:'+(wh>=50?'var(--green,#3d7a3a)':'var(--red)')+'"></i></div><b>'+wh+'%</b></div>'+
     '<i class="esJournal">'+escH(camp? campResult() : warJournal()).replace(/\n/g, '<br>')+'</i>';
   if (camp) campEndFill();               // en campagne : page de carnet (campResult ci-dessus enregistre la progression) à la place du communiqué
   // campagne : mission suivante / réessayer → BRIEFING de la mission (21-menu appelle campLaunch, qui ouvre le dossier :
