@@ -332,7 +332,7 @@ function drawAgi(era, part, pose){
 
 /* ---------- habillage en direct : étoffe, éclats, sceau au sol ---------- */
 // bande d'étoffe attachée en (ax, ay..ay+h), qui traîne vers l'arrière : aplats + trait d'encre (aucun dégradé)
-function heroCloth(g, ax, ay, h, len, t, stream, unf, col, col2, star){
+function heroCloth(g, ax, ay, h, len, t, stream, unf, col, col2, seam){
   const N = 5, T = [], B = [];
   for (let i=0;i<=N;i++){ const k = i/N, x = ax - len*unf*k*(0.86+0.14*stream);
     const wv = Math.sin(t*0.9 - i*1.15)*(0.8+2.4*k)*(0.45+0.55*stream), droop = (1-stream)*k*k*h*0.6;
@@ -342,8 +342,8 @@ function heroCloth(g, ax, ay, h, len, t, stream, unf, col, col2, star){
   g.fillStyle = col; g.fill();
   g.fillStyle = col2;                                                                    // plis
   for (const i of [1,3]){ g.beginPath(); g.moveTo(T[i*2],T[i*2+1]); g.lineTo(T[i*2+2],T[i*2+3]); g.lineTo(B[i*2+2],B[i*2+3]); g.lineTo(B[i*2],B[i*2+1]); g.closePath(); g.fill(); }
-  if (star && unf>0.7){ const sx=(T[4]+T[6]+B[4]+B[6])/4, sy=(T[5]+T[7]+B[5]+B[7])/4, r=h*0.27; g.fillStyle=star; g.beginPath();
-    for (let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr2=i%2? r*0.45 : r; g.lineTo(sx+Math.cos(a)*rr2, sy+Math.sin(a)*rr2); } g.closePath(); g.fill(); }
+  if (seam && unf>0.5){ g.strokeStyle=seam; g.lineWidth=0.9; g.lineCap='butt';                         // liseré noir cousu (drapeau rouge uni : jamais un drapeau national)
+    const q = h*0.16; g.beginPath(); g.moveTo(T[0],T[1]+q); for (let i=1;i<=N;i++) g.lineTo(T[i*2],T[i*2+1]+q); g.moveTo(B[0],B[1]-q); for (let i=1;i<=N;i++) g.lineTo(B[i*2],B[i*2+1]-q); g.stroke(); }
   g.beginPath(); g.moveTo(T[0],T[1]); for (let i=1;i<=N;i++) g.lineTo(T[i*2],T[i*2+1]);
   for (let i=N;i>=0;i--) g.lineTo(B[i*2],B[i*2+1]); g.closePath();
   g.strokeStyle = HERO_INK; g.lineWidth = 0.9; g.lineJoin = 'round'; g.stroke();
@@ -355,7 +355,7 @@ function heroSeal(fac){
     g.save(); g.scale(1,0.3);
     if (hum){ g.lineWidth=2.2; g.setLineDash([9,5]); g.beginPath(); g.arc(0,0,46,0,6.283); g.stroke();
       g.setLineDash([]); g.lineWidth=1.1; g.beginPath(); g.arc(0,0,39,0,6.283); g.stroke();
-      for (let i=0;i<5;i++){ const a=-Math.PI/2+i*6.283/5; g.beginPath(); g.moveTo(Math.cos(a)*39,Math.sin(a)*39); g.lineTo(Math.cos(a+2.513)*39,Math.sin(a+2.513)*39); g.stroke(); } }
+      g.lineWidth=2; for (let i=0;i<5;i++){ const a=-Math.PI/2+i*6.283/5; g.beginPath(); g.moveTo(Math.cos(a)*31,Math.sin(a)*31); g.lineTo(Math.cos(a)*39,Math.sin(a)*39); g.stroke(); } }   // cinq tirets radiaux (plus de pentagramme)
     else { for (const [r,lw] of [[46,2],[36,1.1]]){ g.lineWidth=lw; g.beginPath(); for (let i=0;i<=6;i++){ const a=i*Math.PI/3; g.lineTo(Math.cos(a)*r,Math.sin(a)*r); } g.stroke(); }
       g.lineWidth=1.1; for (let i=0;i<6;i++){ const a=i*Math.PI/3; g.beginPath(); g.moveTo(Math.cos(a)*36,Math.sin(a)*36); g.lineTo(Math.cos(a)*24,Math.sin(a)*24); g.stroke(); }
       g.beginPath(); g.moveTo(0,-14); g.lineTo(11,0); g.lineTo(0,14); g.lineTo(-11,0); g.closePath(); g.stroke(); }
@@ -436,9 +436,12 @@ function heroPose(u, moving, ph){
 function drawHero(u, x, gy){
   const fac = u.fac, hum = fac==='HUM', era = heroEra(u.era), S = HERO_S[fac][era], R = HERO_RIG[fac];
   const t = u.bob, A0 = ctx.globalAlpha, rich = qFx();
-  const mv = Math.abs(u.x-(u._wx!=null? u._wx : u.x)); u._wx = u.x;
-  const moving = mv>0.04, ph = t*1.1;
-  let dir = u.side; if (u.hstate==='flee' && moving) dir = -dir;      // repli prudent : il tourne le dos et court vers sa base
+  const dxw = u.x-(u._wx!=null? u._wx : u.x), mv = Math.abs(dxw); u._wx = u.x;
+  if (mv>0.12) u._bk = dxw*u.side<0? game.t : undefined;                // recul franc : il garde les yeux sur l'ennemi
+  // mémoire de marche (0,12 s) : une image sans déplacement ne stoppe pas la foulée (sinon scintillement marche/arrêt)
+  if (mv>0.04) u._mvT = game.t;
+  const moving = mv>0.04 || (u._mvT!==undefined && game.t-u._mvT<0.12), ph = t*1.1; u._walk = moving;
+  let dir = u.side; if (u.hstate==='flee' && moving) dir = -dir; else if (u._bk!==undefined && game.t-u._bk<0.3) dir = -dir;      // repli prudent : il tourne le dos et court vers sa base
   const float = !hum && era===4;                                       // la Singularité cristalline lévite
   const sp = Math.sin(ph), pose = (float || !moving || Math.abs(sp)>0.7)? 0 : (Math.cos(ph)>0? 1 : -1);
   const P = heroPose(u, moving, ph);
@@ -490,7 +493,7 @@ function drawHero(u, x, gy){
     img('armb', -3, hum? -42 : -44, P.ab);
     if (hum && live){                                                  // drapeau : il suit la hampe
       ctx.save(); ctx.translate(-3*S,-42*S); ctx.rotate(P.ab); ctx.translate(3*S,42*S); ctx.scale(S,S);
-      heroCloth(ctx, R.pole-0.6, R.ptop[era]+2, R.fh[era], R.fl[era], t, stream, unf, '#cf2a26', 'rgba(110,16,16,0.4)', era>=1? '#f2cf62' : null);
+      heroCloth(ctx, R.pole-0.6, R.ptop[era]+2, R.fh[era], R.fl[era], t, stream, unf, '#cf2a26', 'rgba(110,16,16,0.4)', era>=1? '#1a1412' : null);
       ctx.restore(); }
     ctx.drawImage(heroPart(fac,era,'legs',pose), HLEG.ox, HLEG.oy, HLEG.W, HLEG.H);
     img('body');
@@ -509,7 +512,7 @@ function drawHero(u, x, gy){
   // nom de la légende : seulement à l'entrée en scène (4 s), puis il s'efface — plus de panneau permanent
   if (age<4 && A0>0.5){ const a = Math.min(1, age*3)*clamp((4-age)/0.8, 0, 1), col = HERO_COL[fac], ny = gy - heroTop(u) - 30 - (hum? 0 : 4);
     ctx.save(); ctx.globalAlpha = A0*a; ctx.font=HF(11); ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.lineJoin='round';
-    ctx.strokeStyle='rgba(12,8,16,0.8)'; ctx.lineWidth=3; ctx.strokeText(HERO_NAME[fac], x, ny); ctx.fillStyle=col; ctx.fillText(HERO_NAME[fac], x, ny); ctx.restore(); }
+    ctx.strokeStyle='rgba(12,8,16,0.8)'; ctx.lineWidth=3; ctx.strokeText(heroNameOf(fac, era), x, ny); ctx.fillStyle=col; ctx.fillText(heroNameOf(fac, era), x, ny); ctx.restore(); }
   // posture du héros du joueur : petit jeton à l'encre au-dessus de lui quand elle n'est pas « normale »
   if (u.side===1 && A0>0.5){ const hs = game.p.heroStance;
     if (hs && hs!=='normal'){ const iy = gy - heroTop(u) - 12; ctx.save(); ctx.globalAlpha = A0*0.92;
@@ -567,7 +570,7 @@ function drawHeroDeath(d, x, gy, k){
     // le drapeau reste planté un instant, puis s'abat vers l'avant
     const fa = hSm(clamp((k-0.2)/0.5, 0, 1)); ctx.save(); ctx.translate(x - dir*11*S, gy); ctx.scale(dir, 1); ctx.rotate(fa*fa*1.42);
     ctx.translate(11*S, 0); img('armb'); ctx.scale(S,S);
-    heroCloth(ctx, R.pole-0.6, R.ptop[era]+2, R.fh[era], R.fl[era], d.t*7, 0.2*(1-fa), 1, '#cf2a26', 'rgba(110,16,16,0.4)', era>=1? '#f2cf62' : null);
+    heroCloth(ctx, R.pole-0.6, R.ptop[era]+2, R.fh[era], R.fl[era], d.t*7, 0.2*(1-fa), 1, '#cf2a26', 'rgba(110,16,16,0.4)', era>=1? '#1a1412' : null);
     ctx.restore();
     ctx.save(); ctx.translate(x - dir*(k1*5 + k2*10), gy + k1*3*(1-k2)); ctx.rotate(-dir*(k1*0.2 + k2*1.25)); ctx.scale(dir, 1 - 0.06*k1);
     img('back'); ctx.drawImage(heroPart(fac,era,'legs', k2>0.1? 1 : 0), HLEG.ox, HLEG.oy, HLEG.W, HLEG.H); img('body'); img('arm', 2, -42, 0.3 + k1*1.1);

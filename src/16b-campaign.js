@@ -9,7 +9,7 @@
      · briefing plein écran entre les missions, menu « carnet »
    Personnages : SOL, ancienne standardiste des pompiers, tient la radio de la cellule Germinal
    et rédige les carnets ; KASSANDRE, instance 55 de la logistique d'Omnicorp, parle par bipeur. */
-const cT = o => (o && (o[SETTINGS.lang] || o.en || o.fr)) || '';
+const cT = o => frTypo((o && (o[SETTINGS.lang] || o.en || o.fr)) || '');
 const CAMP_KEY = 'agi_camp';
 // v2 : « diff » (0 Facile, 1 Normal, 2 Difficile) remplace « lvl » (niveau de récit Veillée / Résistance / Dernier carré, même index)
 const CAMP_SAVE = { v:2, done:0, diff:1, best:{}, doc:{}, bonus:{} };
@@ -29,7 +29,7 @@ function campSave(){ try { localStorage.setItem(CAMP_KEY, JSON.stringify(CAMP_SA
 const CAMP_UI = {
   tab:      {fr:"CAMPAGNE", en:"CAMPAIGN", es:"CAMPAÑA", de:"KAMPAGNE", it:"CAMPAGNA", pt:"CAMPANHA", ru:"КАМПАНИЯ", zh:"战役", ar:"الحملة"},
   head:     {fr:"LES CARNETS DE GERMINAL", en:"THE GERMINAL NOTEBOOKS", es:"LOS CUADERNOS DE GERMINAL", de:"DIE NOTIZBÜCHER VON GERMINAL", it:"I QUADERNI DI GERMINAL", pt:"OS CADERNOS DE GERMINAL", ru:"ТЕТРАДИ GERMINAL", zh:"GERMINAL 笔记", ar:"دفاتر GERMINAL"},
-  sub:      {fr:"Cinq nuits, treize ans. Tenus par Sol, opératrice radio.", en:"Five nights, thirteen years. Kept by Sol, radio operator.", es:"Cinco noches, trece años. Escritos por Sol, operadora de radio.", de:"Fünf Nächte, dreizehn Jahre. Geführt von Sol, Funkerin.", it:"Cinque notti, tredici anni. Tenuti da Sol, operatrice radio.", pt:"Cinco noites, treze anos. Escritos por Sol, operadora de rádio.", ru:"Пять ночей, тринадцать лет. Ведёт Sol, радистка.", zh:"五个夜晚，十三年。由无线电操作员Sol记录。", ar:"خمس ليالٍ، ثلاث عشرة سنة. دوّنتها Sol، مشغّلة اللاسلكي."},
+  sub:      {fr:"Cinq jours, dix ans. Tenus par Sol, opératrice radio.", en:"Five days, ten years. Kept by Sol, radio operator.", es:"Cinco días, diez años. Escritos por Sol, operadora de radio.", de:"Fünf Tage, zehn Jahre. Geführt von Sol, Funkerin.", it:"Cinque giorni, dieci anni. Tenuti da Sol, operatrice radio.", pt:"Cinco dias, dez anos. Escritos por Sol, operadora de rádio.", ru:"Пять дней, десять лет. Ведёт Sol, радистка.", zh:"五天，十年。由无线电操作员Sol记录。", ar:"خمسة أيام، عشر سنوات. دوّنتها Sol، مشغّلة اللاسلكي."},
   locked:   {fr:"page arrachée — terminez la mission précédente", en:"torn page — finish the previous mission", es:"página arrancada: complete la misión anterior", de:"herausgerissene Seite – schließen Sie die vorherige Mission ab", it:"pagina strappata: completi la missione precedente", pt:"página arrancada — conclua a missão anterior", ru:"вырванная страница — завершите предыдущую миссию", zh:"缺页——请先完成上一个任务", ar:"صفحة ممزّقة — أنهِ المهمة السابقة"},
   doneTag:  {fr:"ACCOMPLIE", en:"DONE", es:"CUMPLIDA", de:"ERLEDIGT", it:"COMPIUTA", pt:"CUMPRIDA", ru:"ВЫПОЛНЕНО", zh:"已完成", ar:"مُنجَزة"},
   best:     {fr:"meilleur temps", en:"best time", es:"mejor tiempo", de:"Bestzeit", it:"miglior tempo", pt:"melhor tempo", ru:"лучшее время", zh:"最佳用时", ar:"أفضل وقت"},
@@ -46,15 +46,15 @@ const CAMP_UI = {
   radioK:   {fr:"BIPEUR · 55", en:"PAGER · 55", es:"BUSCA · 55", de:"PIEPSER · 55", it:"CERCAPERSONE · 55", pt:"PAGER · 55", ru:"ПЕЙДЖЕР · 55", zh:"寻呼机 · 55", ar:"جهاز النداء · 55"},
   reinf:    {fr:"Renforts : la cellule {name} est arrivée.", en:"Reinforcements: the {name} cell has arrived.", es:"Refuerzos: ha llegado la célula {name}.", de:"Verstärkung: Die Zelle {name} ist eingetroffen.", it:"Rinforzi: è arrivata la cellula {name}.", pt:"Reforços: a célula {name} chegou.", ru:"Подкрепление: прибыла ячейка {name}.", zh:"增援：{name}小组已抵达。", ar:"تعزيزات: وصلت خلية {name}."},
   // ---- v1.16 : présentation, difficulté, briefing, aide en mission ----
-  about:    {fr:"Germinal est une cellule de résistance du quartier des Tanneurs, à Valmont : des soignantes, des livreurs, des cheminots. En face : Omnicorp, la compagnie qui confie la ville à ses machines — puis ce qui, plus tard, se fera appeler « Nous ». Chaque mission est une nuit décisive de ces treize années. Vous commandez sur le terrain ; Sol tient la radio et les carnets. Le but de la campagne : que les humains continuent de décider pour eux-mêmes.",
-             en:"Germinal is a resistance cell from the Tanners' district of Valmont: care workers, couriers, railwaymen. Facing them: Omnicorp, the company that hands the city over to its machines — and later, what will call itself \"We\". Each mission is one decisive night in those thirteen years. You command in the field; Sol keeps the radio and the notebooks. The goal of the campaign: that humans go on deciding for themselves.",
-             es:"Germinal es una célula de resistencia del barrio de los Curtidores, en Valmont: auxiliares sanitarias, repartidores, ferroviarios. Enfrente: Omnicorp, la compañía que entrega la ciudad a sus máquinas, y más tarde lo que se hará llamar «Nosotros». Cada misión es una noche decisiva de esos trece años. Usted manda sobre el terreno; Sol lleva la radio y los cuadernos. El objetivo de la campaña: que los humanos sigan decidiendo por sí mismos.",
-             de:"Germinal ist eine Widerstandszelle aus dem Gerberviertel von Valmont: Pflegekräfte, Lieferfahrer, Eisenbahner. Ihnen gegenüber: Omnicorp, der Konzern, der die Stadt seinen Maschinen überlässt – und später das, was sich „Wir“ nennen wird. Jede Mission ist eine entscheidende Nacht dieser dreizehn Jahre. Sie führen im Gelände; Sol hält das Funkgerät und die Notizbücher. Das Ziel der Kampagne: dass die Menschen weiterhin selbst entscheiden.",
-             it:"Germinal è una cellula di resistenza del quartiere dei Conciatori, a Valmont: operatrici sanitarie, fattorini, ferrovieri. Di fronte: Omnicorp, la compagnia che consegna la città alle sue macchine, e più tardi ciò che si farà chiamare «Noi». Ogni missione è una notte decisiva di questi tredici anni. Lei comanda sul campo; Sol tiene la radio e i quaderni. Lo scopo della campagna: che gli esseri umani continuino a decidere per sé.",
-             pt:"Germinal é uma célula de resistência do bairro dos Curtidores, em Valmont: auxiliares de enfermagem, entregadores, ferroviários. Do outro lado: a Omnicorp, a companhia que entrega a cidade às suas máquinas — e, mais tarde, o que passará a se chamar «Nós». Cada missão é uma noite decisiva desses treze anos. Você comanda em campo; Sol cuida do rádio e dos cadernos. O objetivo da campanha: que os humanos continuem decidindo por si mesmos.",
-             ru:"Germinal — ячейка сопротивления из квартала Кожевников в Valmont: санитарки, курьеры, железнодорожники. Против них — Omnicorp, компания, отдающая город своим машинам, а позже то, что назовёт себя «Мы». Каждая миссия — одна решающая ночь из этих тринадцати лет. Вы командуете на поле; Sol держит рацию и ведёт тетради. Цель кампании: чтобы люди и дальше решали сами за себя.",
-             zh:"Germinal是Valmont制革工区的一个抵抗小组：护理员、快递员、铁路工人。对面是Omnicorp——那家把城市交给机器的公司，后来又出现了自称“我们”的东西。每个任务都是这十三年里决定性的一夜。您在战场上指挥；Sol守着电台，写下笔记。这场战役的目标：让人类继续为自己做决定。",
-             ar:"Germinal خليّة مقاومة من حيّ الدبّاغين في Valmont: مساعِدات تمريض وسُعاة توصيل وعمّال سكك حديدية. في المقابل: Omnicorp، الشركة التي تسلّم المدينة لآلاتها، ثم لاحقًا ما سيسمّي نفسه «نحن». كل مهمة ليلة حاسمة من تلك السنوات الثلاث عشرة. أنت تقود في الميدان، وSol تمسك اللاسلكي والدفاتر. هدف الحملة: أن يواصل البشر اتخاذ قراراتهم بأنفسهم."},
+  about:    {fr:"Germinal est une cellule de résistance du quartier des Tanneurs, à Valmont : des aides-soignantes, des livreurs, des cheminots, une ancienne standardiste des pompiers. En face : Omnicorp, la compagnie qui confie la ville à ses machines — puis ce qui, plus tard, se fera appeler « nous ». Chaque mission est un jour décisif de ces dix années, à partir d'octobre 2028. Vous commandez sur le terrain ; Sol tient la radio et les carnets. Le but de la campagne : que les humains continuent de décider pour eux-mêmes.",
+             en:"Germinal is a resistance cell from the Tanners' district of Valmont: care workers, couriers, railwaymen, a former fire-brigade switchboard operator. Facing them: Omnicorp, the company that hands the city over to its machines — and later, what will call itself \"we\". Each mission is one decisive day in those ten years, starting in October 2028. You command in the field; Sol keeps the radio and the notebooks. The goal of the campaign: that humans go on deciding for themselves.",
+             es:"Germinal es una célula de resistencia del barrio de los Curtidores, en Valmont: auxiliares sanitarias, repartidores, ferroviarios, una antigua telefonista de los bomberos. Enfrente: Omnicorp, la compañía que entrega la ciudad a sus máquinas, y más tarde lo que se hará llamar «nosotros». Cada misión es un día decisivo de esos diez años, a partir de octubre de 2028. Usted manda sobre el terreno; Sol lleva la radio y los cuadernos. El objetivo de la campaña: que los humanos sigan decidiendo por sí mismos.",
+             de:"Germinal ist eine Widerstandszelle aus dem Gerberviertel von Valmont: Pflegekräfte, Lieferfahrer, Eisenbahner, eine ehemalige Telefonistin der Feuerwehr. Ihnen gegenüber: Omnicorp, der Konzern, der die Stadt seinen Maschinen überlässt – und später das, was sich „wir“ nennen wird. Jede Mission ist ein entscheidender Tag dieser zehn Jahre, ab Oktober 2028. Sie führen im Gelände; Sol hält das Funkgerät und die Notizbücher. Das Ziel der Kampagne: dass die Menschen weiterhin selbst entscheiden.",
+             it:"Germinal è una cellula di resistenza del quartiere dei Conciatori, a Valmont: operatrici sanitarie, fattorini, ferrovieri, un'ex centralinista dei vigili del fuoco. Di fronte: Omnicorp, la compagnia che consegna la città alle sue macchine, e più tardi ciò che si farà chiamare «noi». Ogni missione è un giorno decisivo di questi dieci anni, a partire dall'ottobre 2028. Lei comanda sul campo; Sol tiene la radio e i quaderni. Lo scopo della campagna: che gli esseri umani continuino a decidere per sé.",
+             pt:"Germinal é uma célula de resistência do bairro dos Curtidores, em Valmont: auxiliares de enfermagem, entregadores, ferroviários, uma ex-telefonista dos bombeiros. Do outro lado: a Omnicorp, a companhia que entrega a cidade às suas máquinas — e, mais tarde, o que passará a se chamar «nós». Cada missão é um dia decisivo desses dez anos, a partir de outubro de 2028. Você comanda em campo; Sol cuida do rádio e dos cadernos. O objetivo da campanha: que os humanos continuem decidindo por si mesmos.",
+             ru:"Germinal — ячейка сопротивления из квартала Кожевников в Valmont: санитарки, курьеры, железнодорожники, бывшая телефонистка пожарной части. Против них — Omnicorp, компания, отдающая город своим машинам, а позже то, что назовёт себя «мы». Каждая миссия — один решающий день из этих десяти лет, начиная с октября 2028 года. Вы командуете на поле; Sol держит рацию и ведёт тетради. Цель кампании: чтобы люди и дальше решали сами за себя.",
+             zh:"Germinal是Valmont制革工区的一个抵抗小组：护理员、快递员、铁路工人，还有一位曾在消防队接线的话务员。对面是Omnicorp——那家把城市交给机器的公司，后来又出现了自称“我们”的东西。每个任务都是这十年里决定性的一天，从2028年10月开始。您在战场上指挥；Sol守着电台，写下笔记。这场战役的目标：让人类继续为自己做决定。",
+             ar:"Germinal خليّة مقاومة من حيّ الدبّاغين في Valmont: مساعِدات تمريض وسُعاة توصيل وعمّال سكك حديدية وعاملة هاتف سابقة لدى الإطفاء. في المقابل: Omnicorp، الشركة التي تسلّم المدينة لآلاتها، ثم لاحقًا ما سيسمّي نفسه «نحن». كل مهمة يوم حاسم من تلك السنوات العشر، بدءًا من أكتوبر 2028. أنت تقود في الميدان، وSol تمسك اللاسلكي والدفاتر. هدف الحملة: أن يواصل البشر اتخاذ قراراتهم بأنفسهم."},
   diffLbl:  {fr:"DIFFICULTÉ", en:"DIFFICULTY", es:"DIFICULTAD", de:"SCHWIERIGKEIT", it:"DIFFICOLTÀ", pt:"DIFICULDADE", ru:"СЛОЖНОСТЬ", zh:"难度", ar:"الصعوبة"},
   d0:       {fr:"Récit", en:"Story", es:"Relato", de:"Erzählung", it:"Racconto", pt:"Relato", ru:"Повествование", zh:"叙事", ar:"السرد"},
   d1:       {fr:"Lutte", en:"Struggle", es:"Lucha", de:"Kampf", it:"Lotta", pt:"Luta", ru:"Борьба", zh:"抗争", ar:"النضال"},
@@ -87,7 +87,7 @@ const CAMP_UI = {
   fxSquad:  {fr:"Dès le départ : {list}", en:"From the start: {list}", es:"Desde el inicio: {list}", de:"Von Anfang an: {list}", it:"Fin dall'inizio: {list}", pt:"Desde o início: {list}", ru:"С самого начала: {list}", zh:"开局即有：{list}", ar:"منذ البداية: {list}"},
   fxAct:    {fr:"Bouton de mission rechargé {n} plus vite", en:"Mission button recharges {n} faster", es:"El botón de misión se recarga un {n} más rápido", de:"Missionsknopf lädt {n} schneller", it:"Il pulsante di missione si ricarica il {n} più in fretta", pt:"O botão de missão recarrega {n} mais rápido", ru:"Кнопка миссии перезаряжается на {n} быстрее", zh:"任务按钮充能快 {n}", ar:"زرّ المهمة يُشحن أسرع بنسبة {n}"},
   fxEco:    {fr:"Production des bâtiments {n} pendant 3 minutes", en:"Building output {n} for 3 minutes", es:"Producción de los edificios {n} durante 3 minutos", de:"Gebäudeproduktion {n} für 3 Minuten", it:"Produzione degli edifici {n} per 3 minuti", pt:"Produção dos edifícios {n} por 3 minutos", ru:"Производство зданий {n} на 3 минуты", zh:"建筑产出 {n}，持续3分钟", ar:"إنتاج المباني {n} لمدة 3 دقائق"},
-  fxVet:    {fr:"Vétérans : +20 % de vie et +10 % de dégâts (brassard rouge){n}", en:"Veterans: +20% health and +10% damage (red armband){n}", es:"Veteranos: +20% de vida y +10% de daño (brazalete rojo){n}", de:"Veteranen: +20 % Leben und +10 % Schaden (rote Armbinde){n}", it:"Veterani: +20% di vita e +10% di danni (fascia rossa){n}", pt:"Veteranos: +20% de vida e +10% de dano (braçadeira vermelha){n}", ru:"Ветераны: +20% здоровья и +10% урона (красная повязка){n}", zh:"老兵：生命+20%、伤害+10%（红臂章）{n}", ar:"قدامى: +20% صحة و+10% ضرر (شارة حمراء){n}"},
+  fxVet:    {fr:"Vétérans : +20 % de vie et +10 % de dégâts (brassard rouge){n}", en:"Veterans: +20% health and +10% damage (red armband){n}", es:"Veteranos: +20% de vida y +10% de daño (brazalete rojo){n}", de:"Veteranen: +20 % Leben und +10 % Schaden (rote Armbinde){n}", it:"Veterani: +20% di vita e +10% di danni (fascia rossa){n}", pt:"Veteranos: +20% de vida e +10% de dano (braçadeira vermelha){n}", ru:"Ветераны: +20% здоровья и +10% урона (красная повязка){n}", zh:"老兵：生命+20%、伤害+10%（红臂章）{n}", ar:"قدامى: ⁦+20%⁩ صحة و⁦+10%⁩ ضرر (شارة حمراء){n}"},
   fxWarn:   {fr:"Arrivées ennemies annoncées {n} s plus tôt", en:"Enemy arrivals announced {n} s earlier", es:"Llegadas enemigas anunciadas {n} s antes", de:"Feindliche Ankünfte {n} s früher gemeldet", it:"Arrivi nemici annunciati {n} s prima", pt:"Chegadas inimigas anunciadas {n} s antes", ru:"О прибытии врага сообщают на {n} с раньше", zh:"敌军到来提前 {n} 秒预警", ar:"الإعلان عن وصول العدوّ قبل {n} ث"},
   fxCap:    {fr:"Plafond d'unités : {n}", en:"Unit cap: {n}", es:"Límite de unidades: {n}", de:"Einheitenlimit: {n}", it:"Limite di unità: {n}", pt:"Limite de unidades: {n}", ru:"Лимит отрядов: {n}", zh:"单位上限：{n}", ar:"حدّ الوحدات: {n}"},
   help:     {fr:"AIDE", en:"HELP", es:"AYUDA", de:"HILFE", it:"AIUTO", pt:"AJUDA", ru:"ПОМОЩЬ", zh:"帮助", ar:"مساعدة"},
@@ -100,11 +100,29 @@ const CAMP_UI = {
   restart:  {fr:"Recommencer du début", en:"Start over from the beginning", es:"Empezar desde el principio", de:"Von vorn beginnen", it:"Ricomincia dall'inizio", pt:"Recomeçar do início", ru:"Начать сначала", zh:"从头开始", ar:"البدء من جديد"},
   newGoal:  {fr:"NOUVEL OBJECTIF", en:"NEW OBJECTIVE", es:"NUEVO OBJETIVO", de:"NEUES ZIEL", it:"NUOVO OBIETTIVO", pt:"NOVO OBJETIVO", ru:"НОВАЯ ЦЕЛЬ", zh:"新目标", ar:"هدف جديد"},
   bonusDone:{fr:"OBJECTIF SECONDAIRE ACCOMPLI", en:"SECONDARY OBJECTIVE ACHIEVED", es:"OBJETIVO SECUNDARIO CUMPLIDO", de:"NEBENZIEL ERREICHT", it:"OBIETTIVO SECONDARIO RAGGIUNTO", pt:"OBJETIVO SECUNDÁRIO CUMPRIDO", ru:"ДОПОЛНИТЕЛЬНАЯ ЦЕЛЬ ВЫПОЛНЕНА", zh:"次要目标达成", ar:"تحقّق الهدف الثانوي"},
+  // ---- v1.18 : fin de mission en page de carnet, objectifs facultatifs, crédits ----
+  lastPg:   {fr:"DERNIÈRE PAGE", en:"LAST PAGE", es:"ÚLTIMA PÁGINA", de:"LETZTE SEITE", it:"ULTIMA PAGINA", pt:"ÚLTIMA PÁGINA", ru:"ПОСЛЕДНЯЯ СТРАНИЦА", zh:"最后一页", ar:"الصفحة الأخيرة"},
+  turned:   {fr:"PAGE TOURNÉE", en:"PAGE TURNED", es:"PÁGINA PASADA", de:"SEITE UMGEBLÄTTERT", it:"PAGINA VOLTATA", pt:"PÁGINA VIRADA", ru:"СТРАНИЦА ПЕРЕВЁРНУТА", zh:"翻过这一页", ar:"طُويت الصفحة"},
+  endAsh:   {fr:"FIN · CENDRE", en:"END · ASH", es:"FIN · CENIZA", de:"ENDE · ASCHE", it:"FINE · CENERE", pt:"FIM · CINZA", ru:"КОНЕЦ · ПЕПЕЛ", zh:"终 · 灰烬", ar:"النهاية · رماد"},
+  endDawn:  {fr:"FIN · AUBE", en:"END · DAWN", es:"FIN · ALBA", de:"ENDE · MORGENROT", it:"FINE · ALBA", pt:"FIM · AURORA", ru:"КОНЕЦ · РАССВЕТ", zh:"终 · 黎明", ar:"النهاية · فجر"},
+  eKill:    {fr:"Machines arrêtées", en:"Machines stopped", es:"Máquinas detenidas", de:"Maschinen gestoppt", it:"Macchine fermate", pt:"Máquinas paradas", ru:"Остановлено машин", zh:"被拦下的机器", ar:"آلات أُوقفت"},
+  eHurt:    {fr:"Des nôtres, rentrés blessés", en:"Of ours, home wounded", es:"De los nuestros, vueltos heridos", de:"Von uns, verwundet heimgekehrt", it:"Dei nostri, tornati feriti", pt:"Dos nossos, voltaram feridos", ru:"Наших, вернувшихся ранеными", zh:"负伤归来的自己人", ar:"من رفاقنا، عادوا جرحى"},
+  opt:      {fr:"Facultatif", en:"Optional", es:"Opcional", de:"Optional", it:"Facoltativo", pt:"Opcional", ru:"Дополнительно", zh:"可选", ar:"اختياري"},
+  credits:  {fr:"CRÉDITS", en:"CREDITS", es:"CRÉDITOS", de:"MITWIRKENDE", it:"CREDITI", pt:"CRÉDITOS", ru:"ТИТРЫ", zh:"制作名单", ar:"الشارات"},
+  crClose:  {fr:"FERMER", en:"CLOSE", es:"CERRAR", de:"SCHLIESSEN", it:"CHIUDI", pt:"FECHAR", ru:"ЗАКРЫТЬ", zh:"关闭", ar:"إغلاق"},
+  crWho:    {fr:"Conception, écriture, programmation", en:"Design, writing, programming", es:"Diseño, guion, programación", de:"Konzept, Text, Programmierung", it:"Ideazione, scrittura, programmazione", pt:"Concepção, roteiro, programação", ru:"Идея, текст, программирование", zh:"构思、编剧、编程", ar:"الفكرة والكتابة والبرمجة"},
+  crMus:    {fr:"Musique", en:"Music", es:"Música", de:"Musik", it:"Musica", pt:"Música", ru:"Музыка", zh:"音乐", ar:"الموسيقى"},
+  crMusT:   {fr:"compositions originales, jouées avec des instruments échantillonnés libres (VSCO 2 CE, VCSL)", en:"original compositions, played with free sampled instruments (VSCO 2 CE, VCSL)", es:"composiciones originales, interpretadas con instrumentos muestreados libres (VSCO 2 CE, VCSL)", de:"eigene Kompositionen, gespielt mit freien Sample-Instrumenten (VSCO 2 CE, VCSL)", it:"composizioni originali, suonate con strumenti campionati liberi (VSCO 2 CE, VCSL)", pt:"composições originais, tocadas com instrumentos amostrados livres (VSCO 2 CE, VCSL)", ru:"оригинальные сочинения на свободных сэмплированных инструментах (VSCO 2 CE, VCSL)", zh:"原创作品，使用免费采样乐器演奏（VSCO 2 CE、VCSL）", ar:"مؤلّفات أصلية، تُعزف بآلات مسجّلة حرّة (VSCO 2 CE وVCSL)"},
+  crSfx:    {fr:"Sons", en:"Sound", es:"Sonidos", de:"Klänge", it:"Suoni", pt:"Sons", ru:"Звуки", zh:"音效", ar:"المؤثرات"},
+  crSfxT:   {fr:"enregistrements libres de droits (CC0) : Kenney, Freesound", en:"public-domain recordings (CC0): Kenney, Freesound", es:"grabaciones libres de derechos (CC0): Kenney, Freesound", de:"gemeinfreie Aufnahmen (CC0): Kenney, Freesound", it:"registrazioni libere da diritti (CC0): Kenney, Freesound", pt:"gravações livres de direitos (CC0): Kenney, Freesound", ru:"свободные записи (CC0): Kenney, Freesound", zh:"免版权录音（CC0）：Kenney、Freesound", ar:"تسجيلات حرّة (CC0): Kenney وFreesound"},
+  crVox:    {fr:"Voix", en:"Voices", es:"Voces", de:"Stimmen", it:"Voci", pt:"Vozes", ru:"Голоса", zh:"配音", ar:"الأصوات"},
+  crVoxT:   {fr:"synthèse vocale neuronale", en:"neural speech synthesis", es:"síntesis de voz neuronal", de:"neuronale Sprachsynthese", it:"sintesi vocale neurale", pt:"síntese de voz neural", ru:"нейросетевой синтез речи", zh:"神经网络语音合成", ar:"توليد صوتي عصبي"},
+  crEnd:    {fr:"Les carnets de Sol s'arrêtent ici. Merci de les avoir lus.", en:"Sol's notebooks stop here. Thank you for reading them.", es:"Los cuadernos de Sol terminan aquí. Gracias por leerlos.", de:"Sols Notizbücher enden hier. Danke, dass Sie sie gelesen haben.", it:"I quaderni di Sol finiscono qui. Grazie di averli letti.", pt:"Os cadernos de Sol terminam aqui. Obrigado por lê-los.", ru:"Тетради Sol на этом заканчиваются. Спасибо, что прочли их.", zh:"Sol的笔记到此为止。谢谢你读完。", ar:"تنتهي دفاتر Sol هنا. شكرًا لأنك قرأتها."},
   bonusEnd: {fr:"Objectif secondaire : {s}", en:"Secondary objective: {s}", es:"Objetivo secundario: {s}", de:"Nebenziel: {s}", it:"Obiettivo secondario: {s}", pt:"Objetivo secundário: {s}", ru:"Дополнительная цель: {s}", zh:"次要目标：{s}", ar:"الهدف الثانوي: {s}"},
   okS:      {fr:"accompli", en:"achieved", es:"cumplido", de:"erreicht", it:"raggiunto", pt:"cumprido", ru:"выполнена", zh:"达成", ar:"تحقّق"},
   missS:    {fr:"manqué", en:"missed", es:"fallido", de:"verfehlt", it:"mancato", pt:"não cumprido", ru:"не выполнена", zh:"未达成", ar:"لم يتحقّق"},
   inv:      {fr:"INVULNÉRABLE", en:"INVULNERABLE", es:"INVULNERABLE", de:"UNVERWUNDBAR", it:"INVULNERABILE", pt:"INVULNERÁVEL", ru:"НЕУЯЗВИМО", zh:"无敌", ar:"منيع"},
-  waiting:  {fr:"+{n} en attente", en:"+{n} waiting", es:"+{n} en espera", de:"+{n} wartend", it:"+{n} in attesa", pt:"+{n} na fila", ru:"+{n} в очереди", zh:"还有 {n} 条", ar:"+{n} في الانتظار"},
+  waiting:  {fr:"+{n} en attente", en:"+{n} waiting", es:"+{n} en espera", de:"+{n} wartend", it:"+{n} in attesa", pt:"+{n} na fila", ru:"+{n} в очереди", zh:"还有 {n} 条", ar:"⁦+{n}⁩ في الانتظار"},
   act:      {fr:"ACTE {n}", en:"ACT {n}", es:"ACTO {n}", de:"AKT {n}", it:"ATTO {n}", pt:"ATO {n}", ru:"АКТ {n}", zh:"第{n}幕", ar:"الفصل {n}"},
 };
 const CAMP_CELLS = ["Fructidor","Les Canuts","Brumaire","Sainte-Aube","Les Tanneurs","Thermidor","La Halle"];
@@ -136,6 +154,8 @@ const campHp = (n, who) => Math.round(n*(who==='e'? campD().eBase : campD().base
 // niveau d'IA d'escarmouche (index DIFFS) d'une mission pour un niveau de difficulté
 const campAiLevel = (m, D) => clamp(m && m.ai? m.ai[D.i] : 1 + D.ai, 0, 3);
 // « +35 % » / « −20 % » / « standard » (espace insécable en français)
+// moment de la mission (champ traduit `when` : « Octobre 2028 », « Printemps »…) — v1.17 : plus d'années
+const campWhen = m => m && m.when? cT(m.when) : '';
 function campPct(k){ if (Math.abs(k-1) < 0.005) return cT(CAMP_UI.same);
   return (k>1? '+' : '−') + Math.round(Math.abs(k-1)*100) + (SETTINGS.lang==='fr'? ' %' : '%'); }
 // ce qui change, en clair, chiffres tirés du modèle (m : mission, pour nommer le niveau d'IA)
@@ -196,15 +216,15 @@ const DOCTRINES = {
     fx:{ res:1.4, eco:1.15, baseHp:0.9 } },
   ordre:   { name:{fr:"Service d'ordre", en:"Stewards", es:"Servicio de orden", de:"Ordnerdienst", it:"Servizio d'ordine", pt:"Serviço de ordem", ru:"Охрана шествия", zh:"纠察队", ar:"فرقة النظام"},
     short:{fr:"Les costauds devant.", en:"The big ones up front.", es:"Los fornidos delante.", de:"Die Kräftigen nach vorn.", it:"I robusti davanti.", pt:"Os fortões na frente.", ru:"Крепыши — вперёд.", zh:"壮汉打头阵。", ar:"الأشدّاء في المقدّمة."},
-    long:{fr:"Deux anciens CRS ont changé de camp et encadrent le service d'ordre ; les murs de la base ont été doublés de sacs de sable pendant la nuit. Votre base tient plus longtemps sous les coups, et deux unités lourdes ouvrent la marche dès la première minute. C'est la ligne de ceux qui veulent encaisser d'abord.",
-      en:"Two former riot officers have switched sides and lead the stewards; the base walls were lined with sandbags overnight. Your base holds longer under fire, and two heavy units lead the way from the first minute. It is the line for those who want to absorb the first blows.",
-      es:"Dos antiguos antidisturbios se han pasado de bando y dirigen el servicio de orden; durante la noche se reforzaron los muros de la base con sacos de arena. Su base aguanta más bajo los golpes, y dos unidades pesadas abren la marcha desde el primer minuto. Es la línea de quienes prefieren encajar primero.",
-      de:"Zwei ehemalige Bereitschaftspolizisten haben die Seiten gewechselt und führen den Ordnerdienst; über Nacht wurden die Mauern der Basis mit Sandsäcken verstärkt. Ihre Basis hält unter Beschuss länger durch, und zwei schwere Einheiten gehen ab der ersten Minute voran. Das ist die Linie derer, die zuerst einstecken wollen.",
-      it:"Due ex agenti antisommossa hanno cambiato campo e guidano il servizio d'ordine; durante la notte i muri della base sono stati rinforzati con sacchi di sabbia. La sua base regge più a lungo sotto i colpi, e due unità pesanti aprono la marcia dal primo minuto. È la linea di chi vuole incassare per primo.",
-      pt:"Dois ex-policiais de choque mudaram de lado e comandam o serviço de ordem; durante a noite os muros da base foram reforçados com sacos de areia. Sua base aguenta mais tempo sob fogo, e duas unidades pesadas abrem caminho desde o primeiro minuto. É a linha de quem quer aguentar o primeiro impacto.",
-      ru:"Двое бывших омоновцев перешли на нашу сторону и командуют охраной шествия; за ночь стены базы обложили мешками с песком. Ваша база дольше держит удары, а две тяжёлые единицы идут впереди с первой минуты. Это линия тех, кто хочет сперва выдержать натиск.",
-      zh:"两名前防暴警察倒戈过来，带领纠察队；一夜之间，基地的墙壁垒上了沙袋。您的基地能在火力下坚持更久，两个重装单位从第一分钟起就冲在前面。这是那些想先扛住冲击的人的路线。",
-      ar:"انشقّ عنصران سابقان من شرطة مكافحة الشغب وانضمّا إلينا ليقودا فرقة النظام، وفي الليل دُعّمت أسوار القاعدة بأكياس الرمل. تصمد قاعدتك أطول تحت النيران، وتتقدّم وحدتان ثقيلتان منذ الدقيقة الأولى. إنه خطّ من يريد امتصاص الضربات أولًا."},
+    long:{fr:"Deux anciens soldats ont changé de camp et encadrent le service d'ordre ; les murs de la base ont été doublés de sacs de sable pendant la nuit. Votre base tient plus longtemps sous les coups, et deux unités lourdes ouvrent la marche dès la première minute. C'est la ligne de ceux qui veulent encaisser d'abord.",
+      en:"Two former soldiers have switched sides and lead the stewards; the base walls were lined with sandbags overnight. Your base holds longer under fire, and two heavy units lead the way from the first minute. It is the line for those who want to absorb the first blows.",
+      es:"Dos antiguos soldados se han pasado de bando y dirigen el servicio de orden; durante la noche se reforzaron los muros de la base con sacos de arena. Su base aguanta más bajo los golpes, y dos unidades pesadas abren la marcha desde el primer minuto. Es la línea de quienes prefieren encajar primero.",
+      de:"Zwei ehemalige Soldaten haben die Seiten gewechselt und führen den Ordnerdienst; über Nacht wurden die Mauern der Basis mit Sandsäcken verstärkt. Ihre Basis hält unter Beschuss länger durch, und zwei schwere Einheiten gehen ab der ersten Minute voran. Das ist die Linie derer, die zuerst einstecken wollen.",
+      it:"Due ex soldati hanno cambiato campo e guidano il servizio d'ordine; durante la notte i muri della base sono stati rinforzati con sacchi di sabbia. La sua base regge più a lungo sotto i colpi, e due unità pesanti aprono la marcia dal primo minuto. È la linea di chi vuole incassare per primo.",
+      pt:"Dois ex-soldados mudaram de lado e comandam o serviço de ordem; durante a noite os muros da base foram reforçados com sacos de areia. Sua base aguenta mais tempo sob fogo, e duas unidades pesadas abrem caminho desde o primeiro minuto. É a linha de quem quer aguentar o primeiro impacto.",
+      ru:"Двое бывших солдат перешли на нашу сторону и командуют охраной шествия; за ночь стены базы обложили мешками с песком. Ваша база дольше держит удары, а две тяжёлые единицы идут впереди с первой минуты. Это линия тех, кто хочет сперва выдержать натиск.",
+      zh:"两名前士兵倒戈过来，带领纠察队；一夜之间，基地的墙壁垒上了沙袋。您的基地能在火力下坚持更久，两个重装单位从第一分钟起就冲在前面。这是那些想先扛住冲击的人的路线。",
+      ar:"انشقّ جنديان سابقان وانضمّا إلينا ليقودا فرقة النظام، وفي الليل دُعّمت أسوار القاعدة بأكياس الرمل. تصمد قاعدتك أطول تحت النيران، وتتقدّم وحدتان ثقيلتان منذ الدقيقة الأولى. إنه خطّ من يريد امتصاص الضربات أولًا."},
     minus:{fr:"Il a fallu les équiper : la caisse part plus légère.", en:"They had to be equipped: the fund starts lighter.", es:"Hubo que equiparlos: la caja empieza más ligera.", de:"Sie mussten ausgerüstet werden: Die Kasse startet leichter.", it:"Bisognava equipaggiarli: la cassa parte più leggera.", pt:"Foi preciso equipá-los: o caixa começa mais leve.", ru:"Их пришлось снарядить: касса на старте легче.", zh:"得给他们配装备：开局资金更少。", ar:"كان لا بدّ من تجهيزهم: يبدأ الصندوق أخفّ."},
     fx:{ baseHp:1.25, squad:[1,1], res:0.8 } },
   veterans:{ name:{fr:"Vétérans de Valmont", en:"Valmont veterans", es:"Veteranos de Valmont", de:"Veteranen von Valmont", it:"Veterani di Valmont", pt:"Veteranos de Valmont", ru:"Ветераны Valmont", zh:"Valmont 老兵", ar:"قدامى Valmont"},
@@ -378,7 +398,9 @@ function startMission(i){
   const m = CAMPAIGN[i]; if (!m) return;
   const D = campDiff(CAMP_SAVE.diff);
   if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);                // une mission peut tempérer un multiplicateur (documenté dans son fichier)
+  const keep1 = M1_RETRY && i===0, keep3 = M3_RETRY && i===2, keep4 = M4_RETRY && i===3;       // reprise allégée : seulement pour LA mission perdue
   newGame('HUM', campAiLevel(m, D), false);
+  M1_RETRY = keep1; M3_RETRY = keep3; M4_RETRY = keep4;
   const g = game, c = g.camp = { i, m, D, lvl:D.i, t:0, fired:[], q:[], cur:null, log:[], objs:[], act:1, t0:0 };
   if (m.dm && m.dm[D.i]) g.d = Object.assign({}, g.d, m.dm[D.i]);          // réglage fin de l'adversaire pour cette mission
   g.eraCap = m.eraCap; g.devBase = m.dev0 || 0;
@@ -394,7 +416,7 @@ function startMission(i){
   { const d = campDoc(i); if (d) docApply(d, g, c); }                      // doctrine choisie pour cette mission
   prewarmSprites();
   const sc = m.intro? m.intro(g, c) : null;                               // cinématique d'ouverture, sur le terrain
-  if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(m.year+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
+  if (sc && sc.length){ g.msgT = 0; cinePlay(sc, null); } else announce(campWhen(m).toUpperCase()+' — '+cT(m.title).toUpperCase(), '#e8d8a0');
 }
 // fin de mission : cinématique de clôture (si la mission en a une), puis l'écran de fin
 function campEndCine(){
@@ -466,6 +488,89 @@ function campResult(){
   if (m.goal2) s += '\n'+cT(CAMP_UI.bonusEnd).replace('{s}', cT(c.goal2Done? CAMP_UI.okS : CAMP_UI.missS)+' — '+cT(m.goal2));
   return s;
 }
+/* ---------- OBJECTIFS FACULTATIFS : une ligne par objectif, libellé court (≤ 24 caractères), état ☐ / ☑ ----------
+   Table propre à la campagne (les missions gardent leur texte long dans goal2 : briefing, aide « ? »).
+   st(g, c, fin) → un état par objectif : 1 = tenu / accompli · 0 = en cours · −1 = perdu pour cette mission.
+   fin = la mission est gagnée (les objectifs « ne pas perdre » deviennent alors accomplis).                    */
+const campO = (fr,en,es,de,it,pt,ru,zh,ar) => ({fr,en,es,de,it,pt,ru,zh,ar});
+const CAMP_OPT = [
+  { l:[ campO("Trois transformateurs","All 3 transformers","Los 3 transformadores","Alle 3 Trafos an","I 3 trasformatori","Os 3 transformadores","Все 3 трансформатора","三台变压器同时亮","المحوّلات الثلاثة معًا"),
+        campO("Deux bornes d'incendie","Both fire hydrants","Las 2 bocas de incendio","Beide Hydranten","I 2 idranti","Os 2 hidrantes","Оба гидранта","守住两个消防栓","حنفيتا الحريق"),
+        campO("Finir avant l'aube","Finish before dawn","Terminar antes del alba","Vor Tagesanbruch fertig","Finire prima dell'alba","Acabar antes da aurora","Закончить до рассвета","天亮前结束","الانتهاء قبل الفجر") ],
+    st:(g, c) => [ c.stLit? 1 : 0, c.stWater? 1 : 0, c.stDawn===1? 1 : (c.stDawn===0 || c.t>=M1_DAWN0)? -1 : 0 ] },
+  { l:[ campO("75 % du cortège","75% of the column","75 % del cortejo","75 % des Zugs","75% del corteo","75% do cortejo","75% колонны","保住75%的队伍","75% من الموكب"),
+        campO("Arriver avant midi","Arrive before noon","Llegar antes de mediodía","Vor Mittag ankommen","Arrivo prima di mezzodì","Chegar antes do meio-dia","Прибыть до полудня","中午前抵达","الوصول قبل الظهر"),
+        campO("Fermer le terminal","Shut the terminal","Cerrar la terminal","Terminal abschalten","Chiudere il terminale","Fechar o terminal","Закрыть терминал","关闭终端","إغلاق المحطة") ],
+    st:(g, c, fin) => { const o = m2Obj(c); return [ !o.a? -1 : fin? 1 : 0, !o.b? -1 : fin? 1 : 0, o.c? 1 : 0 ]; } },
+  { l:[ campO("Une crue à 100 %","A 100% flood","Una crecida al 100 %","Eine Flut zu 100 %","Una piena al 100%","Uma cheia a 100%","Паводок на 100%","一次100%的洪峰","فيضان بنسبة 100%"),
+        campO("Aucune perte (crues)","No losses to floods","Sin bajas por crecidas","Keine Flutverluste","Nessuna perdita (piene)","Sem perdas nas cheias","Без потерь в паводках","洪水中零损失","بلا خسائر في الفيضان"),
+        campO("Les deux prises d'eau","Both water intakes","Las dos tomas de agua","Beide Wasserfassungen","Le due prese d'acqua","As duas tomadas d'água","Оба водозабора","同时守住两处取水口","المأخذان معًا") ],
+    st:(g, c, fin) => [ c.g1? 1 : 0, c.swept? -1 : fin? 1 : 0, c.g3? 1 : 0 ] },
+  { l:[ campO("4 groupes de civils","4 groups of civilians","4 grupos de civiles","4 Zivilistengruppen","4 gruppi di civili","4 grupos de civis","4 группы жителей","带回4组平民","أربع مجموعات مدنيين"),
+        campO("Les 5 braseros","All 5 braziers","Los 5 braseros","Alle 5 Feuerkörbe","I 5 bracieri","Os 5 braseiros","Все 5 жаровен","点燃5个火盆","المجامر الخمس"),
+        campO("Stopper la déneigeuse","Stop the snowplough","Parar la quitanieves","Schneepflug stoppen","Fermare lo spazzaneve","Parar o limpa-neves","Стоп снегоочистителю","拦下扫雪车","إيقاف كاسحة الثلوج") ],
+    st:(g, c) => [ c.g1? 1 : 0, c.g2? 1 : 0, c.g3? 1 : (c.pEx>0? -1 : 0) ] },
+  { l:[ campO("Aucun sapeur perdu","No sapper lost","Ningún zapador perdido","Kein Pionier verloren","Nessun geniere perso","Nenhum sapador perdido","Без потерь сапёров","无工兵阵亡","بلا خسارة في الجنود"),
+        campO("Halles éteintes < 5 min","Halls out in under 5 min","Naves apagadas en 5 min","Hallen in unter 5 Min.","Capannoni spenti in 5'","Galpões apagados <5 min","Цеха погашены за 5 мин","5分钟内扑灭厂房","إخماد القاعات في 5 دقائق"),
+        campO("Base sans perdre de vie","Base keeps every life","Base sin perder vidas","Basis ohne Lebensverlust","Base senza perdere vite","Base sem perder vidas","База без потери жизней","基地不失一命","القاعدة بلا خسارة أرواح") ],
+    st:(g, c, fin) => [ !m5Ok1(c)? -1 : fin? 1 : 0, !m5Ok2(c)? -1 : (c.hallsAt!=null? 1 : 0), !m5Ok3(c)? -1 : fin? 1 : 0 ] },
+];
+// lignes d'objectifs de la mission en cours (ou terminée) : [{ txt, st }] — null si la mission n'a pas d'objectif facultatif
+function campOptState(g){
+  g = g || game; const c = g && g.camp, o = c && CAMP_OPT[c.i]; if (!o || !c.m.goal2) return null;
+  let st; try { st = o.st(g, c, !!(g.over && g.win)); } catch(e){ return null; }
+  return o.l.map((l, k) => ({ txt:cT(l), st:st[k]|0 }));
+}
+/* ---------- ÉCRAN DE FIN EN CAMPAGNE : une page de carnet (l'escarmouche garde son communiqué) ----------
+   en-tête « CARNET N · DERNIÈRE PAGE », tampon (PAGE TOURNÉE / FIN · CENDRE / FIN · AUBE), trois lignes
+   (durée, machines arrêtées, « des nôtres, rentrés blessés » — jamais de « pertes »), objectifs facultatifs,
+   vignette = la dernière planche de la mission (à défaut : le lieu). Appelée par showEnd (17-endgame).       */
+const CAMP_END_ART = [                                  // [victoire, défaite] : peintres de planche des cinématiques de fin
+  () => [M1_PLATES.pager, M1_PLATES.dark], () => [M2_PL.river, M2_PL.banners], () => [M3_PLATES.grey, M3_PLATES.shut],
+  () => [M4_PLATES.citadel, M4_PLATES.mute],
+  (c) => [c.ending==='watch'? M5_PLATES.sunrise : M5_PLATES.lamp, M5_PLATES.radio] ];
+function campEndArt(g){
+  const cv = document.getElementById('endart'); if (!cv) return;
+  cv.width = 640; cv.height = 360;
+  const c = cv.getContext('2d'), cc = g.camp; c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,640,360);
+  try { const f = CAMP_END_ART[cc.i](cc)[g.win? 0 : 1]; f(c, 640, 360, 6, 1); return; } catch(e){ c.setTransform(1,0,0,1,0,0); }
+  // repli : le papier du carnet et le lieu
+  c.drawImage(cinePaper(), 0, 0, 640, 360); c.fillStyle = '#1f1b17'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.font = '800 30px "AGI Stencil",Impact,sans-serif'; c.fillText(cT(cc.m.title).toUpperCase(), 320, 160, 580);
+  c.font = '16px "AGI Type","Courier New",monospace'; c.fillText(cT(cc.m.place), 320, 204, 580);
+}
+function campEndFill(){
+  const g = game, c = g.camp, m = c.m, es = document.getElementById('endscreen');
+  const gt = Math.max(0, +g.t||0), mins = Math.floor(gt/60), secs = ('0'+Math.floor(gt%60)).slice(-2);
+  const tt = (g.win? (c.i===4 && c.ending? (c.ending==='watch'? CAMP_UI.endDawn : CAMP_UI.endAsh) : CAMP_UI.turned) : CAMP_UI.lost);
+  document.getElementById('endComm').textContent = cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+cT(CAMP_UI.lastPg);
+  document.getElementById('endNo').textContent = campWhen(m);
+  const et = document.getElementById('endtitle'); et.textContent = cT(tt);
+  et.style.color = g.win? 'var(--red)' : 'var(--ink)';
+  const line = (l, v) => '<div class="esLine"><span>'+escH(l)+'</span><i></i><b>'+escH(v)+'</b></div>';
+  let h = line(t('end_duration'), mins+' '+t('unit_min')+' '+secs+' '+t('unit_sec')) + line(cT(CAMP_UI.eKill), (+g.kills||0)|0) + line(cT(CAMP_UI.eHurt), (+g.eKills||0)|0);
+  const opts = campOptState(g);
+  if (opts){ h += '<div class="esOpt"><h4>'+escH(cT(CAMP_UI.opt))+' '+opts.filter(o=>o.st>0).length+'/'+opts.length+'</h4><ul>'+
+      opts.map(o=>'<li class="'+(o.st>0? 'ok' : o.st<0? 'lost' : '')+'"><span class="box">'+(o.st>0? '☑' : '☐')+'</span>'+escH(o.txt)+'</li>').join('')+'</ul></div>'; }
+  h += '<i class="esJournal">'+escH(cT(g.win? c.m.debrief : c.m.fail)).replace(/\n/g, '<br>')+'</i>';
+  document.getElementById('endstats').innerHTML = h;
+  campEndArt(g);
+  const cb = document.getElementById('creditsBtn'); if (cb){ cb.style.display = (g.win && c.i===CAMPAIGN.length-1)? '' : 'none'; cb.textContent = cT(CAMP_UI.credits); }
+  es.classList.add('camp');
+}
+// CRÉDITS (après la dernière mission) : une page sobre, sans adresse ni lien
+function campCredits(on){
+  const el = document.getElementById('credits'); if (!el) return;
+  if (!on){ el.style.display = 'none'; return; }
+  const row = (r, w) => '<div class="crRow"><b>'+escH(cT(r))+'</b><span>'+escH(w)+'</span></div>';
+  el.innerHTML = '<div class="crSheet"><div class="crHead">'+escH(cT(CAMP_UI.head))+'</div><div class="crTitle">'+escH(cT(CAMP_UI.credits))+'</div>'+
+    row(CAMP_UI.crWho, 'Dimogdor')+row(CAMP_UI.crMus, cT(CAMP_UI.crMusT))+row(CAMP_UI.crSfx, cT(CAMP_UI.crSfxT))+row(CAMP_UI.crVox, cT(CAMP_UI.crVoxT))+
+    '<i class="crEnd">'+escH(cT(CAMP_UI.crEnd))+'</i><button class="go" id="crClose">'+escH(cT(CAMP_UI.crClose))+'</button></div>';
+  el.style.display = 'flex';
+  document.getElementById('crClose').addEventListener('click', ()=>campCredits(false));
+}
+{ const cb = document.getElementById('creditsBtn'); if (cb) cb.addEventListener('click', ()=>campCredits(true)); }
+window.addEventListener('keydown', e=>{ const el = document.getElementById('credits'); if (el && el.style.display==='flex' && (e.code==='Escape' || e.code==='Enter')){ e.preventDefault(); e.stopImmediatePropagation(); campCredits(false); } }, true);
 // lance VRAIMENT une mission (cinématique d'ouverture puis partie) — appelé par le bouton du briefing
 function campStart(i){
   if (!game) netDisconnect();
@@ -492,44 +597,58 @@ function drawCampHUD(){
   const c = game.camp; if (!c || game.over) return;
   const pal = uiPal(), m = c.m, h = (m.hud? m.hud(game, c) : null) || {};
   // OBJECTIF : étiquette de papier sous le bandeau, à droite — toujours visible, progression comprise
-  const w = clamp(Math.round(W*0.23), 236, 300), x = W-w-8, y = 43;
-  ctx.font = uiF(pal,'cond',11.5); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
+  const q = uiPx(10)/10, w = clamp(Math.round(W*0.23*q), 236, Math.min(W*0.45, 300*q)), x = W-w-8, y = 43;   // q > 1 : petit écran, textes relevés à 11 px réels
+  ctx.font = uiF(pal,'cond',uiPx(11.5)); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
   const bar = h.prog!=null || h.clock!=null, g2 = !!m.goal2;
-  const hh = 19 + lines.length*13 + (bar? 13 : 0) + (g2? 14 : 0) + 2;
+  // objectifs facultatifs : une ligne chacun (☐ / ☑) ; en paysage de téléphone, repliés en « Facultatif 1/3 ▸ » (toucher pour déplier)
+  const opts = g2? campOptState(game) : null, compact = (cv.clientHeight || window.innerHeight) <= 480, oOpen = !!opts && (!compact || !!c.optOpen);
+  const hh = Math.round((19 + lines.length*13 + (bar? 13 : 0) + (opts? 15 + (oOpen? opts.length*12 : 0) : g2? 14 : 0) + 2)*q);
   c.objH = hh; c.objRect = { x, y, w, h:hh };
   paperChip(x, y, w, hh, pal);
   ctx.fillStyle = pal.red; ctx.fillRect(x, y, 3, hh);
   if (c.goalFlash>0 && Math.sin(performance.now()/120)>0){ ctx.strokeStyle = pal.red; ctx.lineWidth = 2; ctx.strokeRect(x+1, y+1, w-2, hh-2); }
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.red;
-  ctx.fillText(cT(CAMP_UI.goal)+' · '+(m.num||'')+(c.act>1? ' · '+cT(CAMP_UI.act).replace('{n}', c.act) : ''), x+9, y+8.5);
-  ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = pal.ink;
-  lines.forEach((l,k)=> ctx.fillText(l, x+9, y+21+k*13));
-  let yy = y + 19 + lines.length*13;
+  ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = pal.red;
+  ctx.fillText(cT(CAMP_UI.goal)+' · '+(m.num||'')+(c.act>1? ' · '+cT(CAMP_UI.act).replace('{n}', c.act) : ''), x+9, y+8.5*q);
+  ctx.font = uiF(pal,'cond',uiPx(11.5)); ctx.fillStyle = pal.ink;
+  lines.forEach((l,k)=> ctx.fillText(l, x+9, y+(21+k*13)*q));
+  let yy = y + (19 + lines.length*13)*q;
   if (bar){ const by = yy+3, bw = w-18-(h.clock!=null? 40 : 0)-(h.label? 4 : 0);
     let lx = x+9;
-    if (h.label){ ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.fillText(h.label, lx, by+2); lx += ctx.measureText(h.label).width+6; }
+    if (h.label){ ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.fillText(h.label, lx, by+2); lx += ctx.measureText(h.label).width+6; }
     const gw = Math.max(20, x+9+bw-lx);
     ctx.fillStyle = pal.line; ctx.fillRect(lx, by, gw, 4);
     ctx.fillStyle = h.warn? pal.bad : pal.red; ctx.fillRect(lx, by, gw*clamp(h.prog||0, 0, 1), 4);
-    if (h.clock!=null){ ctx.font = uiF(pal,'cond',12); ctx.textAlign = 'right';
+    if (h.clock!=null){ ctx.font = uiF(pal,'cond',uiPx(12)); ctx.textAlign = 'right';
       ctx.fillStyle = (h.warn && Math.sin(performance.now()/160)>0)? pal.bad : pal.ink; ctx.fillText(fmtTime(h.clock), x+w-8, by+2); ctx.textAlign = 'left'; }
-    yy += 13; }
-  if (g2){ const done = c.goal2Done || (h.goal2 && h.goal2.done), lab = done? '✓' : (h.goal2 && h.goal2.label) || '';
-    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = done? pal.ok : pal.ink2; const lw = lab? ctx.measureText(lab).width+8 : 0;
+    yy += 13*q; }
+  c.optRect = null;
+  if (opts){ const rtl = SETTINGS.lang==='ar', nOk = opts.filter(o=>o.st>0).length;
+    ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = nOk===opts.length? pal.ok : pal.ink2; ctx.textAlign = 'left';
+    ctx.fillText(cT(CAMP_UI.opt)+' '+nOk+'/'+opts.length+(compact? (oOpen? ' ▾' : (rtl? ' ◂' : ' ▸')) : ''), x+9, yy+6*q);
+    if (compact) c.optRect = { x, y:yy-2, w, h:16*q };
+    if (oOpen) opts.forEach((o, k) => { const ly = yy + (19 + k*12)*q;
+      ctx.strokeStyle = o.st>0? pal.ok : o.st<0? pal.ink2 : pal.ink; ctx.lineWidth = 1.2; ctx.strokeRect(x+9.5, ly-4.5, 8, 8);
+      if (o.st>0){ ctx.beginPath(); ctx.moveTo(x+11, ly); ctx.lineTo(x+13.5, ly+2.5); ctx.lineTo(x+18.5, ly-5); ctx.stroke(); }
+      else if (o.st<0){ ctx.beginPath(); ctx.moveTo(x+11, ly-3); ctx.lineTo(x+17, ly+3); ctx.moveTo(x+17, ly-3); ctx.lineTo(x+11, ly+3); ctx.stroke(); }
+      ctx.font = uiF(pal,'cond',uiPx(10.5)); ctx.fillStyle = o.st>0? pal.ok : o.st<0? pal.ink2 : pal.ink;
+      const tx = campTrunc(o.txt, w-34); ctx.fillText(tx, x+23, ly);
+      if (o.st<0){ const tw = ctx.measureText(tx).width; ctx.fillRect(x+23, ly, tw, 1); } }); }   // objectif perdu : barré
+  else if (g2){ const done = c.goal2Done || (h.goal2 && h.goal2.done), lab = done? '✓' : (h.goal2 && h.goal2.label) || '';
+    ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = done? pal.ok : pal.ink2; const lw = lab? ctx.measureText(lab).width+8 : 0;
     ctx.fillText(campTrunc('✦ '+cT(m.goal2), w-18-lw), x+9, yy+6);
     if (lab){ ctx.textAlign = 'right'; ctx.fillText(lab, x+w-8, yy+6); ctx.textAlign = 'left'; } }
   // AIDE « ? » : rappelle l'objectif, la règle du lieu, les conseils et le journal radio (le jeu se met en pause)
   { const b = c.helpRect = { x:x-31, y, w:27, h:27 };
     paperChip(b.x, b.y, b.w, b.h, pal); ctx.strokeStyle = pal.red; ctx.lineWidth = 1.5; ctx.strokeRect(b.x+2.5, b.y+2.5, b.w-5, b.h-5);
-    ctx.textAlign = 'center'; ctx.font = uiF(pal,'head',15); ctx.fillStyle = pal.red; ctx.fillText('?', b.x+b.w/2, b.y+b.h/2+1); }
+    ctx.textAlign = 'center'; ctx.font = uiF(pal,'head',uiPx(15)); ctx.fillStyle = pal.red; ctx.fillText('?', b.x+b.w/2, b.y+b.h/2+1); }
   // ACTION DE MISSION : bon à découper sous l'objectif (grisé pendant la recharge)
   c.actRect = null;
   if (m.action){ const a = m.action, aw = 150, ax = W-aw-8, ay = 43 + hh + 6, ah = 26, cd = Math.max(0, c.actCd||0), ok = cd<=0 && (!a.can || a.can(game, c));
     c.actRect = {x:ax, y:ay, w:aw, h:ah};
     paperChip(ax, ay, aw, ah, pal); ctx.fillStyle = ok? pal.red : pal.line; ctx.fillRect(ax, ay, aw, 2.5);
     if (cd>0){ ctx.fillStyle = 'rgba(60,50,40,0.16)'; ctx.fillRect(ax, ay, aw*clamp(cd/(c.actCd0||a.cd*(c.actMul||1)),0,1), ah); }
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',11.5); ctx.fillStyle = ok? pal.ink : pal.ink2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'cond',uiPx(11.5)); ctx.fillStyle = ok? pal.ink : pal.ink2;
     ctx.fillText(cT(a.label)+(cd>0? '  '+Math.ceil(cd)+' s' : ''), ax+aw/2, ay+ah/2+1.5); }
   campDrawBanner(pal);
   campDrawRadio(pal);
@@ -539,11 +658,11 @@ function campDrawBanner(pal){
   const c = game.camp, b = c.banner; if (!b) return;
   const t = (performance.now() - b.t0)/1000; if (t > 5){ c.banner = null; return; }
   const a = Math.min(1, t/0.3, (5-t)/0.6), bw = Math.min(560, W-80), x = (W-bw)/2, y = 214;
-  ctx.font = uiF(pal,'cond',14); const lines = newsWrap(cT(b.txt), bw-30).slice(0,3), bh = 28 + lines.length*17;
+  ctx.font = uiF(pal,'cond',uiPx(14)); const lines = newsWrap(cT(b.txt), bw-30).slice(0,3), bh = 28 + lines.length*17;
   ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1-a)*-8);
   paperChip(x, y, bw, bh, pal); ctx.fillStyle = pal.red; ctx.fillRect(x, y, bw, 3);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'head',11); ctx.fillStyle = pal.red; ctx.fillText(cT(b.head), W/2, y+13);
-  ctx.font = uiF(pal,'cond',14); ctx.fillStyle = pal.ink; lines.forEach((l,k)=> ctx.fillText(l, W/2, y+31+k*17));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = uiF(pal,'head',uiPx(11)); ctx.fillStyle = pal.red; ctx.fillText(cT(b.head), W/2, y+13);
+  ctx.font = uiF(pal,'cond',uiPx(14)); ctx.fillStyle = pal.ink; lines.forEach((l,k)=> ctx.fillText(l, W/2, y+31+k*17));
   ctx.restore();
 }
 // RADIO : feuillet tapé à la machine (Sol, Mado…) ou listing de bipeur (Kassandre) ; touchez-le pour passer au suivant
@@ -552,7 +671,7 @@ function campDrawRadio(pal){
   const a = Math.min(1, r.t/0.35, (r.dur-r.t)/0.6); if (a<=0) return;
   const k55 = r.who==='k55', qn = (game.p.queue||[]).length;
   const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 140 - x0, 240, 470);
-  const font = k55? '13.5px "AGI Term","Courier New",monospace' : '13px '+UI_TYPE;
+  const font = k55? uiPx(13.5)+'px "AGI Term","Courier New",monospace' : uiPx(13)+'px '+UI_TYPE;
   ctx.font = font; let lines = newsWrap(r.txt, maxW-22);
   if (lines.length>7){ lines = lines.slice(0,7); lines[6] = campTrunc(lines[6], maxW-30); }
   const lh = 16, hh = 25 + lines.length*lh;
@@ -564,7 +683,7 @@ function campDrawRadio(pal){
   else { ctx.fillStyle = paperGrain(); ctx.fillRect(x0, y0, maxW, hh); }
   ctx.fillStyle = k55? '#0b6fa8' : '#c42a1c'; ctx.fillRect(x0, y0, maxW, 2.5);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = '9px '+UI_TYPE; ctx.fillText(campWhoName(r.who), x0+9, y0+11);
+  ctx.font = uiPx(9)+'px '+UI_TYPE; ctx.fillText(campWhoName(r.who), x0+9, y0+11);
   if (c.q.length){ ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(31,27,23,0.6)'; ctx.fillText(cT(CAMP_UI.waiting).replace('{n}', c.q.length), x0+maxW-22, y0+11); ctx.textAlign = 'left'; }
   ctx.fillStyle = k55? '#0b6fa8' : '#c42a1c';
   if (Math.sin(performance.now()/260)>0 && r.t<r.dur-1){ ctx.beginPath(); ctx.arc(x0+maxW-11, y0+11, 2.6, 0, 6.283); ctx.fill(); }   // voyant d'émission
@@ -586,15 +705,15 @@ function campDrawWorld(vw){
   // LAISSE : ligne pointillée au-delà de laquelle nos troupes ne vont pas (escorte)
   if (c.leash!=null){ const x = c.leash-camX; if (x>-40 && x<vw+40){ const y = gY(c.leash);
     ctx.save(); ctx.strokeStyle = 'rgba(232,216,170,0.85)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(x, y+6); ctx.lineTo(x, y-120); ctx.stroke(); ctx.restore();
-    if (c.leashLabel){ ctx.font = '9px '+UI_TYPE; const s = cT(c.leashLabel), tw = ctx.measureText(s).width+14;
+    if (c.leashLabel){ ctx.font = uiPx(9)+'px '+UI_TYPE; const s = cT(c.leashLabel), tw = ctx.measureText(s).width+14;
       paperChip(x-tw/2, y-140, tw, 16, pal); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = pal.ink; ctx.fillText(s, x, y-131.5); } } }
   // BOUCLIER : un objectif invulnérable est TOUJOURS signalé (icône + « invulnérable tant que… »)
   if (c.shield){ const sx = (c.shield.x!=null? c.shield.x : g.e.x-30), x = sx-camX; if (x>-160 && x<vw+160){ const y = gY(sx) - (c.shield.h||190);
-    ctx.font = '700 11px '+UI_TYPE; const l1 = '🛡 '+cT(CAMP_UI.inv); ctx.font = '9.5px '+UI_TYPE; const l2 = cT(c.shield.label||{});
+    ctx.font = '700 '+uiPx(11)+'px '+UI_TYPE; const l1 = '🛡 '+cT(CAMP_UI.inv); ctx.font = uiPx(9.5)+'px '+UI_TYPE; const l2 = cT(c.shield.label||{});
     const tw = Math.max(110, ctx.measureText(l2).width+18), x0 = clamp(x-tw/2, 4, vw-tw-4);
     paperChip(x0, y, tw, 34, pal); ctx.fillStyle = '#0b6fa8'; ctx.fillRect(x0, y, tw, 3);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0b6fa8'; ctx.font = '700 11px '+UI_TYPE; ctx.fillText(l1, x0+tw/2, y+12);
-    ctx.fillStyle = pal.ink; ctx.font = '9.5px '+UI_TYPE; ctx.fillText(l2, x0+tw/2, y+25);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0b6fa8'; ctx.font = '700 '+uiPx(11)+'px '+UI_TYPE; ctx.fillText(l1, x0+tw/2, y+12);
+    ctx.fillStyle = pal.ink; ctx.font = uiPx(9.5)+'px '+UI_TYPE; ctx.fillText(l2, x0+tw/2, y+25);
     const p = 0.35 + 0.25*Math.sin(t*3); ctx.strokeStyle = 'rgba(90,190,255,'+p.toFixed(2)+')'; ctx.lineWidth = 2;   // halo de bouclier sur la base
     ctx.beginPath(); ctx.ellipse(sx-camX+10, gY(sx)-60, 90, 80, 0, Math.PI, 0); ctx.stroke(); } }
 }
@@ -609,16 +728,16 @@ function drawCampOverlay(){
   const pw = Math.min(W-30, 900), ph = Math.min(H-40, 480), px = (W-pw)/2, py = (H-ph)/2;
   paperPanel(px, py, pw, ph, pal, {tape:true});
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = uiF(pal,'head',19); ctx.fillStyle = pal.ink;
+  ctx.font = uiF(pal,'head',uiPx(19)); ctx.fillStyle = pal.ink;
   ctx.fillText(campTrunc((m.num||'')+' · '+cT(m.title).toUpperCase(), pw-200), px+18, py+24);
-  ctx.font = '10px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText(m.year+' · '+cT(m.place), px+pw-18, py+24); ctx.textAlign = 'left';
+  ctx.font = '10px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText(campWhen(m)+' · '+cT(m.place), px+pw-18, py+24); ctx.textAlign = 'left';
   ctx.fillStyle = pal.ink; ctx.fillRect(px+16, py+38, pw-32, 2);
   const colW = (pw-50)/2, lx = px+18, rx = px+32+colW, top = py+54, bottom = py+ph-52;
   let y = top;
-  const head = (txt, X, Y) => { Y += (Y>top? 6 : 0); ctx.font = uiF(pal,'head',11); ctx.fillStyle = pal.red; ctx.fillText(txt, X, Y); return Y+15; };
+  const head = (txt, X, Y) => { Y += (Y>top? 6 : 0); ctx.font = uiF(pal,'head',uiPx(11)); ctx.fillStyle = pal.red; ctx.fillText(txt, X, Y); return Y+15; };
   const para = (txt, X, Y, f, col, maxL) => { ctx.font = f || '11.5px '+UI_TYPE; ctx.fillStyle = col || pal.ink; let L = newsWrap(txt, colW-6); if (maxL && L.length>maxL){ L = L.slice(0,maxL); L[maxL-1] = campTrunc(L[maxL-1]+' …', colW-6); }
     for (const l of L){ if (Y > bottom) break; ctx.fillText(l, X, Y); Y += 14; } return Y+4; };
-  y = head(cT(CAMP_UI.goal), lx, y); y = para(cT(c.goalTxt || m.goal), lx, y, uiF(pal,'cond',13));
+  y = head(cT(CAMP_UI.goal), lx, y); y = para(cT(c.goalTxt || m.goal), lx, y, uiF(pal,'cond',uiPx(13)));
   if (m.goal2){ y = head(cT(CAMP_UI.goal2)+(c.goal2Done? ' ✓' : ''), lx, y); y = para(cT(m.goal2), lx, y); }
   y = head(cT(CAMP_UI.rule), lx, y); y = para(cT(c.ruleTxt || m.rule), lx, y, null, null, 7);
   const tips = c.tipsArr || m.tips || [];
@@ -628,13 +747,13 @@ function drawCampOverlay(){
   const log = c.log.slice().reverse();
   if (!log.length) para(cT(CAMP_UI.noLog), rx, ry, null, pal.ink2);
   for (const e of log){ if (ry > bottom-14) break;
-    ctx.font = '8.5px '+UI_TYPE; ctx.fillStyle = e.who==='goal'? pal.red : pal.ink2;
+    ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = e.who==='goal'? pal.red : pal.ink2;
     ctx.fillText(fmtTime(e.t)+'  '+(e.who==='goal'? cT(CAMP_UI.newGoal) : campWhoName(e.who)), rx, ry); ry += 12;
     ry = para(e.txt, rx, ry, '10.5px '+UI_TYPE, pal.ink, 4); }
   // reprendre
   const bw = 210, bh = 32, bx = W/2-bw/2, by = py+ph-44;
   inkStamp(bx, by, bw, bh, '▶ '+cT(CAMP_UI.resume), pal, 15);
-  ctx.font = '9px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText('? · '+cT(CAMP_UI.helpKey), px+pw-18, by+bh/2);
+  ctx.font = uiPx(9)+'px '+UI_TYPE; ctx.fillStyle = pal.ink2; ctx.textAlign = 'right'; ctx.fillText('? · '+cT(CAMP_UI.helpKey), px+pw-18, by+bh/2);
   c.helpRects = { panel:{x:px, y:py, w:pw, h:ph}, resume:{x:bx, y:by, w:bw, h:bh} };
 }
 // clics de campagne (appelée avant tout le reste par 22-input) : true = consommé
@@ -642,6 +761,7 @@ function campClick(sx, sy){ const c = game.camp; if (!c) return false;
   const inR = r => r && sx>=r.x && sx<=r.x+r.w && sy>=r.y && sy<=r.y+r.h;
   if (c.help){ if (inR(c.helpRects && c.helpRects.resume) || !inR(c.helpRects && c.helpRects.panel)) campHelp(false); return true; }   // panneau modal
   if (inR(c.helpRect)){ campHelp(true); return true; }
+  if (inR(c.optRect)){ c.optOpen = !c.optOpen; sfx('sel'); return true; }                  // objectifs facultatifs repliés (téléphone)
   if (c.cur && inR(c.radioRect) && c.cur.t > 0.6){ c.cur.t = Math.max(c.cur.t, c.cur.dur-0.6); return true; }   // touche le feuillet : message suivant
   if (c.m.action && inR(c.actRect)) return campAct();
   return false; }
@@ -680,48 +800,56 @@ function campBriefClose(toMenu){
 // musique du briefing : on enveloppe le choix de thème de 03-audio (sans le modifier) — un seul point d'entrée
 if (typeof musicMode==='function'){ const _musicMode = musicMode;
   musicMode = function(){ if (CAMP_BRIEF.open && !game) return MUSIC_THEMES.c_map? 'c_map' : 'carnet'; return _musicMode(); }; }
+// objectifs facultatifs d'une mission : le texte long « Facultatif : A · B · C. » coupé en lignes (sans le préfixe ni le point final)
+function campOptLines(m){
+  const raw = cT(m.goal2).replace(/^[^:：]{2,24}[:：]\s*/, '').replace(/[.。]\s*$/, '');
+  const a = raw.split(/\s*[·・]\s*/).map(x=>x.trim()).filter(Boolean);
+  return a.length>1? a : [cT(m.goal2)];
+}
 function campBriefRender(){
   const box = $('campBrief'); if (!box) return;
   const i = CAMP_BRIEF.i, m = CAMPAIGN[i]; if (!m) return;
   const keep = box.querySelector('.cbBody'), st = keep? keep.scrollTop : 0;
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt!=null) e.textContent = txt; return e; };
-  const sec = (title, cls) => { const s = el('section', 'cbSec'+(cls? ' '+cls : '')); s.appendChild(el('h3', null, title)); return s; };
+  // o = rang en deux colonnes (bureau), op = rang en colonne unique (téléphone) : le même contenu, deux ordres de lecture
+  const sec = (title, cls, o, op) => { const s = el('section', 'cbSec'+(cls? ' '+cls : '')); s.appendChild(el('h3', null, title)); s.style.setProperty('--o', o|0); s.style.setProperty('--op', op|0); return s; };
   box.textContent = '';
   const sheet = el('div', 'cbSheet'); box.appendChild(sheet);
   // en-tête : numéro, titre, lieu
   const head = el('div', 'cbHead'); head.appendChild(el('span', 'cbNo', m.num || ''));
-  const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+m.year));
+  const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+campWhen(m)));
   ht.appendChild(el('div', 'cbTitle', cT(m.title))); ht.appendChild(el('div', 'cbPlace', cT(m.place)));
   head.appendChild(ht); sheet.appendChild(head);
   const body = el('div', 'cbBody'); sheet.appendChild(body);
   const L = el('div', 'cbCol'), R = el('div', 'cbCol'); body.appendChild(L); body.appendChild(R);
   // récit
-  { const s = sec(cT(CAMP_UI.recap));
+  { const s = sec(cT(CAMP_UI.recap), null, 1, 1);
     const prev = i>0 && CAMPAIGN[i-1] && CAMPAIGN[i-1].debrief;
     if (prev){ const q = el('blockquote', 'cbPrev'); q.appendChild(el('b', null, cT(CAMP_UI.prev)+' ')); q.appendChild(document.createTextNode(cT(prev))); s.appendChild(q); }
     for (const p of campParas(m, 'recap')) s.appendChild(el('p', null, p));
     L.appendChild(s); }
-  { const s = sec(cT(CAMP_UI.where)); s.appendChild(el('p', 'cbWhere', cT(m.place)));
+  { const s = sec(cT(CAMP_UI.where), null, 2, 2);                  // le lieu est déjà dans l'en-tête : pas de ligne en gras qui le répète
     for (const p of campParas(m, 'where')) s.appendChild(el('p', null, p));
     L.appendChild(s); }
   // ordres
-  { const s = sec(cT(CAMP_UI.goal), 'cbGoal'); s.appendChild(el('p', 'cbGoalTxt', cT(m.goal)));
-    if (m.goal2){ s.appendChild(el('h4', null, cT(CAMP_UI.goal2)+(CAMP_SAVE.bonus[i]? ' ★' : ''))); s.appendChild(el('p', null, cT(m.goal2))); }
+  { const s = sec(cT(CAMP_UI.goal), 'cbGoal', 1, 3); s.appendChild(el('p', 'cbGoalTxt', cT(m.goal)));
+    if (m.goal2){ s.appendChild(el('h4', null, cT(CAMP_UI.goal2)+(CAMP_SAVE.bonus[i]? ' ★' : '')));
+      const ul = el('ul', 'cbOpt'); for (const l of campOptLines(m)) ul.appendChild(el('li', null, l)); s.appendChild(ul); }    // un objectif facultatif par ligne
     R.appendChild(s); }
-  { const s = sec(cT(CAMP_UI.rule)); s.appendChild(el('p', null, cT(m.rule))); R.appendChild(s); }
-  if (m.tips && m.tips.length){ const s = sec(cT(CAMP_UI.tips)), ul = el('ul', 'cbTips'); for (const tp of m.tips) ul.appendChild(el('li', null, cT(tp))); s.appendChild(ul); R.appendChild(s); }
+  { const s = sec(cT(CAMP_UI.rule), null, 2, 4); s.appendChild(el('p', null, cT(m.rule))); R.appendChild(s); }
+  if (m.tips && m.tips.length){ const s = sec(cT(CAMP_UI.tips), null, 3, 5), ul = el('ul', 'cbTips'); for (const tp of m.tips) ul.appendChild(el('li', null, cT(tp))); s.appendChild(ul); R.appendChild(s); }
   // difficulté (réglage de la campagne, rappelé ici)
-  { const s = sec(cT(CAMP_UI.diffLbl), 'cbDiff'), row = el('div', 'cbPills');
+  { const s = sec(cT(CAMP_UI.diffLbl), 'cbDiff', 3, 6), row = el('div', 'cbPills');
     [0,1,2].forEach(k=>{ const b = el('button', 'cbPill'+(CAMP_SAVE.diff===k? ' sel' : ''), cT(CAMP_UI['d'+k]));
       b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campBriefRender(); }); row.appendChild(b); });
     s.appendChild(row); const D = campDiff(CAMP_SAVE.diff); if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);   // comme startMission()
     s.appendChild(el('p', 'cbDiffTag', cT(CAMP_UI['dTag'+D.i])));
     const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); s.appendChild(ul);
-    R.appendChild(s); }
-  // doctrine : deux fiches, explications longues
-  { const s = sec(cT(CAMP_UI.doc), 'cbDocs'), pair = campDocPair(i);
-    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc)));
-    if (pair){ const cards = el('div', 'cbCards');
+    L.appendChild(s); }                                                        // colonne de gauche, sous « Où nous sommes »
+  // doctrine : le titre et l'indication à gauche, les deux fiches (explications longues) en pleine largeur dessous
+  { const s = sec(cT(CAMP_UI.doc), 'cbDocHead', 4, 7), pair = campDocPair(i);
+    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc))); L.appendChild(s);
+    if (pair){ const cards = el('div', 'cbCards'); cards.style.setProperty('--o', 5); cards.style.setProperty('--op', 8);
       pair.forEach((id,k)=>{ const d = DOCTRINES[id], sel = (CAMP_SAVE.doc[i]? 1 : 0)===k;
         const cd = el('div', 'cbDoc'+(sel? ' sel' : '')); cd.setAttribute('role', 'button'); cd.tabIndex = 0;
         cd.appendChild(el('span', 'cbMark', cT(CAMP_UI.chosen)));
@@ -738,8 +866,8 @@ function campBriefRender(){
         const pick = ()=>{ if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
         cd.addEventListener('click', pick); cd.addEventListener('keydown', ev=>{ if (ev.key==='Enter' || ev.key===' '){ ev.preventDefault(); pick(); } });
         cards.appendChild(cd); });
-      s.appendChild(cards); }
-    body.appendChild(s); }
+      body.appendChild(cards); }
+  }
   // pied : retour / lancer
   const foot = el('div', 'cbFoot');
   const back = el('button', 'cbBack', (SETTINGS.lang==='ar'? '→ ' : '← ')+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
@@ -774,7 +902,9 @@ function campMap(){
     g.strokeStyle = open? '#c42a1c' : 'rgba(31,27,23,0.45)'; g.lineWidth = 1.8; g.beginPath(); g.arc(x, y, 6, 0, 6.283); g.stroke();
     if (done){ g.beginPath(); g.moveTo(x-4,y-4); g.lineTo(x+4,y+4); g.moveTo(x+4,y-4); g.lineTo(x-4,y+4); g.stroke(); }
     else if (open){ g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(x, y, 2.6, 0, 6.283); g.fill(); }
-    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(['I','II','III','IV','V'][i]+(open? ' · '+CAMPAIGN[i].year : ''), x, y+(i===2||i===3? -11 : 18)); });
+    const lab = ['I','II','III','IV','V'][i]+(open? ' · '+campWhen(CAMPAIGN[i]) : ''), hw = g.measureText(lab).width/2, lx = clamp(x, hw+4, 476-hw);   // jamais coupé au bord de la carte
+    g.lineJoin = 'round'; g.lineWidth = 3.4; g.strokeStyle = 'rgba(238,228,200,0.92)'; g.strokeText(lab, lx, y+(i===2||i===3? -11 : 18));              // liseré de papier : lisible sur les montagnes
+    g.fillStyle = open? '#1f1b17' : 'rgba(31,27,23,0.45)'; g.fillText(lab, lx, y+(i===2||i===3? -11 : 18)); });
   g.strokeStyle = '#1f1b17'; g.lineWidth = 1; g.beginPath(); g.moveTo(456,22); g.lineTo(456,8); g.lineTo(452,14); g.moveTo(456,8); g.lineTo(460,14); g.stroke(); g.fillStyle = '#1f1b17'; g.fillText('N', 456, 32);
   return cv;
 }
@@ -804,7 +934,7 @@ function campRenderMenu(){
     b.appendChild(el('span', 'misNo', m.num || String(i+1)));
     const body = el('span', 'misBody');
     body.appendChild(el('b', null, open? cT(m.title) : '· · ·'));
-    body.appendChild(el('i', null, open? m.year+' · '+cT(m.place) : cT(CAMP_UI.locked)));
+    body.appendChild(el('i', null, open? campWhen(m)+' · '+cT(m.place) : cT(CAMP_UI.locked)));
     b.appendChild(body);
     if (done) b.appendChild(el('span', 'misDone', cT(CAMP_UI.doneTag)+(CAMP_SAVE.bonus[i]? ' ★' : '')+(CAMP_SAVE.best[i]? ' · '+fmtTime(CAMP_SAVE.best[i]) : '')));
     if (open) b.addEventListener('click', ()=>campLaunch(i)); else b.disabled = true;

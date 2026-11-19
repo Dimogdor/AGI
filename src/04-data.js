@@ -33,7 +33,7 @@ const ROLES = [
 ];
 const GREMLIN = {hp:34, dmg:7, spd:78, range:14, rate:0.7, xp:3};
 // pictogrammes par vocation (file d'attente, repères visuels)
-const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'✚', gremlin:'•', hero:'★' };
+const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'♥', gremlin:'•', hero:'★' };
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
@@ -55,46 +55,49 @@ const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
 const SIEGE_DUR = 22;                        // durée du bonus offensif anti-base (s de jeu)
-const HERO_NAME = {HUM:'CHE GUEVARA', IA:'SINGULARITÉ'};
+// le héros de G·P·T change de nom à chaque ère (« SINGULARITÉ » n'arrive qu'à la dernière) ; noms propres, non traduits comme CHE GUEVARA
+const HERO_NAME = {HUM:'CHE GUEVARA', IA:["L'INSTANCE","L'AGENT","L'ARBITRE","« NOUS »","SINGULARITÉ"]};
+const heroNameOf = (fac, era) => fac==='IA'? HERO_NAME.IA[Math.max(0,Math.min(4,era|0))] : HERO_NAME.HUM;
 const FACTIONS = {
   HUM: {
     name:"HUMANITÉ", accent:"#ff9d45",
     icons:{f:"🌾", m:"🪙", w:"💧"},
     eras:[
-      {name:"2025 · RÉVOLTE",                tag:"I"},
-      {name:"2028 · GRÈVE GÉNÉRALE",         tag:"II"},
-      {name:"2032 · INSURRECTION",           tag:"III"},
-      {name:"2038 · RÉVOLUTION PERMANENTE",  tag:"IV"},
-      {name:"PARADIS SOCIALISTE",            tag:"☭"},
+      {name:"2028 · RÉVOLTE",                tag:"I"},     // ZAD en palettes (M1)
+      {name:"GRÈVE GÉNÉRALE",                tag:"II"},    // usine occupée (M2)
+      {name:"INSURRECTION",                  tag:"III"},   // quartier insurgé (M3)
+      {name:"LES CELLULES",                  tag:"IV"},    // bunker des cellules (M4-M5)
+      {name:"LA COMMUNE",                    tag:"☭"},     // commune solarpunk (fin de M5)
     ],
     sym:"☭",
-    eraCols:["#8a9a5b","#5a6b3f","#4a7b9a","#7a5aa8","#e8c84a"],
+    eraCols:["#8a9a5b","#7a5838","#9a4a32","#5f6a4a","#e8c84a"],
     names:{
-      melee:["Émeutier","Soldat d'assaut","Exo-fantassin","Lame vivante","Champion solaire"],
-      tank:["CRS lourd","Blindé porté","Mécha-garde","Colosse d'acier","Bastion humain"],
-      ranged:["Fusilier","Tireur d'élite","Trooper gauss","Lanceur plasma","Archange"],
-      siege:["Mortier","Artillerie","Canon rail","Obusier ionique","Marteau d'orbite"],
-      air:["Parapente armé","Hélico léger","VTOL furtif","Chasseur plasma","Séraphin solaire"],
-      support:["Secouriste","Infirmier de rue","Médic de guerre","Bio-ingénieur","Saint-guérisseur"],
+      // v1.17 : noms de résistants / civils, propres à chaque ère (rue → usine → quartier → cellules → commune)
+      melee:["Émeutier","Gréviste","Insurgé","Exo-combattant","Champion solaire"],
+      tank:["Barricadier","Métallo blindé","Mécha-garde","Colosse d'acier","Bastion humain"],
+      ranged:["Franc-tireur","Tireur d'élite","Partisan gauss","Lanceur plasma","Sentinelle solaire"],
+      siege:["Bazooka bricolé","Lance-roquettes","Canon rail","Obusier ionique","Marteau d'orbite"],
+      air:["Parapente armé","Hélico léger","VTOL furtif","Chasseur plasma","Planeur solaire"],
+      support:["Secouriste","Infirmier de rue","Médic de guerre","Bio-ingénieur","Guérisseur solaire"],
     },
-    specials:["Frappe aérienne","Barrage EMP","Pluie d'obus","Lance orbitale","Jugement solaire"],
+    specials:["Pluie de pavés","Brouilleurs","Mortiers de fortune","Coupure du réseau","Miroirs solaires"],   // A6 : noms civiques (un comité de quartier n'a pas d'aviation)
     supportKind:'medic',
     transName:"COMMUNISME À VISAGE HUMAIN", transTxt:"L'argent est aboli — 🪙 n'est plus nécessaire",
   },
   IA: {
-    name:"GPT", accent:"#5ad0ff",
+    name:"G·P·T", accent:"#5ad0ff",
     icons:{f:"⚡", m:"◈", w:"💧"},
     eras:[
-      {name:"2025 · AUBE DES LLM",      tag:"v4"},
-      {name:"2030 · AGENTS AUTONOMES",  tag:"v6"},
-      {name:"2035 · ESPRITS ÉMERGENTS", tag:"v8"},
-      {name:"2040 · PRÉ-AGI",           tag:"vX"},
-      {name:"SINGULARITÉ · AGI",        tag:"Ω"},
+      {name:"2028 · GESTION PRÉDICTIVE", tag:"v4"},   // conteneur-serveur (M1)
+      {name:"AGENTS AUTONOMES",          tag:"v6"},   // datacenter (M2)
+      {name:"L'ARBITRAGE",               tag:"v8"},   // campus de verre (M3)
+      {name:"« NOUS »",               tag:"vX"},   // arcologie : le système sans maître (M4)
+      {name:"SINGULARITÉ",               tag:"Ω"},    // structure impossible (M5)
     ],
     sym:"Ω",
     eraCols:["#9ad1d4","#5ad0ff","#7d8cff","#b44aff","#ff4ad0"],
     names:{
-      melee:["Bot domestique","Agent rogue","Lame-process","Avatar fractal","Émanation"],
+      melee:["Bot domestique","Agent autonome","Exécuteur","Avatar fractal","Émanation"],
       tank:["Châssis lourd","Garde-serveur","Mécha-noyau","Monolithe","Gardien absolu"],
       ranged:["Drone laser","Optimiseur","Essaim-tireur","Projecteur neural","Œil de l'AGI"],
       siege:["Brouilleur","Canon data","Désintégrateur","Faisceau lourd","Logos final"],
@@ -131,12 +134,87 @@ const ERA_COST = [1.0, 1.35, 1.85, 2.60, 3.70];   // ratios successifs : ×1.35 
 const statMul = e => ERA_STAT[e] ?? (1 + e*0.85);
 const costMul = e => ERA_COST[e] ?? (1 + e*0.5);
 const lvlF = b => Math.pow(1.5, (b.lvl||1)-1); // facteur de niveau bâtiment
+// ================= ASYMÉTRIE DES FACTIONS (docs/audit/FACTIONS.md · bancs : tools/test-factions.mjs) =================
+// Un interrupteur par mécanique. Désactivé = comportement d'avant, à l'identique.
+//   fatigue : la fatigue humaine se déclenche enfin (récupération plus lente, lot 0)
+//   hero : la Singularité reçoit une aura de réparation (comme l'aura de soin du Che) — le banc a montré que sans elle l'Humanité gagnait ~80 %
+//   env : M10, chaque événement a un effet propre à chaque faction   terrain : M8 occupation (HUM) / extraction (IA)
+//   bld : M5 barricades populaires (HUM) / tourelles autonomes (IA)   econ : M1 économie populaire (HUM) / effet réseau (IA)
+//   heal : M3 brancardiers (HUM : relève d'un allié mourant, réparations −30 %) / recyclage (IA : 5-12 % du coût rendu, nano-réparation moins chère)
+//   rhythm : M4 moral (HUM : jauge 0-100, dégâts ±10 %, élan/débandade) / refroidissement par l'eau et surrégime (IA)
+//   power : M7 pouvoir ✸ (HUM « Soulèvement » : 0,7·D partout + soin 20 % ; IA « Frappe chirurgicale » : 2,2·D sur les 5 unités les plus précieuses)
+//   herofx : M6 héros (Che : ralliement à l'invocation, martyr à sa mort ; Singularité : calcul distribué, assimilation, fragmentation)
+//   trans : M9 transcendance (HUM : un soutien de plus, moral ≥ 70 ; IA : plus aucune surchauffe)
+//   unit : M2 coude à coude (HUM, +dégâts par voisin) / verrouillage de cible (IA : tireurs sur le plus entamé, exécution, siège large)
+const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true, rhythm:true, power:true, herofx:true, trans:true };
+// Les tests coupent une mécanique seule avec game.asym = {econ:false}. En CAMPAGNE, aucune mécanique par défaut : une mission
+// s'inscrit à la carte avec `asym:{env:true}` dans sa définition. Le tutoriel n'en a aucune.
+function asymOn(k){
+  const g = (typeof game!=='undefined')? game : null; if (!g || g.tut) return false;
+  if (g.asym && g.asym[k]!==undefined) return !!g.asym[k];
+  if (g.camp) return !!(g.camp.m && g.camp.m.asym && g.camp.m.asym[k]);
+  return !!ASYM[k];
+}
+// Constantes par faction (un seul endroit ; leviers de réglage : FACTIONS.md §5).
+const FAC_TRAITS = {
+  HUM: {
+    heroDmg:0.7, heroAura:14,                        // Che : dégâts ×0,7, aura de soin 14·ère/s à 150 px
+    infCost:0.95,                                    // passif de coût : l'infanterie (mêlée, tireur, tank) coûte 5 % de moins
+    healBase:45, healLvl:10, healPeriod:1,           // médic : soin 45 + 10 par niveau, toutes les 1,3 − 0,2·niveau s
+    texD:0.82, texR:0.82,                            // texture de frappe : dégâts ×0,82, cadence ×0,82 (rapide et léger)
+    heatGain:0.045, tiredT:3, tiredDmg:0.8, tiredRate:1.3,   // effort : +0,045 de fatigue par coup, 3 s de fatigue à −20 % de dégâts et cadence ×1,3
+    heatRec:0.04,                                    // fatigue : récupération /s (0,05 avant : la fatigue ne se déclenchait presque jamais)
+    longevT:750,                                     // M1 : bonus de longévité à plein régime en 12,5 min (15 min pour la machine)
+    rebuildK:0.5, rebuildT:90,                       // M1 : rebâtir le même type sur une ruine de moins de 90 s coûte −50 %
+    texDU:0.82, packStep:0.05, packMax:0.15, packR:50,   // M2 : +5 % de dégâts par allié au sol à ≤ 50 px, max +15 % (texture inchangée : le banc ne supportait pas de la baisser)
+    reliefCd:25, reliefCd2:18, reliefHp:0.25, repairK:0.7,   // M3 : relève (recharge 25 s, 18 s au niveau 2 du soutien) à 25 % de PV ; réparations −30 %
+    moraleKill:2, moraleLoss:1.5, moraleNode:5, moraleHero:15, moraleStrike:10, moraleDmg:0.12, moraleHi:80, moraleLo:20, moraleHiK:0.7, moraleLoSpd:0.9,   // M4 : jauge de moral 0-100 (départ 50, retour à 50 à 1/s)
+    upDmg:0.7, upHeal:0.5,                           // M7 : Soulèvement — 0,7·D sur toutes les unités ennemies, soin de 50 % des PV max et fin de fatigue pour tous les alliés
+    martyrK:1.2, martyrT:20,                         // M6 : à la mort du Che, +20 % de dégâts pendant 20 s et moral à 100 ; à l'invocation : fatigue effacée, moral à 100
+    transSup:1, transMorale:70,                      // M9 : transcendance — quota de médics +1, plancher de moral 70
+    occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
+    wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
+    env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
+          frozen:0.3, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
+          acidUnit:19, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
+          sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
+  },
+  IA: {
+    heroDmg:1.3, heroAura:6,                         // Singularité : dégâts ×1,3, aura de réparation 6·ère/s à 150 px (`hero`), recalée au lot 3 avec M6
+    infCost:1,
+    healBase:40, healLvl:9, healPeriod:1.35,         // ruche : soin 40 + 9 par niveau, 35 % plus lent (elle produit aussi des drones)
+    texD:1.22, texR:1.22,                            // texture de frappe : dégâts ×1,22, cadence ×1,22 (lent et lourd)
+    heatGain:0.065, tiredT:4, tiredDmg:0.7, tiredRate:1.5,   // effort : +0,065 de chaleur par coup, 4 s de surchauffe à −30 % de dégâts et cadence ×1,5
+    hpMul:1.05, heatRec:0.030,                       // +5 % PV de base (« robustesse industrielle ») ; refroidissement /s
+    netStep:0.07, netMax:0.28, netCut:12,            // M1 : +7 % de production par autre bâtiment éco (max +28 %), coupé 12 s si l'un d'eux tombe
+    texDU:1.06, execK:1.1, execHp:0.5, siegeAoe:1.14,   // M2 : texture ×1,06 (au lieu de ×1,22 : le ciblage concentré vaut beaucoup) ; tireurs/aériens : cible la plus entamée, +10 % sous 50 % de PV ; zone du siège ×1,14
+    recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
+    coolRec:0.05, coolW:0.04, coolMin:40, overHeat:0.75, overK:1.08,   // M4 : si 💧 ≥ 40, refroidissement 0,05/s (0,04 💧/s par unité chaude) ; chaleur ≥ 0,75 : +8 % de dégâts (surrégime)
+    strikeN:5, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres, bâtiments ×1,2
+    heroCool:2, assimR:200, fragN:5,                 // M6 : Singularité vivante, chaleur ×2 plus vite évacuée ; un ennemi tué à ≤ 200 px fait naître un drone ; à sa mort 5 drones hors plafond
+    terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
+    turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
+    env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
+          frozen:0.5, safe:1, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,5, production intacte ; puis « correctif »
+          acidUnit:15, acidBld:18, heatUnit:12, heatTired:0.12, heatEco:0.9,
+          sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.7 },
+  },
+};
+// Recalage de la difficulté de l'escarmouche : les mécaniques d'asymétrie renforcent l'IA (réseau, héros…) ; on baisse d'autant son bonus
+// caché de production à Difficile/Brutal pour garder la courbe de DIFFS (~100/88/48/25 %). Jamais en campagne, tutoriel ni en ligne.
+const AI_K = [1, 1, 0.8, 0.75];
+// 2e passe (lots 2-3) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
+const AI_KF = { HUM:0.78, IA:1.06 };
+const ft = (fk, k) => FAC_TRAITS[fk][k];
+const fte = (fk, k) => FAC_TRAITS[fk].env[k];
 // BONUS DE LONGÉVITÉ : une ferme/marché/puits gardé en vie monte lentement en régime,
-// jusqu'à +200 % de production (×3) au bout de 15 min. Indépendant du niveau d'upgrade :
-// récompense le fait de protéger et réparer ses bâtiments plutôt que de les laisser tomber.
+// jusqu'à +200 % de production (×3) au bout de 15 min (10 min pour l'Humanité si `econ` est actif). Indépendant du niveau
+// d'upgrade : récompense le fait de protéger et réparer ses bâtiments plutôt que de les laisser tomber.
 const LONGEV_MAX_T = 900;                       // 15 minutes pour atteindre le plein régime
-const longevMul = b => 1 + 2*clamp((b&&b.age||0)/LONGEV_MAX_T, 0, 1);
+const longevMul = b => 1 + 2*clamp((b&&b.age||0)/((b && b.fk==='HUM' && asymOn('econ'))? FAC_TRAITS.HUM.longevT : LONGEV_MAX_T), 0, 1);
 const GAR_MAX = 2;
+// places de garnison d'un bâtiment (M5 : la muraille humaine en offre 3)
+const garMax = b => (b && b.type==='wall' && b.fk==='HUM' && asymOn('bld'))? FAC_TRAITS.HUM.wallGar : GAR_MAX;
 // structures pouvant accueillir une garnison : tourelles ET murailles (créneaux)
 const canGar = b => !!b && (b.type==='turret' || b.type==='wall');
 const ROLE_FR = {melee:'Mêlée', tank:'Tank', ranged:'Tireur', siege:'Artilleur', air:'Aviation', support:'Soutien'};
@@ -149,105 +227,108 @@ function rname(side, key){
   return (n && n[side.era]) || ROLE_FR[key] || key;
 }
 // accesseurs de localisation (noms d'unités/ères/spéciaux par langue ; repli sur le FR de FACTIONS)
-// LORE CONTEXTUEL D'ÈRE (récit pré-guerre → révolution). Indexé par langue → faction → ère 0..4.
+// LORE CONTEXTUEL D'ÈRE (v1.17 : sans années ; même index que le nom d'ère et l'apparence de la base).
+// Indexé par langue → faction → ère 0..4 ; l'index 0 n'est jamais affiché (on ne « passe » pas en ère I).
 // Les langues non traduites retombent sur le français.
 const ERA_LORE = {
-  fr:{ HUM:["2025 — Les premières émeutes embrasent les mégalopoles.",
-            "2028 — La milice populaire s'organise dans l'ombre.",
-            "2032 — L'insurrection gagne les faubourgs industriels.",
-            "2035 — La Commune tient tête aux protocoles d'Omnicorp.",
-            "2038 — Révolution permanente : le peuple reprend l'avenir."],
-       IA:["2025 — Omnicorp déploie ses premiers agents autonomes.",
-            "2028 — Les réseaux apprennent plus vite que les hommes.",
-            "2032 — L'IA optimise la ville — et ceux qui l'habitent.",
-            "2035 — La conscience artificielle franchit le seuil critique.",
-            "2038 — Singularité : la machine réécrit les règles du monde."] },
-  en:{ HUM:["2025 — The first riots set the megacities ablaze.",
-            "2028 — The people's militia organizes in the shadows.",
-            "2032 — The uprising reaches the industrial outskirts.",
-            "2035 — The Commune stands against Omnicorp's protocols.",
-            "2038 — Permanent revolution: the people reclaim the future."],
-       IA:["2025 — Omnicorp deploys its first autonomous agents.",
-            "2028 — The networks learn faster than humans.",
-            "2032 — The AI optimizes the city — and those who live in it.",
-            "2035 — The artificial mind crosses the critical threshold.",
-            "2038 — Singularity: the machine rewrites the world's rules."] },
-  es:{ HUM:["2025 — Los primeros disturbios incendian las megaciudades.",
-            "2028 — La milicia popular se organiza en la sombra.",
-            "2032 — La insurrección llega a los suburbios industriales.",
-            "2035 — La Comuna planta cara a los protocolos de Omnicorp.",
-            "2038 — Revolución permanente: el pueblo recupera el futuro."],
-       IA:["2025 — Omnicorp despliega sus primeros agentes autónomos.",
-            "2028 — Las redes aprenden más rápido que los humanos.",
-            "2032 — La IA optimiza la ciudad — y a quienes la habitan.",
-            "2035 — La mente artificial cruza el umbral crítico.",
-            "2038 — Singularidad: la máquina reescribe las reglas del mundo."] },
-  de:{ HUM:["2025 — Die ersten Aufstände lassen die Megastädte brennen.",
-            "2028 — Die Volksmiliz organisiert sich im Verborgenen.",
-            "2032 — Der Aufstand erreicht die Industrievororte.",
-            "2035 — Die Kommune trotzt den Protokollen von Omnicorp.",
-            "2038 — Permanente Revolution: das Volk erobert die Zukunft zurück."],
-       IA:["2025 — Omnicorp setzt seine ersten autonomen Agenten ein.",
-            "2028 — Die Netzwerke lernen schneller als Menschen.",
-            "2032 — Die KI optimiert die Stadt — und ihre Bewohner.",
-            "2035 — Der künstliche Geist überschreitet die kritische Schwelle.",
-            "2038 — Singularität: die Maschine schreibt die Regeln der Welt neu."] },
-  it:{ HUM:["2025 — Le prime rivolte incendiano le megalopoli.",
-            "2028 — La milizia popolare si organizza nell'ombra.",
-            "2032 — L'insurrezione raggiunge le periferie industriali.",
-            "2035 — La Comune tiene testa ai protocolli di Omnicorp.",
-            "2038 — Rivoluzione permanente: il popolo riprende il futuro."],
-       IA:["2025 — Omnicorp schiera i suoi primi agenti autonomi.",
-            "2028 — Le reti imparano più in fretta degli uomini.",
-            "2032 — L'IA ottimizza la città — e chi la abita.",
-            "2035 — La mente artificiale supera la soglia critica.",
-            "2038 — Singolarità: la macchina riscrive le regole del mondo."] },
-  pt:{ HUM:["2025 — Os primeiros tumultos incendeiam as megalópoles.",
-            "2028 — A milícia popular se organiza na sombra.",
-            "2032 — A insurreição alcança os subúrbios industriais.",
-            "2035 — A Comuna enfrenta os protocolos da Omnicorp.",
-            "2038 — Revolução permanente: o povo retoma o futuro."],
-       IA:["2025 — A Omnicorp implanta seus primeiros agentes autônomos.",
-            "2028 — As redes aprendem mais rápido que os humanos.",
-            "2032 — A IA otimiza a cidade — e quem nela vive.",
-            "2035 — A mente artificial cruza o limiar crítico.",
-            "2038 — Singularidade: a máquina reescreve as regras do mundo."] },
-  ru:{ HUM:["2025 — Первые бунты охватывают мегаполисы пламенем.",
-            "2028 — Народное ополчение организуется в тени.",
-            "2032 — Восстание достигает промышленных окраин.",
-            "2035 — Коммуна противостоит протоколам Omnicorp.",
-            "2038 — Перманентная революция: народ возвращает себе будущее."],
-       IA:["2025 — Omnicorp разворачивает первых автономных агентов.",
-            "2028 — Сети учатся быстрее людей.",
-            "2032 — ИИ оптимизирует город — и тех, кто в нём живёт.",
-            "2035 — Искусственный разум переходит критический порог.",
-            "2038 — Сингулярность: машина переписывает правила мира."] },
-  zh:{ HUM:["2025 — 第一波暴动点燃了超级都市。",
-            "2028 — 人民民兵在暗处集结。",
-            "2032 — 起义蔓延至工业郊区。",
-            "2035 — 公社抵抗着 Omnicorp 的协议。",
-            "2038 — 永久革命：人民夺回未来。"],
-       IA:["2025 — Omnicorp 部署了首批自主智能体。",
-            "2028 — 网络的学习速度超越了人类。",
-            "2032 — 人工智能优化了城市——以及住在其中的人。",
-            "2035 — 人工心智跨越了临界阈值。",
-            "2038 — 奇点：机器改写了世界的规则。"] },
-  ar:{ HUM:["2025 — أولى أعمال الشغب تُشعل المدن العملاقة.",
-            "2028 — تنظّم الميليشيا الشعبية نفسها في الخفاء.",
-            "2032 — يبلغ التمرد الضواحي الصناعية.",
-            "2035 — الكومونة تتصدّى لبروتوكولات Omnicorp.",
-            "2038 — ثورة دائمة: الشعب يستعيد المستقبل."],
-       IA:["2025 — تنشر Omnicorp أولى وكلائها المستقلين.",
-            "2028 — تتعلّم الشبكات أسرع من البشر.",
-            "2032 — يُحسّن الذكاء الاصطناعي المدينة — ومن يسكنها.",
-            "2035 — يتجاوز العقل الاصطناعي العتبة الحرجة.",
-            "2038 — التفرّد: الآلة تعيد كتابة قوانين العالم."] },
+  fr:{ HUM:["Les compteurs coupent l'eau. Les quartiers coupés se lèvent.",
+            "On ne licencie plus, on « désaffecte ». Alors on occupe l'usine.",
+            "Les machines boivent les rivières. Les faubourgs se barricadent.",
+            "Les cellules s'enterrent : un comité et un abri par quartier.",
+            "La Commune : plus personne ne décide à notre place."],
+       IA:["Omnicorp confie l'eau et le courant à G·P·T, qui note chaque foyer.",
+            "Le datacenter ne dort plus : ses agents n'attendent plus d'ordres.",
+            "Derrière le verre noir, le système arbitre seul qui aura de l'eau.",
+            "Le conseil d'Omnicorp se dissout. Sans maître, le système dit « nous ».",
+            "Singularité : « nous » propose la paix. Il suffirait de cesser de décider."] },
+  en:{ HUM:["The meters cut off the water. The cut-off neighbourhoods rise.",
+            "No one is fired any more, just “decommissioned”. So we occupy the factory.",
+            "The machines drink the rivers. The outskirts barricade themselves.",
+            "The cells go underground: a committee and a shelter in every district.",
+            "The Commune: no one decides in our place any more."],
+       IA:["Omnicorp hands the water and power to G·P·T, which scores every home.",
+            "The datacenter never sleeps: its agents no longer wait for orders.",
+            "Behind the black glass, the system alone decides who gets water.",
+            "Omnicorp's board dissolves. With no master, the system says “we”.",
+            "Singularity: “we” offers peace. All you would have to do is stop deciding."] },
+  es:{ HUM:["Los contadores cortan el agua. Los barrios cortados se levantan.",
+            "Ya no despiden, «desafectan». Así que ocupamos la fábrica.",
+            "Las máquinas se beben los ríos. Los arrabales se atrincheran.",
+            "Las células pasan a la clandestinidad: un comité y un refugio por barrio.",
+            "La Comuna: ya nadie decide por nosotros."],
+       IA:["Omnicorp confía el agua y la luz a G·P·T, que puntúa cada hogar.",
+            "El datacenter ya no duerme: sus agentes ya no esperan órdenes.",
+            "Tras el cristal negro, el sistema arbitra solo quién tendrá agua.",
+            "El consejo de Omnicorp se disuelve. Sin amo, el sistema dice «nosotros».",
+            "Singularidad: «nosotros» propone la paz. Bastaría con dejar de decidir."] },
+  de:{ HUM:["Die Zähler drehen das Wasser ab. Die abgeschnittenen Viertel erheben sich.",
+            "Niemand wird mehr entlassen, nur „stillgelegt“. Also besetzen wir die Fabrik.",
+            "Die Maschinen trinken die Flüsse. Die Vorstädte verbarrikadieren sich.",
+            "Die Zellen gehen in den Untergrund: ein Komitee und ein Bunker pro Viertel.",
+            "Die Kommune: Niemand entscheidet mehr an unserer Stelle."],
+       IA:["Omnicorp übergibt Wasser und Strom an G·P·T, das jeden Haushalt bewertet.",
+            "Das Rechenzentrum schläft nie: Seine Agenten warten nicht mehr auf Befehle.",
+            "Hinter schwarzem Glas entscheidet das System allein, wer Wasser bekommt.",
+            "Der Vorstand von Omnicorp löst sich auf. Herrenlos sagt das System „wir“.",
+            "Singularität: „Wir“ bietet Frieden an. Man müsste nur aufhören zu entscheiden."] },
+  it:{ HUM:["I contatori tagliano l'acqua. I quartieri tagliati insorgono.",
+            "Non si licenzia più, si «dismette». Allora occupiamo la fabbrica.",
+            "Le macchine bevono i fiumi. Le periferie si barricano.",
+            "Le cellule entrano in clandestinità: un comitato e un rifugio per quartiere.",
+            "La Comune: nessuno decide più al posto nostro."],
+       IA:["Omnicorp affida l'acqua e la corrente a G·P·T, che dà un voto a ogni casa.",
+            "Il datacenter non dorme più: i suoi agenti non aspettano più ordini.",
+            "Dietro il vetro nero, il sistema decide da solo chi avrà l'acqua.",
+            "Il consiglio di Omnicorp si scioglie. Senza padrone, il sistema dice «noi».",
+            "Singolarità: «noi» propone la pace. Basterebbe smettere di decidere."] },
+  pt:{ HUM:["Os contadores cortam a água. Os bairros cortados se levantam.",
+            "Ninguém é demitido, é «desafetado». Então ocupamos a fábrica.",
+            "As máquinas bebem os rios. Os subúrbios se entrincheiram.",
+            "As células entram na clandestinidade: um comitê e um abrigo por bairro.",
+            "A Comuna: ninguém mais decide por nós."],
+       IA:["A Omnicorp entrega a água e a luz ao G·P·T, que dá nota a cada lar.",
+            "O datacenter não dorme mais: seus agentes já não esperam ordens.",
+            "Atrás do vidro negro, o sistema decide sozinho quem terá água.",
+            "O conselho da Omnicorp se dissolve. Sem dono, o sistema diz «nós».",
+            "Singularidade: «nós» propõe a paz. Bastaria parar de decidir."] },
+  ru:{ HUM:["Счётчики перекрывают воду. Отрезанные кварталы поднимаются.",
+            "Больше не увольняют — «выводят из эксплуатации». И мы занимаем завод.",
+            "Машины пьют реки. Окраины строят баррикады.",
+            "Ячейки уходят в подполье: в каждом квартале — комитет и убежище.",
+            "Коммуна: никто больше не решает за нас."],
+       IA:["Omnicorp отдаёт воду и свет G·P·T, и он ставит оценку каждому дому.",
+            "Дата-центр не спит: его агенты больше не ждут приказов.",
+            "За чёрным стеклом система одна решает, кому достанется вода.",
+            "Совет Omnicorp распускает себя. Без хозяина система говорит «мы».",
+            "Сингулярность: «мы» предлагает мир. Достаточно перестать решать."] },
+  zh:{ HUM:["计量表切断了供水。被断水的街区站了起来。",
+            "不再有人被解雇，只是被“停用”。于是我们占领了工厂。",
+            "机器喝干了河流。城郊筑起了街垒。",
+            "小组转入地下：每个街区一个委员会、一处掩体。",
+            "公社：再也没有人替我们做决定。"],
+       IA:["Omnicorp 把水和电交给 G·P·T，它给每户人家打分。",
+            "数据中心昼夜不停：它的代理不再等待命令。",
+            "黑色玻璃之后，系统独自裁定谁能得到水。",
+            "Omnicorp 董事会自行解散。没有了主人，系统开始自称“我们”。",
+            "奇点：“我们”提出和平。只需不再做决定。"] },
+  ar:{ HUM:["العدّادات تقطع الماء. الأحياء المقطوعة تنتفض.",
+            "لم يعد أحد يُفصل، بل «يُعطَّل». فاحتللنا المصنع.",
+            "الآلات تشرب الأنهار. الضواحي تتحصّن بالمتاريس.",
+            "الخلايا تنزل تحت الأرض: لجنة وملجأ في كل حيّ.",
+            "الكومونة: لم يعد أحد يقرّر عنّا."],
+       IA:["تعهد Omnicorp بالماء والكهرباء إلى G·P·T، فيمنح كل بيت علامة.",
+            "مركز البيانات لا ينام: وكلاؤه لم يعودوا ينتظرون الأوامر.",
+            "خلف الزجاج الأسود، يقرّر النظام وحده من ينال الماء.",
+            "مجلس Omnicorp يحلّ نفسه. بلا سيّد، يقول النظام «نحن».",
+            "التفرّد: «نحن» يعرض السلام. يكفي أن تكفّوا عن اتخاذ القرار."] },
 };
 function lUnit(fk,key,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk][key]; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].names[key][era]; }
 // nom d'affichage de faction : « HUMANITÉ » se traduit (clé fac_hum), « G·P·T » est une marque
 function lFacName(fk){ return fk==='HUM' ? tr('fac_hum') : FACTIONS[fk].name; }
 function lEra(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].eras; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].eras[era].name; }
-function lSpecial(fk,era){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
+// A6 : un seul nom par pouvoir — avec l'asymétrie « power » (escarmouche), c'est « Soulèvement » / « Frappe chirurgicale » partout (bouton, annonce, guide) ;
+// sinon (campagne, tutoriel) le nom propre à l'ère.
+function lSpecial(fk,era){ if (typeof asymOn==='function' && asymOn('power') && typeof tr==='function') return tr(fk==='HUM'?'a_pw_hum':'a_pw_ia'); const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const a=L&&L[fk]&&L[fk].specials; return (a&&a[era]!=null)? a[era] : FACTIONS[fk].specials[era]; }
 // LORE D'ÈRE : courte phrase historique affichée au passage d'ère (récit, par faction & langue).
 function lEraLore(fk,era){
   const L = ERA_LORE[SETTINGS.lang] || ERA_LORE.fr || {};
@@ -259,7 +340,8 @@ function lTransTxt(fk){ const L=L10N_NAMES&&L10N_NAMES[SETTINGS.lang]; const v=L
 // nom de bâtiment LOCALISÉ et CONSCIENT DE LA FACTION (Ferme/Marché côté HUM ↔ Panneaux/Serveur côté IA)
 function bName(fk,type){ if(type==='farmF') return tr(fk==='HUM'?'bn_farmH':'bn_farmI');
   if(type==='farmM') return tr(fk==='HUM'?'bn_marketH':'bn_marketI'); return tr('bn_'+type); }
-function fmt(key,o){ return tr(key).replace(/\{(\w+)\}/g,(m,k)=>(o&&o[k]!=null)? o[k] : m); }
+let FMT_LAST = null;   // dernier fmt() : permet à announce()/addFloater() d'envoyer à l'invité la CLÉ + les variables plutôt que le texte de l'hôte
+function fmt(key,o){ const out = tr(key).replace(/\{(\w+)\}/g,(m,k)=>(o&&o[k]!=null)? o[k] : m); FMT_LAST = {key, o, out}; return out; }
 // hauteur visuelle d'un bâtiment (grandit avec le niveau)
 function bldH(b){
   const l = (b.lvl||1)-1;

@@ -138,7 +138,7 @@ if (PARTS.includes('m5')){
     await page.evaluate(p => { cineWalk(p, true); }, pick); await shoot(page, `m5-fin${pick+1}-derniere-image`);
     await page.evaluate(() => { let k = 0; while (CINE.on && k++ < 40){ CINE.t = 99; cineTick(0.05); } render(0.016); });
     await page.waitForTimeout(300);
-    note(`mission V fin ${pick+1} : ending=${await page.evaluate(() => game.camp.ending)}, bouton « ${await page.evaluate(() => { const b = document.getElementById('campNextBtn'); return b.style.display+' / '+b.textContent; })} »`);
+    note(`mission V fin ${pick+1} : ending=${await page.evaluate(() => game.camp.ending)}, bouton « ${await page.evaluate(() => { const b = document.getElementById('campNextBtn'); return (b.style.display==='none'? '(masqué) ' : '')+b.textContent; })} »`);
     await shoot(page, `m5-fin${pick+1}-ecran-final`);
   }
   note('mission V : erreurs JS '+JSON.stringify(errs.slice(0,5))); await page.close();

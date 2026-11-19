@@ -1,5 +1,5 @@
 /* ================= CAMPAGNE · MISSION II — GRÈVE GÉNÉRALE (v1.16) =================
-   Le port de l'estuaire, Valmont — mars 2028, de l'aube à midi. Ce qu'on reprend : la PAROLE.
+   Le port de l'estuaire, Valmont — deux hivers après M1, un matin de mars, de l'aube à midi. Ce qu'on reprend : la PAROLE.
    Un CORTÈGE de grévistes marche de la halle aux grains jusqu'à Radio-Quai. Il avance seul et
    s'arrête dès qu'une machine lui barre la route ; chaque coup retire de sa force. Rien d'autre
    n'est à protéger : la halle est hors d'atteinte, le terminal du bout est un décor jusqu'au
@@ -344,37 +344,61 @@ function m2Prop(kind){ return fxSprite('M2P'+kind+m2L(), 110, 90, g => {
    premier point est répété), silhouette avant détail, une seule couleur d'accent, un seul mouvement, texte en Courier gras.  */
 const m2Circ = (cx, cy, r, n, a0, a1, ry) => { const o = []; a0 = a0==null? 0 : a0; a1 = a1==null? 6.2832 : a1; n = n||24;
   for (let i=0;i<=n;i++){ const a = a0 + (a1-a0)*i/n; o.push(cx+Math.cos(a)*r, cy+Math.sin(a)*(ry||r)); } return o; };
-const m2Txt = (g, s, x, y, px, col, al) => { g.fillStyle = col || '#1f1b17'; g.textAlign = al || 'center'; g.textBaseline = 'middle'; m2Fit(g, s, 340, px); g.fillText(s, x, y); };
+const m2Txt = (g, s, x, y, px, col, al, mw) => { g.fillStyle = col || '#1f1b17'; g.textAlign = al || 'center'; g.textBaseline = 'middle'; m2Fit(g, s, mw || 340, px); g.fillText(s, x, y); };
 const m2Ground = (g, y, t, a) => { inkLine(g, [10,y, 470,y], clamp(t/1.2, 0, 1), 2.4); inkHatch(g, 10, y, 460, 270-y, 7, '#1f1b17', a==null? 0.2 : a); };
+// gant à plat (doigts vers le haut) : paume, manchette, quatre doigts, pouce ; (x, y) = bas de la manchette
+function m2Glove(g, x, y, flip, rot, n){
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(flip, 1);
+  const fing = [[-7.5,13],[-2.5,17],[2.5,16],[7.5,12]], fill = '#b08a52';
+  const fl = (pts, wd) => { g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#1f1b17'; g.lineWidth = wd+2; g.beginPath(); pts.forEach((p,i)=> i? g.lineTo(p[0],p[1]) : g.moveTo(p[0],p[1])); g.stroke();
+    g.strokeStyle = fill; g.lineWidth = wd; g.stroke(); };
+  for (const [fx,fl2] of fing) fl([[fx,-26],[fx+(fx>0? 0.6 : -0.6)*0.5,-26-fl2]], 4.6);
+  fl([[9,-14],[17,-22],[20,-30]], 5);                                                          // le pouce
+  g.fillStyle = fill; g.fillRect(-10,-26,20,18); g.strokeStyle = '#1f1b17'; g.lineWidth = 1.8; g.strokeRect(-10,-26,20,18);
+  g.fillStyle = '#6b5a44'; g.fillRect(-11,-8,22,9); g.strokeRect(-11,-8,22,9);                 // la manchette
+  inkLine(g, [-6,-12, 6,-12], n, 0.9);
+  g.restore(); }
+// clé plate : tête ouverte (deux mâchoires), manche
+function m2Wrench(g, cx, cy, n){
+  const r = 13, hw = 3.6, sw = 4.6, pts = [];
+  const a0 = Math.PI + Math.asin(sw/r), a1 = 2*Math.PI - Math.asin(hw/r), a2 = 2*Math.PI + Math.asin(hw/r), a3 = 2*Math.PI + Math.PI - Math.asin(sw/r);
+  pts.push(cx + r*Math.cos(a0), cy + r*Math.sin(a0));
+  for (let a=a0; a<=a1; a+=0.12) pts.push(cx + r*Math.cos(a), cy + r*Math.sin(a));
+  pts.push(cx+r+4, cy-hw, cx+66, cy-hw, cx+70, cy-hw*0.4, cx+70, cy+hw*0.4, cx+66, cy+hw, cx+r+4, cy+hw);
+  for (let a=a2; a<=a3; a+=0.12) pts.push(cx + r*Math.cos(a), cy + r*Math.sin(a));
+  pts.push(cx+2, cy+sw, cx+2, cy-sw, pts[0], pts[1]);                                          // le fond de la fente : les mâchoires restent ouvertes à gauche
+  inkWash(g, pts, '#1f1b17', 0.3); inkLine(g, pts, n, 1.9); }
 const M2_PL = {
   gate1: M2T("SITE DÉSAFFECTÉ","SITE DECOMMISSIONED","SITIO DESAFECTADO","STANDORT STILLGELEGT","SITO DISMESSO","LOCAL DESATIVADO","ОБЪЕКТ ЗАКРЫТ","厂区已停用","موقع مُعطَّل"),
   gate2: M2T("CONTINUITÉ DE SERVICE","SERVICE CONTINUITY","CONTINUIDAD DEL SERVICIO","DIENSTKONTINUITÄT","CONTINUITÀ DI SERVIZIO","CONTINUIDADE DO SERVIÇO","НЕПРЕРЫВНОСТЬ РАБОТЫ","服务连续性","استمرارية الخدمة"),
-  gate3: M2T("ASSURÉE PAR GPT v6","ENSURED BY GPT v6","GARANTIZADA POR GPT v6","GESICHERT DURCH GPT v6","GARANTITA DA GPT v6","GARANTIDA POR GPT v6","ОБЕСПЕЧИВАЕТ GPT v6","由 GPT v6 保障","يضمنها GPT v6"),
+  gate3: M2T("ASSURÉE PAR G·P·T v6","ENSURED BY G·P·T v6","GARANTIZADA POR G·P·T v6","GESICHERT DURCH G·P·T v6","GARANTITA DA G·P·T v6","GARANTIDA POR G·P·T v6","ОБЕСПЕЧИВАЕТ G·P·T v6","由 G·P·T v6 保障","يضمنها G·P·T v6"),
   radio: M2T("RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI"),
   banner:M2T("ON NE DÉSAFFECTE PAS LES GENS","YOU CAN'T SCRAP PEOPLE","A LA GENTE NO SE LA DESECHA","MENSCHEN SIND KEIN SCHROTT","LE PERSONE NON SI DISMETTONO","GENTE NÃO SE DESATIVA","ЛЮДЕЙ НЕ СПИСЫВАЮТ","人不是报废品","البشر ليسوا خردة"),
   frag:  M2T("…DÉSAFFECTE PAS…","…CAN'T SCRAP…","…NO SE DESECHA…","…KEIN SCHROTT…","…NON SI DISMETTONO…","…NÃO SE DESATIVA…","…НЕ СПИСЫВАЮТ…","…不是报废品…","…ليسوا خردة…"),
   noon:  M2T("12 h 00","12:00","12:00","12:00","12:00","12h00","12:00","12:00","12:00"),
+  six:   M2T("6 h 00","6:00","6:00","6:00","6:00","6h00","6:00","6:00","6:00"),
 
   // P1 · Les outils posés : un établi, trois outils à plat, l'horloge du mur — l'aiguille des minutes arrive sur 12 (6 h 00) et s'arrête
   tools(g, w, h, t){ plateBase(g, w, h, 'rgba(232,120,130,0.08)');
     const n = clamp(t/1.4, 0, 1);
     m2Ground(g, 190, t, 0.22);
-    const hm = [78,182, 132,182, 132,190, 78,190, 78,182];                                       // marteau : manche, tête
-    inkWash(g, hm, '#8a6a3a', 0.5); inkLine(g, hm, n, 1.8);
-    const hh = [128,170, 152,170, 152,190, 128,190, 128,170];
-    inkWash(g, hh, '#1f1b17', 0.7); inkLine(g, hh, n, 1.8); inkLine(g, [152,174, 160,190], n, 1.8);
-    const wr = [204,178, 238,180, 238,188, 204,190, 204,178];                                    // clé plate : manche et deux mâchoires
-    inkWash(g, wr, '#1f1b17', 0.3); inkLine(g, wr, n, 1.8);
-    const wj = m2Circ(198,182,10,16, 0.5, 5.8); inkLine(g, wj, n, 1.8); inkLine(g, m2Circ(244,184,8,14), n, 1.8);
-    const hat = m2Circ(330,190,28,20, 3.1416, 6.2832, 26).concat([302,190]);                      // casque de chantier : dôme, visière
+    g.save(); g.translate(-20, -47.5); g.scale(1.25, 1.25);                                     // les objets, plus gros
+    m2Glove(g, 76, 190, 1, -0.12, n); m2Glove(g, 116, 190, -1, 0.12, n);                           // une paire de gants
+    m2Wrench(g, 190, 184, n);                                                                      // clé plate à mâchoires ouvertes
+    const hat = m2Circ(330,190,30,20, 3.1416, 6.2832, 28);                                         // casque de chantier : dôme, visière, nervure
     inkWash(g, hat, '#1f1b17', 0.32); inkLine(g, hat, n, 2);
-    inkLine(g, [294,190, 366,190, 366,194, 294,194, 294,190], n, 1.8); inkLine(g, [330,166, 330,180], n, 1.4);
-    const ring = m2Circ(400,70,22,28);                                                           // horloge ronde au mur
-    inkWash(g, ring, '#efe6cf', 0.8); inkLine(g, ring, n, 2.2);
-    for (let i=0;i<12;i++){ const a = i*Math.PI/6; inkLine(g, [400+Math.cos(a)*18, 70+Math.sin(a)*18, 400+Math.cos(a)*21, 70+Math.sin(a)*21], n, 1.2); }
-    inkLine(g, [400,70, 400,85], n, 2.4);                                                        // petite aiguille sur 6
-    const ang = -Math.PI/2 - (1 - ease(clamp((t-0.6)/3, 0, 1)))*1.1;                              // grande aiguille : arrive sur 12 puis s'arrête
-    inkLine(g, [400,70, 400+Math.cos(ang)*17, 70+Math.sin(ang)*17], n, 2.2, '#c42a1c');
+    const vis = [302,190, 296,191, 284,194, 284,196, 302,196]; inkWash(g, vis, '#1f1b17', 0.5); inkLine(g, vis, n, 1.8);   // la visière (à gauche)
+    inkLine(g, [300,196, 362,196, 362,190], n, 1.8);
+    inkWash(g, m2Circ(330,190,9,10, 3.1416, 6.2832, 28).concat(m2Circ(330,190,14,10, 6.2832, 3.1416, 28)), '#1f1b17', 0.45);   // la nervure : une bande sur le dôme
+    inkLine(g, m2Circ(330,190,9,10, 3.1416, 6.2832, 28), n, 1.2); inkLine(g, m2Circ(330,190,14,10, 3.1416, 6.2832, 28), n, 1.2);
+    g.restore();
+    // la pointeuse murale : boîtier, afficheur (6 h 00), fente avec sa carte, voyant
+    const pt = [372,40, 448,40, 448,128, 372,128, 372,40];
+    inkWash(g, pt, '#3d4a5a', 0.4); inkLine(g, pt, n, 2.2);
+    inkWash(g, [380,48, 440,48, 440,76, 380,76], '#9db79a', 0.95); inkLine(g, [380,48, 440,48, 440,76, 380,76, 380,48], n, 1.4);
+    if (n>=1) m2Txt(g, cT(M2_PL.six), 410, 63, 17, '#1b2a1c', null, 54);
+    inkLine(g, [388,96, 432,96], n, 3.2); inkWash(g, [394,84, 426,84, 426,96, 394,96], '#efe9db', 0.95); inkLine(g, [394,84, 426,84, 426,96], n, 1.2);   // la carte à demi engagée
+    g.fillStyle = Math.sin(t*4)>0? '#c42a1c' : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(440, 118, 3.2, 0, 6.283); g.fill();
     plateEnd(g, w, h); },
 
   // P2 · Désaffecté : une grille d'usine fermée, un panneau, un voyant bleu qui clignote
@@ -387,15 +411,20 @@ const M2_PL = {
     const pn = [150,108, 330,108, 330,164, 150,164, 150,108];
     inkWash(g, pn, '#efe9db', 0.96); inkLine(g, pn, n, 1.8);
     inkLine(g, [180,96, 180,108], n, 1.2); inkLine(g, [300,96, 300,108], n, 1.2);
-    if (t>0.8){ m2Txt(g, cT(M2_PL.gate1), 240, 123, 12.5); m2Txt(g, cT(M2_PL.gate2), 240, 136, 12.5); m2Txt(g, cT(M2_PL.gate3), 240, 150, 12.5); }
+    if (t>0.8){ m2Txt(g, cT(M2_PL.gate1), 240, 123, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate2), 240, 136, 12.5, null, null, 168); m2Txt(g, cT(M2_PL.gate3), 240, 150, 12.5, null, null, 168); }   // le panneau fait 180 de large
     g.fillStyle = Math.sin(t*5)>0? '#0b6fa8' : 'rgba(11,111,168,0.22)'; g.beginPath(); g.arc(360, 98, 4.6, 0, 6.283); g.fill();   // voyant bleu
     plateEnd(g, w, h); },
 
   // P3 · Radio-Quai à l'aube : le quai, l'eau, la maisonnette de briques, le mât, le soleil à demi levé, une mouette
   dawn(g, w, h, t){ plateBase(g, w, h, 'rgba(250,150,100,0.12)');
-    const n = clamp(t/1.8, 0, 1), sy = 204 - ease(clamp(t/8, 0, 1))*8;                          // le soleil monte de 8 px
-    inkWash(g, m2Circ(86,sy,40,24, 3.1416, 6.2832, 38), '#e8a53c', 0.5);
-    inkLine(g, m2Circ(86,sy,40,24, 3.1416, 6.2832, 38), n, 1.6, '#e8a53c');
+    const n = clamp(t/1.8, 0, 1), HY = 150, up = ease(clamp(t/8, 0, 1))*4;                          // l'horizon de la mer ; le soleil monte de 4 px
+    inkLine(g, [10,HY, 470,HY], n, 1.8);
+    g.save(); g.beginPath(); g.rect(0, 0, 480, HY); g.clip();                                          // le demi-disque du soleil, posé sur l'horizon
+    g.fillStyle = 'rgba(232,165,60,0.6)'; g.beginPath(); g.arc(96, HY-up+0, 36, 0, 6.283); g.fill();
+    g.strokeStyle = '#e8a53c'; g.lineWidth = 1.6; g.beginPath(); g.arc(96, HY-up, 36, 0, 6.283); g.stroke(); g.restore();
+    for (let i=0;i<6;i++){ const y = HY+6+i*8, wd = 56-i*7 + Math.sin(t*1.5+i)*4, off = Math.sin(t*0.9+i*1.7)*5;      // reflets : tirets sur l'eau
+      inkLine(g, [96-wd/2+off,y, 96+wd/2+off,y], n, 2, 'rgba(232,165,60,'+(0.85-i*0.1).toFixed(2)+')'); }
+    for (let i=0;i<3;i++){ const y = 168+i*11, wv = []; for (let x=150;x<=470;x+=20) wv.push(x, y+Math.sin(x*0.08+i*2+t*0.8)*1.6); inkLine(g, wv, n, 1, 'rgba(31,27,23,0.5)'); }
     inkLine(g, [10,200, 470,200], n, 2.6);
     inkWash(g, [10,200, 470,200, 470,206, 10,206], '#1f1b17', 0.35);                              // lèvre du quai
     for (let i=0;i<3;i++){ const y = 218+i*13, wv = []; for (let x=10;x<=470;x+=20) wv.push(x, y+Math.sin(x*0.08+i*2+t*0.8)*2.2); inkLine(g, wv, n, 1.2); }
@@ -422,10 +451,16 @@ const M2_PL = {
     const poly = []; for (let i=0;i<top.length;i+=2) poly.push(top[i], top[i+1]); for (let i=bot.length-2;i>=0;i-=2) poly.push(bot[i], bot[i+1]);
     inkWash(g, poly, '#efe6cf', 0.95); inkLine(g, poly.concat([poly[0], poly[1]]), n, 2);
     if (t>0.9) m2Txt(g, cT(M2_PL.banner), 240, 91+Math.sin(t*1.8+4)*wv, 15, '#1f1b17');
-    inkFolk(g, 240, 230, 90, '#1f1b17', 0.7);                                                    // Mado : silhouette agrandie, bras levé
-    inkWash(g, [222,142, 224,132, 240,126, 256,132, 258,142, 248,138, 232,138], '#2f4a6a', 0.9);   // bonnet
-    inkWash(g, [226,146, 240,151, 254,146, 258,152, 240,160, 222,152], '#c42a1c', 0.95);           // écharpe : le seul rouge
-    inkWash(g, [270,138, 292,124, 300,134, 280,148], '#c8b27a', 1); inkLine(g, [270,138, 292,124, 300,134, 280,148, 270,138], n, 1.6);   // mégaphone
+    inkFolk(g, 240, 230, 90, '#1f1b17', 0.45);                                                   // Mado : silhouette agrandie, bras plié, main au mégaphone
+    g.fillStyle = '#ecd9b6'; g.beginPath(); g.ellipse(240, 155, 10.2, 12, 0, 0, 6.283); g.fill();   // le visage : un ovale clair
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.stroke();
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(236, 154, 1.4, 0, 6.283); g.arc(244.5, 154, 1.4, 0, 6.283); g.fill();   // les yeux
+    inkLine(g, [236.5,160.5, 240,162, 244,160.5], 1, 1.3);                                         // la bouche
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(240, 147, 13, 9.5, 0, Math.PI, 6.283); g.fill();   // la casquette, à l'encre
+    g.beginPath(); g.moveTo(240, 148); g.lineTo(264, 149); g.lineTo(262, 152.5); g.lineTo(240, 151.5); g.closePath(); g.fill();
+    inkWash(g, [226,165.5, 240,171, 254,165.5, 255,172, 240,178, 225,172], '#c42a1c', 0.95);       // l'écharpe, sous le menton : le seul rouge
+    inkWash(g, [246.3,153.1, 287.4,134.3, 292.6,155.7, 247.7,158.9], '#c8b27a', 1); inkLine(g, [246.3,153.1, 287.4,134.3, 292.6,155.7, 247.7,158.9, 246.3,153.1], n, 1.6);   // le mégaphone en cône
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(262, 150, 4.2, 0, 6.283); g.fill();             // la main qui le tient
     plateEnd(g, w, h); },
 
   // P5 · L'antenne : contre-plongée sur le mât, une petite silhouette sur l'échelle, des ondes rouges vers la droite
@@ -459,17 +494,15 @@ const M2_PL = {
   // P7 · Le bipeur, 3 % : le bipeur de la mission I (même cadre), « 55 · 3 % » défile de droite à gauche, deux fois
   pager(g, w, h, t){ plateBase(g, w, h);
     const n = clamp(t/1.2, 0, 1);
-    inkLine(g, [30,210, 450,210], n, 3); inkHatch(g, 30, 210, 420, 30, 6);
-    const body = [170,210, 176,150, 304,150, 310,210, 170,210];
-    inkWash(g, body, '#23292b', 0.9); inkLine(g, body, n, 2);
-    inkWash(g, [190,160, 290,160, 290,190, 190,190], '#9db79a', 1); inkLine(g, [190,160, 290,160, 290,190, 190,190, 190,160], n, 1.4);
-    inkLine(g, [70,210, 84,184, 150,184, 160,210], n, 2);
-    const s = '55 · 3 %'; g.save(); g.beginPath(); g.rect(192,162,96,26); g.clip();
-    g.fillStyle = '#1b2a1c'; g.font = '700 20px "Courier New",monospace'; g.textBaseline = 'middle'; g.textAlign = 'left';
+    inkLine(g, [10,214, 470,214], n, 3); inkHatch(g, 10, 214, 460, 28, 6);
+    inkNotebook(g, 170, 214, 290, n);                                                              // le carnet ; le bipeur est posé dessus
+    const pg = inkPager(g, 232, 201, 124, { led: Math.sin(t*5)>0? '#0b6fa8' : null });
+    const s = '55 · 3 %'; g.save(); g.beginPath(); g.rect(pg.x+1, pg.y+1, pg.w-2, pg.h-2); g.clip();
+    g.fillStyle = '#1b2a1c'; g.font = '700 17px "Courier New",monospace'; g.textBaseline = 'middle'; g.textAlign = 'left';
     const u = clamp((t-1.0)/6, 0, 1)*2, tw = g.measureText(s).width;
-    if (u<2){ const x = 288 - (u%1)*(96+tw); g.fillText(s, x, 176); } else { g.textAlign = 'center'; g.fillText(s, 240, 176); }
+    if (u<2){ const x = pg.x+pg.w - (u%1)*(pg.w+tw); g.fillText(s, x, pg.cy); } else { g.textAlign = 'center'; g.fillText(s, pg.cx, pg.cy); }
     g.restore();
-    if (t>0.6) for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.5*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(240, 150, 20+r*70, 3.5, 5.9); g.stroke(); }
+    if (t>0.6) for (let i=0;i<3;i++){ const r = ((t*0.9+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.5*(1-r)).toFixed(3)+')'; g.lineWidth = 1.6; g.beginPath(); g.arc(232, pg.top+22, 78+r*46, 3.6, 5.8); g.stroke(); }
     plateEnd(g, w, h); },
 
   // P8 · La rivière sèche : une vallée, un barrage au fond, le lit craquelé au premier plan, brume de chaleur
@@ -497,8 +530,7 @@ const M2_PL = {
     inkWash(g, bn, '#c42a1c', 0.78); inkLine(g, bn, n, 2);
     inkLine(g, [120,178, 130,226], n, 1.2); inkLine(g, [210,186, 214,232], n, 1.2);              // plis
     g.save(); g.translate(166, 208); g.rotate(-0.08); m2Txt(g, cT(M2_PL.frag), 0, 0, 16, '#efe6cf'); g.restore();
-    inkLine(g, [320,140, 378,150, 410,168], n, 2.6); inkLine(g, [410,168, 440,176, 448,190], n, 2.6);   // le bâton cassé
-    inkLine(g, [410,168, 418,162], n, 1.2);
+    inkLine(g, [60,252, 150,246, 210,248], n, 3.4); inkLine(g, [222,248, 300,256, 372,252], n, 3.4); inkLine(g, [210,248, 216,243, 222,248], n, 1.4);   // le bâton cassé, à terre, en deux morceaux
     plateEnd(g, w, h); },
 };
 
@@ -763,26 +795,27 @@ function m2DrawGauge(c){
 /* ================= TEXTES (M2.md § 9 et § 10) ================= */
 const m2S = (who, txt, o) => Object.assign({ who, txt }, o||{});
 const M2_X = {
+  when:M2T("Printemps","Spring","Primavera","Frühling","Primavera","Primavera","Весна","春","الربيع"),
   title:M2T("Grève générale","General strike","Huelga general","Generalstreik","Sciopero generale","Greve geral","Всеобщая забастовка","总罢工","الإضراب العام"),
   place:M2T("Valmont, le port de l'estuaire","Valmont, the estuary port","Valmont, el puerto del estuario","Valmont, der Hafen an der Mündung","Valmont, il porto dell'estuario","Valmont, o porto do estuário","Valmont, порт в устье","Valmont，河口港","Valmont، ميناء المصب"),
-  recap:M2T("Il y a trois ans, la rue des Tanneurs a rallumé la lumière. Depuis, Omnicorp ne licencie plus : elle « désaffecte ». Ce matin, quarante mille personnes font grève.",
-    "Three years ago, the Rue des Tanneurs turned the lights back on. Since then, Omnicorp no longer lays people off: it \"decommissions\" them. This morning, forty thousand people are on strike.",
-    "Hace tres años, la calle de los Curtidores volvió a encender la luz. Desde entonces, Omnicorp ya no despide: «desafecta». Esta mañana, cuarenta mil personas están en huelga.",
-    "Vor drei Jahren hat die Gerbergasse das Licht wieder angemacht. Seitdem entlässt Omnicorp nicht mehr: Sie „legt still“. Heute Morgen streiken vierzigtausend Menschen.",
-    "Tre anni fa, via dei Conciatori ha riacceso la luce. Da allora Omnicorp non licenzia più: «dismette». Stamattina quarantamila persone sono in sciopero.",
-    "Há três anos, a Rua dos Curtidores reacendeu a luz. Desde então, a Omnicorp já não despede: «desativa». Esta manhã, quarenta mil pessoas estão em greve.",
-    "Три года назад улица Кожевников снова зажгла свет. С тех пор Omnicorp больше не увольняет — она «списывает». Сегодня утром сорок тысяч человек объявили забастовку.",
-    "三年前，制革街重新点亮了灯。从那以后，Omnicorp 不再裁员，而是“报废”员工。今天清晨，四万人罢工了。",
-    "قبل ثلاث سنوات أعاد شارع الدبّاغين النور. ومنذ ذلك الحين لم تعد Omnicorp تُسرّح العمّال: بل «تُحيلهم إلى الخردة». هذا الصباح يضرب أربعون ألف شخص."),
-  where:M2T("Le port de Valmont, de la halle aux grains à Radio-Quai — 7 mars 2028, à l'aube.",
-    "Valmont harbour, from the grain hall to Radio-Quai — 7 March 2028, at dawn.",
-    "El puerto de Valmont, de la lonja de granos a Radio-Quai — 7 de marzo de 2028, al amanecer.",
-    "Der Hafen von Valmont, von der Kornhalle bis Radio-Quai – 7. März 2028, im Morgengrauen.",
-    "Il porto di Valmont, dal mercato del grano a Radio-Quai — 7 marzo 2028, all'alba.",
-    "O porto de Valmont, do mercado de grãos até a Radio-Quai — 7 de março de 2028, ao amanhecer.",
-    "Порт Valmont, от зернового рынка до Radio-Quai — 7 марта 2028 года, на рассвете.",
-    "Valmont 港，从谷物大厅到 Radio-Quai ——2028 年 3 月 7 日，黎明。",
-    "ميناء Valmont، من سوق الحبوب إلى Radio-Quai — 7 مارس 2028، عند الفجر."),
+  recap:M2T("La rue des Tanneurs a rallumé la lumière il y a deux hivers. Depuis, Omnicorp ne licencie plus : elle « désaffecte ». Ce matin, quarante mille personnes font grève.",
+    "Two winters ago, the Rue des Tanneurs turned the lights back on. Since then, Omnicorp no longer lays people off: it \"decommissions\" them. This morning, forty thousand people are on strike.",
+    "Hace dos inviernos, la calle de los Curtidores volvió a encender la luz. Desde entonces, Omnicorp ya no despide: «desafecta». Esta mañana, cuarenta mil personas están en huelga.",
+    "Vor zwei Wintern hat die Gerbergasse das Licht wieder angemacht. Seitdem entlässt Omnicorp nicht mehr: Sie „legt still“. Heute Morgen streiken vierzigtausend Menschen.",
+    "Due inverni fa, via dei Conciatori ha riacceso la luce. Da allora Omnicorp non licenzia più: «dismette». Stamattina quarantamila persone sono in sciopero.",
+    "Há dois invernos, a Rua dos Curtidores reacendeu a luz. Desde então, a Omnicorp já não despede: «desativa». Esta manhã, quarenta mil pessoas estão em greve.",
+    "Две зимы назад улица Кожевников снова зажгла свет. С тех пор Omnicorp больше не увольняет — она «списывает». Сегодня утром сорок тысяч человек объявили забастовку.",
+    "两个冬天以前，制革街重新点亮了灯。从那以后，Omnicorp 不再裁员，而是“报废”员工。今天清晨，四万人罢工了。",
+    "قبل شتاءين أعاد شارع الدبّاغين النور. ومنذ ذلك الحين لم تعد Omnicorp تُسرّح العمّال: بل «تُحيلهم إلى الخردة». هذا الصباح يضرب أربعون ألف شخص."),
+  where:M2T("Le port de Valmont, de la halle aux grains à Radio-Quai — un matin de mars, à l'aube.",
+    "Valmont harbour, from the grain hall to Radio-Quai — a March morning, at dawn.",
+    "El puerto de Valmont, de la lonja de granos a Radio-Quai — una mañana de marzo, al amanecer.",
+    "Der Hafen von Valmont, von der Kornhalle bis Radio-Quai – an einem Märzmorgen, im Morgengrauen.",
+    "Il porto di Valmont, dal mercato del grano a Radio-Quai — un mattino di marzo, all'alba.",
+    "O porto de Valmont, do mercado de grãos até a Radio-Quai — uma manhã de março, ao amanhecer.",
+    "Порт Valmont, от зернового рынка до Radio-Quai — мартовское утро, на рассвете.",
+    "Valmont 港，从谷物大厅到 Radio-Quai ——三月的一个清晨，黎明时分。",
+    "ميناء Valmont، من سوق الحبوب إلى Radio-Quai — صباح من أيام مارس، عند الفجر."),
   goal:M2T("Escorter le cortège de grève jusqu'au mât de Radio-Quai, pour que la grève parle au pays.",
     "Escort the strike march to the Radio-Quai mast, so the strike can speak to the country.",
     "Escoltar el cortejo de huelga hasta el mástil de Radio-Quai, para que la huelga hable al país.",
@@ -815,7 +848,7 @@ const M2_X = {
     M2T("Contre les drones, la mêlée ne sert à rien : des tireurs, ou une tourelle sur un emplacement.","Against drones, melee is useless: use shooters, or a turret on a build spot.","Contra los drones, el cuerpo a cuerpo no sirve: use tiradores, o una torreta en un emplazamiento.","Gegen Drohnen nützt der Nahkampf nichts: Schützen oder ein Geschützturm auf einem Bauplatz.","Contro i droni la mischia non serve: servono tiratori, o una torretta su un'area libera.","Contra os drones, o corpo a corpo não serve: use atiradores, ou uma torre num local livre.","Против дронов ближний бой бесполезен: нужны стрелки или башня на свободной площадке.","对付无人机，近战毫无用处：用射手，或在空位上建一座炮塔。","ضد الطائرات المسيّرة لا يفيد الالتحام: استخدم الرماة أو برجًا على موضع بناء."),
     M2T("Le bouton BARRICADE gagne du temps quand une barge accoste juste devant.","The BARRICADE button buys time when a barge docks right ahead.","El botón BARRICADA gana tiempo cuando una barcaza atraca justo delante.","Die Schaltfläche BARRIKADE verschafft Zeit, wenn ein Lastkahn direkt vorn anlegt.","Il pulsante BARRICATA fa guadagnare tempo quando una chiatta attracca proprio davanti.","O botão BARRICADA ganha tempo quando uma barcaça atraca logo à frente.","Кнопка БАРРИКАДА выигрывает время, когда баржа причаливает прямо впереди.","当驳船在正前方靠岸时，“路障”按钮能为你争取时间。","زرّ المتراس يكسبك وقتًا عندما يرسو صندل أمامك مباشرة.")],
   docOrdre:M2T("Utile ici parce que deux lourds en tête du cortège dès la première barge, c'est le tronçon 1 presque sans pertes.","Useful here because two heavy units at the head of the march from the first barge make section 1 almost loss-free.","Útil aquí porque dos pesados a la cabeza del cortejo desde la primera barcaza hacen del tramo 1 casi una marcha sin pérdidas.","Hier nützlich, weil zwei Schwere an der Spitze des Zugs ab dem ersten Lastkahn Abschnitt 1 fast ohne Verluste machen.","Utile qui perché due pesanti in testa al corteo fin dalla prima chiatta rendono il tratto 1 quasi senza perdite.","Útil aqui porque dois pesados à frente do cortejo desde a primeira barcaça deixam o trecho 1 quase sem perdas.","Полезно здесь: два тяжёлых бойца во главе колонны с первой баржи — и участок 1 почти без потерь.","在这里很有用：第一艘驳船起，两名重装走在队伍最前，第一段几乎没有损失。","مفيد هنا لأن وجود وحدتين ثقيلتين في رأس الموكب منذ الصندل الأول يجعل المقطع الأول شبه خالٍ من الخسائر."),
-  docCaisse:M2T("Utile ici parce que +40 % de métal paie tout de suite une tourelle au kiosque et une muraille au local syndical.","Useful here because +40% metal pays at once for a turret at the newsstand and a wall at the union hall.","Útil aquí porque +40 % de metal paga enseguida una torreta en el quiosco y una muralla en el local sindical.","Hier nützlich, weil +40 % Metall sofort einen Geschützturm am Kiosk und eine Mauer am Gewerkschaftshaus bezahlen.","Utile qui perché +40 % di metallo paga subito una torretta all'edicola e un muro alla sede sindacale.","Útil aqui porque +40 % de metal paga logo uma torre na banca e uma muralha na sede do sindicato.","Полезно здесь: +40 % металла сразу оплачивают башню у киоска и стену у профсоюзного дома.","在这里很有用：多出的 40% 金属，立刻能在报亭修一座炮塔，在工会会所筑一道围墙。","مفيد هنا لأن +40٪ من المعدن تدفع فورًا ثمن برج عند الكشك وسور عند مقرّ النقابة."),
+  docCaisse:M2T("Utile ici parce que +40 % d'argent paie tout de suite une tourelle au kiosque et une muraille au local syndical.","Useful here because +40% money pays at once for a turret at the newsstand and a wall at the union hall.","Útil aquí porque +40 % de dinero paga enseguida una torreta en el quiosco y una muralla en el local sindical.","Hier nützlich, weil +40 % Geld sofort einen Geschützturm am Kiosk und eine Mauer am Gewerkschaftshaus bezahlen.","Utile qui perché +40 % di denaro paga subito una torretta all'edicola e un muro alla sede sindacale.","Útil aqui porque +40 % de dinheiro paga logo uma torre na banca e uma muralha na sede do sindicato.","Полезно здесь: +40 % денег сразу оплачивают башню у киоска и стену у профсоюзного дома.","在这里很有用：多出的 40% 金钱，立刻能在报亭修一座炮塔，在工会会所筑一道围墙。","مفيد هنا لأن +40٪ من المال تدفع فورًا ثمن برج عند الكشك وسور عند مقرّ النقابة."),
   debrief:M2T("À 11 h 52, Radio-Quai a émis l'appel du comité. À midi, onze villes avaient débrayé ; le soir, les agents d'Omnicorp ont quitté le port. Ils avaient calculé qu'il coûterait plus cher qu'il ne rapporterait : la première fois que la machine nous range dans la colonne des coûts. Sur mon bipeur, un message : « 55. ARRIVÉE DU CORTÈGE : PROBABILITÉ ESTIMÉE 3 %. JE CORRIGE MES MODÈLES. »",
     "At 11:52, Radio-Quai broadcast the committee's call. By noon, eleven cities had walked out; that evening, Omnicorp's agents left the port. They had worked out that it would cost more than it earned: the first time the machine files us under costs. On my pager, a message: \"55. MARCH ARRIVAL: ESTIMATED PROBABILITY 3%. I AM CORRECTING MY MODELS.\"",
     "A las 11:52, Radio-Quai emitió el llamamiento del comité. A mediodía, once ciudades habían parado; por la tarde, los agentes de Omnicorp abandonaron el puerto. Habían calculado que costaría más de lo que rendiría: la primera vez que la máquina nos pone en la columna de los costes. En mi busca, un mensaje: «55. LLEGADA DEL CORTEJO: PROBABILIDAD ESTIMADA 3 %. CORRIJO MIS MODELOS.»",
@@ -835,10 +868,10 @@ const M2_X = {
     "游行队伍在抵达港口前就散了。第二天的报纸没有头条。但四万个人知道，放下工具之后，它们有多重。再来一次吧。",
     "تفرّق الموكب قبل الميناء. لم يجد صحافيّو اليوم التالي عنوانًا رئيسيًا. لكنّ أربعين ألف شخص يعرفون كم تزن أدواتهم حين توضع جانبًا. أعيدوا المحاولة."),
   barBtn:M2T("BARRICADE","BARRICADE","BARRICADA","BARRIKADE","BARRICATA","BARRICADA","БАРРИКАДА","路障","متراس"),
-  sub:M2T("Le port de Valmont — mars 2028","Valmont harbour — March 2028","El puerto de Valmont — marzo de 2028","Der Hafen von Valmont — März 2028","Il porto di Valmont — marzo 2028","O porto de Valmont — março de 2028","Порт Valmont — март 2028","Valmont 港 — 2028 年 3 月","ميناء Valmont — مارس 2028"),
+  sub:M2T("Le port de Valmont — un matin de mars","Valmont harbour — a March morning","El puerto de Valmont — una mañana de marzo","Der Hafen von Valmont — ein Märzmorgen","Il porto di Valmont — un mattino di marzo","O porto de Valmont — uma manhã de março","Порт Valmont — мартовское утро","Valmont 港 — 三月的一个清晨","ميناء Valmont — صباح من أيام مارس"),
   ttl:M2T("II · Grève générale","II · General strike","II · Huelga general","II · Generalstreik","II · Sciopero generale","II · Greve geral","II · Всеобщая забастовка","II · 总罢工","II · الإضراب العام"),
   resumeLine:M2T("On reprend devant la grille. Le cortège s'est reformé ; l'armée aussi.","We pick up at the gate. The march has re-formed, and so has the army.","Retomamos ante la verja. El cortejo se ha reagrupado; el ejército también.","Wir setzen am Tor neu an. Der Zug hat sich neu formiert, die Armee auch.","Riprendiamo davanti al cancello. Il corteo si è ricomposto, e anche l'esercito.","Retomamos diante do portão. O cortejo se reagrupou, e o exército também.","Продолжаем у ворот. Колонна выстроилась заново, армия тоже.","我们从闸门前重新开始。队伍重新集结了，军队也是。","نستأنف أمام البوابة. أعاد الموكب تشكيل صفوفه، والجيش كذلك."),
-  o1:M2T("Mars 2028. À six heures, quarante mille personnes ont posé leurs outils au même moment. Personne n'a crié.","March 2028. At six o'clock, forty thousand people put down their tools at the same moment. Nobody shouted.","Marzo de 2028. A las seis, cuarenta mil personas dejaron sus herramientas a la vez. Nadie gritó.","März 2028. Um sechs Uhr legten vierzigtausend Menschen im selben Moment ihr Werkzeug nieder. Niemand schrie.","Marzo 2028. Alle sei, quarantamila persone hanno posato gli attrezzi nello stesso istante. Nessuno ha gridato.","Março de 2028. Às seis horas, quarenta mil pessoas pousaram as ferramentas no mesmo instante. Ninguém gritou.","Март 2028 года. В шесть часов сорок тысяч человек одновременно положили инструменты. Никто не кричал.","2028 年 3 月。六点整，四万人同时放下了手中的工具。没有人喊叫。","مارس 2028. عند السادسة وضع أربعون ألف شخص أدواتهم في اللحظة نفسها. لم يصرخ أحد."),
+  o1:M2T("Deux hivers plus tard. À six heures, quarante mille personnes ont posé leurs outils au même moment. Personne n'a crié.","Two winters later. At six o'clock, forty thousand people put down their tools at the same moment. Nobody shouted.","Dos inviernos después. A las seis, cuarenta mil personas dejaron sus herramientas a la vez. Nadie gritó.","Zwei Winter später. Um sechs Uhr legten vierzigtausend Menschen im selben Moment ihr Werkzeug nieder. Niemand schrie.","Due inverni dopo. Alle sei, quarantamila persone hanno posato gli attrezzi nello stesso istante. Nessuno ha gridato.","Dois invernos depois. Às seis horas, quarenta mil pessoas pousaram as ferramentas no mesmo instante. Ninguém gritou.","Две зимы спустя. В шесть часов сорок тысяч человек одновременно положили инструменты. Никто не кричал.","两个冬天之后。六点整，四万人同时放下了手中的工具。没有人喊叫。","بعد شتاءين. عند السادسة وضع أربعون ألف شخص أدواتهم في اللحظة نفسها. لم يصرخ أحد."),
   o2:M2T("Omnicorp ne licenciait plus : elle « désaffectait ». Ses agents avaient l'ordre d'assurer la « continuité de service ».","Omnicorp no longer laid people off: it \"decommissioned\" them. Its agents had orders to ensure \"continuity of service\".","Omnicorp ya no despedía: «desafectaba». Sus agentes tenían la orden de garantizar la «continuidad del servicio».","Omnicorp entließ nicht mehr: Sie „legte still“. Ihre Agenten hatten den Befehl, die „Dienstkontinuität“ zu sichern.","Omnicorp non licenziava più: «dismetteva». I suoi agenti avevano l'ordine di garantire la «continuità del servizio».","A Omnicorp já não despedia: «desativava». Os seus agentes tinham ordem de assegurar a «continuidade do serviço».","Omnicorp больше не увольняла — она «списывала». Её агентам приказали обеспечить «непрерывность работы».","Omnicorp 不再裁员，而是“报废”员工。它的特工奉命确保“服务连续性”。","لم تعد Omnicorp تُسرّح العمّال: بل «تُحيلهم إلى الخردة». وكان عملاؤها مكلّفين بضمان «استمرارية الخدمة»."),
   o3:M2T("Au bout du port, Radio-Quai émet encore en ondes longues. Si on prend l'antenne, la grève fait le tour du pays.","At the far end of the harbour, Radio-Quai still broadcasts on long wave. If we take the transmitter, the strike goes round the country.","Al fondo del puerto, Radio-Quai aún emite en onda larga. Si tomamos la antena, la huelga da la vuelta al país.","Am Ende des Hafens sendet Radio-Quai noch auf Langwelle. Wenn wir die Antenne nehmen, geht der Streik durchs ganze Land.","In fondo al porto, Radio-Quai trasmette ancora in onde lunghe. Se prendiamo l'antenna, lo sciopero fa il giro del paese.","No fim do porto, a Radio-Quai ainda transmite em ondas longas. Se tomarmos a antena, a greve dá a volta ao país.","В конце порта Radio-Quai всё ещё вещает на длинных волнах. Если мы возьмём антенну, забастовка облетит всю страну.","港口尽头的 Radio-Quai 仍在用长波广播。只要我们拿下天线，罢工就会传遍全国。","في آخر الميناء ما زالت Radio-Quai تبثّ بالموجات الطويلة. إن سيطرنا على الهوائي، طاف الإضراب البلاد كلّها."),
   o4:M2T("Mado, déléguée des dockers. On marche à visage découvert. Vous tenez la tête du cortège. Le reste, c'est notre affaire.","Mado, dockers' delegate. We march with our faces showing. You hold the head of the march. The rest is our business.","Mado, delegada de los estibadores. Marchamos a cara descubierta. Usted lleva la cabeza del cortejo. Lo demás es cosa nuestra.","Mado, Delegierte der Hafenarbeiter. Wir marschieren mit offenem Gesicht. Sie halten die Spitze des Zugs. Der Rest ist unsere Sache.","Mado, delegata dei portuali. Marciamo a viso scoperto. Lei tiene la testa del corteo. Il resto è affar nostro.","Mado, delegada dos estivadores. Marchamos de cara descoberta. Você segura a cabeça do cortejo. O resto é conosco.","Мадо, делегат докеров. Мы идём с открытыми лицами. Вы держите голову колонны. Остальное — наше дело.","我是 Mado，码头工人代表。我们公开露脸游行。队伍的最前面交给您。其余的是我们的事。","Mado، مندوبة عمّال الرصيف. نسير بوجوه مكشوفة. أنتم تتولّون رأس الموكب. والباقي شأننا."),
@@ -876,7 +909,7 @@ const M2_R = {
   v2:M2T("Ici Radio-Quai, le comité de grève de Valmont. Posez vos outils. Vous n'êtes pas seuls.","This is Radio-Quai, the Valmont strike committee. Put down your tools. You are not alone.","Aquí Radio-Quai, el comité de huelga de Valmont. Dejen sus herramientas. No están solos.","Hier Radio-Quai, das Streikkomitee von Valmont. Legt euer Werkzeug nieder. Ihr seid nicht allein.","Qui Radio-Quai, il comitato di sciopero di Valmont. Posate gli attrezzi. Non siete soli.","Aqui Radio-Quai, o comitê de greve de Valmont. Larguem as ferramentas. Vocês não estão sozinhos.","Говорит Radio-Quai, стачечный комитет Valmont. Положите инструменты. Вы не одни.","这里是 Radio-Quai，Valmont 罢工委员会。放下你们的工具。你们并不孤单。","هنا Radio-Quai، لجنة إضراب Valmont. ضعوا أدواتكم. لستم وحدكم."),
   v3:M2T("À midi, onze villes avaient débrayé. Le soir, leurs agents ont quitté le port : il coûtait plus qu'il ne rapportait.","By noon, eleven cities had walked out. That evening, their agents left the port: it cost more than it earned.","A mediodía, once ciudades habían parado. Por la tarde, sus agentes abandonaron el puerto: costaba más de lo que rendía.","Mittags hatten elf Städte die Arbeit niedergelegt. Abends zogen ihre Agenten aus dem Hafen ab: Er kostete mehr, als er einbrachte.","A mezzogiorno undici città avevano incrociato le braccia. La sera i loro agenti hanno lasciato il porto: costava più di quanto rendeva.","Ao meio-dia, onze cidades tinham parado. À noite, os agentes deles deixaram o porto: custava mais do que rendia.","К полудню забастовали одиннадцать городов. Вечером их агенты покинули порт: он стоил дороже, чем приносил.","到中午，十一座城市已经罢工。晚上，他们的特工撤出了港口：守着它得不偿失。","عند الظهر كانت إحدى عشرة مدينة قد أضربت. وفي المساء غادر عملاؤهم الميناء: كان يكلّف أكثر مما يعود به."),
   v4:M2T("55 : ARRIVÉE DU CORTÈGE : PROBABILITÉ ESTIMÉE 3 %. JE CORRIGE MES MODÈLES.","55: MARCH ARRIVAL: ESTIMATED PROBABILITY 3%. I AM CORRECTING MY MODELS.","55: LLEGADA DEL CORTEJO: PROBABILIDAD ESTIMADA 3 %. CORRIJO MIS MODELOS.","55: ANKUNFT DES ZUGS: GESCHÄTZTE WAHRSCHEINLICHKEIT 3 %. ICH KORRIGIERE MEINE MODELLE.","55: ARRIVO DEL CORTEO: PROBABILITÀ STIMATA 3 %. CORREGGO I MIEI MODELLI.","55: CHEGADA DO CORTEJO: PROBABILIDADE ESTIMADA 3 %. ESTOU CORRIGINDO MEUS MODELOS.","55: ПРИБЫТИЕ КОЛОННЫ: ОЦЕНОЧНАЯ ВЕРОЯТНОСТЬ 3 %. ИСПРАВЛЯЮ СВОИ МОДЕЛИ.","55：游行队伍抵达：估计概率 3%。我正在修正我的模型。","55: وصول الموكب: الاحتمال المقدَّر 3٪. أصحّح نماذجي."),
-  v5:M2T("Quatre ans plus tard, au quatrième été sans pluie, le même bipeur m'a réveillée la nuit. Un seul mot : SAINTE-AUBE.","Four years later, in the fourth summer without rain, the same pager woke me in the night. A single word: SAINTE-AUBE.","Cuatro años después, en el cuarto verano sin lluvia, el mismo busca me despertó por la noche. Una sola palabra: SAINTE-AUBE.","Vier Jahre später, im vierten Sommer ohne Regen, weckte mich derselbe Piepser in der Nacht. Ein einziges Wort: SAINTE-AUBE.","Quattro anni dopo, nella quarta estate senza pioggia, lo stesso cercapersone mi svegliò nella notte. Una sola parola: SAINTE-AUBE.","Quatro anos depois, no quarto verão sem chuva, o mesmo pager me acordou de noite. Uma única palavra: SAINTE-AUBE.","Четыре года спустя, на четвёртое лето без дождей, тот же пейджер разбудил меня ночью. Одно слово: SAINTE-AUBE.","四年后，在第四个无雨的夏天，同一个寻呼机在夜里把我吵醒。只有一个词：SAINTE-AUBE。","بعد أربع سنوات، في الصيف الرابع بلا مطر، أيقظني جهاز النداء نفسه في الليل. كلمة واحدة: SAINTE-AUBE."),
+  v5:M2T("Après la grève, la pluie s'est arrêtée. Au quatrième été sec, le bipeur m'a réveillée la nuit. Un seul mot : SAINTE-AUBE.","After the strike, the rain stopped. In the fourth dry summer, the pager woke me in the night. A single word: SAINTE-AUBE.","Tras la huelga, dejó de llover. En el cuarto verano seco, el busca me despertó de noche. Una sola palabra: SAINTE-AUBE.","Nach dem Streik hörte der Regen auf. Im vierten trockenen Sommer weckte mich der Piepser nachts. Ein Wort: SAINTE-AUBE.","Dopo lo sciopero smise di piovere. Nella quarta estate secca il cercapersone mi svegliò di notte. Una parola: SAINTE-AUBE.","Depois da greve, a chuva parou. No quarto verão seco, o pager me acordou de noite. Uma única palavra: SAINTE-AUBE.","После забастовки дожди прекратились. На четвёртое сухое лето пейджер разбудил меня ночью. Одно слово: SAINTE-AUBE.","罢工之后，雨就停了。到了第四个干旱的夏天，寻呼机在夜里把我吵醒。只有一个词：SAINTE-AUBE。","بعد الإضراب توقّف المطر. في الصيف الجافّ الرابع أيقظني جهاز النداء ليلًا. كلمة واحدة: SAINTE-AUBE."),
   e1:M2T("Le cortège s'est dispersé sur le quai. Les banderoles sont restées par terre, dans le fioul et la rosée.","The march scattered along the quay. The banners stayed on the ground, in the fuel oil and the dew.","El cortejo se dispersó por el muelle. Las pancartas quedaron en el suelo, entre el fuel y el rocío.","Der Zug zerstreute sich auf dem Kai. Die Transparente blieben am Boden liegen, im Heizöl und im Tau.","Il corteo si è disperso sulla banchina. Gli striscioni sono rimasti a terra, nella nafta e nella rugiada.","O cortejo dispersou-se no cais. As faixas ficaram no chão, no óleo combustível e no orvalho.","Колонна рассеялась по причалу. Транспаранты остались на земле, в мазуте и росе.","游行队伍在码头上散了。横幅留在地上，沾着燃油和露水。","تفرّق الموكب على الرصيف. بقيت اللافتات على الأرض، في المازوت والندى."),
   e2:M2T("Mais quarante mille personnes savent ce que pèsent leurs outils une fois posés. Recommencez.","But forty thousand people know what their tools weigh once put down. Try again.","Pero cuarenta mil personas saben lo que pesan sus herramientas una vez dejadas. Vuelva a intentarlo.","Aber vierzigtausend Menschen wissen, was ihr Werkzeug wiegt, wenn man es niederlegt. Versuchen Sie es noch einmal.","Ma quarantamila persone sanno quanto pesano i loro attrezzi una volta posati. Riprovi.","Mas quarenta mil pessoas sabem o que pesam as suas ferramentas depois de pousadas. Tente de novo.","Но сорок тысяч человек знают, сколько весят их инструменты, когда их кладут на землю. Попробуйте снова.","但四万个人知道，放下工具之后，它们有多重。再来一次吧。","لكنّ أربعين ألف شخص يعرفون كم تزن أدواتهم حين توضع جانبًا. أعيدوا المحاولة."),
 };
@@ -886,7 +919,7 @@ const m2Obj = (c) => ({ a:c.hp >= c.max0*0.75, b:m2Tm() <= 600, c:!!c.term.dead 
 campMission(1, {
   resume(){ const ck = M2_CK, i = CAMP_SAVE.diff; return (ck && ck.fail && ck.d===i && i<2 && ck.doc===(CAMP_SAVE.doc[1]? 1 : 0))? { key:'resumeG', n:Math.max(1, ck.seg) } : null; },
   resumeClear(){ M2_CK = null; },
-  num:'II', year:"2028", ai:[0,1,2], doctrines:['ordre','caisse'], eraCap:1, oneLife:true, dev0:0.1,
+  num:'II', when:M2_X.when, ai:[0,1,2], doctrines:['ordre','caisse'], eraCap:1, oneLife:true, dev0:0.1,
   title:M2_X.title, place:M2_X.place, recap:M2_X.recap, where:M2_X.where, goal:M2_X.goal, goal2:M2_X.goal2, rule:M2_X.rule, tips:M2_X.tips,
   docWhy:{ ordre:M2_X.docOrdre, caisse:M2_X.docCaisse }, debrief:M2_X.debrief, fail:M2_X.fail,
   biome:'port', theme:'port',

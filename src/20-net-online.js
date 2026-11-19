@@ -130,7 +130,7 @@ function toggleSoftPause(){
    PeerJS ; l'invité s'y connecte directement par cet identifiant — le code EST l'adresse,
    rien à échanger. Aucun serveur à gérer. Un seul canal de données fiable transporte tous
    les messages typés {t, d}. STUN+TURN permettent la traversée des NAT (4G/5G inclus). */
-const NET_PROTO = 2;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CHAQUE changement
+const NET_PROTO = 5;   // VERSION DU PROTOCOLE RÉSEAU — à incrémenter à CHAQUE changement
                        // incompatible (sérialisation, messages…). Bloque les versions mêlées.
 /* ╔══════════════════════════════════════════════════════════════════════════╗
    ║  CONFIG RÉSEAU — À RENSEIGNER (sinon repli automatique, le jeu marche      ║

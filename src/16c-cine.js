@@ -165,11 +165,12 @@ function cineFont(who, fs){
 // de ponctuation fermante en début de ligne. La somme des longueurs des lignes = caractères tapés.
 function cineWrap(text, maxW){
   const out = [];
-  for (const para of String(text).split('\n')){
-    const toks = para.match(/[⺀-鿿豈-﫿＀-￯]|[^\s⺀-鿿豈-﫿＀-￯]+|\s+/g) || [];
+  for (const para of frTypo(String(text)).split('\n')){
+    // l'insécable (typographie française) reste DANS son mot : jamais une coupure de ligne, jamais remplacée par une espace ordinaire
+    const toks = para.match(/[⺀-鿿豈-﫿＀-￯]|(?:[^\s⺀-鿿豈-﫿＀-￯]|\u00A0)+|[^\S\u00A0]+/g) || [];
     let cur = '', sp = false;
     for (const tk of toks){
-      if (/^\s+$/.test(tk)){ sp = true; continue; }
+      if (/^[^\S\u00A0]+$/.test(tk)){ sp = true; continue; }
       const cand = cur? cur + (sp? ' ' : '') + tk : tk;
       const closing = /^[，。！？、；：」』”’）》〉…,.;:!?)\]»%—–-]+$/.test(tk);
       if (cur && !closing && ctx.measureText(cand).width > maxW){ out.push(cur); cur = tk; }
@@ -202,7 +203,7 @@ function cineFrame(){
   ctx.font = sf.toFixed(1)+'px '+UI_TYPE;
   const lbl = cT(CINE_UI.skip)+' ▸▸', hint = cineTouch()? '' : '  [Esc]';
   const sw = Math.round(ctx.measureText(lbl+hint).width + sf*2.4), y = Math.round(Math.max(5, (bh-sh)/2));
-  const skip = { x: rtl? 10 : W-10-sw, y, w:sw, h:sh, lbl, hint, f:sf };
+  const skip = { x: rtl? 10 : W-10-FS_W-8-sw, y, w:sw, h:sh, lbl, hint, f:sf };
   const vok = typeof voiceIndex==='function' && !!voiceIndex();
   const vbtn = vok? { x: rtl? skip.x+sw+8 : skip.x-sh-8, y, w:sh, h:sh } : null;
   return (CINE._fr = { key, k, rtl, fs, bh, skip, vbtn });
@@ -242,7 +243,9 @@ function cineLayout(s){
     const mg = Math.round(Math.max(8, fs*0.5));
     if (s.plate){ mode = 'below';
       box = { x:Math.round((W-w)/2), y:H-hh-mg, w, h:hh };
-      const top = Math.max(bh*0.7, fr.skip.y+fr.skip.h+6), ph = Math.max(H*0.42, box.y - mg - top), pw = Math.min(W, ph*480/270*1.35);
+      // hauteur de planche fixe sur toute la cinématique : calculée avec la boîte la plus haute (maxL lignes + portrait)
+      const psM = Math.round(clamp(fs*3.5, 54, 86)), hMax = Math.max(psM + 2*pad, pad + Math.round(nf*1.9) + maxL*lh + cueH + Math.round(pad*0.5));
+      const top = Math.max(bh*0.7, fr.skip.y+fr.skip.h+6), ph = Math.max(H*0.42, H - hMax - mg - mg - top), pw = Math.min(W, ph*480/270*1.35);
       plate = { x:Math.round((W-pw)/2), y:Math.round(top), w:Math.round(pw), h:Math.round(ph) };
     } else { mode = 'top'; box = { x:Math.round((W-w)/2), y:bh+mg, w, h:hh }; }
   }
@@ -279,9 +282,32 @@ function plateBase(g, w, h, tint){
   g.save(); g.translate((w-480*sc)/2, (h-270*sc)/2); g.scale(sc, sc);
   return sc;
 }
+// vignettage + grain : cuits UNE fois par taille de planche (pleine résolution, tramé avant l'arrondi), puis une
+// seule drawImage par image — plus de dégradé radial en paliers. Le grain 128×128 (~4 %) casse les paliers
+// des lavis radiaux à très faible opacité que dessinent les planches.
+let CINE_VIG = null, CINE_GRAIN = null;
+function cineVig(w, h){
+  w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
+  if (CINE_VIG && CINE_VIG.width===w && CINE_VIG.height===h) return CINE_VIG;
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+  const im = g.createImageData(w, h), d = im.data, r0 = h*0.35, r1 = h*0.95; let sd = 4242;
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+    const q = (Math.hypot(x-w/2, y-h/2) - r0)/(r1-r0), t = q<=0? 0 : q>=1? 1 : q;
+    sd = (sd*16807)%2147483647; const a = t*107 + (sd/2147483647 - 0.5);
+    const o = (y*w+x)*4; d[o] = 40; d[o+1] = 24; d[o+2] = 10; d[o+3] = a<0? 0 : a>255? 255 : Math.round(a); }
+  g.putImageData(im, 0, 0);
+  return (CINE_VIG = c);
+}
+function cineGrain(g){
+  if (!CINE_GRAIN){ const c = document.createElement('canvas'); c.width = c.height = 128; const k = c.getContext('2d');
+    const im = k.createImageData(128, 128), d = im.data; let sd = 911;
+    for (let i=0;i<128*128;i++){ sd = (sd*16807)%2147483647; const v = 40 + 175*(sd/2147483647); d[i*4] = d[i*4+1] = d[i*4+2] = v; d[i*4+3] = 255; }
+    k.putImageData(im, 0, 0); CINE_GRAIN = g.createPattern(c, 'repeat'); }
+  return CINE_GRAIN;
+}
 function plateEnd(g, w, h){ g.restore();
-  const v = g.createRadialGradient(w/2,h/2,h*0.35,w/2,h/2,h*0.95); v.addColorStop(0,'rgba(40,24,10,0)'); v.addColorStop(1,'rgba(40,24,10,0.42)');
-  g.fillStyle = v; g.fillRect(0,0,w,h); }
+  g.drawImage(cineVig(w, h), 0, 0);
+  const pt = cineGrain(g); if (pt){ g.save(); g.globalAlpha = 0.04; g.fillStyle = pt; g.fillRect(0, 0, w, h); g.restore(); } }
 // trait d'encre légèrement tremblé entre des points [x,y,…] ; n = part du tracé déjà dessinée (0..1)
 function inkLine(g, pts, n, wd, col){
   const m = pts.length/2; if (m<2) return; n = clamp(n==null? 1 : n, 0, 1); if (n<=0) return;
@@ -300,12 +326,48 @@ function inkWash(g, pts, col, a){ g.fillStyle = col || '#1f1b17'; g.globalAlpha 
 // hachures dans un rectangle (ombres)
 function inkHatch(g, x, y, w, h, step, col, a){ g.save(); g.beginPath(); g.rect(x,y,w,h); g.clip(); g.strokeStyle = col || '#1f1b17'; g.globalAlpha = a==null? 0.3 : a; g.lineWidth = 0.8;
   g.beginPath(); for (let k=-h; k<w; k+=step||5){ g.moveTo(x+k, y+h); g.lineTo(x+k+h, y); } g.stroke(); g.restore(); }
-// petit personnage à l'encre (silhouette) : pieds en (x,y), hauteur s
-function inkFolk(g, x, y, s, col, arm){ g.fillStyle = col || '#1f1b17';
+// petit personnage à l'encre (silhouette) : pieds en (x,y), hauteur s ; arm = 0..1 : hauteur du bras levé ;
+// card = vrai : la main tient un carton de vote blanc au lieu d'une paume ouverte
+function inkFolk(g, x, y, s, col, arm, card){ g.fillStyle = col || '#1f1b17';
   g.beginPath(); g.arc(x, y-s*0.86, s*0.13, 0, 6.283); g.fill();
   g.beginPath(); g.moveTo(x-s*0.17, y-s*0.72); g.lineTo(x+s*0.17, y-s*0.72); g.lineTo(x+s*0.13, y-s*0.3); g.lineTo(x+s*0.16, y); g.lineTo(x+s*0.04, y);
   g.lineTo(x, y-s*0.26); g.lineTo(x-s*0.04, y); g.lineTo(x-s*0.16, y); g.lineTo(x-s*0.13, y-s*0.3); g.closePath(); g.fill();
-  if (arm){ g.strokeStyle = g.fillStyle; g.lineWidth = s*0.08; g.lineCap = 'round'; g.beginPath(); g.moveTo(x+s*0.14, y-s*0.66); g.lineTo(x+s*0.34, y-s*(0.66+0.4*arm)); g.stroke(); } }
+  if (arm){ const ex = x+s*0.24, ey = y-s*(0.66+0.14*arm), hx = x+s*0.22, hy = y-s*(0.66+0.46*arm);     // épaule → coude → main
+    g.strokeStyle = g.fillStyle; g.lineWidth = s*0.08; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(x+s*0.14, y-s*0.66); g.lineTo(ex, ey); g.lineTo(hx, hy); g.stroke();
+    if (card){ const cw = s*0.2, ch = s*0.15; g.fillStyle = '#f4f1e8'; g.fillRect(hx-cw/2, hy-ch-s*0.02, cw, ch);   // carton de vote
+      g.strokeStyle = '#1f1b17'; g.lineWidth = Math.max(0.5, s*0.02); g.strokeRect(hx-cw/2, hy-ch-s*0.02, cw, ch); }
+    else { g.beginPath(); g.arc(hx, hy-s*0.04, s*0.06, 0, 6.283); g.fill(); } } }                          // paume ouverte
+
+// bipeur de poche (v1.17 : plus un moniteur) : boîtier arrondi, petit écran à cristaux, deux boutons, voyant, et le
+// CLIP DE CEINTURE qui dépasse derrière le haut. (x, y) = milieu du bas ; ws = largeur. Renvoie l'écran {x,y,w,h,cx,cy}
+// et le voyant {lx,ly,lr} : la planche y écrit son texte et allume le voyant.
+function inkPager(g, x, y, ws, o){
+  o = o || {}; const hs = ws*0.72, x0 = x-ws/2, y0 = y-hs, r = ws*0.08;
+  g.fillStyle = '#8f949a'; g.fillRect(x0+ws*0.58, y0-ws*0.06, ws*0.24, ws*0.1);                            // le clip, derrière
+  g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.strokeRect(x0+ws*0.58, y0-ws*0.06, ws*0.24, ws*0.1);
+  g.beginPath(); g.moveTo(x0+r, y0); g.lineTo(x0+ws-r, y0); g.quadraticCurveTo(x0+ws, y0, x0+ws, y0+r); g.lineTo(x0+ws, y);
+  g.lineTo(x0, y); g.lineTo(x0, y0+r); g.quadraticCurveTo(x0, y0, x0+r, y0); g.closePath();
+  g.fillStyle = o.body || '#23292b'; g.fill(); g.lineWidth = 2; g.stroke();
+  const sx = x0+ws*0.09, sy = y0+hs*0.12, sw = ws*0.82, sh = hs*0.5;
+  g.fillStyle = o.fill || '#9db79a'; g.fillRect(sx, sy, sw, sh); g.strokeStyle = '#0d1416'; g.lineWidth = 1.4; g.strokeRect(sx, sy, sw, sh);
+  g.fillStyle = '#4a5558'; g.fillRect(x0+ws*0.1, y0+hs*0.74, ws*0.2, hs*0.1); g.fillRect(x0+ws*0.34, y0+hs*0.74, ws*0.2, hs*0.1);
+  const lx = x0+ws*0.84, ly = y0+hs*0.79, lr = Math.max(1.8, ws*0.028);
+  g.fillStyle = o.led || 'rgba(11,111,168,0.3)'; g.beginPath(); g.arc(lx, ly, lr, 0, 6.283); g.fill();
+  return { x:sx, y:sy, w:sw, h:sh, cx:sx+sw/2, cy:sy+sh/2, lx, ly, lr, top:y0 };
+}
+// carnet de Sol posé à plat (vu de trois quarts) : deux pages, quelques lignes ; (x, y) = milieu de l'arête avant
+function inkNotebook(g, x, y, ws, n){
+  const hs = ws*0.09, x0 = x-ws/2, p = [x0,y, x0+ws*0.08,y-hs, x0+ws*0.92,y-hs, x0+ws,y];
+  inkWash(g, p, '#e9dfc6', 0.9); inkLine(g, p.concat(p.slice(0,2)), n, 2); inkLine(g, [x, y, x, y-hs], n, 1.2);
+  for (let i=0;i<2;i++){ inkLine(g, [x0+ws*0.14, y-hs*(0.3+0.3*i), x0+ws*0.44, y-hs*(0.3+0.3*i)], n, 0.9, '#8a7a5a'); inkLine(g, [x+ws*0.06, y-hs*(0.3+0.3*i), x+ws*0.36, y-hs*(0.3+0.3*i)], n, 0.9, '#8a7a5a'); } }
+// drone de la G·P·T : coque ovale, quatre bras à hélices, œil (voyant) ; (x, y) = centre
+function inkDrone(g, x, y, s, led, col){
+  g.strokeStyle = col || '#1f1b17'; g.fillStyle = col || '#1f1b17'; g.lineWidth = Math.max(1, s*0.07); g.lineCap = 'round';
+  g.beginPath(); g.ellipse(x, y, s*0.5, s*0.22, 0, 0, 6.283); g.fill();
+  for (const q of [-1, 1]){ g.beginPath(); g.moveTo(x+q*s*0.3, y-s*0.14); g.lineTo(x+q*s*0.62, y-s*0.34); g.stroke();
+    g.beginPath(); g.ellipse(x+q*s*0.62, y-s*0.38, s*0.2, s*0.05, 0, 0, 6.283); g.fill(); }
+  g.fillStyle = led || '#3aa0e0'; g.beginPath(); g.arc(x, y+s*0.04, s*0.09, 0, 6.283); g.fill(); }
 
 function cinePortrait(id){
   const p = CINE_PORTRAITS[id]; if (!p) return null;
@@ -368,7 +430,9 @@ function drawCine(){
     const a = Math.min(1, t/0.5, (dur-t)/0.5 + 1), cy = P? P.y+P.h*0.45 : H*0.40;
     ctx.save(); ctx.globalAlpha = clamp(a,0,1); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const big = Math.min(48, W*0.058, fr.fs*2.3);
-    ctx.font = big+'px '+UI_STEN; const tx = cT(s.title).toUpperCase(), tw = ctx.measureText(tx).width, sub = s.sub? fr.fs*1.5 : 0;
+    ctx.font = big+'px '+UI_STEN; const tx = cT(s.title).toUpperCase(), tw0 = ctx.measureText(tx).width, sub = s.sub? fr.fs*1.5 : 0;
+    let tw = tw0;                                                           // le cartouche suit la plus large des deux lignes (titre, sous-titre)
+    if (s.sub){ ctx.font = cineFont('sol', fr.fs*0.8); tw = Math.max(tw0, ctx.measureText(cT(s.sub)).width); ctx.font = big+'px '+UI_STEN; }
     ctx.fillStyle = 'rgba(13,11,10,0.78)'; ctx.fillRect(W/2-tw/2-26, cy-big*0.8, tw+52, big*1.6 + sub);
     ctx.fillStyle = '#c42a1c'; ctx.fillRect(W/2-tw/2-26, cy-big*0.8, 5, big*1.6 + sub);
     ctx.fillStyle = '#efe6cf'; ctx.fillText(tx, W/2, cy);

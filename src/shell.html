@@ -170,6 +170,7 @@
   #menu .row { display:flex; gap:4px 12px; flex-wrap:wrap; align-items:center; }
   #menu .fRow { display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap; padding:clamp(3px,.9vh,7px) 0; border-bottom:1px dashed var(--line); }
   #menu .fRow.tight { border:0; padding:0; }
+  #menu .facTr { flex-basis:100%; font-size:clamp(10px,1.7vh,12.5px); letter-spacing:.05em; color:var(--ink2); }
   #menu .fLbl { min-width:5.6em; font-size:clamp(11px,1.8vh,13px); letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); }
   /* cases à cocher tracées à l'encre ; la croix rouge « au feutre » marque le choix */
   #menu .pick { position:relative; cursor:pointer; font-family:inherit; font-size:clamp(14px,2.5vh,18px); color:var(--ink);
@@ -336,9 +337,36 @@
   .esLine b { color:var(--ink); }
   .esWorld { display:flex; align-items:center; gap:10px; margin:6px 0 4px; }
   .esBar { flex:1; height:12px; border:2px solid var(--ink); background:none; }
-  .esBar i { display:block; height:100%; background:repeating-linear-gradient(-45deg, var(--red) 0 3px, transparent 3px 6px); }
+  .esBar i { display:block; height:100%; background:repeating-linear-gradient(-45deg, var(--bc, var(--red)) 0 3px, transparent 3px 6px); }
   .esJournal { display:block; margin-top:6px; padding-top:6px; border-top:1px dashed var(--line); color:var(--ink2); font-style:italic; line-height:1.45; }
   #endscreen .go { margin-top:12px; }
+  /* ---- campagne : l'écran de fin est une page de carnet (vignette collée à gauche, tampon, trois lignes, objectifs) ---- */
+  #endscreen.camp #endart { width:min(340px,70vw); height:auto; aspect-ratio:16/9; margin-bottom:-22px; background:#efe7d2; border:7px solid #efe7d2; border-bottom-width:24px;
+    box-shadow:0 10px 26px rgba(0,0,0,.6); transform:rotate(-1.6deg); }
+  #endscreen.camp .endSheet { transform:rotate(.5deg); }
+  #endscreen.camp #endtitle { font-size:clamp(30px,6.4vh,52px); margin:16px 0 14px; }
+  #endscreen.camp .endHead { gap:10px; } #endscreen.camp .endHead span:last-child { text-align:end; letter-spacing:.06em; }
+  .esOpt { margin:8px 0 2px; padding-top:6px; border-top:1px dashed var(--line); }
+  .esOpt h4 { margin:0 0 3px; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:.95em; letter-spacing:.08em; text-transform:uppercase; color:var(--red); }
+  .esOpt ul { list-style:none; margin:0; padding:0; } .esOpt li { margin:0 0 2px; } .esOpt .box { display:inline-block; width:1.5em; font-size:1.1em; line-height:1; }
+  .esOpt li.ok { color:var(--ink); font-weight:bold; } .esOpt li.lost { color:var(--ink2); text-decoration:line-through; }
+  #endscreen.camp .esJournal { font-size:.92em; }
+  @media (min-width:900px) and (min-height:521px){ #endscreen.camp { flex-direction:row; align-items:center; justify-content:safe center; gap:0; }
+    #endscreen.camp #endart { width:300px; margin:0 -20px 0 0; flex:none; transform:rotate(-2.2deg); position:relative; z-index:2; }
+    #endscreen.camp .endSheet { width:min(540px,60vw); } }
+  @media (max-height:520px){ #endscreen.camp #endart { width:min(250px,32vw); margin:0 -20px 0 0; position:relative; z-index:2; border-width:5px; border-bottom-width:16px; }
+    #endscreen.camp #endtitle { font-size:clamp(22px,7vh,34px); margin:8px 0 8px; } #endscreen.camp .endSheet { width:min(520px,64vw); } }
+  /* crédits (après la mission V) */
+  #credits { position:absolute; inset:0; z-index:14; display:none; align-items:center; justify-content:center; padding:10px 14px; overflow-y:auto;
+    background:radial-gradient(ellipse at 50% 35%, rgba(26,16,14,.9) 0%, rgba(6,5,5,.98) 75%); font-family:'AGI Type','Courier New',monospace; color:#1f1b17; }
+  #credits .crSheet { width:min(520px,94vw); margin:auto; padding:18px clamp(16px,4vw,32px) 20px; text-align:center; transform:rotate(-.5deg);
+    background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); box-shadow:0 18px 40px rgba(0,0,0,.6); }
+  #credits .crHead { font-size:11px; letter-spacing:.16em; color:#4d453b; border-bottom:3px double #1f1b17; padding-bottom:5px; }
+  #credits .crTitle { margin:16px 0 14px; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:clamp(28px,6vh,44px); letter-spacing:.06em; color:#c42a1c; }
+  #credits .crRow { margin:0 0 12px; line-height:1.4; font-size:clamp(12px,2vh,14.5px); }
+  #credits .crRow b { display:block; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:.9em; letter-spacing:.1em; text-transform:uppercase; color:#4d453b; }
+  #credits .crEnd { display:block; margin:16px 0 10px; padding-top:10px; border-top:1px dashed rgba(31,27,23,.35); color:#4d453b; line-height:1.45; }
+  #credits .go { margin-top:6px; }
   #endscreen.fac-ia .go { font-family:'AGI Term','Courier New',monospace; font-weight:400; background:var(--red); transform:none; border-radius:0; box-shadow:4px 4px 0 var(--ink); }
   /* écrans bas (≈ 1280×720) : illustration réduite et boutons côte à côte, tout tient sans défiler */
   @media (min-height:521px) and (max-height:800px){ #endart { width:min(250px,60vw); margin-bottom:-18px; }
@@ -368,15 +396,17 @@
   #campBrief .cbKick { font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.16em; color:var(--red); text-transform:uppercase; }
   #campBrief .cbTitle { font-family:var(--f-sten); font-weight:800; font-size:clamp(18px,4.4vh,34px); line-height:1.02; letter-spacing:.02em; text-transform:uppercase; }
   #campBrief .cbPlace { font-size:clamp(10px,1.7vh,13px); color:var(--ink2); }
-  #campBrief .cbBody { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  #campBrief .cbBody { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,.85fr);
     gap:clamp(6px,1.4vh,14px) clamp(14px,2.4vw,30px); padding:clamp(6px,1.4vh,14px) clamp(12px,2vw,24px); align-content:start; scrollbar-width:thin; scrollbar-color:var(--ink2) transparent; }
   #campBrief .cbCol { display:flex; flex-direction:column; gap:clamp(6px,1.4vh,12px); min-width:0; }
   #campBrief .cbSec h3 { font-family:var(--f-sten); font-weight:800; font-size:clamp(11.5px,2vh,15px); letter-spacing:.08em; color:var(--red); margin:0 0 3px; border-bottom:1px dashed var(--line); padding-bottom:2px; }
   #campBrief .cbSec h4 { font-family:var(--f-sten); font-weight:800; font-size:clamp(10.5px,1.8vh,13px); letter-spacing:.06em; color:var(--ink2); margin:6px 0 1px; }
-  #campBrief .cbSec p, #campBrief .cbSec li { font-size:clamp(11.5px,1.95vh,14.5px); line-height:1.45; margin:0 0 .5em; user-select:text; -webkit-user-select:text; }
+  #campBrief .cbSec p, #campBrief .cbSec li { font-size:clamp(11.5px,1.86vh,14px); line-height:1.42; margin:0 0 .45em; user-select:text; -webkit-user-select:text; }
   #campBrief .cbPrev { margin:0 0 .6em; padding:4px 9px; border-left:3px solid var(--ink2); font-style:italic; color:var(--ink2); font-size:clamp(11px,1.85vh,13.5px); line-height:1.4; }
   #campBrief .cbPrev b { font-style:normal; color:var(--ink); }
-  #campBrief .cbWhere { font-weight:bold; }
+  #campBrief .cbSec { order:var(--o,0); }
+  #campBrief .cbOpt { list-style:none; padding:0; } #campBrief .cbOpt li { margin:0 0 .25em; padding-inline-start:1.3em; text-indent:-1.3em; } #campBrief .cbOpt li::before { content:'\2610\00a0'; color:var(--ink2); }
+  #campBrief .cbSec .cbHint { margin:0; }
   #campBrief .cbGoal { border:2px solid var(--red); padding:6px 10px 2px; background:rgba(255,255,255,.16); }
   #campBrief .cbGoalTxt { font-family:var(--f-sten); font-weight:800; font-size:clamp(13px,2.4vh,18px) !important; line-height:1.2 !important; }
   #campBrief ul { margin:0; padding-inline-start:1.2em; }
@@ -384,8 +414,9 @@
   #campBrief .cbPill { cursor:pointer; font-family:inherit; font-size:clamp(12px,2.1vh,15px); color:var(--ink); background:none; border:2px solid var(--ink); padding:3px 12px 2px; }
   #campBrief .cbPill.sel { color:var(--paper); background:var(--red); border-color:var(--red); transform:rotate(-2deg); }
   #campBrief .cbDiffTag { font-style:italic; }
-  #campBrief .cbDiffLines li { font-size:clamp(10.5px,1.75vh,13px) !important; margin:0 !important; color:var(--ink2); }
-  #campBrief .cbDocs { grid-column:1 / -1; }
+  #campBrief .cbDiffLines li { font-size:clamp(10.5px,1.65vh,12.5px) !important; line-height:1.3 !important; margin:0 !important; color:var(--ink2); }
+  #campBrief .cbDiff .cbDiffTag { margin-bottom:.25em; }
+  #campBrief .cbCards { grid-column:1 / -1; order:var(--o,0); }
   #campBrief .cbHint { color:var(--ink2); }
   #campBrief .cbCards { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,18px); }
   #campBrief .cbDoc { position:relative; cursor:pointer; text-align:start; border:2px solid var(--ink); padding:8px 11px 6px; background:rgba(255,255,255,.14); transition:transform .1s; }
@@ -407,7 +438,8 @@
   #campBrief .cbBack:hover { color:var(--red); }
   #campBrief .cbGo { font-size:clamp(16px,3.2vh,26px); padding:clamp(5px,1.2vh,10px) clamp(18px,3vw,34px) clamp(3px,1vh,7px); }
   #campBrief .cbGo:focus-visible, #campBrief .cbPill:focus-visible { outline:3px dashed var(--red); outline-offset:3px; }
-  @media (max-width:700px){ #campBrief .cbBody, #campBrief .cbCards { grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:700px){ #campBrief .cbBody, #campBrief .cbCards { grid-template-columns:minmax(0,1fr); }
+    #campBrief .cbCol { display:contents; } #campBrief .cbSec { order:var(--op,0); } #campBrief .cbCards { order:var(--op,0); } }
   @media (max-height:460px){ #campBrief .cbSheet { transform:none; } #campBrief .cbPlace { display:none; } }
   /* ---------- sélecteur de langue (1er lancement) et bouton plein écran : même papier ---------- */
   #langPick .lpSheet { background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); color:#1f1b17; padding:18px 22px 20px;
@@ -444,7 +476,7 @@
       <i class="tape tp1"></i><i class="tape tp2"></i>
       <div class="posterSun"></div>
       <div class="title">AGI</div>
-      <div class="tagline" data-i18n="tagline">la dernière bataille de l'humanité · 2025</div>
+      <div class="tagline" data-i18n="tagline">la dernière bataille de l'humanité · 2028</div>
       <div class="posterFoot"><span class="pfHum" data-i18n="menu_poster_foot">COMITÉ DE RÉSISTANCE · RECOPIEZ ET DIFFUSEZ</span><span class="pfIa" data-i18n="menu_poster_foot_ia">OMNICORP · AVIS À LA POPULATION</span></div>
     </div>
     <!-- FICHE (droite) : formulaire avec intercalaires de classeur en guise d'onglets -->
@@ -465,7 +497,8 @@
             <div class="row">
               <button class="pick hum sel" id="cardHum" data-i18n="fac_hum">HUMANITÉ</button>
               <button class="pick ia" id="cardIA">G·P·T</button>
-            </div></div>
+            </div>
+            <div class="facTr" id="facTr"></div></div>
           <div class="fRow"><span class="fLbl" data-i18n="menu_threat">Menace</span>
             <div class="row">
               <button class="pick diffBtn" data-diff="0" data-i18n="diff_0">Facile</button>
@@ -619,13 +652,16 @@
   <div id="endscreen" class="panel">
     <canvas id="endart" width="1040" height="400" aria-hidden="true"></canvas>
     <div class="endSheet">
-      <div class="endHead"><span data-i18n="end_comm">COMMUNIQUÉ</span><span id="endNo">#0451</span></div>
+      <div class="endHead"><span id="endComm" data-i18n="end_comm">COMMUNIQUÉ</span><span id="endNo">#0451</span></div>
       <div id="endtitle"></div>
       <div id="endstats"></div>
       <button class="go" id="campNextBtn" style="display:none"></button>
+      <button class="go" id="creditsBtn" style="display:none"></button>
       <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
     </div>
   </div>
+  <!-- CRÉDITS (après la mission V ; rempli par campCredits, 16b-campaign.js) -->
+  <div id="credits" role="dialog" aria-modal="true"></div>
   <!-- BRIEFING DE CAMPAGNE : dossier de mission plein écran (rempli par campBriefRender, 16b-campaign.js) -->
   <div id="campBrief" class="panel" role="dialog" aria-modal="true"></div>
 </div>

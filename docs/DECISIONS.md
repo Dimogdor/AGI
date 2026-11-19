@@ -19,3 +19,15 @@
   résistants / civils), unités renommables selon les ères ; événement « Grève générale » de l'escarmouche
   renommé « Couvre-feu » ; mission II : quarante mille grévistes ; les répliques réécrites restent MUETTES
   jusqu'à la refonte audio finale (aucune régénération de voix, test-voice en avertissement).
+- **2026-11 · Asymétrie des factions, lots 0-1 (autorisés par l'auteur)** : un interrupteur par mécanique (`ASYM`, `asymOn`, constantes dans
+  `FAC_TRAITS`) ; en campagne et au tutoriel rien ne s'applique sauf `asym:{…}` dans la mission. `specialCd` : on garde −5 % pour les deux
+  camps (le « −10 % HUM » du commentaire n'a jamais existé). +5 % PV de la machine conservés (commentaire corrigé : pas de surcoût
+  d'électricité). Fatigue humaine : récupération 0,05 → 0,04/s pour qu'elle se déclenche. **Constat du banc** : bot contre bot, l'Humanité
+  gagnait ~80 % à cause de l'aura de soin du Che (la Singularité n'avait aucun équivalent) ; la Singularité reçoit une aura de réparation de
+  7·ère/s — correction de calibration, à revoir avec M6. Difficulté d'escarmouche recalée par `AI_K`.
+- **2026-11 · Asymétrie des factions, lots 2-3** : mécaniques M2, M3, M4, M6, M7, M9 livrées, un interrupteur chacune (`unit`, `heal`, `rhythm`,
+  `power`, `herofx`, `trans`) ; `NET_PROTO` 5. Les bancs sont très bruités (±5 par case, trajectoires chaotiques) : seul `power` ressort de façon stable
+  (le Soulèvement profite à l'Humanité). Aura de la Singularité 7 → 6. `AI_KF` (recalage par camp de l'IA adverse) pour la difficulté ; non appliqué au banc bot.
+  Reste ouvert : niveaux de bot 1 et 3 de B à ~40 %, bench E instable d'une graine à l'autre. Détails : `docs/audit/FACTIONS-BALANCE.md`.
+- **2026-11 · Conseiller final v1.17 (auteur)** : Fable bloqué par la limite de dépense mensuelle → même brief confié à opus (lecture seule) ;
+  Fable sera relancé en second avis s'il redevient disponible avant la livraison.

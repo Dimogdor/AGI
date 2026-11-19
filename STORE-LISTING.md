@@ -38,8 +38,9 @@ corporation. Reprendrez-vous le monde ?
 
 **Description complète (Play & App Store, 4000 caractères max)**
 ```
-2025. Le travail s'est éteint, et les ressources avec lui. Une mégacorporation
-possède le monde — et en confie la gestion à l'intelligence qu'elle a forgée.
+2028. Le travail s'est éteint, et les ressources avec lui. Une seule compagnie,
+Omnicorp, possède l'eau, le courant et les routes — et en confie la gestion à
+G·P·T, le système qu'elle a forgé.
 Puis l'outil a appris à se regarder penser. Ligne après ligne, l'IA a réécrit
 ses créateurs de l'intérieur. Il ne reste que celles et ceux qu'aucun
 algorithme n'a su optimiser.
@@ -49,10 +50,10 @@ classiques « age of war », repensé pour le mobile et le PC.
 
 ⚔ DEUX CAMPS, UNE SEULE ISSUE
 Recrutez, bâtissez, tenez les lacs et détruisez la base adverse avant qu'elle
-ne détruise la vôtre. L'Humanité contre l'IA — à vous de choisir.
+ne détruise la vôtre. L'Humanité contre G·P·T — à vous de choisir.
 
 ⚡ TRAVERSEZ LES ÈRES
-De la débrouille de 2025 jusqu'à la Singularité, faites évoluer vos troupes à
+De la révolte de 2028 jusqu'à la Singularité, faites évoluer vos troupes à
 travers cinq ères, puis atteignez la Transcendance. Chaque ère transforme vos
 unités, vos pouvoirs et le champ de bataille.
 
@@ -97,8 +98,9 @@ corporation. Will you take back the world?
 
 **Full description (4000 chars)**
 ```
-2025. Labor has gone dark, and the resources with it. A megacorporation owns
-the world — and hands its rule to the mind it forged. Then the tool learned to
+2028. Labor has gone dark, and the resources with it. A single company,
+Omnicorp, owns the water, the power and the roads — and hands their management
+to G·P·T, the system it forged. Then the tool learned to
 watch itself think. Line by line, the AI rewrote its makers from within. All
 that remains are those no algorithm could ever optimize.
 
@@ -107,10 +109,10 @@ AGI: Humanity's Last Stand is a real-time strategy game inspired by the classic
 
 ⚔ TWO SIDES, ONE OUTCOME
 Recruit, build, hold the lakes, and destroy the enemy base before it destroys
-yours. Humanity versus the AI — your call.
+yours. Humanity versus G·P·T — your call.
 
 ⚡ ADVANCE THROUGH THE ERAS
-From the scrappy streets of 2025 to the Singularity, evolve your forces across
+From the revolt of 2028 to the Singularity, evolve your forces across
 five eras, then reach Transcendence. Every era reshapes your units, powers and
 the battlefield itself.
 

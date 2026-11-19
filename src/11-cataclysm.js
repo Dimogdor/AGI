@@ -39,7 +39,7 @@ function startCata(key){
   const g=game, c=CATAS[key];
   g.cata=key; g.cataT=0; g.cataDur=c.dur;
   g.cataX = WORLD*(0.3+Math.random()*0.4);
-  announce(c.icon+'  '+cataName(key)+'  '+c.icon, c.col);
+  announce(c.icon+'  '+cataName(key)+'  '+c.icon, c.col, {r:{L:'cata', k:key}, pr:c.icon+'  ', sx:'  '+c.icon});
   sfx('boom');
   // effets INSTANTANÉS et radicaux au déclenchement
   if (key==='nuke'){
@@ -50,7 +50,7 @@ function startCata(key){
     g.shake=Math.max(g.shake,10);
     // LA CRUE NOIE TOUT CE QUI N'EST PAS VOLANT : les unités au sol commencent à couler
     // (la noyade s'achève en ~1,8 s, voir applyCataEffects). Les volants sont au-dessus de l'eau.
-    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.drownT = 0.001; burst(u.x, gY(u.x)-8, '#9fd8ff', 7, 1.3); }
+    for (const s of [g.p,g.e]) for (const u of s.units) if (!u.fly){ u.drownT = 0.001; if (!(asymOn('env') && u.fac==='HUM' && floodRefuge(u))) burst(u.x, gY(u.x)-8, '#9fd8ff', 7, 1.3); }
   } else if (key==='sand'){
     g.shake=Math.max(g.shake,8);
     for (const s of [g.p,g.e]) for (const u of s.units) if (u.fly){ u.hp=0; burst(u.x, gY(u.x)-30, '#d9b46a', 6); }
@@ -59,18 +59,27 @@ function startCata(key){
     METEORS.length=0; g.metT=0.9;      // premières chutes après ~1 s d'annonce
   }
 }
+// refuge d'inondation (M10, humains) : base, muraille, tourelle ou tout bâtiment humain à ≤ 120 px
+function floodRefuge(u){
+  const side = u.side===1? game.p : game.e, R = fte('HUM','floodSafe');
+  if (Math.abs(u.x-side.x) <= R) return true;
+  for (const s of sideBuildSlots(side)) if (s.b && s.b.type!=='site' && Math.abs(s.x-u.x) <= R) return true;
+  return false;
+}
 function cataName(key){ const k='cata_'+key; const s=(typeof t==='function')? t(k):null; return (s&&s!==k)? s : CATAS[key].name; }
 function applyCataEffects(dt){
   const g=game, k=g.cata;
   const each=fn=>{ for (const u of g.p.units) fn(u); for (const u of g.e.units) fn(u); };
-  if (k==='acid'){                                          // DoT lourd : unités + bâtiments
-    each(u=>{ u.hp -= (u.fac==='IA'?22:18)*dt; });
-    for (const side of [g.p,g.e]) for (const s of sideBuildSlots(side)) if (s.b && s.b.type!=='site') s.b.hp -= 24*dt;
-  } else if (k==='heat'){                                   // DoT lourd + surchauffe + ralentit
-    each(u=>{ u.hp -= (u.fac==='IA'?20:16)*dt; u.heat=(u.heat||0)+0.12*dt; if (u.heat>=1){u.heat=0;u.tiredT=3;} });
+  const E = asymOn('env');   // M10 : chaque cataclysme touche autrement chaque faction (FAC_TRAITS.*.env) ; sinon valeurs d'avant
+  if (k==='acid'){                                          // DoT lourd : unités (machines : corrosion) + bâtiments (humains : bois et tôle)
+    each(u=>{ u.hp -= (E? fte(u.fac,'acidUnit') : (u.fac==='IA'?22:18))*dt; });
+    for (const side of [g.p,g.e]) for (const s of sideBuildSlots(side)) if (s.b && s.b.type!=='site') s.b.hp -= (E? fte(side.facKey,'acidBld') : 24)*dt;
+  } else if (k==='heat'){                                   // DoT lourd + surchauffe + ralentit (humains : fatigue ×1,5 et −10 % de vitesse ; machines : production −30 %)
+    each(u=>{ u.hp -= (E? fte(u.fac,'heatUnit') : (u.fac==='IA'?20:16))*dt; u.heat=(u.heat||0)+(E? fte(u.fac,'heatTired') : 0.12)*dt; if (u.heat>=1){u.heat=0;u.tiredT=3;} });
   } else if (k==='flood'){                                  // noyade : tout ce qui n'est pas volant coule et meurt
     each(u=>{ if (!u.fly){
-      u.drownT = (u.drownT||0) + dt;
+      if (E && u.fac==='HUM' && u.role!=='gremlin' && floodRefuge(u)){ u.drownT = 0; return; }   // M10 : près d'une structure humaine, on grimpe et on survit
+      u.drownT = Math.max(u.drownT||0, 0.001) + dt;
       u.hp -= u.maxhp * dt / 1.8;                           // mort garantie en ~1,8 s
       if (Math.random() < dt*7){                            // bulles qui remontent
         particles.push({x:u.x+(Math.random()-0.5)*12, y:gY(u.x)-6-Math.random()*16,

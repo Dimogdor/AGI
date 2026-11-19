@@ -102,6 +102,7 @@ function mkSide(side, facKey, x){
   };
 }
 function newGame(facKey, diff, withTuto, eFacOverride){
+  M1_RETRY = M3_RETRY = M4_RETRY = false;     // la « reprise allégée » ne survit pas à une autre partie (startMission la ré-arme pour la même mission)
   const eFac = eFacOverride || (facKey==='HUM'? 'IA':'HUM');
   game = {
     diff, d:DIFFS[diff], t:0, over:false, win:false,
@@ -144,8 +145,43 @@ function newGame(facKey, diff, withTuto, eFacOverride){
 }
 // capture des effets transitoires pour les renvoyer à l'invité (hôte uniquement)
 function netEv(e){ if (game && game.net==='host' && net && net.ev && net.ev.length<160) net.ev.push(e); }
-function announce(txt,color){ game.msg={txt,color}; game.msgT=2.6; netEv({k:'a',t:txt,c:color}); }
-function addFloater(x,y,txt,color,size=13){ floaters.push({x,y,txt,color,size,t:0}); netEv({k:'f',x,y,t:txt,c:color,s:size}); }
+// ANNONCES / FLOTTEURS EN LIGNE : l'hôte envoie la CLÉ de traduction + ses variables (ou une référence de nom : ère, pouvoir,
+// cataclysme…) ; l'invité traduit dans SA langue. Le texte brut de l'hôte ne sert que de repli (texte composé inconnu).
+const _revI18N = {};
+function netTxtKey(txt){
+  if (typeof txt!=='string' || !txt) return null;
+  if (FMT_LAST && FMT_LAST.out===txt){ const v = {}; let n = 0;
+    if (FMT_LAST.o) for (const k in FMT_LAST.o){ const x = FMT_LAST.o[k]; if (x && typeof x==='object') return null; v[k] = x; n++; }
+    return n? {q:FMT_LAST.key, v} : {q:FMT_LAST.key}; }
+  const L = SETTINGS.lang; let rc = _revI18N[L];
+  if (!rc){ rc = _revI18N[L] = {map:new Map(), list:[]}; const tbl = I18N[L]||I18N.fr;
+    for (const k in tbl){ const s = frTypo(tbl[k], L); if (typeof s==='string' && s.length>=3 && !rc.map.has(s)){ rc.map.set(s,k); if (s.length>=8) rc.list.push([s,k]); } } }
+  const k0 = rc.map.get(txt); if (k0) return {q:k0};
+  for (const [s,k] of rc.list){ const i = txt.indexOf(s);                       // « 🏰⚔ »+texte : décor sans lettres autour d'une clé
+    if (i>=0){ const rest = txt.slice(0,i)+txt.slice(i+s.length); if (!/\p{L}/u.test(rest)) return {q:k, pr:txt.slice(0,i), sx:txt.slice(i+s.length)}; } }
+  return null;
+}
+function announce(txt,color,net){ game.msg={txt,color}; game.msgT=2.6;
+  if (game.net==='host') netEv(Object.assign({k:'a',t:txt,c:color}, net || netTxtKey(txt))); }
+function addFloaterLocal(x,y,txt,color,size=13){ floaters.push({x,y,txt,color,size,t:0}); }
+function announceLocal(txt,color){ game.msg={txt,color}; game.msgT=2.6; }          // jamais envoyée à l'invité (perspective de l'hôte)
+function addFloater(x,y,txt,color,size=13,net){ floaters.push({x,y,txt,color,size,t:0});
+  if (game.net==='host') netEv(Object.assign({k:'f',x,y,t:txt,c:color,s:size}, net || (typeof txt==='string' && txt.length>2? netTxtKey(txt) : null))); }
+// côté invité : retraduit un événement texte (clé + variables, ou référence de nom) dans sa langue
+function netTxtOut(e){
+  const res = r => { if (!r || typeof r!=='object') return null; const f = (r.f==='IA'||r.f==='HUM')? r.f : null, i = SN(r.i, 0, 4)|0;
+    if (r.L==='era' && f) return lEra(f,i); if (r.L==='lore' && f) return lEraLore(f,i); if (r.L==='ttx' && f) return lTransTxt(f);
+    if (r.L==='tn' && f) return lTransName(f); if (r.L==='sp' && f) return lSpecial(f,i);
+    if (r.L==='cata' && typeof r.k==='string' && CATAS.hasOwnProperty(r.k)) return cataName(r.k); return null; };
+  let out = null;
+  if (e.r) out = res(e.r);
+  else if (typeof e.q==='string' && Object.prototype.hasOwnProperty.call(I18N.fr, e.q)){
+    const q = e.q.replace(/_(you|foe)$/, (m,w)=>'_'+(w==='you'?'foe':'you'));   // « toi / l'adversaire » : perspective de l'hôte → retournée
+    const v = {}; if (e.v && typeof e.v==='object') for (const k of Object.keys(e.v).slice(0,8)){ const x = e.v[k]; v[k] = (x && typeof x==='object')? res(x) : String(x).slice(0,60); }
+    out = fmt(Object.prototype.hasOwnProperty.call(I18N.fr, q)? q : e.q, v); }
+  if (out==null) return String(e.t==null? '' : e.t);
+  return String(e.pr||'').slice(0,12) + out + String(e.sx||'').slice(0,12);
+}
 // lumière dynamique (RTX simulé). FUSION : un éclair qui tombe sur une lumière encore vive de
 // taille voisine, au même endroit, la RAVIVE au lieu de s'empiler — en mêlée dense, des dizaines
 // d'éclairs additifs superposés saturaient en une tache blanche qui masquait les combattants.
@@ -266,17 +302,18 @@ function homeBuff(u){
 function calcRates(side){
   const dwindle = 1 - 0.65*game.dev;
   let rf=4, rm=2.5, rw=0.6;
+  const net = ecoMul(side);                       // M1 : effet réseau de la machine (même formule que updateBuildings)
   for (const s of sideBuildSlots(side)){
     if (!s.b) continue;
-    if (s.b.type==='farmF') rf += BUILDS.farmF.rate*lvlF(s.b)*longevMul(s.b);
-    else if (s.b.type==='farmM') rm += BUILDS.farmM.rate*lvlF(s.b)*longevMul(s.b);
-    else if (s.b.type==='well') rw += BUILDS.well.rate*lvlF(s.b)*longevMul(s.b)*(1-0.5*game.dev);
+    if (s.b.type==='farmF') rf += BUILDS.farmF.rate*lvlF(s.b)*longevMul(s.b)*net;
+    else if (s.b.type==='farmM') rm += BUILDS.farmM.rate*lvlF(s.b)*longevMul(s.b)*net;
+    else if (s.b.type==='well') rw += BUILDS.well.rate*lvlF(s.b)*longevMul(s.b)*(1-0.5*game.dev)*net;
   }
   const key = side===game.p? 'p':'e';
   for (const n of game.nodes) if (n.owner===key){
-    rw += (n.center? 3.5:2.2)*dwindle;
+    rw += (n.center? 3.5:2.2)*dwindle*terrK(side);   // M8 : la machine tire +40 % de ses lacs
     if (n.center){ rf += 2*dwindle; rm += 2*dwindle; }
   }
-  const pm = side.prodMul||1, wM = winterMul();   // même malus dégressif que la vraie production
-  return {f:rf*pm*wM, m:rm*pm*wM, w:rw*pm};
+  const pm = side.prodMul||1;                      // même malus dégressif que la vraie production (hiver : par faction avec M10)
+  return {f:rf*pm*winterK(side,'f'), m:rm*pm*winterK(side,'m'), w:rw*pm};
 }

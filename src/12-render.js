@@ -1060,8 +1060,35 @@ function drawZone(z, dev, t, vw){
   ctx.restore();
   // étiquette de contrôle
   const zl = owner? (owner==='p'?tr('zone_you'):tr('zone_foe')) : tr('zone_neutral');
-  ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
-  ctx.strokeText(zl, x, y-64); ctx.fillStyle=owner? acc : '#e6dcc4'; ctx.fillText(zl, x, y-64);
+  fieldLabel(x, y-64, z.x, zl, owner? acc : null, 1);                 // dessinée par-dessus les unités, empilée avec les autres étiquettes de la zone
+}
+// ÉTIQUETTES DE TERRAIN (v1.17) : nom de l'oasis, « ZONE … », « CONSTRUIRE / TERRAIN LIBRE » — enregistrées pendant le décor, puis posées EN UN SEUL PASSAGE
+// au-dessus des unités, sur un petit fond papier ; celles d'une même zone s'empilent verticalement au lieu de se superposer.
+let FIELD_LBLS = [];
+function fieldLabel(x, y, wx, txt, col, rank){ if (FIELD_LBLS.length<64) FIELD_LBLS.push({x, y, wx, txt, col, rank}); }
+function drawFieldLabels(){
+  if (!FIELD_LBLS.length) return;
+  const L = FIELD_LBLS.slice().sort((a,b)=>a.x-b.x), groups = [];
+  for (const l of L){
+    if (l.rank===2 && (game.p.units.some(u=>Math.abs(u.x-l.wx)<30) || game.e.units.some(u=>Math.abs(u.x-l.wx)<30))) continue;   // « CONSTRUIRE » / « TERRAIN LIBRE » : masqué dès qu'une unité s'y tient
+    const g = groups[groups.length-1];
+    if (g && Math.abs(l.x-g.x1)<84){ g.items.push(l); g.x1 = l.x; } else groups.push({ x0:l.x, x1:l.x, items:[l], });
+  }
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  const fpx = Math.max(9.5, 9/(uiK()*zoom)), hh = Math.round(fpx*1.35); ctx.font=HF(fpx);          // téléphone : étiquettes relevées (≈ 9 px réels)
+  for (const g of groups){
+    const cx = g.items.reduce((a,l)=>a+l.x,0)/g.items.length, bottom = Math.max(...g.items.map(l=>l.y));
+    g.items.sort((a,b)=>a.rank-b.rank);                                  // du haut (nom du lieu) au bas (zone, puis socle)
+    g.items.forEach((l,i)=>{
+      const y = bottom - (g.items.length-1-i)*(hh+2), tw = ctx.measureText(l.txt).width, w = tw+10+(l.col? 7 : 0), x0 = cx-w/2;
+      ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(x0+1.2, y-hh/2+1.8, w, hh);
+      ctx.fillStyle='rgba(233,224,202,0.94)'; ctx.fillRect(x0, y-hh/2, w, hh);
+      ctx.strokeStyle='rgba(31,27,23,0.55)'; ctx.lineWidth=1; ctx.strokeRect(x0+0.5, y-hh/2+0.5, w-1, hh-1);
+      if (l.col){ ctx.fillStyle=l.col; ctx.fillRect(x0+1, y-hh/2+1, 4, hh-2); }
+      ctx.fillStyle='#1f1b17'; ctx.fillText(l.txt, cx+(l.col? 3 : 0), y+0.5);
+    });
+  }
+  ctx.restore();
 }
 // chaîne de montagnes lointaine : silhouette dentelée, très embrumée, parallaxe ultra-lente.
 // neige sur les sommets quand le monde est sain ; teinte cendrée quand il agonise.
@@ -1560,13 +1587,11 @@ function drawNode(n){
   ctx.strokeStyle='rgba(200,240,255,0.6)'; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
   // mât + drapeau
   const owner=n.owner, col=owner?(owner==='p'?game.p.fac.accent:game.e.fac.accent):'#9a8a78';
-  ctx.strokeStyle='#5a4a3a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,y-2); ctx.lineTo(x,y-46); ctx.stroke();
-  const wave=Math.sin(t*3)*3; ctx.fillStyle=col;
-  ctx.beginPath(); ctx.moveTo(x,y-46); ctx.lineTo(x+22,y-40+wave); ctx.lineTo(x,y-32); ctx.closePath(); ctx.fill();
+  drawFlag(x, y-2, t, col, true, 50);
   if (Math.abs(n.prog)<1 && n.prog!==0){
     ctx.fillStyle='#000a'; ctx.fillRect(x-22,y-58,44,5);
     ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(x-22,y-58,44*Math.abs(n.prog),5); }
-  if (n.center){ ctx.font=HF(11); ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillText(tr('oasis'), x, y-82); }
+  if (n.center) fieldLabel(x, y-82, n.x, tr('oasis'), null, 0);
 }
 
 /* ====== ÉCLAIRAGE & MATIÈRE — relief 2.5D sculpté + accents néon ====== */
@@ -1628,6 +1653,12 @@ function tubeT(x0,y0,x1,y1,r,col){
   rrectT(0,-r,Math.hypot(x1-x0,y1-y0),2*r,Math.min(r,1.6)); TC.fill(); TC.restore();
 }
 function crossT(x,y,s,col){ TC.fillStyle=col; TC.fillRect(x-s/2,y-s/6,s,s/3); TC.fillRect(x-s/6,y-s/2,s/3,s); }
+// emblème de soin : croix BLANCHE sur fond VERT (humains) — jamais la croix rouge, emblème protégé
+function medT(x,y,s){ s=Math.max(s,4); TC.fillStyle='#2f9a4a'; rrectT(x-s*0.62,y-s*0.62,s*1.24,s*1.24,s*0.2); TC.fill(); crossT(x,y,s*0.92,'#ffffff'); }
+// emblème de soin des machines : clé et engrenage bleus, aucune croix
+function techT(x,y,s){ tubeT(x-s*0.5,y+s*0.5,x+s*0.5,y-s*0.5,Math.max(1,s*0.16),'#9fd0ff');
+  TC.save(); TC.translate(x,y); TC.fillStyle='#3a9aff'; for (let i=0;i<6;i++){ TC.save(); TC.rotate(i*Math.PI/3); TC.fillRect(-s*0.11,-s*0.52,s*0.22,s*0.24); TC.restore(); }
+  TC.beginPath(); TC.arc(0,0,s*0.38,0,6.283); TC.fill(); TC.fillStyle='#10305a'; TC.beginPath(); TC.arc(0,0,s*0.15,0,6.283); TC.fill(); TC.restore(); }
 // point lumineux : seul élément néon des personnages (petit, net, cœur blanc)
 function glowDot(x,y,r,col,b){
   bloomT(col,b||6,()=>{ TC.fillStyle=col; TC.beginPath(); TC.arc(x,y,r,0,6.283); TC.fill(); });
@@ -1639,7 +1670,7 @@ function bandT(x0,y0,x1,y1,t,w,col){
   TC.save(); TC.translate(x,y); TC.rotate(Math.atan2(y1-y0,x1-x0)); TC.fillStyle=col; TC.fillRect(-1.3,-w/2,2.6,w); TC.restore();
 }
 // bouche de l'arme [avance, hauteur] par rôle : tirs, éclairs et obus partent enfin du canon
-const MZ_DEF=[10,-26], MZ_MEL=[8,-36], MZ_HR=[29,-40], MZ_HS=[25,-47], MZ_BS=[7,-55], MZ_BR=[0,1,2,3,4].map(e=>[22+e,-35.5]);
+const MZ_DEF=[10,-26], MZ_MEL=[8,-36], MZ_HR=[29,-40], MZ_HS=[25,-47], MZ_BS=[28,-57], MZ_BR=[0,1,2,3,4].map(e=>[30+e,-34.5]);
 function muzzleOf(u){
   if (u.fly || u.role==='hero' || u.role==='gremlin') return MZ_DEF;
   const hum = u.fac==='HUM';
@@ -1654,7 +1685,7 @@ function muzzleOf(u){
 let SPART = 'full', SPOSE = 0;
 const LEGS = { W:48, H:40, ox:-24, oy:-34 };          // position de la toile des jambes / pieds
 const unitHeavy = (kind, role) => role==='tank' || (kind==='bot' && role==='siege');
-const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || (kind==='hum' && era===4);
+const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || era>=3;
 function bakePart(kind, fac, role, era, trans, part, pose){
   SPART = part; SPOSE = pose||0;
   try { drawUnitSprite(kind, fac, role, era, trans); } finally { SPART = 'full'; SPOSE = 0; }
@@ -1738,7 +1769,17 @@ function armPose(role, era, cx, F){
   }
 }
 
-// ===== HUMANITÉ : survivants 2025 → milice → tactique → exo-armure → armure d'or =====
+// ===== HUMANITÉ : survivants de la Révolte → milice → tactique → exo-armure → armure d'or =====
+// panneau solaire : cadre d'or, cellules sombres en quadrillage (ère IV humaine « La Commune »)
+function solarT(q, frame){
+  frame = frame || '#e8c860';
+  plateT(q, '#1d3556', false);
+  const L = (a,b,t) => [q[a*2]+(q[b*2]-q[a*2])*t, q[a*2+1]+(q[b*2+1]-q[a*2+1])*t];
+  TC.strokeStyle='rgba(140,190,235,0.55)'; TC.lineWidth=0.6;
+  for (const t of [0.33,0.66]){ const a=L(0,1,t), b=L(3,2,t); strokeP([a[0],a[1],b[0],b[1]]); TC.stroke(); }
+  { const a=L(0,3,0.5), b=L(1,2,0.5); strokeP([a[0],a[1],b[0],b[1]]); TC.stroke(); }
+  TC.strokeStyle=frame; TC.lineWidth=1.3; polyP(q); TC.stroke();
+}
 function drawHumSprite(fac, role, era, trans, hero){
   const cx=USP.cx, F=USP.foot, acc=FACTIONS[fac].accent;
   const uni = hero? '#55653c' : FACTIONS[fac].eraCols[era];
@@ -1762,14 +1803,22 @@ function drawHumSprite(fac, role, era, trans, hero){
     TC.fillStyle='rgba(0,0,0,0.35)'; TC.fillRect(cx+1,F-1.4,11,1.4); };
   if (SPART==='legs'){ const a=SPOSE*0.34; rot(cx-1,F-24,a,legB); rot(cx+2,F-24,-a,legF); return; }
   // --- arrière-plan : cape (ère d'or), paquetage
-  if (doBack && era===4){ TC.fillStyle=lgrad(cx-14,F-46,cx-4,F-8,[[0,'#c8402c'],[1,'#661a16']]);
-    polyP([cx-6,F-46, cx-1,F-44, cx-7,F-9, cx-19,F-11, cx-14,F-30]); TC.fill(); }
+  // ères III-IV : module dorsal d'exo-armure (batterie + antenne ; ailettes de panneaux solaires). Plus de cape.
+  if (doBack && era===3){
+    plateT([cx-13,F-47, cx-5,F-46, cx-5,F-29, cx-12,F-30], '#2c2c3a');
+    TC.strokeStyle='rgba(255,255,255,0.18)'; TC.lineWidth=0.8; for (let i=0;i<3;i++){ strokeP([cx-11.5,F-43+i*4.4, cx-6.5,F-43+i*4.4]); TC.stroke(); }
+    TC.strokeStyle='#2a2a32'; TC.lineWidth=1.2; strokeP([cx-10,F-47, cx-14,F-63]); TC.stroke();
+    glowDot(cx-14,F-63.5,1.3,acc,5);
+  } else if (doBack && era===4){
+    solarT([cx-5,F-47, cx-8,F-64, cx-19,F-60, cx-15,F-45]);
+    solarT([cx-7,F-45, cx-13,F-56, cx-24,F-48, cx-17,F-34]);
+  }
   if (!doBack){}
   else if (role==='support'){
     const bx=cx-sw-7;
     if (era>=1){ TC.strokeStyle='#2a2a2e'; TC.lineWidth=1.2; strokeP([bx+2,F-45, bx-1,F-60]); TC.stroke(); glowDot(bx-1,F-60,1.2,'#ff5a4a',4); }
     TC.fillStyle=lgrad(bx,F-46,bx+9,F-26,[[0,era===4?'#fff6dc':'#f2f4f0'],[1,era===4?'#c8a860':'#a8aca8']]); rrectT(bx,F-46,9,20,3); TC.fill();
-    crossT(bx+4.5,F-37,6,RED);
+    medT(bx+4.5,F-37,6);
   } else if (role==='siege'){
     const bx=cx-sw-6;
     for (let i=0;i<2;i++){ tubeT(bx+1.5+i*3.4,F-44,bx+1.5+i*3.4,F-53,1.4,'#6a7048'); TC.fillStyle='#c84a2a';
@@ -1800,19 +1849,19 @@ function drawHumSprite(fac, role, era, trans, hero){
     TC.fillStyle=lgrad(cx-4,F-48,cx+5,F-43,[[0,shade(acc,1.15)],[1,shade(acc,0.7)]]);
     polyP([cx-4,F-48, cx+5,F-47.5, cx+5.5,F-44, cx-4,F-44]); TC.fill();
     polyP([cx-4,F-47, cx-10,F-41, cx-8,F-39, cx-3,F-44]); TC.fill();
-  } else if (era===1){
+  } else if (era===1){                                                                              // veste de travail à bretelles
     TC.fillStyle=shade(uni,0.8); TC.fillRect(cx-5,F-40,4.5,4.5); TC.fillRect(cx+1,F-40,4.5,4.5);   // poches
-    TC.lineCap='butt'; TC.strokeStyle='#4a3522'; TC.lineWidth=2.6; strokeP([cx-sw+2,F-44, cx+sw-2,F-26]); TC.stroke(); // cartouchière
-    TC.fillStyle='#d8b050'; for(let i=1;i<5;i++){ TC.fillRect(cx-sw+2+i*(2*sw-4)/5-0.8, F-44+i*18/5-1.6, 1.6, 2.2); }
-  } else if (era===2){
-    plateT([cx-sw+2,F-44, cx+sw-1,F-44, cx+sw-1,F-28, cx-sw+2,F-28], mix(uni,'#2e3238',0.5));   // gilet porte-plaques
-    TC.strokeStyle='rgba(0,0,0,0.3)'; for(let i=0;i<3;i++){ strokeP([cx-sw+3,F-40+i*3.4, cx+sw-2,F-40+i*3.4]); TC.stroke(); }
-    TC.fillStyle=mix(uni,'#2e3238',0.65); rrectT(cx-5,F-29,4.5,4,1); TC.fill(); rrectT(cx+1,F-29,4.5,4,1); TC.fill();
-    TC.fillStyle=acc; TC.fillRect(cx+3,F-42.5,3,2);                                              // écusson
-  } else if (era===3){
-    plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw-1,F-34, cx,F-31, cx-sw+1,F-34], shade(uni,1.12));     // plastron
-    strokeP([cx-4,F-29, cx+5,F-29]); TC.stroke(); strokeP([cx-4,F-26.5, cx+5,F-26.5]); TC.stroke();
-    bloomT(acc,5,()=>{ TC.fillStyle=acc; rrectT(cx-2,F-41,6,1.6,0.8); TC.fill(); });
+    TC.lineCap='butt'; TC.strokeStyle='#3a2a1e'; TC.lineWidth=1.9; strokeP([cx-3.6,F-45, cx-3,F-27]); TC.stroke(); strokeP([cx+4,F-45, cx+4.6,F-27]); TC.stroke();   // bretelles
+    TC.fillStyle='#d8b050'; for (let i=0;i<3;i++){ TC.beginPath(); TC.arc(cx+0.4,F-41+i*4.6,0.85,0,6.283); TC.fill(); }
+  } else if (era===2){                                                                              // veste de chantier rapiécée
+    plateT([cx-5.5,F-46, cx+1,F-44.5, cx-1,F-40, cx-6.5,F-43], shade(uni,1.25));                    // col
+    TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.9; strokeP([cx-1,F-40, cx-1.5,F-25]); TC.stroke();   // fermeture
+    TC.fillStyle=shade(uni,0.78); TC.fillRect(cx-6,F-37,4.6,4.4); TC.fillRect(cx+1.6,F-37,4.6,4.4);  // poches
+    TC.fillStyle='#e8d8b0'; TC.fillRect(cx+2.6,F-43,4.6,4.4); TC.fillStyle=acc; TC.fillRect(cx+3.6,F-42,2.6,2.4);   // écusson cousu
+  } else if (era===3){                                                                              // gilet de mineur à bandes réfléchissantes
+    plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw-1,F-28, cx-sw+1,F-28], shade(uni,1.1));
+    TC.fillStyle='#ff9d45'; TC.fillRect(cx-sw+1,F-40,2*sw-2,2.4); TC.fillRect(cx-sw+1,F-33,2*sw-2,2.4);
+    TC.fillStyle='rgba(255,255,255,0.5)'; TC.fillRect(cx-sw+1,F-39.2,2*sw-2,0.7); TC.fillRect(cx-sw+1,F-32.2,2*sw-2,0.7);
   } else {
     plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw-1,F-33, cx,F-30, cx-sw+1,F-33], '#f0d888');            // plastron d'or
     glowDot(cx+1,F-38.5,2.2,'#ffe9a0',6);
@@ -1829,12 +1878,10 @@ function drawHumSprite(fac, role, era, trans, hero){
   TC.fillStyle=shade(skin,0.75); TC.fillRect(cx-2,F-48,5,4);
   TC.fillStyle=rgrad(hx-3,hy-3,hr*1.5,[[0,shade(skin,1.12)],[0.65,skin],[1,shade(skin,0.68)]]);
   TC.beginPath(); TC.arc(hx,hy,hr,0,6.283); TC.fill(); TC.beginPath(); TC.arc(hx+7.3,hy+1.2,1.7,0,6.283); TC.fill();
-  const closed = era>=3 && !hero;                                                                  // casque intégral
-  if (!closed){
-    TC.fillStyle=shade(skin,0.8); TC.beginPath(); TC.ellipse(hx-2,hy+0.5,1.6,2.3,0,0,6.283); TC.fill();
-    TC.fillStyle='#1e1612'; rrectT(hx+3.4,hy-2,1.9,2.6,0.8); TC.fill();
-    TC.fillStyle=shade(skin,0.5); TC.fillRect(hx+2.5,hy-3.9,3.8,1);
-  }
+  // le visage reste TOUJOURS visible : ni casque intégral, ni visière fermée
+  TC.fillStyle=shade(skin,0.8); TC.beginPath(); TC.ellipse(hx-2,hy+0.5,1.6,2.3,0,0,6.283); TC.fill();
+  TC.fillStyle='#1e1612'; rrectT(hx+3.4,hy-2,1.9,2.6,0.8); TC.fill();
+  TC.fillStyle=shade(skin,0.5); TC.fillRect(hx+2.5,hy-3.9,3.8,1);
   const dome = (r, dy, col) => { TC.fillStyle=lgrad(hx-r,hy+dy-r,hx+r,hy+dy,[[0,shade(col,1.35)],[1,shade(col,0.62)]]);
     TC.beginPath(); TC.arc(hx,hy+dy,r,Math.PI,0); TC.closePath(); TC.fill(); };
   if (hero){                                                                                       // le Che
@@ -1848,29 +1895,55 @@ function drawHumSprite(fac, role, era, trans, hero){
     else if (role==='ranged'){ dome(hr+0.6,-1.5,'#3a3e44'); TC.fillStyle='#2a2e34'; rrectT(hx+3,hy-3.6,9,2,1); TC.fill(); }  // casquette
     else if (role==='siege'){ dome(hr+0.8,-1,'#5a4e46'); TC.fillStyle='#4a4038'; rrectT(hx-8.4,hy-3.2,17,3,1.4); TC.fill();  // bonnet
       TC.beginPath(); TC.arc(hx-1,hy-9.6,1.8,0,6.283); TC.fill(); }
-    else if (role==='support'){ dome(hr+0.5,-1.5,'#e8e8e4'); crossT(hx+1,hy-5.5,4,RED); }
+    else if (role==='support'){ dome(hr+0.5,-1.5,'#e8e8e4'); medT(hx+1,hy-5.5,4); }
     else { dome(hr+0.2,-1.2,'#3a2a1e'); TC.fillStyle=acc; rrectT(hx-7.6,hy-5,15.4,2.6,1); TC.fill();                   // bandeau
       TC.strokeStyle=acc; TC.lineWidth=1.4; strokeP([hx-7,hy-4, hx-12,hy-1]); TC.stroke(); strokeP([hx-7,hy-3.4, hx-11,hy+1.5]); TC.stroke(); }
-  } else if (era===1){
-    const hc = role==='support'? '#dcdcd4' : '#59633f';
-    dome(9.6,-1.5,hc); TC.fillStyle=shade(hc,0.7); rrectT(hx-10.5,hy-2.4,21,2.2,1); TC.fill();     // casque acier
-    if (role==='support'){ TC.fillStyle='#fff'; TC.beginPath(); TC.arc(hx,hy-6,3.2,0,6.283); TC.fill(); crossT(hx,hy-6,4.4,RED); }
-  } else if (era===2){
-    dome(9.4,-1.8,'#3c4652'); TC.fillStyle='#4a525c'; rrectT(hx-4.6,hy-1.6,3.2,4.6,1.4); TC.fill();  // casque + oreillette radio
-    TC.fillStyle='#2a2e34'; TC.fillRect(hx+5,hy-9,3,3); TC.fillStyle='#1a1d22'; rrectT(hx+4,hy-12.5,6,3.4,1); TC.fill();
-    TC.fillStyle='rgba(120,220,160,0.8)'; TC.fillRect(hx+8.4,hy-11.8,1.2,2);                        // JVN relevées
-    if (role==='support') crossT(hx-3,hy-6.5,4,RED);
-    if (tank){ TC.fillStyle='rgba(170,210,235,0.38)'; rrectT(hx+1,hy-6,8.6,11,2); TC.fill(); }       // visière anti-émeute
-  } else {
-    const hc = era===4? '#e8c860' : mix(uni,'#2a2a38',0.35);
-    TC.fillStyle=lgrad(hx-9,hy-10,hx+9,hy+8,[[0,shade(hc,1.4)],[0.5,hc],[1,shade(hc,0.55)]]);
-    TC.beginPath(); TC.arc(hx,hy-0.5,hr+1.4,0,6.283); TC.fill();
-    TC.fillStyle=shade(hc,0.6); polyP([hx+2,hy+3, hx+9,hy+2, hx+8,hy+7, hx+2,hy+8]); TC.fill();       // mentonnière
-    if (era===4){ TC.fillStyle=lgrad(hx-12,hy-16,hx,hy-8,[[0,'#e84a34'],[1,'#8a2018']]);
-      polyP([hx-1,hy-8.5, hx+3,hy-9.5, hx-5,hy-15.5, hx-12,hy-11]); TC.fill(); }                      // cimier
-    const vc = era===4? '#fff0c0' : '#ffd34a';
-    bloomT(vc,6,()=>{ TC.fillStyle=vc; rrectT(hx+1,hy-2.6,8.6,2.6,1.2); TC.fill(); });              // visière
-    if (role==='support') crossT(hx-3,hy-5,4,RED);
+  } else if (era===1){                                                                             // GRÈVE : casquettes, bonnets, foulard rouge
+    if (tank){ dome(hr+1.2,-2.4,'#e8c030'); TC.fillStyle='#c8a020'; rrectT(hx-9.6,hy-4.2,19.6,2.2,1); TC.fill();     // casque de chantier jaune
+      TC.fillStyle='#f4d848'; rrectT(hx-1.2,hy-11.6,2.4,4.4,0.8); TC.fill(); }
+    else if (role==='ranged'){ dome(hr+0.9,-2.4,'#7a3a2a'); TC.fillStyle='#5a2a1e'; rrectT(hx-8.7,hy-5,17.4,2.8,1.2); TC.fill();   // bonnet de laine
+      TC.beginPath(); TC.arc(hx-1,hy-11,1.7,0,6.283); TC.fill(); }
+    else if (role==='siege'){ dome(hr+0.6,-2.3,'#5a5448'); TC.fillStyle='#403c34'; rrectT(hx+2.6,hy-4.6,9.4,2,1); TC.fill(); }       // casquette plate
+    else if (role==='support'){ dome(hr+0.6,-2.2,'#ece8dc'); TC.fillStyle='#d8d4c6'; polyP([hx-7.4,hy-3.6, hx-12,hy-1, hx-9,hy+1.4, hx-6,hy-1]); TC.fill(); medT(hx+1.4,hy-6.6,4.4); }   // fichu blanc
+    else { dome(hr+0.6,-2.2,'#6a5238'); TC.fillStyle='#4a3826'; rrectT(hx+2.6,hy-4.6,9.4,2,1); TC.fill(); }                          // casquette
+    TC.fillStyle='#c8302a'; polyP([cx-4.5,F-47, cx+5,F-46.5, cx+3.5,F-42.4, cx-3,F-43.4]); TC.fill();                                 // foulard rouge noué
+    TC.fillStyle='#9a2420'; polyP([cx-3,F-46.5, cx-9,F-41, cx-7,F-39.6, cx-2,F-43.6]); TC.fill();
+  } else if (era===2){                                                                             // INSURRECTION : casques de moto / de vélo peints à la main
+    const shell = (col, rim) => { dome(9.2,-2.8,col); TC.fillStyle=rim; rrectT(hx-9.6,hy-4,19.4,2.2,1); TC.fill(); };
+    const stripe = col => { TC.fillStyle=col; rrectT(hx-1,hy-11.9,2.8,8.2,0.9); TC.fill(); };
+    const goggles = () => { TC.strokeStyle='#2a2018'; TC.lineWidth=1.3; strokeP([hx-8,hy-6, hx+9,hy-6]); TC.stroke();                  // lunettes de soudeur
+      for (const gx of [hx+0.4,hx+5.8]){ TC.fillStyle='#8a6a2a'; TC.beginPath(); TC.arc(gx,hy-6,2.7,0,6.283); TC.fill();
+        TC.fillStyle='#2a4a3a'; TC.beginPath(); TC.arc(gx,hy-6,1.7,0,6.283); TC.fill(); TC.fillStyle='rgba(255,255,255,0.55)'; TC.fillRect(gx-0.8,hy-7,0.9,0.9); } };
+    const gasMask = () => { TC.fillStyle='#4a4e44'; rrectT(hx+1,hy-8,9,4.8,2); TC.fill(); TC.fillStyle='#22241f';                     // masque à gaz relevé sur le front
+      TC.beginPath(); TC.arc(hx+3.6,hy-5.6,1.5,0,6.283); TC.arc(hx+7.8,hy-5.6,1.5,0,6.283); TC.fill();
+      TC.strokeStyle='#2a2a26'; TC.lineWidth=1.2; strokeP([hx+1,hy-6, hx-8,hy-6.4]); TC.stroke(); };
+    if (tank){ shell('#b8362a','#7a1e18'); stripe('#f0c030'); goggles(); }
+    else if (role==='ranged'){ shell('#d8d0b0','#a89e80'); TC.strokeStyle='rgba(60,50,40,0.7)'; TC.lineWidth=1.1;                       // casque de vélo aéré
+      for (const k of [-4.5,-1,2.5]){ strokeP([hx+k,hy-11, hx+k-1,hy-6.4]); TC.stroke(); } goggles(); }
+    else if (role==='siege'){ shell('#4a6a58','#2a4a38'); stripe('#e8e0c0'); gasMask(); }
+    else if (role==='support'){ shell('#ece8dc','#c8c4b4'); medT(hx+2,hy-7.6,5); }
+    else { shell('#c8782a','#8a4a18'); stripe('#f4ecd8'); }
+  } else if (era===3){                                                                             // CELLULES : casque de mineur + lampe, cagoule tricotée
+    const lamp = () => { TC.fillStyle='#3a3a34'; rrectT(hx+4.4,hy-8.6,5,3.2,1); TC.fill();
+      TC.fillStyle='rgba(255,196,80,0.16)'; polyP([hx+9.6,hy-7, hx+26,hy-13, hx+26,hy+1]); TC.fill();
+      bloomT('#fff0c0',7,()=>{ TC.fillStyle='#fff0c0'; TC.beginPath(); TC.arc(hx+9.2,hy-7,1.6,0,6.283); TC.fill(); }); };
+    const hat = col => { dome(hr+1.8,-2.6,col); TC.fillStyle=shade(col,0.7); rrectT(hx-10,hy-4.4,20.6,2.4,1); TC.fill();
+      TC.fillStyle=shade(col,1.25); rrectT(hx-1.4,hy-12.2,2.8,7.4,1); TC.fill(); };
+    if (tank){ hat('#e87a30'); }                                                                    // exosquelette de chantier : casque ouvert
+    else if (role==='ranged'){ dome(hr+0.9,-2.4,'#4a4438'); TC.fillStyle='#3a362c'; polyP([hx-8.6,hy-3, hx-2.4,hy-2.6, hx-2.4,hy+7.6, hx-7.4,hy+8.4]); TC.fill();
+      TC.strokeStyle='rgba(255,255,255,0.12)'; TC.lineWidth=0.7; for (let i=0;i<4;i++){ strokeP([hx-8+i*1.5,hy-8, hx-7.4+i*1.2,hy+7]); TC.stroke(); } }   // cagoule tricotée
+    else if (role==='siege'){ hat('#c8c0a8'); lamp(); }
+    else if (role==='support'){ hat('#ece8dc'); lamp(); medT(hx+0.4,hy-8,4.6); }
+    else { hat('#d09a2c'); lamp(); }
+  } else {                                                                                         // COMMUNE : visière solaire ou chapeau, visage découvert
+    const straw = (col, band) => { TC.fillStyle=col; TC.beginPath(); TC.ellipse(hx,hy-5.4,12.6,2.8,-0.05,0,6.283); TC.fill();
+      TC.fillStyle=shade(col,1.12); TC.beginPath(); TC.arc(hx,hy-6,6.4,Math.PI,0); TC.closePath(); TC.fill();
+      TC.fillStyle=band; TC.fillRect(hx-6.4,hy-7.6,12.8,1.8); };
+    const visor = () => { dome(hr+0.6,-2.4,'#f0d888'); solarT([hx+2.6,hy-5.4, hx+13,hy-4.6, hx+12.2,hy-2.2, hx+2.6,hy-3.2]); };
+    if (tank || role==='ranged') visor();
+    else if (role==='siege') straw('#cdb870','#5a8a3a');
+    else if (role==='support'){ straw('#f2ead0','#2f9a4a'); medT(hx+0.4,hy-11,4.6); }
+    else straw('#e0cc8a','#9a6434');
   }
   }
   if (SPART==='body') return;
@@ -1889,8 +1962,8 @@ function drawHumSprite(fac, role, era, trans, hero){
   function drawArm(){
     limbT(P.f, aw, shade(uni,0.95));
     if (era>=3) plateT([P.f[2]-3,P.f[3]-3, P.f[2]+3,P.f[3]-2.5, P.f[4]+1,P.f[5]+1.5, P.f[4]-2.5,P.f[5]+2], shade(uni,1.08));
-    const band = role==='support'? '#f4f4f0' : trans? '#e8302a' : hero? '#e8302a' : (era===1||era===2)? acc : null;
-    if (band){ bandT(P.f[0],P.f[1],P.f[2],P.f[3],0.5,aw+0.6,band); if (role==='support') crossT((P.f[0]+P.f[2])/2,(P.f[1]+P.f[3])/2,2.6,RED); }
+    const band = role==='support'? '#f4f4f0' : trans? '#e8302a' : hero? '#e8302a' : (era===1||era===2||era===3)? acc : null;
+    if (band){ bandT(P.f[0],P.f[1],P.f[2],P.f[3],0.5,aw+0.6,band); if (role==='support') medT((P.f[0]+P.f[2])/2,(P.f[1]+P.f[3])/2,2.6); }
     TC.fillStyle=lgrad(fh[0]-2,fh[1]-2,fh[0]+2,fh[1]+2,[[0,shade(glove,1.2)],[1,shade(glove,0.75)]]);
     TC.beginPath(); TC.arc(fh[0],fh[1],aw*0.5,0,6.283); TC.fill();
   }
@@ -1901,10 +1974,10 @@ function drawHumSprite(fac, role, era, trans, hero){
     else if (era===1){ TC.fillStyle=lgrad(3,-3,3,2,[[0,'#e8ecf0'],[1,'#7a828c']]); polyP([3,-1.6, 18,-3, 21,-0.6, 17,1.8, 3,1.6]); TC.fill(); }  // machette
     else if (era===2){ tubeT(2,0,17,0,1.2,'#2a2c30'); TC.fillStyle=lgrad(12,-7,18,0,[[0,'#e0e4ea'],[1,'#6a7280']]);
       polyP([12,-1.4, 17,-1.4, 19.5,-7, 14,-6]); TC.fill(); }                                            // tomahawk
-    else { const bc = era===4? '#fff3c4' : '#ffe0b0', gc = era===4? '#ffe9a0' : acc;
-      TC.fillStyle=era===4? '#d8a840' : '#4a4a58'; TC.fillRect(2,-3.2,2.2,6.4);                         // garde
-      bloomT(gc,7,()=>{ TC.fillStyle=bc; polyP([4,-1.8, 21,-1.3, 24,0, 21,1.3, 4,1.8]); TC.fill(); });   // lame d'énergie / d'or
-      TC.fillStyle='rgba(255,255,255,0.9)'; TC.fillRect(5,-0.4,16,0.8); }
+    else { const gc = era===4? '#fff0c0' : acc;                                                          // lame vibrante sombre, fil lumineux
+      TC.fillStyle='#2c2a34'; TC.fillRect(2,-3.2,2.2,6.4);                                               // garde
+      TC.fillStyle=lgrad(0,-2,0,2,[[0,'#4a4858'],[1,'#17151c']]); polyP([4,-1.9, 21,-1.4, 24,0, 21,1.4, 4,1.9]); TC.fill();
+      bloomT(gc,6,()=>{ TC.strokeStyle=gc; TC.lineWidth=1; strokeP([4.5,-1.6, 21,-1.2, 23.6,0]); TC.stroke(); }); }
     TC.restore();
   }
   function humRifle(e){
@@ -1922,16 +1995,17 @@ function drawHumSprite(fac, role, era, trans, hero){
       TC.fillStyle='#1c1e22'; TC.fillRect(cx+8,y-3.6,1.6,1.4); tubeT(cx+5,y-5,cx+14,y-5,1.5,'#24262a');     // lunette
       TC.fillStyle='rgba(140,220,255,0.9)'; TC.fillRect(cx+13.4,y-5.8,0.9,1.6);
     } else {
-      const bc = e===4? '#f0d888' : '#c8ccd6', ec = e===4? '#ffe9a0' : '#ffb35a';
+      const bc = e===4? '#2e2a38' : '#3a3e4c', ec = e===4? '#fff0c0' : '#ffb35a';                       // fusil à rails : sombre, lisible sur l'or
       plateT([cx-1,y-3, cx+22,y-2.4, cx+27,y-0.4, cx+22,y+2, cx+7,y+2.4, cx+2,y+3.6, cx-1,y+2.4], bc);
-      TC.fillStyle=shade(bc,0.45); TC.fillRect(cx+6,y+0.6,15,1.2);
-      for (let i=0;i<3;i++) glowDot(cx+11+i*3.6,y-0.4,0.9,ec,4);
-      glowDot(cx+27,y-0.4,1.5,ec,6);
+      tubeT(cx+22,y-1.6,cx+33,y-1.4,1.1,'#22242c');                                                     // rail de sortie
+      TC.fillStyle='rgba(0,0,0,0.5)'; TC.fillRect(cx+6,y+0.6,15,1.2);
+      for (let i=0;i<3;i++){ bloomT(ec,4,()=>{ TC.strokeStyle=ec; TC.lineWidth=1; strokeP([cx+10+i*3.8,y-3, cx+10+i*3.8,y+2]); TC.stroke(); }); }  // bobines gauss
+      glowDot(cx+33,y-1.4,1.3,ec,6);
     }
   }
   function humLauncher(){
     const x0=cx-13, y0=F-42, x1=cx+20, y1=F-47;
-    const tc = era===0? '#7a7e84' : era===1? '#5a6a3c' : era===2? '#3e4a3c' : era===3? '#2c2e3a' : '#d8b048';
+    const tc = era===0? '#7a7e84' : era===1? '#5a6a3c' : era===2? '#3e4a3c' : era===3? '#2c2e3a' : '#2e2a38';
     if (era===1) tubeT(x0-2,y0+0.3,x0+5,y0-0.8,4.4,shade(tc,0.85));                                      // évasement arrière
     tubeT(x0,y0,x1,y1,3.4,tc);
     const along = (t,fn) => { TC.save(); TC.translate(x0+(x1-x0)*t, y0+(y1-y0)*t); TC.rotate(Math.atan2(y1-y0,x1-x0)); fn(); TC.restore(); };
@@ -1942,44 +2016,63 @@ function drawHumSprite(fac, role, era, trans, hero){
       TC.fillStyle='rgba(140,220,255,0.9)'; TC.fillRect(3,-7.4,1,2.4); });                                // optique
     else if (era===3){ for (const t of [0.4,0.6,0.8]) along(t,()=>{ bloomT('#ffb35a',5,()=>{ TC.fillStyle='#ffb35a'; TC.fillRect(-0.9,-3.8,1.8,7.6); }); });
       along(1,()=>{ TC.fillStyle='#4a4c5a'; TC.fillRect(0,-3.4,5,1.6); TC.fillRect(0,1.8,5,1.6); }); }       // rails
-    else along(1,()=>glowDot(1,0,2.2,'#fff0c0',7));
+    else { for (const t of [0.35,0.7]) along(t,()=>bloomT('#fff0c0',5,()=>{ TC.fillStyle='#fff0c0'; TC.fillRect(-0.8,-3.8,1.6,7.6); }));
+      along(1,()=>glowDot(1,0,2.2,'#fff0c0',7)); }
     along(0.4,()=>{ TC.fillStyle='#2a2a2e'; TC.fillRect(-1.2,2.4,2.4,4.4); });                              // poignée
   }
   function humMedic(){
     if (era<2){ TC.fillStyle='#4a4038'; TC.fillRect(fh[0]-0.8,fh[1],1.6,2.4);                               // trousse portée
       TC.fillStyle=lgrad(fh[0]-5,fh[1]+2,fh[0]+5,fh[1]+10,[[0,'#ffffff'],[1,'#b8bcb8']]); rrectT(fh[0]-5,fh[1]+2,10,8,1.6); TC.fill();
-      crossT(fh[0],fh[1]+6,5,RED); }
-    else { const bc = era===4? '#f0d888' : '#e4e8ec';                                                       // émetteur de soin
+      medT(fh[0],fh[1]+6,5); }
+    else { const bc = era===4? '#fff6dc' : '#e4e8ec';                                                       // émetteur de soin
       plateT([fh[0]-3,fh[1]-3, fh[0]+8,fh[1]-2.4, fh[0]+9,fh[1]+1.2, fh[0]-2,fh[1]+2], bc);
-      crossT(fh[0]+3,fh[1]-0.6,3,RED); glowDot(fh[0]+9.6,fh[1]-0.6,1.6,'#7dffb0',6); }
+      medT(fh[0]+3,fh[1]-0.6,3); glowDot(fh[0]+9.6,fh[1]-0.6,1.6,'#7dffb0',6); }
   }
-  function humShield(){
+  function humShield(){                                                                                // boucliers de fortune : tôle, portière, panneau, plaque de wagonnet (jamais de polycarbonate)
     const x=cx+8, y=F-50, w=12, h=46;
-    if (era===0){ TC.fillStyle=lgrad(x,y,x+w,y+h,[[0,'#9a7a52'],[1,'#5a4228']]); rrectT(x,y,w,h,1.5); TC.fill();   // porte de récup
-      TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.8; for (let i=1;i<3;i++){ strokeP([x+i*4,y+1, x+i*4,y+h-1]); TC.stroke(); }
-      TC.fillStyle='#8a8e92'; TC.fillRect(x,y+9,w,3); TC.fillRect(x,y+h-12,w,3);
-      TC.fillStyle='#c8ccd0'; for (const yy of [y+10.5,y+h-10.5]) for (const xx of [x+2,x+w-2]){ TC.beginPath(); TC.arc(xx,yy,0.8,0,6.283); TC.fill(); } }
-    else if (era===1){ plateT([x,y, x+w,y+1, x+w,y+h-1, x,y+h], '#8a9098');                                         // bouclier d'acier
-      TC.fillStyle='#1a1d22'; rrectT(x+3,y+5,w-5,2.2,1); TC.fill();
-      TC.fillStyle='#c8ccd2'; for (let i=0;i<5;i++){ TC.beginPath(); TC.arc(x+1.6,y+4+i*9.4,0.8,0,6.283); TC.arc(x+w-1.6,y+4+i*9.4,0.8,0,6.283); TC.fill(); } }
-    else if (era===2){ TC.fillStyle='rgba(150,190,215,0.62)'; rrectT(x,y,w,h,2); TC.fill();                        // polycarbonate
-      TC.strokeStyle='rgba(40,50,60,0.9)'; TC.lineWidth=1.4; rrectT(x,y,w,h,2); TC.stroke();
-      TC.fillStyle='rgba(255,255,255,0.45)'; TC.fillRect(x+2,y+3,1.6,h-8);
-      TC.fillStyle=acc; TC.fillRect(x+1,y+h*0.42,w-2,3); }
-    else { const c = era===4? '#e8c860' : '#3a3a4a';                                                                 // pavois d'énergie / d'or
-      plateT([x,y+2, x+w/2,y, x+w,y+2, x+w,y+h-6, x+w/2,y+h, x,y+h-6], c);
-      if (era===3){ TC.strokeStyle=rgbaC(acc,0.9); TC.lineWidth=1.2; bloomT(acc,5,()=>{ polyP([x+2,y+4, x+w/2,y+2.5, x+w-2,y+4, x+w-2,y+h-7, x+w/2,y+h-2.5, x+2,y+h-7]); TC.stroke(); }); }
-      else bloomT('#fff0c0',7,()=>drawStar(x+w/2,y+h*0.42,4.2,'#fff3c4')); }
+    if (era===0){ plateT([x,y+1, x+w,y, x+w,y+h, x,y+h], '#7e8a8e');                                           // tôle ondulée de barricade, pleine
+      TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=0.9; for (let i=1;i<5;i++){ strokeP([x+i*2.4,y+2, x+i*2.4,y+h-1]); TC.stroke(); }
+      TC.strokeStyle='rgba(255,255,255,0.25)'; for (let i=1;i<5;i++){ strokeP([x+i*2.4+1,y+2, x+i*2.4+1,y+h-1]); TC.stroke(); }
+      TC.fillStyle=acc; TC.fillRect(x,y+h*0.52,w,3.4);                                                          // bande peinte
+      TC.fillStyle='#8a5a34'; TC.fillRect(x+1,y+h-14,5,6);                                                      // plaque de rouille
+      TC.fillStyle='#c8ccd0'; for (const yy of [y+3,y+h-3]) for (const xx of [x+1.6,x+w-1.6]){ TC.beginPath(); TC.arc(xx,yy,0.8,0,6.283); TC.fill(); } }
+    else if (era===1){ plateT([x,y+2, x+w,y, x+w,y+h-1, x,y+h], '#8a3a2c');                                   // portière de voiture
+      TC.fillStyle='#2a3840'; polyP([x+1.4,y+3, x+w-1.4,y+1.6, x+w-1.4,y+13, x+1.4,y+14]); TC.fill();           // vitre sombre (opaque)
+      TC.fillStyle='rgba(255,255,255,0.22)'; polyP([x+2.4,y+3.4, x+5,y+3, x+3,y+13.4, x+2.4,y+13.4]); TC.fill();
+      TC.fillStyle='#c8ccd2'; rrectT(x+w-5,y+17,4,1.6,0.8); TC.fill();                                          // poignée chromée
+      TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.9; strokeP([x+1,y+h*0.62, x+w-1,y+h*0.62+1]); TC.stroke();
+      TC.fillStyle='rgba(0,0,0,0.22)'; TC.beginPath(); TC.ellipse(x+4,y+h*0.78,3,2.2,0.3,0,6.283); TC.fill(); }  // bosse
+    else if (era===2){ TC.strokeStyle='#8a9096'; TC.lineWidth=2; strokeP([x+w/2,y, x+w/2,y+h]); TC.stroke();   // panneau « sens interdit » arraché, sur son poteau tordu
+      plateT([x,y+26, x+w,y+25, x+w,y+h, x,y+h-1], '#3a6a48'); TC.fillStyle='rgba(255,255,255,0.7)';           // plaque de rue
+      TC.fillRect(x+1.6,y+30,w-3.2,1.2); TC.fillRect(x+1.6,y+34,w-5,1.2); TC.fillRect(x+1.6,y+38,w-4,1.2);
+      TC.fillStyle='#c8302a'; TC.beginPath(); TC.arc(x+w/2+0.5,y+13,10.4,0,6.283); TC.fill();
+      TC.fillStyle='#f4f0e8'; TC.beginPath(); TC.arc(x+w/2+0.5,y+13,8.2,0,6.283); TC.fill();
+      TC.fillStyle='#c8302a'; TC.beginPath(); TC.arc(x+w/2+0.5,y+13,6.6,0,6.283); TC.fill();
+      TC.fillStyle='#f4f0e8'; rrectT(x+w/2-5.6,y+11.6,12.2,2.8,0.8); TC.fill();                                 // barre blanche
+      TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.8; strokeP([x+w/2-6,y+6, x+w/2-2,y+9]); TC.stroke(); strokeP([x+w/2+3,y+19, x+w/2+6,y+21]); TC.stroke(); }
+    else if (era===3){ plateT([x,y+1, x+w,y, x+w,y+h, x,y+h-1], '#6a5a3c');                                    // plaque de wagonnet de mine, rouillée
+      TC.fillStyle='rgba(120,60,20,0.35)'; TC.fillRect(x+1,y+h-16,6,10); TC.fillRect(x+w-5,y+8,4,6);
+      for (let i=0;i<4;i++){ TC.fillStyle=i%2? '#1e1a14' : '#ff9d45'; polyP([x,y+14+i*5, x+w,y+11+i*5, x+w,y+14+i*5, x,y+17+i*5]); TC.fill(); }   // chevrons de chantier
+      TC.fillStyle='#c8b890'; for (let i=0;i<5;i++){ TC.beginPath(); TC.arc(x+1.6,y+4+i*9.4,0.8,0,6.283); TC.arc(x+w-1.6,y+4+i*9.4,0.8,0,6.283); TC.fill(); }
+      TC.fillStyle='#1e1a14'; TC.fillRect(x+3,y+h-9,6,1.1); TC.fillRect(x+3,y+h-6.4,4,1.1); }                  // numéro pochoir
+    else { plateT([x,y, x+w,y, x+w,y+h, x,y+h], '#e8c860');                                                    // plaque-panneau solaire
+      TC.fillStyle='#1d3556'; TC.fillRect(x+1.4,y+8,w-2.8,h-10);
+      TC.strokeStyle='rgba(140,190,235,0.55)'; TC.lineWidth=0.6;
+      for (let i=1;i<4;i++){ strokeP([x+1.4,y+8+i*(h-10)/4, x+w-1.4,y+8+i*(h-10)/4]); TC.stroke(); }
+      strokeP([x+w/2,y+8, x+w/2,y+h-2]); TC.stroke();
+      TC.fillStyle='#2f9a4a'; TC.fillRect(x+1.4,y+3,w-2.8,2.6); }
   }
 }
 
 // ===== GPT : robots industriels → coque → blindés → effilés → cristal =====
 function drawBotSprite(fac, role, era, trans, hero){
   const cx=USP.cx, F=USP.foot;
-  const lite = hero? '#ff6ad6' : FACTIONS[fac].eraCols[era];         // couleur de l'ère : lumières
+  const RTINT = { melee:'#ff5a5a', tank:'#8a7bff', ranged:'#5ad8ff', siege:'#ffb040', support:'#6aff9a' };   // teinte de rôle (ères III-IV)
+  const lite = hero? '#ff6ad6' : era>=3? mix(FACTIONS[fac].eraCols[era], RTINT[role]||'#ffffff', era===4? 0.45 : 0.25) : FACTIONS[fac].eraCols[era];   // couleur de l'ère : lumières
   const plate = mix(lite,'#4a5260',0.5), frame='#2a3038', joint='#15181d';
-  const tank = role==='tank', heavy = tank || role==='siege', sw = tank? 11 : role==='siege'? 9.5 : 8.5;
-  const lw = heavy? 6.4 : 5, hy0 = tank? 4 : 0;
+  const tank = role==='tank', heavy = tank || role==='siege', melee = role==='melee';
+  const sw = tank? 11 : role==='siege'? 9.5 : melee? 9.5 : role==='ranged'? 7.5 : 8.5;      // mêlée : trapu et large ; tireur : fin
+  const lw = heavy? 6.4 : 5, hy0 = tank? 4 : melee? 3 : 0;
   const P = armPose(hero?'hero':role, era, cx, F);
   if (!hero){ P.f[0]+=1; P.f[1]-=2; P.b[1]-=2; }                       // épaules de châssis plus hautes
   const doBack = SPART==='full' || SPART==='back';
@@ -1993,6 +2086,22 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.fillStyle=joint; TC.beginPath(); TC.arc(cx+7,F-15,2.4,0,6.283); TC.fill();
     plateT([cx-2,F, cx+11,F, cx+8.5,F-4, cx+1,F-5], shade(plate,0.9)); };
   if (SPART==='legs'){ const a=SPOSE*0.3; rot(cx-2,F-25,a,legB); rot(cx+2,F-25,-a,legF); return; }
+  // --- ères III-IV : ailerons dorsaux (III) / éclats de cristal en ailes (IV), pour tous les rôles
+  if (doBack && era===3){
+    for (const [dx,h] of [[0,15],[4,11]]){ plateT([cx-4-dx,F-46, cx-9-dx-h*0.35,F-46-h, cx-7-dx,F-46-h*0.9, cx-1-dx,F-45], shade(plate,1.1));
+      TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=0.8; strokeP([cx-4-dx,F-46, cx-9-dx-h*0.35,F-46-h]); TC.stroke(); }
+    TC.fillStyle=frame; rrectT(cx-12,F-36,5,7,1.5); TC.fill(); glowDot(cx-11.5,F-28.6,1.4,lite,5);              // tuyère
+  } else if (doBack && era===4){
+    for (const [x1,y1,x2,y2] of [[cx-9,F-70,cx-1,F-46],[cx-17,F-60,cx-3,F-42],[cx-14,F-46,cx-3,F-36]]){
+      polyP([x2,y2, x1,y1, x2-8,y2-3, x2-5,y2+4]); TC.fillStyle=shade(plate,1.28); TC.fill(); TC.strokeStyle=rgbaC(lite,0.8); TC.lineWidth=0.8; TC.stroke(); }
+  }
+  // --- soutien : mât d'antenne et parabole de relais
+  if (doBack && role==='support'){
+    TC.strokeStyle=frame; TC.lineWidth=1.6; strokeP([cx-8,F-45, cx-10,F-69]); TC.stroke();
+    TC.fillStyle=shade(plate,1.15); TC.beginPath(); TC.ellipse(cx-10,F-66,5,1.7,-0.2,0,6.283); TC.fill();
+    glowDot(cx-10,F-70,1.4,lite,5);
+    if (era>=3){ TC.strokeStyle=frame; TC.lineWidth=1.2; strokeP([cx-8,F-52, cx-14,F-60]); TC.stroke(); glowDot(cx-14,F-60.6,1.1,lite,4); }
+  }
   // --- drone de réparation (soutien), derrière
   if (doBack && role==='support'){
     TC.fillStyle=lgrad(cx-16,F-66,cx-4,F-60,[[0,shade(plate,1.4)],[1,shade(plate,0.6)]]);
@@ -2000,14 +2109,21 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.fillStyle=frame; TC.fillRect(cx-17,F-66,14,1.2);
     glowDot(cx-10,F-60.6,1.4,lite,5);
   }
-  // --- nacelle lance-missiles (siège), sur l'épaule arrière
+  // --- siège : dos large, affût et gros canon par-dessus l'épaule (le plus gros gabarit des machines)
   if (doBack && role==='siege'){
-    plateT([cx-14,F-55, cx+2,F-60, cx+4,F-49, cx-12,F-45], plate);
-    TC.fillStyle=frame; polyP([cx+2,F-60, cx+5,F-61, cx+7,F-50, cx+4,F-49]); TC.fill();
-    const n = 2 + Math.min(era,2);
-    for (let i=0;i<n;i++){ const t=(i+0.5)/n; const x=cx+5.5+t*1.6, y=F-60.5+t*10.5;
-      TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(x,y,1.9,0,6.283); TC.fill();
-      TC.fillStyle=era>=2? lite : '#e04a3a'; TC.beginPath(); TC.arc(x+0.3,y,1.2,0,6.283); TC.fill(); }
+    plateT([cx-18,F-60, cx+2,F-62, cx+4,F-40, cx-16,F-36], shade(plate,0.92));                          // affût large
+    TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.9; strokeP([cx-17,F-48, cx+3,F-50]); TC.stroke();
+    TC.fillStyle=frame; rrectT(cx-21,F-54,5,14,1.6); TC.fill();                                       // culasse
+    const bc = era===0? '#6e6a60' : shade(plate,0.82), by1=F-52, by2=F-58;
+    tubeT(cx-8,by1,cx+27,by2,3.5,bc);
+    const along=(t,fn)=>{ TC.save(); TC.translate(cx-8+35*t, by1+(by2-by1)*t); TC.rotate(Math.atan2(by2-by1,35)); fn(); TC.restore(); };
+    if (era===0){ for (const t of [0.35,0.6]) along(t,()=>{ TC.fillStyle='#c4c8cc'; TC.fillRect(-1.6,-4.6,3.2,9.2); }); }  // rafistolé au chatterton
+    else if (era===1){ along(0.5,()=>{ TC.fillStyle=frame; TC.fillRect(-1.6,-5.2,3.2,3.2); tubeT(-14,-5.4,10,-5.4,1.2,shade(bc,0.8)); }); }   // fût de recul
+    else if (era===2){ for (let i=0;i<4;i++){ TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(cx-10+(i%2)*6.4,F-56+Math.floor(i/2)*7,2.2,0,6.283); TC.fill();
+        TC.fillStyle='#e04a3a'; TC.beginPath(); TC.arc(cx-9.7+(i%2)*6.4,F-56+Math.floor(i/2)*7,1.3,0,6.283); TC.fill(); } }   // batterie de missiles
+    else if (era===3){ for (const t of [0.4,0.6,0.8]) along(t,()=>bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(-0.8,-4.8,1.6,9.6); })); }   // bobines
+    else { along(1,()=>{ bloomT(lite,8,()=>{ TC.fillStyle=lite; polyP([0,-4.6, 6,0, 0,4.6, -3,0]); TC.fill(); }); }); }                  // prisme
+    along(1,()=>{ TC.fillStyle=joint; TC.fillRect(-1,-4.2,3.2,8.4); });                                // frein de bouche
     TC.fillStyle=joint; TC.fillRect(cx-6,F-47,4,4);
   }
   if (SPART==='back') return;
@@ -2015,7 +2131,13 @@ function drawBotSprite(fac, role, era, trans, hero){
   if (SPART==='full') legB();
   // --- bras arrière (couche 'armb')
   if (SPART!=='body' && SPART!=='arm'){ limbT(P.b, 4.4, shade(frame,0.85));
-    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill(); }
+    TC.fillStyle=joint; TC.beginPath(); TC.arc(P.b[4],P.b[5],2.2,0,6.283); TC.fill();
+    if (melee && !hero){ TC.save(); TC.translate(P.b[4],P.b[5]); TC.rotate(-0.55);                       // lame de l'avant-bras arrière
+      if (era===0){ TC.fillStyle='#c8ccd0'; polyP([0,-1.6, 9,-3.4, 6,0, 9,3.4, 0,1.6]); TC.fill(); }      // cisaille
+      else { TC.fillStyle=lgrad(0,-2,0,2,[[0,'#e8ecf0'],[1,'#6a727c']]); polyP([0,-1.6, 14,-0.8, 17,0.2, 14,1, 0,1.8]); TC.fill();
+        if (era>=3) bloomT(lite,5,()=>{ TC.strokeStyle=lite; TC.lineWidth=0.9; strokeP([1,0, 16,0.2]); TC.stroke(); }); }
+      TC.restore(); }
+  }
   if (SPART==='armb') return;
   // --- jambe avant : cuisse blindée, genou articulé, vérin
   if (SPART==='full') legF();
@@ -2050,6 +2172,13 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.strokeStyle=rgbaC(lite,0.7); TC.lineWidth=0.8; strokeP([cx-sw+1,ct+1.5, cx+2,F-38, cx+sw+1,ct+2.5]); TC.stroke();
     glowDot(cx+2,F-40,2.2,lite,7);
     for (const [x,y] of [[cx-sw-4,F-46],[cx-sw-2,F-30]]){ TC.fillStyle=shade(plate,1.2); polyP([x,y-2.6, x+1.6,y, x,y+2.6, x-1.6,y]); TC.fill(); }  // éclats en orbite
+  }
+  if (tank){                                                                                            // bloc blindé : plastron massif, jupe, deuxième épaulière
+    plateT([cx-sw-2,ct+5, cx+sw+2,ct+5, cx+sw+2,F-33, cx-sw-2,F-33], shade(plate,0.95));
+    TC.strokeStyle='rgba(0,0,0,0.38)'; TC.lineWidth=1; for (let i=0;i<3;i++){ strokeP([cx-sw+1,ct+10+i*3.6, cx+sw-1,ct+10+i*3.6]); TC.stroke(); }
+    TC.fillStyle='rgba(255,255,255,0.45)'; for (const [x,y] of [[cx-sw-0.6,ct+6.6],[cx+sw+0.6,ct+6.6],[cx-sw-0.6,F-35],[cx+sw+0.6,F-35]]){ TC.beginPath(); TC.arc(x,y,0.8,0,6.283); TC.fill(); }
+    plateT([cx-9,F-31, cx+10,F-31, cx+11,F-20, cx-10,F-20], shade(plate,0.85));
+    plateT([cx-sw-5,ct-2, cx-2,ct-1, cx-2,ct+7, cx-sw-6,ct+6], shade(plate,1.0));
   }
   if (heavy || era>=2){                                                                                // épaulière
     const g = era===3? 1.5 : 0;
@@ -2127,16 +2256,28 @@ function drawBotSprite(fac, role, era, trans, hero){
     arm(P.f);
     TC.save(); TC.translate(fh[0],fh[1]); TC.fillStyle='#8a929c'; TC.rotate(-0.5); TC.fillRect(0,-2.6,6,1.6); TC.rotate(0.9); TC.fillRect(0,1,6,1.6); TC.restore();   // pince
     glowDot(fh[0]+6.5,fh[1]-0.2,1.3,lite,6);
-    bloomT(lite,5,()=>crossT(cx-3,F-41,3.6,lite));                                                     // marquage réparateur
+    TC.fillStyle='#f2f4f2'; rrectT(cx-6,F-45,9.5,9.5,1.6); TC.fill();                                    // panneau de soin
+    techT(cx-1.2,F-40.2,7.4); bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(cx-6,F-35.4,9.5,1); });
   } else {
-    // tireur : canon de bras ; siège : canon court de visée sous la nacelle
+    // tireur : long fusil à deux mains, crosse, lunette, bipied ; siège : bras sur la poignée du canon dorsal
     const sh=P.f; limbT([sh[0],sh[1], sh[2],sh[3]], 4.6, frame);
-    const L = role==='siege'? 12 : 19+era;
-    tubeT(sh[2],sh[3]-1, sh[2]+L,sh[3]-1.5, 3.3, plate);
-    TC.fillStyle=frame; TC.fillRect(sh[2]+L*0.3,sh[3]-4.6,1.4,6.4); TC.fillRect(sh[2]+L*0.55,sh[3]-4.6,1.4,6.4);
-    TC.fillStyle=joint; TC.beginPath(); TC.arc(sh[2]+L,sh[3]-1.5,2,0,6.283); TC.fill();
-    glowDot(sh[2]+L,sh[3]-1.5,1.3,lite,6);
-    if (era>=3 && role!=='siege') for (let i=0;i<2;i++) glowDot(sh[2]+L*0.42+i*4,sh[3]-1.2,0.8,lite,4);
+    if (role==='siege'){
+      TC.fillStyle=joint; rrectT(sh[2]-1.5,sh[3]-4,4,8,1.4); TC.fill();                                // poignée
+      glowDot(sh[2]+3.5,sh[3]-2,1.2,lite,5);
+    } else {
+      const L = 27+era, y0=sh[3]-1, rc = era>=3? shade(plate,0.8) : plate;
+      plateT([cx-9,F-44, sh[2]+3,y0-2.4, sh[2]+3,y0+2, cx-7,F-37], frame);                              // crosse sur l'épaule
+      tubeT(sh[2],y0,sh[2]+L,y0-0.5,2.6,rc);
+      tubeT(sh[2]+L*0.62,y0-0.3,sh[2]+L+1.5,y0-0.8,1.7,shade(rc,0.7));                                 // volée amincie
+      TC.fillStyle=frame; TC.fillRect(sh[2]+L*0.25,y0-3.8,1.4,5.4); TC.fillRect(sh[2]+L*0.5,y0-3.8,1.4,5.4);
+      tubeT(sh[2]+L*0.35,y0+1,sh[2]+L*0.5,y0+6,0.8,frame);                                              // bipied
+      if (era>=1){ tubeT(sh[2]+4,y0-4.8,sh[2]+L*0.52,y0-4.8,1.5,'#1c2024');                              // lunette
+        glowDot(sh[2]+L*0.52,y0-4.8,0.9,lite,4); }
+      if (era===3) for (let i=0;i<3;i++) bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(sh[2]+L*0.3+i*5,y0-2.8,1.2,5.4); });           // rails
+      if (era===4) bloomT(lite,8,()=>{ TC.fillStyle=lite; polyP([sh[2]+L+1,y0-0.8-3.4, sh[2]+L+6,y0-0.8, sh[2]+L+1,y0-0.8+3.4, sh[2]+L-1.5,y0-0.8]); TC.fill(); });  // prisme
+      TC.fillStyle=joint; TC.beginPath(); TC.arc(sh[2]+L+1.5,y0-0.8,1.5,0,6.283); TC.fill();
+      glowDot(sh[2]+L+1.6,y0-0.8,1,lite,5);
+    }
   }
 }
 function attackFX(u, x, bodyY, imp, mx){
@@ -2199,16 +2340,7 @@ function unitShadow(kind, fac, role, era, x, gy, dir){
 function drawWrecks(vw){
   for (const w of wrecks){
     const x = w.x-camX; if (x<-60||x>vw+60) continue;
-    const kind = w.fac==='HUM'? 'hum':'bot';
-    const sp = fxSprite('WRK'+kind+w.role+w.era, USP.W, USP.H, g => {
-      g.drawImage(unitPart(kind,w.fac,w.role,w.era,false,'front'), 0, 0, USP.W, USP.H);
-      g.drawImage(unitPart(kind,w.fac,w.role,w.era,false,'legs',0), USP.cx+LEGS.ox, USP.foot+LEGS.oy, LEGS.W, LEGS.H);
-      g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(22,17,20,0.66)'; g.fillRect(0,0,USP.W,USP.H); });
-    ctx.save(); ctx.globalAlpha = clamp((w.t-0.3)/0.45, 0, 1)*clamp((50-w.t)/8, 0, 1)*0.92;
-    ctx.translate(x, gY(w.x)+1);
-    if (w.role==='tank'||w.role==='siege'){ ctx.rotate(-w.side*0.35); ctx.scale(w.side, 0.5); }
-    else { ctx.rotate(-w.side*1.45); ctx.scale(w.side, 1); }
-    ctx.drawImage(sp, -USP.cx, -USP.foot, USP.W, USP.H); ctx.restore();
+    drawWreck(w, x, gY(w.x), clamp((w.t-0.3)/0.45, 0, 1)*clamp((50-w.t)/8, 0, 1)*0.95);
   }
 }
 // PREMIER PLAN EN PARALLAXE (v1.13) : herbes, barbelés et gravats sombres, très bas, qui défilent
@@ -2281,59 +2413,171 @@ function blitHumanoid(u, x, gy, kind){
 }
 function drawHuman(u, x, gy){ blitHumanoid(u, x, gy, 'hum'); }
 function drawBot(u, x, gy){ blitHumanoid(u, x, gy, 'bot'); }
-// AÉRONEFS : hélicoptère humain (civil rafistolé → hélico de milice → hélico d'attaque →
-// VTOL → or) et drone quadrirotor GPT. Les rotors restent animés en direct par drawAir.
+// AÉRONEFS (v1.17) : un appareil crédible par ère et par camp, dessiné pour remplir la toile 64×44.
+//  HUM : parapente armé → hélico léger → VTOL furtif à rotors carénés → chasseur plasma → planeur solaire.
+//  IA  : drones — quadrirotor → quadrirotor blindé → drone à turbines carénées → drone hexa à ailerons → drone cristal à anneaux.
+// Les rotors tournent en direct dans drawAir (AIR_ROT : [dx, dy, demi-largeur] en pixels de sprite).
+const AIR_ROT = {
+  HUM: [ null, [[-1.4,-10.6,13]], [[-13,-8.5,7],[9,-8.5,7]], null, null ],
+  IA:  [ [[-17,-8,8.5],[17,-8,8.5],[-10,-11,5.5],[10,-11,5.5]],
+         [[-18,-8,9.5],[18,-8,9.5],[-11,-11.5,6],[11,-11.5,6]],
+         [[-16,-7.2,8],[16,-7.2,8]],
+         [[-17,-9,8],[17,-9,8],[-9,-12.5,5]],
+         [[-16,-8,9],[16,-8,9]] ],
+};
 function airSprite(fac, era, trans){
   const cx=32, cy=22;
   if (fac==='HUM'){
     const acc=FACTIONS.HUM.accent, body=FACTIONS.HUM.eraCols[era];
-    TC.fillStyle=lgrad(cx-26,cy-5,cx-26,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);   // poutre de queue
-    polyP([cx-8,cy-4.5, cx-26,cy-3.4, cx-26,cy-0.6, cx-8,cy+2]); TC.fill();
-    plateT([cx-29.5,cy-11, cx-25,cy-10, cx-23.5,cy+0.5, cx-27.5,cy+0.5], body);                // dérive
-    TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-25.5,cy-4.5,4.4,0,6.283); TC.stroke();  // anticouple
-    TC.fillStyle=acc; TC.fillRect(cx-20,cy-3.6,3,3.4);                                         // bande de faction
-    TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';                            // patins
-    strokeP([cx-10,cy+10, cx+10,cy+10, cx+13,cy+8]); TC.stroke();
-    strokeP([cx-5,cy+5, cx-6,cy+10]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+10]); TC.stroke();
-    if (era>=2){ plateT([cx-6,cy+2, cx+4,cy+2, cx+3,cy+5, cx-5,cy+5], shade(body,0.8));          // aile courte + paniers
-      tubeT(cx-5,cy+6.2,cx+5,cy+6.2,1.7,era===4?'#c8a040':'#2a2e34');
-      TC.fillStyle=era===4?'#fff0c0':'#c84a2a'; TC.beginPath(); TC.arc(cx+5,cy+6.2,1,0,6.283); TC.fill(); }
-    plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body); // fuselage
-    TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);  // verrière
-    polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
-    TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
-    plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));                    // capot moteur
-    TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);                                // mât rotor
-    if (era===0){ TC.fillStyle=shade(body,1.25); TC.fillRect(cx-7,cy-2,5,4);                    // tôle rapiécée
-      TC.fillStyle='rgba(0,0,0,0.4)'; for (const [x,y] of [[cx-6.4,cy-1.4],[cx-2.6,cy-1.4],[cx-6.4,cy+1.4],[cx-2.6,cy+1.4]]) TC.fillRect(x,y,0.8,0.8); }
-    else if (era===1){ tubeT(cx+1,cy+3,cx+10,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6); } // porte + mitrailleuse
-    else if (era>=3){ const gc = era===4? '#fff0c0' : '#ffb35a';
-      TC.fillStyle=era===4?'#fff3c4':shade(body,1.35); TC.fillRect(cx-9,cy-0.6,18,1.2);
-      tubeT(cx+11,cy+4,cx+16,cy+4.6,1,'#2a2e34'); glowDot(cx+11,cy+4,1.4,gc,5); }               // tourelle de nez
-    if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
-  } else {
-    const lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
-    TC.strokeStyle=frame; TC.lineWidth=1.8; TC.lineCap='round';                                // bras porteurs
-    strokeP([cx-10,cy-5.6, cx-3,cy-2]); TC.stroke(); strokeP([cx+10,cy-5.6, cx+3,cy-2]); TC.stroke();
-    for (const sx of [-10,10]){ TC.fillStyle=frame; rrectT(cx+sx-2.6,cy-8,5.2,2.8,1.3); TC.fill(); }
-    for (let i=0;i<Math.min(era,3);i++)                                                        // ailerons d'ère
-      plateT([cx-12+i*3.2,cy-2, cx-10+i*3.2,cy-8-i*0.8, cx-8+i*3.2,cy-7.4-i*0.8, cx-8.6+i*3.2,cy-2], shade(plate,1.1));
-    if (era===4){ polyP([cx-14,cy-1, cx-4,cy-6, cx+10,cy-5, cx+16,cy]); TC.fillStyle=shade(plate,1.35); TC.fill();   // coque de cristal
-      polyP([cx-14,cy-1, cx+16,cy, cx+8,cy+5, cx-6,cy+4]); TC.fillStyle=shade(plate,0.75); TC.fill(); }
-    else plateT([cx-14,cy-1, cx-6,cy-5, cx+8,cy-5, cx+15,cy, cx+8,cy+5, cx-6,cy+4], plate);         // corps effilé
-    TC.fillStyle=frame; polyP([cx-6,cy+2, cx+8,cy+2, cx+8,cy+5, cx-6,cy+4]); TC.fill();
-    tubeT(cx,cy+4.6,cx+10,cy+6.2,1.2,'#3a4048');                                              // canon ventral
-    TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+9,cy-0.6,2.8,0,6.283); TC.fill();         // œil-capteur
-    glowDot(cx+9.4,cy-0.6,1.6,lite,6);
-    if (era>=2){ TC.fillStyle=rgbaC(lite,0.9); TC.fillRect(cx-5,cy-2.6,8,1); }
-    if (trans) bloomT('#39ff6a',7,()=>{ TC.strokeStyle=rgbaC('#39ff6a',0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(cx,cy-11,7,1.8,0,0,6.283); TC.stroke(); });
+    if (era===0){                                                                              // PARAPENTE ARMÉ
+      const P0=[cx-28,cy-4], P2=[cx+28,cy-4], Cu=[cx,cy-27], Cl=[cx,cy-12];
+      const B=(a,c,b,t)=>[(1-t)*(1-t)*a[0]+2*t*(1-t)*c[0]+t*t*b[0], (1-t)*(1-t)*a[1]+2*t*(1-t)*c[1]+t*t*b[1]];
+      TC.strokeStyle='rgba(30,30,36,0.7)'; TC.lineWidth=0.7; TC.lineCap='round';                   // suspentes
+      for (const t of [0.08,0.3,0.5,0.7,0.92]){ const q=B(P0,Cl,P2,t); strokeP([q[0],q[1], cx+1,cy+2]); TC.stroke(); }
+      const N=6;
+      for (let i=0;i<N;i++){ const t0=i/N, t1=(i+1)/N, pts=[];
+        for (let k=0;k<=3;k++){ const q=B(P0,Cu,P2,t0+(t1-t0)*k/3); pts.push(q[0],q[1]); }
+        for (let k=3;k>=0;k--){ const q=B(P0,Cl,P2,t0+(t1-t0)*k/3); pts.push(q[0],q[1]); }
+        plateT(pts, i%2? body : shade(acc,0.85)); }
+      // pilote assis dans son harnais, fusil sur les genoux
+      plateT([cx-4,cy+1, cx+3,cy+1, cx+4,cy+11, cx-4,cy+12], shade(body,0.8));                    // harnais / buste
+      limbT([cx+1,cy+10, cx+8,cy+11, cx+9,cy+17], 3.6, '#2a2420');                                 // jambes pendantes
+      TC.fillStyle='#e2b48a'; TC.beginPath(); TC.arc(cx,cy-2,3.4,0,6.283); TC.fill();               // tête
+      TC.fillStyle='#d8a630'; TC.beginPath(); TC.arc(cx,cy-3,3.9,Math.PI,0); TC.fill();             // casque
+      TC.fillStyle=acc; TC.fillRect(cx-3.6,cy-1.4,7.2,1.3);
+      limbT([cx+1,cy+3, cx+6,cy+6, cx+10,cy+4.5], 2.6, shade(body,0.9));                           // bras
+      TC.fillStyle=lgrad(cx+5,cy+2,cx+5,cy+7,[[0,'#9a6034'],[1,'#5a3418']]); polyP([cx+4,cy+3.6, cx+13,cy+2.6, cx+13,cy+5, cx+5,cy+6.4]); TC.fill();
+      tubeT(cx+12,cy+3.4,cx+27,cy+3.4,1.1,'#4a4e54');                                              // canon
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-0.5,cy+6,2.6,'#ff4a2a'));
+      return;
+    }
+    if (era===1){                                                                              // HÉLICO LÉGER
+      TC.fillStyle=lgrad(cx-27,cy-5,cx-27,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);
+      polyP([cx-8,cy-4.5, cx-27,cy-3.4, cx-27,cy-0.6, cx-8,cy+2]); TC.fill();
+      plateT([cx-30.5,cy-11, cx-26,cy-10, cx-24.5,cy+0.5, cx-28.5,cy+0.5], body);
+      TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-26.5,cy-4.5,4.4,0,6.283); TC.stroke();
+      TC.fillStyle=acc; TC.fillRect(cx-21,cy-3.6,3,3.4);
+      TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';
+      strokeP([cx-10,cy+11, cx+10,cy+11, cx+13,cy+9]); TC.stroke();
+      strokeP([cx-5,cy+5, cx-6,cy+11]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+11]); TC.stroke();
+      plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body);
+      TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);
+      polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
+      TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
+      plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));
+      TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);
+      tubeT(cx+1,cy+3,cx+11,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6);   // porte + mitrailleuse
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
+      return;
+    }
+    if (era===2){                                                                              // VTOL FURTIF (deux rotors carénés)
+      const dark='#2a2e38';
+      plateT([cx-24,cy+0.5, cx-14,cy-4.5, cx+14,cy-5, cx+28,cy+1.5, cx+12,cy+6, cx-14,cy+6], body);   // fuselage à facettes
+      polyP([cx-24,cy+0.5, cx-14,cy-4.5, cx-9,cy-1, cx-20,cy+3]); TC.fillStyle=shade(body,0.6); TC.fill();
+      plateT([cx-27,cy-9, cx-22,cy-8, cx-19,cy+0.5, cx-25,cy+0.5], shade(body,0.85));                  // dérive
+      TC.fillStyle='rgba(20,28,40,0.95)'; polyP([cx+9,cy-4.2, cx+19,cy-0.6, cx+10,cy+1.6, cx+5,cy-1.5]); TC.fill();   // verrière sombre
+      TC.fillStyle='rgba(150,200,240,0.55)'; polyP([cx+10,cy-3.4, cx+15,cy-1.4, cx+10,cy-0.4]); TC.fill();
+      TC.strokeStyle=dark; TC.lineWidth=2; TC.lineCap='round';                                          // mâts de nacelles
+      strokeP([cx-13,cy-2, cx-13,cy-6.5]); TC.stroke(); strokeP([cx+9,cy-3, cx+9,cy-6.5]); TC.stroke();
+      for (const px of [-13,9]){ TC.fillStyle=dark; rrectT(cx+px-8,cy-10.5,16,4.4,2); TC.fill();        // nacelles carénées
+        TC.fillStyle='rgba(180,200,220,0.18)'; TC.fillRect(cx+px-6,cy-9.8,12,1.4); }
+      tubeT(cx+2,cy+6,cx+14,cy+7.2,1.4,'#1c2026'); TC.fillStyle='#c84a2a'; TC.beginPath(); TC.arc(cx+14.4,cy+7.2,1,0,6.283); TC.fill();  // panier d'armes
+      TC.fillStyle=acc; TC.fillRect(cx-6,cy-1.2,5,1.6);
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy+2,2.6,'#ff4a2a'));
+      return;
+    }
+    if (era===3){                                                                              // CHASSEUR PLASMA (aile delta)
+      const glow='#ff9a4a';
+      plateT([cx-6,cy-3, cx-26,cy-14, cx-21,cy-3, cx-6,cy+1], shade(body,0.7));                       // dérive
+      plateT([cx-22,cy-2, cx-14,cy-6, cx+8,cy-5.6, cx+29,cy+1, cx+10,cy+5.4, cx-20,cy+4.4], body);    // fuselage effilé
+      plateT([cx-8,cy+3, cx+12,cy+3.4, cx-4,cy+12, cx-18,cy+9], shade(body,0.82));                    // aile delta
+      TC.fillStyle='rgba(18,22,32,0.96)'; polyP([cx+4,cy-5.4, cx+14,cy-4, cx+18,cy-0.6, cx+4,cy-0.8]); TC.fill();   // verrière
+      TC.fillStyle='rgba(255,255,255,0.35)'; polyP([cx+6,cy-4.6, cx+11,cy-3.8, cx+7,cy-1.6]); TC.fill();
+      TC.fillStyle='#1c2026'; rrectT(cx-8,cy+6,15,3.4,1.6); TC.fill();                                 // pod à plasma
+      glowDot(cx+7.4,cy+7.7,1.8,glow,7);
+      bloomT(glow,9,()=>{ TC.fillStyle=glow; polyP([cx-22,cy-1.4, cx-31,cy+1, cx-22,cy+3.4]); TC.fill(); });   // flamme de tuyère
+      TC.fillStyle=acc; TC.fillRect(cx-14,cy-2,6,1.5);
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-9,cy+0.5,2.4,'#ff4a2a'));
+      return;
+    }
+    // ère 4 : PLANEUR SOLAIRE — nacelle d'or sous une grande aile à cellules
+    solarT([cx-27,cy-1, cx-18,cy-12, cx+24,cy-12, cx+30,cy-1]);
+    plateT([cx-27,cy-1, cx+30,cy-1, cx+29,cy+1.6, cx-26,cy+1.6], '#c8a040', false);                   // tranche de l'aile
+    plateT([cx-9,cy+1.4, cx+12,cy+1.4, cx+18,cy+6, cx+6,cy+10, cx-9,cy+8], body);                      // nacelle
+    TC.fillStyle='rgba(20,26,40,0.95)'; polyP([cx+8,cy+2.4, cx+15,cy+5.4, cx+7,cy+7.4, cx+3,cy+3.6]); TC.fill();
+    TC.fillStyle='rgba(255,255,255,0.4)'; polyP([cx+8,cy+3.4, cx+12,cy+5, cx+8,cy+5.6]); TC.fill();
+    TC.strokeStyle='#c8a040'; TC.lineWidth=1.6; TC.lineCap='round'; strokeP([cx-8,cy+6, cx-24,cy+3, cx-30,cy-3]); TC.stroke();   // poutre de queue
+    plateT([cx-31,cy-8, cx-28,cy-8, cx-27,cy+1, cx-31,cy+1], shade(body,0.9));
+    tubeT(cx+2,cy+10,cx+14,cy+10.4,1.2,'#2e2a38'); glowDot(cx+14.4,cy+10.4,1.2,'#fff0c0',5);           // nacelle d'arme sombre
+    if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+5.5,2.4,'#ff4a2a'));
+    return;
   }
+  // ---- drones G·P·T : même famille que le gremlin (corps coque, œil-capteur, bras porte-rotors)
+  const lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
+  const rotor=(x,y,w,far)=>{                                                                       // moyeu + garde de rotor
+    TC.fillStyle=far? shade(frame,0.75) : frame; rrectT(x-1.2,y-0.2,2.4,4,1); TC.fill();
+    TC.strokeStyle=far? 'rgba(120,130,145,0.5)':'rgba(170,180,195,0.6)'; TC.lineWidth=0.8; TC.beginPath(); TC.ellipse(x,y,w,w*0.26,0,0,6.283); TC.stroke(); };
+  const eye=(x,y,r)=>{ TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(x,y,r+1.2,0,6.283); TC.fill(); glowDot(x+0.3,y,r,lite,6); };
+  if (era<=1){                                                                                      // QUADRIROTOR (0) / blindé armé (1)
+    TC.strokeStyle=frame; TC.lineWidth=2; TC.lineCap='round';
+    strokeP([cx-5,cy-1, cx-10,cy-8.5, cx-17,cy-5.5]); TC.stroke(); strokeP([cx+5,cy-1, cx+10,cy-8.5, cx+17,cy-5.5]); TC.stroke();  // bras lointains
+    for (const [x,y,w] of [[-10,-11,5.5],[10,-11,5.5]]) rotor(cx+x,cy+y+0.6,w,true);
+    TC.strokeStyle=shade(frame,1.15); strokeP([cx-5,cy+1, cx-17,cy-5]); TC.stroke(); strokeP([cx+5,cy+1, cx+17,cy-5]); TC.stroke();
+    for (const x of [-17,17]) rotor(cx+x,cy-8,8.5,false);
+    const bw = era===0? 8.5 : 10.5;
+    plateT([cx-bw,cy-3, cx-bw+3,cy-6.5, cx+bw-3,cy-6.5, cx+bw,cy-3, cx+bw-1,cy+4, cx-bw+2,cy+5], plate);          // coque
+    TC.fillStyle=frame; polyP([cx-bw+2,cy+1.5, cx+bw-1,cy+1.5, cx+bw-1,cy+4.2, cx-bw+2,cy+5]); TC.fill();
+    if (era===1){ TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.8; strokeP([cx-bw+2,cy-3.4, cx+bw-2,cy-3.4]); TC.stroke();
+      for (const sx of [-1,1]){ tubeT(cx+sx*13,cy+2.5,cx+sx*13+9,cy+3.2,1.5,'#3a4048'); TC.fillStyle='#0c1014'; TC.beginPath(); TC.arc(cx+sx*13+9,cy+3.2,1.4,0,6.283); TC.fill(); }  // pods d'armes
+      TC.strokeStyle=frame; TC.lineWidth=1.4; strokeP([cx-6,cy+4, cx-8,cy+8, cx-13,cy+8.5]); TC.stroke(); strokeP([cx+6,cy+4, cx+8,cy+8, cx+13,cy+8.5]); TC.stroke(); }   // patins
+    else { TC.strokeStyle=frame; TC.lineWidth=1.2; strokeP([cx-5,cy+5, cx-6.5,cy+8, cx-10,cy+8]); TC.stroke(); strokeP([cx+5,cy+5, cx+6.5,cy+8, cx+10,cy+8]); TC.stroke(); }
+    eye(cx+bw-3,cy-0.6,1.9);
+    glowDot(cx-bw+3,cy-4.4,0.9,'#ff5a4a',3);
+    tubeT(cx+1,cy+5.6,cx+11,cy+6.4,1.2,'#3a4048');                                                // canon ventral
+  } else if (era===2){                                                                              // DRONE À TURBINES CARÉNÉES
+    for (const sx of [-1,1]){ const x=cx+sx*16;
+      TC.fillStyle=frame; rrectT(x-9,cy-8.8,18,6.6,2.6); TC.fill();                                  // carénage
+      TC.fillStyle='#0c1218'; rrectT(x-7.2,cy-7.8,14.4,3.2,1.4); TC.fill();
+      TC.fillStyle=shade(plate,1.15); rrectT(x-9,cy-9.4,18,1.6,0.8); TC.fill();
+      TC.strokeStyle=frame; TC.lineWidth=2; TC.lineCap='round'; strokeP([x-sx*5,cy-2, x-sx*10,cy+1]); TC.stroke(); }
+    plateT([cx-11,cy-2, cx-4,cy-5, cx+8,cy-5, cx+14,cy, cx+8,cy+5.4, cx-5,cy+5], plate);            // corps losange
+    TC.strokeStyle='rgba(0,0,0,0.32)'; TC.lineWidth=0.9; strokeP([cx-8,cy-0.4, cx+11,cy-0.4]); TC.stroke();
+    TC.fillStyle=rgbaC(lite,0.85); TC.fillRect(cx-5,cy+2,9,1);
+    eye(cx+9,cy-1.2,1.8);
+    tubeT(cx+1,cy+5,cx+14,cy+6.4,1.4,'#3a4048'); glowDot(cx+14.4,cy+6.4,1.1,lite,5);
+  } else if (era===3){                                                                              // DRONE HEXA À AILERONS
+    TC.strokeStyle=frame; TC.lineWidth=1.8; TC.lineCap='round';
+    strokeP([cx-3,cy-2, cx-9,cy-12, cx-9,cy-9.5]); TC.stroke();
+    rotor(cx-9,cy-12.5,5,true);
+    for (const x of [-17,17]){ TC.strokeStyle=frame; TC.lineWidth=2.2; strokeP([cx+x*0.3,cy-1.4, cx+x*0.8,cy-5]); TC.stroke();
+      TC.fillStyle=frame; rrectT(cx+x-8.6,cy-10.4,17.2,5.4,2.4); TC.fill();
+      TC.fillStyle='#0c1218'; rrectT(cx+x-7,cy-9.4,14,2.6,1.2); TC.fill();
+      bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(cx+x-7,cy-5.6,14,0.9); }); }
+    for (let i=0;i<3;i++) plateT([cx-14+i*3.4,cy-1, cx-12.4+i*3.4,cy-8.6-i*0.6, cx-9.8+i*3.4,cy-8.2-i*0.6, cx-10.4+i*3.4,cy-1], shade(plate,1.12));   // ailerons dorsaux
+    plateT([cx-15,cy-1, cx-7,cy-5, cx+9,cy-5, cx+17,cy, cx+9,cy+5.4, cx-7,cy+4.6], plate);
+    TC.fillStyle=frame; polyP([cx-7,cy+2, cx+9,cy+2, cx+9,cy+5.4, cx-7,cy+4.6]); TC.fill();
+    bloomT(lite,5,()=>{ TC.fillStyle=lite; TC.fillRect(cx-8,cy-2.4,17,1); });
+    eye(cx+11,cy-0.8,1.9);
+    for (const sx of [-1,1]) tubeT(cx+sx*6,cy+5.4,cx+sx*6+9,cy+6.6,1.2,'#3a4048');
+  } else {                                                                                          // DRONE CRISTAL À ANNEAUX D'ÉNERGIE
+    for (const sx of [-1,1]){ const x=cx+sx*16;
+      bloomT(lite,7,()=>{ TC.strokeStyle=rgbaC(lite,0.9); TC.lineWidth=1.6; TC.beginPath(); TC.ellipse(x,cy-8,9,2.8,0,0,6.283); TC.stroke(); });
+      for (const dy of [-1,1]){ TC.fillStyle=shade(plate,1.25); polyP([x-1.4,cy-8+dy*4.6, x,cy-8+dy*2.4, x+1.4,cy-8+dy*4.6, x,cy-8+dy*6.6]); TC.fill(); }
+      TC.strokeStyle=rgbaC(lite,0.5); TC.lineWidth=1; strokeP([cx+sx*7,cy-1, x-sx*4,cy-6.4]); TC.stroke(); }
+    polyP([cx-14,cy-1, cx-3,cy-9, cx+10,cy-8, cx+17,cy]); TC.fillStyle=shade(plate,1.35); TC.fill();      // coque de cristal
+    polyP([cx-14,cy-1, cx+17,cy, cx+8,cy+6.4, cx-5,cy+5.4]); TC.fillStyle=shade(plate,0.75); TC.fill();
+    TC.strokeStyle=rgbaC(lite,0.7); TC.lineWidth=0.8; strokeP([cx-12,cy-1, cx+2,cy-6, cx+16,cy-0.4]); TC.stroke();
+    TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+10,cy-1.2,2.8,0,6.283); TC.fill(); glowDot(cx+10.4,cy-1.2,1.8,lite,7);
+    tubeT(cx,cy+5.4,cx+11,cy+7,1.2,'#3a4048');
+    for (const [x,y] of [[cx-20,cy+6],[cx+22,cy+5]]){ TC.fillStyle=shade(plate,1.2); polyP([x,y-2.2, x+1.4,y, x,y+2.2, x-1.4,y]); TC.fill(); }
+  }
+  if (trans) bloomT('#39ff6a',7,()=>{ TC.strokeStyle=rgbaC('#39ff6a',0.9); TC.lineWidth=1.2; TC.beginPath(); TC.ellipse(cx,cy-14,7,1.8,0,0,6.283); TC.stroke(); });
 }
 function drawAir(u, x, gy){
   const fac=u.fac, era=u.era, t=u.bob, dir=u.side, acc=FACTIONS[fac].accent;
   const spr = sprite('AIR'+fac+era+(u.trans?'T':''), 64, 44, ()=>airSprite(fac,era,u.trans));
   const y = gy - u.flyH + Math.sin(t*1.1)*3;
-  const AS = 1.5;                 // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
+  const AS = 1.75;                // aéronefs agrandis (échelle cohérente : plus gros que l'infanterie)
   projShadow(x, gy, 16);
   // ASSIETTE (v1.14) : l'appareil pique du nez quand il avance, se cabre au tir, se redresse en vol stationnaire
   const mvA = Math.abs(u.x-(u._wx!=null?u._wx:u.x)); u._wx = u.x;
@@ -2344,23 +2588,29 @@ function drawAir(u, x, gy){
   if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); ctx.drawImage(spr,-32,-22, 64, 44); }
   ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
-  ctx.strokeStyle=rgbaC(fac==='HUM'?'#cfd6e0':acc,0.5); ctx.lineWidth=2.5;
-  if (fac==='HUM'){ const r=Math.abs(Math.sin(t*9))*20; ctx.beginPath(); ctx.moveTo(x-r,y-16); ctx.lineTo(x+r,y-16); ctx.stroke(); }
-  else { for(const sx2 of[-15,15]){ const r=Math.abs(Math.sin(t*10+sx2))*9; ctx.beginPath(); ctx.moveTo(x+sx2-r,y-10); ctx.lineTo(x+sx2+r,y-10); ctx.stroke(); } }
+  ctx.strokeStyle=rgbaC(fac==='HUM'? '#cfd6e0' : (era===4? FACTIONS.IA.eraCols[4] : acc),0.5); ctx.lineWidth=2.5;
+  const rots = AIR_ROT[fac][era];
+  if (rots) rots.forEach((R,i)=>{ const r=Math.abs(Math.sin(t*(fac==='HUM'?9:10)+i*1.7))*R[2]*AS; const rx=x+dir*R[0]*AS, ry=y+R[1]*AS;
+    ctx.beginPath(); ctx.moveTo(rx-r,ry); ctx.lineTo(rx+r,ry); ctx.stroke(); });
   ctx.restore();
   if (u.atkT>u.rate-0.14) attackFX(u, x, y);
 }
 // GREMLIN (essaim GPT) : petit robot-araignée mis en cache (avant : capsule néon redessinée
 // avec halos en direct à chaque frame)
 function gremlinSprite(era){
-  const cx=14, cy=12, lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
-  TC.strokeStyle='#4a525c'; TC.lineWidth=0.9; TC.lineCap='round'; TC.lineJoin='round';
-  for (const s of [-1,1]) for (let i=0;i<3;i++){ const x0=cx+s*(1+i*1.6), kx=cx+s*(7+i*1.8), fx=cx+s*(5+i*2.6);
-    strokeP([x0,cy+1, kx,cy-2+i, fx,cy+10]); TC.stroke(); }
-  TC.fillStyle=lgrad(cx-7,cy-6,cx+7,cy+5,[[0,shade(plate,1.45)],[0.5,plate],[1,shade(plate,0.55)]]);
-  TC.beginPath(); TC.ellipse(cx,cy,7.4,5.6,0,0,6.283); TC.fill();
-  TC.fillStyle='#0a1016'; rrectT(cx+1,cy-2.6,6,3.4,1.6); TC.fill();
-  glowDot(cx+3,cy-1,1.2,lite,4); glowDot(cx+5.6,cy-1,1.2,lite,4);
+  // mini-drone de la même famille que les aéronefs : coque, œil-capteur, deux petits rotors carénés sur bras, pattes d'atterrissage
+  const cx=14, cy=13, lite=FACTIONS.IA.eraCols[era], plate=mix(lite,'#4a5260',0.5), frame='#2a3038';
+  TC.strokeStyle=frame; TC.lineWidth=1.3; TC.lineCap='round'; TC.lineJoin='round';
+  for (const s of [-1,1]){ strokeP([cx+s*2,cy+2.5, cx+s*6,cy+6.5, cx+s*9,cy+10.5]); TC.stroke();       // pattes
+    strokeP([cx+s*3.5,cy+3, cx+s*3,cy+7, cx+s*4.8,cy+10.5]); TC.stroke();
+    strokeP([cx+s*2,cy-2, cx+s*8,cy-6]); TC.stroke();                                                    // bras porte-rotor
+    TC.fillStyle=frame; TC.fillRect(cx+s*8-0.6,cy-7.4,1.2,2.2);
+    TC.strokeStyle='rgba(170,180,195,0.75)'; TC.lineWidth=0.8; TC.beginPath(); TC.ellipse(cx+s*8,cy-7.6,4.4,1.2,0,0,6.283); TC.stroke();
+    TC.strokeStyle=frame; TC.lineWidth=1.3; }
+  plateT([cx-7,cy, cx-5,cy-4.6, cx+5,cy-4.6, cx+7.4,cy, cx+6,cy+4, cx-5,cy+4.4], plate);
+  TC.fillStyle=frame; polyP([cx-5,cy+2, cx+6,cy+2, cx+6,cy+4, cx-5,cy+4.4]); TC.fill();
+  TC.fillStyle='#0a1016'; TC.beginPath(); TC.arc(cx+3.4,cy-0.6,2.5,0,6.283); TC.fill();
+  glowDot(cx+3.6,cy-0.6,1.4,lite,5);
 }
 // HÉROS : voir 12b-hero.js (un personnage par ère, en couches animées)
 // PERF : PRÉCHAUFFE de tous les sprites d'unités possibles (2 factions × 5 rôles au sol × 5 ères
@@ -2403,8 +2653,7 @@ function warmTick(budgetMs){
 }
 function drawUnit(u){
   const x = u.x-camX;
-  if (game.camp && game.camp.hidden && game.camp.hidden(u)) return;      // campagne : unité dans le noir
-  if (x<-40 || x>VW()+40) return;
+  if ((game.camp && game.camp.hidden && game.camp.hidden(u)) || x<-40 || x>VW()+40){ u._wx = u.x; return; }   // dans le noir / hors champ : la démarche ne se « rejoue » pas à l'entrée
   const gy = gY(u.x);
   const fh = u.fly? u.flyH : 0;
   const top = u.role==='gremlin'? 26 : u.fly? 44 : u.role==='hero'? heroTop(u) : 70;   // au-dessus de la tête
@@ -2436,8 +2685,9 @@ function drawUnit(u){
     ctx.restore(); ctx.globalAlpha=1;
   }
   // APPARITION (v1.14) : l'unité sort de l'ombre de sa base en 0,4 s, dans un nuage de poussière
-  if (u._born===undefined){ u._born = game.t;
-    if (qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
+  if (u._born===undefined) u._born = game.t;                            // filet (créée hors spawnUnit/spawnHero)
+  if (!u._dust){ u._dust = 1;                                            // poussière une seule fois, et seulement si on la voit naître
+    if (game.t-u._born<0.25 && qFx() && !u.fly && u.role!=='gremlin' && game.t>1 && particles.length<460)
       for (let i=0;i<4;i++) particles.push({k:'u', x:u.x-u.side*4+(Math.random()-0.5)*14, y:gy-3, vx:(Math.random()-0.5)*26, vy:-10-Math.random()*12, g:-4, dr:1.4, life:0.6+Math.random()*0.3, t:0, r:3.5+Math.random()*2.5}); }
   // AURA DU HÉROS : un petit repère à l'encre sous chaque allié au sol galvanisé (remplace les faisceaux)
   if (sideU.heroAlive && u.role!=='hero' && !u.fly && u.role!=='gremlin' && qFx()) heroPip(u.fac, x, gy);
@@ -2487,6 +2737,31 @@ function drawUnit(u){
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }
+  // jauge de chaleur des machines (v1.17) : 3 px sous la barre de vie, visible au-dessus de 0,3 ; flamme en surrégime (> 0,75), clignotement gris en surchauffe
+  if (u.fac==='IA' && u.role!=='gremlin'){
+    const over = u.tiredT>0, hv = over? 1 : clamp(u.heat||0, 0, 1);
+    if (hv>0.3){
+      const w = 24, yh = gy-top-fh + (frac<1? 4.6 : 1.2);
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-w/2,yh,w,3);
+      ctx.fillStyle = over? (Math.sin(game.t*14)>0? '#aeb4bc' : '#4e5258') : mix('#ff9d2e','#ff2a1e',clamp((hv-0.3)/0.7,0,1));
+      ctx.fillRect(x-w/2,yh,w*hv,3);
+      if (!over && hv>0.75){ const fx = x+w/2+2, fy = yh+1, fl = 1+0.25*Math.sin(game.t*17+u.bob*3);   // petite flamme
+        ctx.fillStyle='#ff7a1e'; ctx.beginPath(); ctx.moveTo(fx,fy-8*fl); ctx.bezierCurveTo(fx+3.2,fy-4,fx+3,fy,fx,fy+0.6); ctx.bezierCurveTo(fx-3,fy,fx-3.2,fy-4,fx,fy-8*fl); ctx.fill();
+        ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.moveTo(fx,fy-4.2*fl); ctx.bezierCurveTo(fx+1.6,fy-2,fx+1.4,fy,fx,fy+0.2); ctx.bezierCurveTo(fx-1.4,fy,fx-1.6,fy-2,fx,fy-4.2*fl); ctx.fill(); }
+    }
+  }
+  // fatigue humaine : goutte de sueur au-dessus de la tête
+  if (u.fac==='HUM' && u.role!=='gremlin' && (u.tiredT>0 || (u.heat||0)>0.75)){
+    const k = (game.t*0.9+u.bob*0.1)%1, sx = x+8, sy = gy-top-fh-1+k*6;
+    ctx.globalAlpha = 1-k*0.6; ctx.fillStyle='#8fd4ff'; ctx.strokeStyle='rgba(30,70,110,0.7)'; ctx.lineWidth=0.7;
+    ctx.beginPath(); ctx.moveTo(sx,sy-4); ctx.bezierCurveTo(sx+2.6,sy-1,sx+2.4,sy+2.2,sx,sy+2.2); ctx.bezierCurveTo(sx-2.4,sy+2.2,sx-2.6,sy-1,sx,sy-4); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  // événement qui fige ce camp (couvre-feu : humains ; mise à jour forcée : machines) : petit cadenas / petite clé au-dessus de la tête
+  if (u.role!=='gremlin' && facFrozen(u.fac)){
+    const fy = gy-top-fh-(frac<1? 12 : 8)-Math.sin(game.t*3+u.bob)*0.8, ic = u.fac==='HUM'? 'lock' : 'wrench';
+    ctx.fillStyle = 'rgba(14,10,9,0.62)'; ctx.beginPath(); ctx.arc(x, fy, 6.2, 0, 6.283); ctx.fill();
+    ctx.fillStyle = u.fac==='HUM'? '#ff9d45' : '#5ad0ff'; drawIcon(ic, x, fy, 9.5);
+  }
   if (drowning) ctx.restore();
 }
 /* ---------- marqueur d'ordre de position (⚑) ---------- */
@@ -2499,11 +2774,7 @@ function drawRally(r){
   const ph=(r.t*1.4)%1;                               // onde de choc au sol
   ctx.strokeStyle=rgbaC('#ffd34a',0.7*(1-ph)); ctx.lineWidth=2;
   ctx.beginPath(); ctx.ellipse(x,gy+2,8+ph*26,(8+ph*26)*0.34,0,0,6.283); ctx.stroke();
-  ctx.strokeStyle='#e8d8a0'; ctx.lineWidth=2.4; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(x,gy+2); ctx.lineTo(x,fy); ctx.stroke();
-  const wv=Math.sin(r.t*9)*2;
-  ctx.fillStyle='#ffd34a';
-  ctx.beginPath(); ctx.moveTo(x,fy); ctx.lineTo(x+14,fy+4+wv); ctx.lineTo(x,fy+9); ctx.closePath(); ctx.fill();
+  drawFlag(x, gy+2, r.t, '#ffd34a', false, 40+(1-drop)*34);
   ctx.restore();
 }
 /* ---------- dégâts : fumée & flammes sur bâtiments/bases amochés ---------- */
@@ -2587,13 +2858,13 @@ function drawRainBoon(t){
 // Désormais chaque bâtiment a sa forme (palissade, tour de guet, champ, étal, puits ; panneaux
 // solaires, baie de calcul, condenseur côté GPT) et ses MATÉRIAUX suivent l'ère du camp :
 // planches et palettes → brique et tôle industrielles → béton → blindage → bois, verre et jardins
-// (v1.16 : plus de pierre crénelée en 2028 ni de marbre doré au Paradis). Cuits une fois, puis blittés
+// (v1.16 : plus de pierre crénelée à la Grève générale ni de marbre doré à la Commune). Cuits une fois, puis blittés
 // (miroir selon le camp) : moins d'opérations canvas par frame qu'avant malgré le détail.
 const HMAT = [
   { wall:'#8a6444', roof:'#6e6a66', trim:'#4a3428', lite:'#ffcf78' },   // ère 0 : planches, palettes, tôle
   { wall:'#8e4a34', roof:'#6e6a66', trim:'#4e4840', lite:'#ffcf78' },   // ère 1 : brique et tôle d'usine
   { wall:'#7c8084', roof:'#4e5256', trim:'#3a3e42', lite:'#fff0c0' },   // ère 2 : béton
-  { wall:'#4a4560', roof:'#2e2a3c', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
+  { wall:'#4e5640', roof:'#2c3226', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
   { wall:'#e8dcc4', roof:'#5a9a3a', trim:'#9a6434', lite:'#ffe2a8' },   // ère 4 : bois clair, verre, toits végétaux
 ];
 const iaPlate = era => mix(FACTIONS.IA.eraCols[era],'#4a5260',0.55);
@@ -2623,10 +2894,13 @@ function hazardT(x,y,w,h){
 }
 
 /* --- BÂTIMENTS (repère : cx = centre, G = sol, h = hauteur de jeu bldH) --- */
-const BSP = { W:64, H:120, cx:32, G:112 };
+const BSP = { W:96, H:150, cx:48, G:140 };
 function bldSprite(type, fk, lvl, era, h){
   const cx=BSP.cx, G=BSP.G;
+  const big = bldBig(type);
+  if (big){ TC.save(); TC.translate(cx, G); TC.scale(BLD_K, BLD_K); TC.translate(-cx, -G); }
   if (fk==='HUM') humBld(type, lvl, era, h, cx, G); else iaBld(type, lvl, era, h, cx, G);
+  if (big) TC.restore();
 }
 function humBld(type, lvl, era, h, cx, G){
   const M=HMAT[era], acc=FACTIONS.HUM.accent, y0=G-h;
@@ -2698,60 +2972,9 @@ function humBld(type, lvl, era, h, cx, G){
     TC.fillStyle=era===4? M.trim : era>=3? shade(M.wall,1.3) : '#3a3e44';
     rrectT(cx-6,hy-4.6,12,9.2,3); TC.fill();
     TC.fillStyle=acc; TC.fillRect(cx-6,hy+2.6,12,1.6);
-  } else if (type==='farmF'){
-    // champ labouré (le blé, animé, est dessiné en direct par-dessus) + abri selon l'ère
-    if (era>=3){ plateT([cx-17,G-h-6, cx-5,G-h-6, cx-5,G, cx-17,G], era===4? M.wall : '#3a3a4a');      // ferme verticale
-      for (let i=0;i<3;i++){ const yy=G-h-2+i*((h+2)/3); TC.fillStyle='#2e6a2e'; TC.fillRect(cx-16,yy,10,2.6);
-        bloomT('#d27aff',4,()=>{ TC.fillStyle='rgba(210,122,255,0.9)'; TC.fillRect(cx-16,yy-1.2,10,0.9); }); } }
-    else if (era===2){ TC.fillStyle='rgba(190,225,235,0.55)'; TC.beginPath(); TC.arc(cx-10,G,9,Math.PI,0); TC.fill();  // serre
-      TC.strokeStyle='rgba(80,90,100,0.9)'; TC.lineWidth=0.9; TC.stroke(); strokeP([cx-10,G-9, cx-10,G]); TC.stroke();
-      TC.fillStyle='rgba(255,255,255,0.5)'; TC.fillRect(cx-15,G-6,1.2,5); }
-    else if (lvl>=2){ plateT([cx-19,G-h+6, cx-7,G-h+6, cx-7,G, cx-19,G], era===0? '#9a3a2a' : '#8a3226');  // grange
-      TC.fillStyle=M.roof; polyP([cx-21,G-h+7, cx-13,G-h, cx-5,G-h+7]); TC.fill();
-      TC.strokeStyle='rgba(255,255,255,0.6)'; TC.lineWidth=0.8; strokeP([cx-16,G, cx-16,G-6, cx-10,G-6, cx-10,G]); TC.stroke(); }
-    TC.fillStyle=lgrad(0,G-5,0,G,[[0,'#7a5a3a'],[1,'#4a3422']]); rrectT(cx-18,G-4.4,36,4.4,1.5); TC.fill();
-    TC.fillStyle='rgba(0,0,0,0.25)'; for (let i=0;i<5;i++) TC.fillRect(cx-16+i*7,G-3.6,4.4,0.9);
-    TC.fillStyle='#6a4a2c'; TC.fillRect(cx+16,G-9,1.6,9); TC.fillRect(cx-19,G-9,1.6,9);
-  } else if (type==='farmM'){
-    // étal de marché : auvent rayé aux couleurs de la faction, caisses, sacs
-    const sh = Math.max(h+4, 24), top=G-sh;
-    if (era>=3){ plateT([cx-15,top+3, cx+15,top+3, cx+15,G, cx-15,G], era===4? M.wall : '#3a3a4a');
-      bloomT(M.lite,6,()=>{ TC.fillStyle=M.lite; TC.fillRect(cx-11,top+7,22,4); });
-      TC.fillStyle='#1c1814'; TC.fillRect(cx-10,top+14,20,G-top-18); TC.fillStyle=rgbaC(M.lite,0.35); TC.fillRect(cx-10,top+14,20,G-top-18); }
-    else {
-      TC.fillStyle=era===2? '#5a5e62' : '#6a4a2c'; TC.fillRect(cx-14,top+4,2,sh-4); TC.fillRect(cx+12,top+4,2,sh-4);
-      plateT([cx-15,G-10, cx+15,G-10, cx+15,G, cx-15,G], era===2? '#7c8084' : '#9a7048');
-      for (let i=0;i<6;i++){ TC.fillStyle=i%2? '#f2ece0' : acc; polyP([cx-17+i*5.7,top, cx-11.3+i*5.7,top, cx-10.6+i*5.7,top+7, cx-16.3+i*5.7,top+7]); TC.fill(); }
-      TC.fillStyle='rgba(0,0,0,0.25)'; TC.fillRect(cx-17,top+7,34,1.2);
-      TC.fillStyle='#e8c84a'; TC.beginPath(); TC.arc(cx-7,G-11.5,2.4,Math.PI,0); TC.fill();
-      TC.fillStyle='#d84a2a'; TC.beginPath(); TC.arc(cx-1,G-11.5,2.2,Math.PI,0); TC.fill();
-      TC.fillStyle='#7ab84a'; TC.beginPath(); TC.arc(cx+5,G-11.5,2.2,Math.PI,0); TC.fill();
-      if (lvl>=2){ TC.fillStyle='#b88a50'; TC.fillRect(cx+16,G-7,7,7); TC.fillStyle='rgba(0,0,0,0.3)'; TC.fillRect(cx+16,G-4,7,0.8); }
-      if (lvl>=3){ TC.fillStyle='#c8b080'; TC.beginPath(); TC.ellipse(cx-19,G-3.4,3.6,3.4,0,0,6.283); TC.fill(); }
-    }
-    bloomT('#ffd34a',5,()=>{ TC.fillStyle='#ffd34a'; TC.beginPath(); TC.arc(cx+10,top-3,3,0,6.283); TC.fill(); });   // enseigne (pièce)
-    TC.fillStyle='#8a6a1a'; TC.fillRect(cx+9.4,top-4.4,1.2,2.8);
-  } else {
-    // puits : margelle de pierre + toit (→ château d'eau → purificateur)
-    if (era<=1){
-      plateT([cx-10,G-12, cx+10,G-12, cx+10,G, cx-10,G], era===0? '#8a7a68' : M.wall); masonT(cx-10,G-12,20,12,4,6,0.25);
-      TC.fillStyle='#50a0dc'; TC.beginPath(); TC.ellipse(cx,G-12,8,2.4,0,0,6.283); TC.fill();
-      TC.fillStyle='#5a3e24'; TC.fillRect(cx-9,G-h-6,1.8,h-6); TC.fillRect(cx+7.2,G-h-6,1.8,h-6);
-      TC.fillStyle=M.roof; polyP([cx-13,G-h-4, cx,G-h-12, cx+13,G-h-4]); TC.fill();
-      TC.strokeStyle='#3a2a1a'; TC.lineWidth=0.8; strokeP([cx,G-h-4, cx,G-16]); TC.stroke();
-      TC.fillStyle='#6a5a4a'; TC.fillRect(cx-1.8,G-17,3.6,3);
-    } else if (era===2){
-      TC.strokeStyle='#4a4e54'; TC.lineWidth=1.6; strokeP([cx-8,G, cx-6,G-h+4]); TC.stroke(); strokeP([cx+8,G, cx+6,G-h+4]); TC.stroke();
-      plateT([cx-10,G-h-8, cx+10,G-h-8, cx+10,G-h+5, cx-10,G-h+5], '#6a8aa4');
-      TC.fillStyle='rgba(0,0,0,0.2)'; TC.fillRect(cx-10,G-h-2,20,0.9); tubeT(cx+4,G-h+5,cx+4,G,1,'#4a4e54');
-    } else {
-      plateT([cx-10,G-6, cx+10,G-6, cx+10,G, cx-10,G], era===4? M.trim : '#3a3a4a');
-      TC.fillStyle='rgba(200,235,255,0.35)'; rrectT(cx-7,G-h-6,14,h,4); TC.fill();
-      bloomT('#5ab8ff',6,()=>{ TC.fillStyle='rgba(90,184,255,0.85)'; rrectT(cx-5.6,G-h*0.55-6,11.2,h*0.55,3); TC.fill(); });
-      TC.fillStyle='rgba(255,255,255,0.55)'; TC.fillRect(cx-5,G-h-4,1.4,h-6);
-      plateT([cx-8,G-h-9, cx+8,G-h-9, cx+8,G-h-5, cx-8,G-h-5], era===4? M.trim : '#3a3a4a');
-    }
-  }
+  } else if (type==='farmF') humFarmF(era, lvl, h, cx, G);
+  else if (type==='farmM') humMarket(era, lvl, h, cx, G);
+  else humWell(era, lvl, h, cx, G);
 }
 function iaBld(type, lvl, era, h, cx, G){
   const lite=FACTIONS.IA.eraCols[era], plate=iaPlate(era), frame='#2a3038', dark='#14181e', y0=G-h;
@@ -2780,39 +3003,17 @@ function iaBld(type, lvl, era, h, cx, G){
       TC.fillStyle=dark; TC.beginPath(); TC.arc(cx+16+lvl*2,by-0.6,1.2,0,6.283); TC.fill(); }
     plateT([cx-8,hy-5, cx+5,hy-6, cx+9,hy, cx+5,hy+5, cx-8,hy+5], shade(plate,1.1));              // tête
     TC.fillStyle=dark; TC.beginPath(); TC.arc(cx+3,hy-0.6,2.6,0,6.283); TC.fill(); glowDot(cx+3.3,hy-0.6,1.4,lite,5);
-  } else if (type==='farmF'){
-    // champ de panneaux solaires
-    for (let i=0;i<2;i++){ const px=cx-16+i*16;
-      TC.fillStyle=frame; TC.fillRect(px+6,G-8,1.6,8);
-      TC.fillStyle=lgrad(px,G-16,px+14,G-8,[[0,'#3a5a8a'],[1,'#162a48']]); polyP([px,G-8, px+3,G-16, px+15,G-16, px+12,G-8]); TC.fill();
-      TC.strokeStyle='rgba(160,200,255,0.45)'; TC.lineWidth=0.6; strokeP([px+1.5,G-12, px+13.5,G-12]); TC.stroke();
-      strokeP([px+6,G-8, px+8,G-16]); TC.stroke(); strokeP([px+9,G-8, px+11.5,G-16]); TC.stroke(); }
-    plateT([cx+14,G-h, cx+20,G-h, cx+20,G, cx+14,G], plate);                                     // batterie (LED animées en direct)
-    if (lvl>=2) plateT([cx-20,G-6, cx-16,G-6, cx-16,G, cx-20,G], frame);
-  } else if (type==='farmM'){
-    // baie de calcul (minage) : armoire + grille de LED animées en direct
-    plateT([cx-10,G-h-6, cx+10,G-h-6, cx+10,G, cx-10,G], plate);
-    TC.fillStyle=dark; TC.fillRect(cx-7,G-h-2,14,h-2);
-    TC.fillStyle='rgba(255,255,255,0.12)'; for (let i=0;i<4;i++) TC.fillRect(cx-7,G-h+1+i*(h-4)/4,14,0.8);
-    TC.fillStyle=frame; TC.fillRect(cx-12,G-3,24,3);
-    if (lvl>=2){ plateT([cx+11,G-h+2, cx+17,G-h+2, cx+17,G, cx+11,G], shade(plate,0.85)); }
-  } else {
-    // condenseur d'eau : cuve vitrée + conduites
-    plateT([cx-9,G-5, cx+9,G-5, cx+9,G, cx-9,G], frame);
-    TC.fillStyle='rgba(200,235,255,0.3)'; rrectT(cx-6.5,G-h-6,13,h+1,5); TC.fill();
-    bloomT(lite,5,()=>{ TC.fillStyle=rgbaC(lite,0.75); rrectT(cx-5,G-h*0.6-5,10,h*0.6,4); TC.fill(); });
-    TC.fillStyle='rgba(255,255,255,0.5)'; TC.fillRect(cx-4.4,G-h-4,1.2,h-4);
-    plateT([cx-7.5,G-h-9, cx+7.5,G-h-9, cx+7.5,G-h-5, cx-7.5,G-h-5], plate);
-    tubeT(cx+7,G-h*0.5-3,cx+13,G-h*0.5-3,1.2,frame); tubeT(cx+13,G-h*0.5-3,cx+13,G,1.2,frame);
-  }
+  } else if (type==='farmF') iaFarmF(era, lvl, h, cx, G);
+  else if (type==='farmM') iaMarket(era, lvl, h, cx, G);
+  else iaWell(era, lvl, h, cx, G);
 }
 
 /* --- BASES (v1.16) : des QG qui ont le sens de leur époque ---
    Fini le château : chaque camp défend un lieu crédible qui se transforme à chaque ère.
-     HUMANITÉ  ZAD en palettes (2025) → usine occupée (2028) → quartier insurgé (2032)
-               → base militaire révolutionnaire (2038) → commune solarpunk (Paradis socialiste)
-     GPT       conteneur-serveur (2025) → datacenter (2030) → campus de verre noir (2035)
-               → arcologie-forteresse (2040) → structure impossible (Singularité)
+     HUMANITÉ  ZAD en palettes (Révolte) → usine occupée (Grève générale) → quartier insurgé (Insurrection)
+               → bunker des cellules (Les Cellules) → commune solarpunk (La Commune)
+     G·P·T     conteneur-serveur (Gestion prédictive) → datacenter (Agents autonomes) → campus de verre noir
+               (L'Arbitrage) → arcologie-forteresse (« Nous ») → structure impossible (Singularité)
    La FORTIFICATION ajoute les défenses de l'époque devant et derrière ; les DÉGÂTS sont peints
    dans le décor (vitres brisées, suie, brèches, gravats) ; la GARNISON (≤ 3) se tient au poste
    de guet central, d'où partent ses tirs (sol − 96). Le statique est cuit — une toile par état
@@ -2916,7 +3117,7 @@ function bCrack(x,y,len,seed){ let cx=x, cy=y; TC.beginPath(); TC.moveTo(cx,cy);
 /* ======== HUMANITÉ ======== */
 const BW_WOOD = ['#a07850','#8a6440','#b08a5a','#7a5636','#97806a','#6e5a48','#a89070'];
 const HUM_BASE = [
-  // ── 2025 · RÉVOLTE : la ZAD — cabane en palettes, vigie en rondins, yourte, éolienne bricolée,
+  // ── 2028 · RÉVOLTE : la ZAD — cabane en palettes, vigie en rondins, yourte, éolienne bricolée,
   //    potager, feu de camp, barricade de pneus et de touret ──
   (f, dmg) => {
     // éolienne bricolée : mât en échafaudage haubané (rotor en direct)
@@ -2977,7 +3178,7 @@ const HUM_BASE = [
     if (dmg>=1) bRubble(20,46,41,'#8a7060');
     if (dmg>=2){ bRubble(-50,-20,43,'#7a6050'); bSoot(40,-14,9); }
   },
-  // ── 2028 · GRÈVE GÉNÉRALE : l'usine occupée — halle à toit en sheds, cheminée froide peinte,
+  // ── GRÈVE GÉNÉRALE : l'usine occupée — halle à toit en sheds, cheminée froide peinte,
   //    tour de l'horloge (poste de guet), banderoles, drapeaux rouges, braseros, conteneurs ──
   (f, dmg) => {
     const BR = '#8e4a34', BR2 = '#a85a40', STONE = '#dccdb0';
@@ -3027,7 +3228,7 @@ const HUM_BASE = [
     if (f>=3){ bCtnEnd(61,-54,77,-36,'#c88a2a'); bWire(58,80,-57,2.3); }
     if (dmg>=2){ bSoot(66,-20,9); bRubble(44,78,23,'#8a6a50'); }
   },
-  // ── 2032 · INSURRECTION : quartier insurgé — immeuble barricadé, radio pirate, projecteur,
+  // ── INSURRECTION : quartier insurgé — immeuble barricadé, radio pirate, projecteur,
   //    bus renversé, sacs de sable, rideau de fer tagué ──
   (f, dmg) => {
     const PL = '#c9b394';
@@ -3080,7 +3281,7 @@ const HUM_BASE = [
     if (f>=2){ plateT([66,-4, 68,-20, 74,-20, 76,-4, 78,-4, 78,0, 64,0, 64,-4], '#a8a49a'); bTxt('A', 71, -12, 6, '#2a2a2a', null, 0, '400'); bBags(62,80,-4,1,'#b8a47a'); }
     if (f>=3){ for (const hx of [44]){ bLn([hx-6,0, hx+5,-13], 2.2, '#4a4a50'); bLn([hx+6,0, hx-5,-13], 2.2, '#3a3a40'); bLn([hx,0, hx,-14], 2.2, '#56565c'); } bWire(62,80,-24,2.4); }
   },
-  // ── 2038 · RÉVOLUTION PERMANENTE : base militaire révolutionnaire — bunker de béton coffré,
+  // ── LES CELLULES : base militaire des cellules — bunker de béton coffré,
   //    mirador à sacs de sable, filet de camouflage, antennes, radar, panneaux solaires, hesco ──
   (f, dmg) => {
     const CO = '#8c8a80';
@@ -3101,7 +3302,7 @@ const HUM_BASE = [
     bFill(-68,-3,38,0,'#6a6860');
     for (const sx of [-58,-40,-22]){ bFill(sx-1,-33,sx+11,-27,'#1a1816'); bloomT('#ffb35a',5,()=>bFill(sx,-31.6,sx+10,-28.6,'#ffb35a')); }
     bDisc(-50,-14,6.6,'#f0e8d8'); TC.save(); TC.translate(0,0); drawStar(-50,-14,5,'#c8282a'); TC.restore();
-    bTxt('QG · 38', -30, -14, 5.4, 'rgba(30,28,26,0.7)', null, 0, '800');
+    bTxt('QG', -30, -14, 5.4, 'rgba(30,28,26,0.7)', null, 0, '800');
     bBox(10,-26,26,0,'#5a5e5a'); hazardT(10,-28,16,2.6); TC.fillStyle='rgba(0,0,0,0.3)'; TC.fillRect(17.6,-25,0.8,25);
     bBox(26,-38,32,-30,'#3a3a3e'); bloomT('#ffb35a',4,()=>bFill(27,-36.6,31,-32,'#ffd890'));
     // filet de camouflage drapé sur l'arrière
@@ -3127,7 +3328,7 @@ const HUM_BASE = [
     if (f>=3){ tubeT(30,-55, 52,-57, 1.6, '#3a3e3a'); tubeT(30,-51.4, 52,-53, 1.6, '#3a3e3a');
       TC.fillStyle=lgrad(20,-60,36,-48,[[0,'#7a7e72'],[1,'#3a3e36']]); TC.beginPath(); TC.arc(28,-48,9,Math.PI,0); TC.fill(); bWire(56,80,-28,2.4); }
   },
-  // ── PARADIS SOCIALISTE : commune solarpunk — tour de terrasses en bois et verre, jardins
+  // ── LA COMMUNE : commune solarpunk — tour de terrasses en bois et verre, jardins
   //    suspendus, éolienne hélicoïdale, serre géodésique, maison commune à toit végétal ──
   (f, dmg, trans) => {
     const WOOD = '#9a6434', GLASS = '#5e9aa4', LITE = '#ffe2a8', LEAF = ['#4a8a3a','#6aaa4a','#3a7a3a','#8ac25a'];
@@ -3179,7 +3380,7 @@ const HUM_BASE = [
 ];
 /* ======== GPT ======== */
 const IA_BASE = [
-  // ── 2025 · AUBE DES LLM : conteneurs-serveurs d'une jeune pousse — baies vitrées de LED,
+  // ── 2028 · GESTION PRÉDICTIVE : conteneurs-serveurs d'une jeune pousse — baies vitrées de LED,
   //    climatiseurs, faisceaux de câbles, groupe électrogène, mât 5G, caméra qui scrute ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[0];
@@ -3198,7 +3399,7 @@ const IA_BASE = [
     for (let i=0;i<4;i++){ const rx=-55+i*11.4; bFill(rx,-26,rx+9.6,-4,'#1a2430'); TC.fillStyle='rgba(255,255,255,0.12)'; for (let j=0;j<6;j++) TC.fillRect(rx,-25+j*3.6,9.6,0.6); }
     TC.strokeStyle='rgba(160,180,200,0.35)'; TC.lineWidth=0.5; TC.beginPath(); for (let x=-56;x<-10;x+=2.4){ TC.moveTo(x,-27); TC.lineTo(x,-3); } TC.stroke();
     // conteneur B : blanc, logo de la jeune pousse
-    bCtn(-4,-30,52,0,'#d6dadc'); bTxt('GPT', 26, -15, 12, '#1a2a38', B_TERM, 0, '400');
+    bCtn(-4,-30,52,0,'#d6dadc'); bTxt('G·P·T', 26, -15, 10, '#1a2a38', B_TERM, 0, '400');
     TC.strokeStyle='#1a2a38'; TC.lineWidth=1.3; TC.beginPath(); TC.arc(8,-15,5,0,6.283); TC.stroke(); bDisc(8,-15,1.6,lite);
     bTxt('NODE-01', 26, -6, 4.2, 'rgba(26,42,56,0.7)', B_TERM, 0, '400');
     // conteneur C (au-dessus) + climatiseurs (hélices en direct)
@@ -3220,7 +3421,7 @@ const IA_BASE = [
     if (dmg>=1){ bSoot(-30,-40,10); bCrack(20,-2,22,5); bFill(-33,-26,-23,-4,'#05080c'); }
     if (dmg>=2){ bHole(-20,-48,7,9); bHole(36,-18,5,13); bSoot(10,-60,12); bRubble(-8,40,51,'#6a7480'); }
   },
-  // ── 2030 · AGENTS AUTONOMES : le datacenter — hall bardé, ouïes de ventilation, ventilateurs
+  // ── AGENTS AUTONOMES : le datacenter — hall bardé, ouïes de ventilation, ventilateurs
   //    de toiture, tour de refroidissement fumante, noyau vitré, fibres lumineuses, drones ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[1], CL = '#b8c0c8';
@@ -3234,7 +3435,7 @@ const IA_BASE = [
     bBox(-70,-46,46,0,CL); TC.fillStyle='rgba(0,0,0,0.12)'; for (let x=-68;x<46;x+=3.4) TC.fillRect(x,-44,0.8,30);
     bFill(-70,-14,46,-4,'#2a3038'); TC.fillStyle='rgba(160,200,230,0.35)'; for (let x=-68;x<46;x+=2.6) TC.fillRect(x,-13,1.2,8);
     bFill(-70,-4,46,0,'#5a626c'); bFill(-72,-48,48,-45,'#6a727c');
-    bTxt('GPT', -46, -30, 13, '#1e2a36', B_TERM, 0, '400'); bTxt('DATACENTER · 2030', -46, -20, 4.4, 'rgba(30,42,54,0.75)', B_TERM, 0, '400');
+    bTxt('G·P·T', -46, -30, 11, '#1e2a36', B_TERM, 0, '400'); bTxt('DATACENTER', -46, -20, 4.4, 'rgba(30,42,54,0.75)', B_TERM, 0, '400');
     bloomT(lite,5,()=>bFill(-66,-41,-26,-39.6,lite));
     // ventilateurs de toiture (hélices en direct)
     for (const ux of [-64,-46]){ bBox(ux,-56,ux+16,-46,'#8a929c'); bFill(ux+2,-58,ux+14,-56,'#5a626c'); }
@@ -3254,7 +3455,7 @@ const IA_BASE = [
     if (f>=2){ for (let x=56;x<=78;x+=3) plateT([x,0, x,-28, x+1,-31, x+2,-28, x+2,0], '#3a4048', false); bFill(55,-24,79,-22.6,'#3a4048'); }
     if (f>=3){ bBox(62,-46,70,-31,'#5a626c'); bBox(58,-52,72,-44,'#8a929c'); tubeT(70,-48, 84,-48.4, 1.4, '#3a4048'); bDisc(64,-48,1.6,lite); }
   },
-  // ── 2035 · ESPRITS ÉMERGENTS : campus corporate de verre noir — tour biseautée, terrasse en
+  // ── L'ARBITRAGE : campus corporate de verre noir — tour biseautée, terrasse en
   //    porte-à-faux, aile basse, pavillon d'accueil, champ de capteurs, hologramme (en direct) ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[2];
@@ -3273,7 +3474,7 @@ const IA_BASE = [
     glass(TW, '#1a1e2c');
     for (const y of [-100,-80,-60,-40]) bloomT(lite,4,()=>{ TC.fillStyle=rgbaC(lite,0.7); TC.fillRect(-46,y,40,1); });
     bFill(-49,-110,-47,0,'#3a4054'); bFill(-7,-126,-5,0,'#3a4054');
-    bTxt('GPT', -27, -114, 6, '#e8f0ff', B_TERM, -0.36, '400');
+    bTxt('G·P·T', -27, -114, 5, '#e8f0ff', B_TERM, -0.36, '400');
     // terrasse en porte-à-faux (poste de guet) — garde-corps de verre
     plateT([-8,-86, 24,-86, 22,-82, -8,-82], '#c8ccd4'); TC.fillStyle='rgba(180,220,255,0.35)'; TC.fillRect(-8,-95,32,9);
     bFill(-8,-95,24,-94,'#e8ecf4'); bLn([24,-82, 10,-62], 1.2, '#8a929c');
@@ -3290,7 +3491,7 @@ const IA_BASE = [
     if (f>=2){ for (const px of [58,78]) bBox(px-2,-30,px+2,0,'#2a2e3a'); }
     if (f>=3){ bBox(56,-6,80,0,'#c8ccd4'); bFill(56,-6,80,-5,lite); }
   },
-  // ── 2040 · PRÉ-AGI : l'arcologie-forteresse — monolithe à gradins, fentes de lumière,
+  // ── « NOUS » : l'arcologie-forteresse — monolithe à gradins, fentes de lumière,
   //    contreforts, galerie de tir, canons lourds, émetteurs de bouclier ──
   (f, dmg) => {
     const lite = FACTIONS.IA.eraCols[3], M1 = '#2c2a3c', M2 = '#3a3650';
@@ -3315,7 +3516,7 @@ const IA_BASE = [
     plateT([60,0, 66,-18, 72,-18, 76,0], M2); plateT([68,0, 74,-12, 80,0], M1);
     if (f>=2) { plateT([58,0, 60,-44, 64,-44, 66,0], M2); glowDot(62,-46,2.2,lite,8); }
   },
-  // ── SINGULARITÉ · AGI : la structure impossible — dais de runes, pyramide inversée fractale
+  // ── SINGULARITÉ : la structure impossible — dais de runes, pyramide inversée fractale
   //    en lévitation, triangle de Penrose, colonne de lumière, éclats en orbite (en direct) ──
   (f, dmg, trans) => {
     const lite = trans? '#ffffff' : FACTIONS.IA.eraCols[4], P1 = trans? '#e8d8f0' : '#4a3a5c', P2 = trans? '#b8a0d0' : '#2a2038';
@@ -3511,24 +3712,11 @@ function drawIAEye(c, s, t, d, ex, ey, kind){
 const HUM_GAR_HAT = ['#1e1c22','#c8302a','#5a6b3f','#4a4e5a','#e8dcc0'];   // cagoule, casquette, casque, casque à visière, casque clair
 function drawBaseGarrison(s, x, gy, d, deck){
   const n = s.gar.length; if (!n) return;
-  const hum = s.facKey==='HUM';
   for (let gi=0; gi<n; gi++){
-    const g = s.gar[gi] || {}, era = g.era!=null? g.era : s.era, gx = x + (gi-(n-1)/2)*10, top = gy + deck;
-    const bob = Math.sin((g.bob||gi)*0.6)*0.5, hy = top - 4 + bob;
+    const g = s.gar[gi] || {}, era = g.era!=null? g.era : s.era, gx = x + (gi-(n-1)/2)*13, top = gy + deck;
+    const bob = Math.sin((g.bob||gi)*0.6)*0.5;
     const recoil = g.atkT!=null && g.rate!=null && g.atkT > g.rate-0.12;
-    const col = (FACTIONS[g.fac||s.facKey]||s.fac).eraCols[clamp(era,0,4)];
-    // épaules + tête
-    ctx.fillStyle = hum? shade(col,0.8) : '#3a4450'; ctx.beginPath(); ctx.ellipse(gx, top+1.5+bob, 4.4, 3, 0, Math.PI, 0); ctx.fill();
-    if (hum){ ctx.fillStyle='#d8a880'; ctx.beginPath(); ctx.arc(gx, hy, 2.9, 0, 6.283); ctx.fill();
-      ctx.fillStyle=HUM_GAR_HAT[clamp(era,0,4)]; ctx.beginPath(); ctx.arc(gx, hy-0.6, 3.2, Math.PI, 0); ctx.fill();
-      if (era===0){ ctx.fillRect(gx-3.2, hy-0.8, 6.4, 1.6); } }
-    else { ctx.fillStyle='#d8e4ee'; rr(gx-3.2, hy-3.2, 6.4, 6, 2); ctx.fill();
-      ctx.fillStyle=col; ctx.fillRect(gx-0.4+d*0.8, hy-1.4, 2.6*d, 1.6); }
-    // arme
-    const siege = g.role==='siege', ang = siege? -0.45 : -0.06, L = siege? 9 : 10;
-    ctx.strokeStyle = siege? '#5a5a52' : '#24242a'; ctx.lineWidth = siege? 2.6 : 1.7; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(gx+d*1.5, top-1+bob); ctx.lineTo(gx+d*(1.5+L*Math.cos(ang)), top-1+bob+L*Math.sin(ang)); ctx.stroke();
-    if (recoil){ ctx.fillStyle = hum? '#ffd34a' : '#bff'; ctx.beginPath(); ctx.arc(gx+d*(2+L*Math.cos(ang)), top-1+bob+L*Math.sin(ang), 2.4, 0, 6.283); ctx.fill(); }
+    drawGarBust(g.fac||s.facKey, clamp(era,0,4), g.role, g.range!=null? g.range : 100, gx, top+1.5, d, recoil, bob);
   }
 }
 
@@ -3583,18 +3771,14 @@ function drawBase(side){
   drawBaseGarrison(side, x, gy, d, meta.deck);
   // nano-réparation : ouvriers (HUM) / drones (IA)
   if (side.autoRepair){
-    if (hum){ for (let i=0;i<2;i++){ const wx=x+Math.sin(t*0.7+i*2.6)*52, wy=gy-1;
-      ctx.fillStyle='#caa84a'; ctx.beginPath(); ctx.arc(wx,wy-12,2.6,0,6.283); ctx.fill(); ctx.fillStyle='#8a6a3a'; ctx.fillRect(wx-2,wy-10,4,8);
-      if (Math.sin(t*8+i)>0.5){ ctx.fillStyle='#ffd34a'; ctx.fillRect(wx+2,wy-13,2,2); } } }
+    if (hum){ for (let i=0;i<2;i++){ const wx=x+Math.sin(t*0.7+i*2.6)*52; drawRepairer(wx, gy, t, era, i*1.7+side.x*0.01, wx<x? 1 : -1); } }
     else { for (let i=0;i<2;i++){ const a=t*1.4+i*3.14, dx2=Math.cos(a)*46, dy2=-58+Math.sin(a*1.7)*16;
-      ctx.fillStyle='#5ad0ff'; ctx.beginPath(); ctx.moveTo(x+dx2+4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2-3); ctx.lineTo(x+dx2-4,gy+dy2); ctx.lineTo(x+dx2,gy+dy2+3); ctx.closePath(); ctx.fill(); } }
+      drawRepairDrone(x+dx2, gy+dy2, x+dx2*0.55, gy-26, t, era, i*2.3); } }
   }
   // base amochée : panaches de fumée puis flammes, aux points sensibles de CHAQUE base
   if (frac<0.55){ const S = meta.smoke; for (let i=0;i<S.length;i++) dmgSmoke(x+S[i][0]*d, gy+S[i][1], frac, t, side.x+i*31); }
-  const w=110, by=gy-140;
-  ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(x-w/2,by,w,8);
-  ctx.fillStyle=col; ctx.fillRect(x-w/2,by,w*frac,8);
-  ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1; ctx.strokeRect(x-w/2,by,w,8);
+  const w=100, by=gy-140;
+  inkGauge(x-w/2, by, w, 7, frac, col, fk);
   if (side===game.p && frac<0.95){
     ctx.font=HF(12); ctx.textAlign='center';
     ctx.fillStyle='rgba(255,255,255,'+(0.5+0.3*Math.sin(t*3))+')';
@@ -3651,8 +3835,7 @@ function drawSlot(slot, side, neutral){
       if (SLOT_LABELS.every(lx=>Math.abs(lx-slot.x)>=90)){
         SLOT_LABELS.push(slot.x);
         const lb = neutral?tr('free_land'):tr('build_here');
-        ctx.font=HF(9); ctx.textAlign='center'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(14,10,12,0.7)'; ctx.lineWidth=2.6;
-        ctx.strokeText(lb, x, gy-40); ctx.fillStyle=ac; ctx.fillText(lb, x, gy-40);
+        fieldLabel(x, gy-40, slot.x, lb, null, 2);
       }
     }
     return;
@@ -3669,7 +3852,8 @@ function drawSlot(slot, side, neutral){
   projShadow(x, gy, 15);                          // ombre portée du bâtiment
   // POP DE CONSTRUCTION : le bâtiment SURGIT du sol avec un léger dépassement élastique
   // (b.age démarre à 0 à la pose — pur habillage, ancré au sol, sans effet de jeu).
-  const popK = (b.age!==undefined && b.age<0.45)? clamp(b.age/0.45,0,1) : 1;
+  const popK = (b.age!==undefined && b.age<0.45 && game.net!=='guest')?   // invité : bâtiment recréé à chaque instantané (âge entier) → pas de pop écrasé
+     clamp(b.age/0.45,0,1) : 1;
   const popped = popK<1;
   if (popped){
     const s = popK<0.8? (popK/0.8)*1.08 : 1.08-((popK-0.8)/0.2)*0.08;
@@ -3679,6 +3863,7 @@ function drawSlot(slot, side, neutral){
   const bspr = sprite('B'+b.type+facKey+lvl+'e'+bera, BSP.W, BSP.H, ()=>bldSprite(b.type, facKey, lvl, bera, bh2));
   ctx.save(); ctx.translate(x, gy); ctx.scale(bs, 1); ctx.drawImage(bspr, -BSP.cx, -BSP.G, BSP.W, BSP.H);
   // animations en direct par-dessus le bâtiment cuit
+  if (bldBig(b.type)){ ctx.save(); ctx.scale(BLD_K, BLD_K); }
   if (b.type==='farmF'){
     if (facKey==='HUM'){ ctx.strokeStyle='#caa84a'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.fillStyle='#e8c84a';
       for (let i=0;i<4;i++){ const wx=-1+i*5.6, sw=Math.sin(t*2+i)*2; ctx.beginPath(); ctx.moveTo(wx,-3); ctx.lineTo(wx+sw,-16); ctx.stroke();
@@ -3691,35 +3876,19 @@ function drawSlot(slot, side, neutral){
   } else if (b.type==='turret' && b.atkT > BUILDS.turret.rate-0.1){
     bloomT('#ffd34a',8,()=>{ ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.arc(18+lvl*2,-bh2-3.6,3,0,6.283); ctx.fill(); });
   }
+  if (b.type==='farmF' && facKey==='HUM' && bera===4){          // pales de l'éolienne (moyeu cuit dans le sprite)
+    ctx.save(); ctx.translate(WIND_HUB[0], WIND_HUB[1]); ctx.rotate(t*1.6); ctx.strokeStyle=DK_INK; ctx.lineWidth=2.6; ctx.lineCap='round';
+    for (let i=0;i<3;i++){ ctx.rotate(2.0944); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-13); ctx.stroke(); }
+    ctx.strokeStyle='#f4f0e6'; ctx.lineWidth=1.3; for (let i=0;i<3;i++){ ctx.rotate(2.0944); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-12.6); ctx.stroke(); }
+    ctx.restore(); }
+  if (bldBig(b.type)) ctx.restore();
   ctx.restore();
   if (popped) ctx.restore();   // fin du pop de construction (le reste — garnison, barres — à l'échelle normale)
-  // garnison : silhouettes animées selon le rôle, aux créneaux
+  // garnison : bustes par camp et par ère, arme pointée vers l'ennemi, aux créneaux
   if (b.gar && b.gar.length){
     for (let gi=0; gi<b.gar.length; gi++){
-      const g = b.gar[gi], gx = x + (gi? 8:-8), gyTop = gy - bh2 - 2;
-      const col = FACTIONS[g.fac].eraCols[g.era];
-      const recoil = g.atkT > g.rate-0.12;
-      // tête qui dépasse
-      if (g.fac==='HUM'){ ctx.fillStyle='#edc39a'; ctx.beginPath(); ctx.arc(gx, gyTop-3, 3.2, 0, 6.28); ctx.fill();
-        ctx.fillStyle=col; ctx.beginPath(); ctx.arc(gx, gyTop-4, 3.5, Math.PI, 0); ctx.fill(); }
-      else { ctx.fillStyle='#e8f4ff'; ctx.beginPath(); ctx.arc(gx, gyTop-3, 3.4, 0, 6.28); ctx.fill();
-        ctx.fillStyle='#1a1a2e'; ctx.beginPath(); ctx.arc(gx+1, gyTop-3, 1.3, 0, 6.28); ctx.fill(); }
-      if (g.range>60){
-        // canon qui suit la cadence + flash au tir
-        ctx.strokeStyle = g.role==='siege'? '#e8d8a0':'#2c2c34'; ctx.lineWidth=2;
-        const ang = g.role==='siege'? -0.5 : -0.08;
-        ctx.beginPath(); ctx.moveTo(gx, gyTop-2);
-        ctx.lineTo(gx + owner.side*10*Math.cos(ang), gyTop-2+10*Math.sin(ang)); ctx.stroke();
-        if (recoil){ ctx.fillStyle = g.fac==='HUM'? '#ffd34a':'#aef';
-          ctx.beginPath(); ctx.arc(gx + owner.side*11, gyTop-3, 2.6, 0, 6.28); ctx.fill(); }
-      } else {
-        // mêlée/tank : lame ou bouclier qui veille à la porte
-        if (g.role==='tank'){ ctx.fillStyle=col; rr(gx + owner.side*4-2, gyTop-6, 3.4, 8, 1); ctx.fill(); }
-        else { ctx.strokeStyle=col; ctx.lineWidth=2;
-          const sw = recoil? 0.8 : Math.sin(g.bob)*0.2;
-          ctx.beginPath(); ctx.moveTo(gx, gyTop-2);
-          ctx.lineTo(gx + owner.side*8*Math.cos(sw-0.4), gyTop-2-8*Math.sin(sw+0.4)); ctx.stroke(); }
-      }
+      const g = b.gar[gi], gx = x + (gi-(b.gar.length-1)/2)*9, gyTop = gy - bh2 + 2;
+      drawGarBust(g.fac, clamp(g.era,0,4), g.role, g.range, gx, gyTop, owner.side, g.atkT > g.rate-0.12, 0);
     }
   }
   // v1.5 — halo doré « plein régime » : une ferme/marché/puits qui a vieilli sans mourir
@@ -3727,7 +3896,7 @@ function drawSlot(slot, side, neutral){
   if ((b.type==='farmF'||b.type==='farmM'||b.type==='well') && SETTINGS.quality!=='low'){
     const inten = clamp((longevMul(b)-1)/2, 0, 1);
     if (inten>0.12){
-      const bh3 = bldH(b), cy = gy-bh3*0.5;
+      const bh3 = bldVisH(b), cy = gy-bh3*0.5;
       ctx.save(); ctx.globalCompositeOperation='lighter';
       ctx.fillStyle='rgba(255,206,96,'+(0.05+0.11*inten).toFixed(3)+')';
       ctx.beginPath(); ctx.arc(x, cy, 15+4*Math.sin(t*2)+9*inten, 0, 6.283); ctx.fill();
@@ -3737,52 +3906,27 @@ function drawSlot(slot, side, neutral){
     }
   }
   // niveau et garnison
-  if ((b.lvl||1)>1){ ctx.font=HF(10); ctx.textAlign='center';
-    ctx.fillStyle='#ffd34a'; ctx.fillText('★'.repeat(b.lvl-1), x, gy-bldH(b)-22); }
-  // défenseurs aux créneaux des murailles : tête + fusil qui dépasse du rempart
+  if ((b.lvl||1)>1) levelChevrons(x, gy-bldVisH(b)-28, b.lvl-1);
+  // défenseurs aux créneaux des murailles : buste + arme qui dépasse du rempart
   if (b.type==='wall' && b.gar && b.gar.length){
-    for (let gi=0; gi<b.gar.length; gi++){
-      const gx = x-7+gi*14, gTop = gy-bldH(b);
-      ctx.fillStyle = owner.facKey==='HUM'? '#e0b890':'#e8f4ff';
-      ctx.beginPath(); ctx.arc(gx, gTop-4, 3, 0, 6.28); ctx.fill();
-      ctx.strokeStyle='#2c2c34'; ctx.lineWidth=1.8;
-      ctx.beginPath(); ctx.moveTo(gx, gTop-3); ctx.lineTo(gx+owner.side*9, gTop-6); ctx.stroke();
-      if (b.gar[gi].atkT > b.gar[gi].rate-0.1){
-        ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.arc(gx+owner.side*10, gTop-6, 2.2, 0, 6.28); ctx.fill();
-      }
-    }
+    for (let gi=0; gi<b.gar.length; gi++){ const g = b.gar[gi];
+      drawGarBust(g.fac||owner.facKey, clamp(g.era!=null? g.era : owner.era||0,0,4), g.role, g.range!=null? g.range : 100, x-7+gi*14, gy-bldVisH(b)+2, owner.side, g.atkT > g.rate-0.1, 0); }
   }
-  if (b.gar && b.gar.length){
-    ctx.font=HF(11); ctx.textAlign='center';
-    ctx.fillStyle='#fff'; ctx.fillText('🚪'+b.gar.length, x+20, gy-bldH(b)-12);
-  }
+  if (b.gar && b.gar.length) garCounter(x+(owner.side>0? 22 : -22), gy-bldVisH(b)-4, b.gar.length, owner.facKey);
   const frac = clamp(b.hp/b.maxhp,0,1);
   // DÉGÂTS VISIBLES (v1.13) : lézardes sous 60 % de PV, davantage sous 30 %, et sol noirci
-  if (frac<0.6 && qFx()){ const bh4 = bldH(b), n = frac<0.3? 4 : 2; ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+  if (frac<0.6 && qFx()){ const bh4 = bldVisH(b), n = frac<0.3? 4 : 2; ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
     ctx.strokeStyle='rgba(12,8,10,0.7)'; ctx.lineWidth=1.4;
     for (let i=0;i<n;i++){ let cx = x-12+i*8+lhash(i,slot.x)*5, cy = gy-3-lhash(i,slot.x+3)*bh4*0.25; ctx.beginPath(); ctx.moveTo(cx,cy);
       for (let k=0;k<4;k++){ cx += (lhash(i*7+k,slot.x+5)-0.5)*7; cy -= bh4*(0.1+lhash(i*5+k,9)*0.08); ctx.lineTo(cx,cy); }
       ctx.stroke(); }
     ctx.fillStyle='rgba(14,10,10,'+(0.28*(1-frac/0.6)).toFixed(3)+')'; ctx.beginPath(); ctx.ellipse(x, gy+1, 26, 4.5, 0, 0, 6.283); ctx.fill();
     ctx.restore(); }
-  dmgSmoke(x, gy-bldH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
-  if (frac<1){ const hy = gy-bldH(b)-18;
-    ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-16,hy,32,3.4);
-    ctx.fillStyle = frac>0.4?'#7dd84a':'#ff5a4a'; ctx.fillRect(x-16,hy,32*frac,3.4); }
+  dmgSmoke(x, gy-bldVisH(b), frac, t, slot.x);            // bâtiment amoché : fumée, puis flammes
+  if (frac<1) inkGauge(x-16, gy-bldVisH(b)-20, 32, 4, frac, gaugeCol(frac), owner.facKey);
   // nano-réparation : l'équipe se déplace sur CHAQUE bâtiment endommagé de la carte
   if (owner && owner.autoRepair && frac<1){
-    if (owner.facKey==='HUM'){
-      const wx2 = x + Math.sin(t*3)*8;
-      ctx.fillStyle='#caa84a'; ctx.beginPath(); ctx.arc(wx2, gy-13, 2.6, 0, 6.28); ctx.fill();
-      ctx.fillStyle='#8a6a3a'; ctx.fillRect(wx2-2, gy-11, 4, 8);
-      if (Math.sin(t*9)>0.6){ ctx.fillStyle='#ffd34a'; ctx.fillRect(wx2+3, gy-14, 1.8, 1.8); }
-    } else {
-      const a2 = t*2.2, dx3 = Math.cos(a2)*14;
-      ctx.fillStyle='#5ad0ff'; ctx.beginPath();
-      ctx.moveTo(x+dx3+4, gy-26); ctx.lineTo(x+dx3, gy-29); ctx.lineTo(x+dx3-4, gy-26); ctx.lineTo(x+dx3, gy-23);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle='rgba(90,208,255,0.4)'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(x+dx3, gy-23); ctx.lineTo(x+dx3, gy-12); ctx.stroke();
-    }
+    if (owner.facKey==='HUM'){ const wx2 = x + 10*Math.sin(t*0.9+slot.x); drawRepairer(wx2, gy, t, owner.era||0, slot.x*0.13, wx2<x? 1 : -1); }
+    else { const dx3 = Math.cos(t*2.2)*14; drawRepairDrone(x+dx3, gy-bldVisH(b)-6+Math.sin(t*3)*2, x+dx3*0.6, gy-bldVisH(b)*0.5, t, owner.era||0, slot.x*0.1); }
   }
 }

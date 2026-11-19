@@ -16,10 +16,12 @@
 const BIOMES = {};
 const BIOME_BAKED = new Map();
 function biomeRnd(seed){ let s = seed||1; return ()=>{ s = (s*16807)%2147483647; return s/2147483647; }; }
+// cuisson à 2× (densité réelle de l'écran) : les crêtes et les hachures ne sont plus des escaliers agrandis ni un moiré
+const biomeSS = () => Math.max(1, Math.min(2, Math.ceil(SCALE||1)));
 function biomeLayer(B, i){
-  const key = B.id+'#'+i; let c = BIOME_BAKED.get(key);
-  if (!c){ const L = B.layers[i]; c = document.createElement('canvas'); c.width = L.w; c.height = L.h;
-    const g = c.getContext('2d'); L.paint(g, L.w, L.h, biomeRnd(101+i*37+B.id.length*13)); BIOME_BAKED.set(key, c); }
+  const SS = biomeSS(), key = B.id+'#'+i+'@'+SS; let c = BIOME_BAKED.get(key);
+  if (!c){ const L = B.layers[i]; c = document.createElement('canvas'); c.width = L.w*SS; c.height = L.h*SS;
+    const g = c.getContext('2d'); g.scale(SS, SS); g.imageSmoothingEnabled = true; L.paint(g, L.w, L.h, biomeRnd(101+i*37+B.id.length*13)); BIOME_BAKED.set(key, c); }
   return c;
 }
 function biomeBack(B, vw, t){
@@ -27,7 +29,7 @@ function biomeBack(B, vw, t){
   for (let i=0;i<B.layers.length;i++){ const L = B.layers[i], a = L.a? L.a() : 1; if (a<=0.01) continue;
     const c = biomeLayer(B, i), y = GROUND - L.h + (L.off||0);
     let x = -((camX*L.par) % L.w); if (x>0) x -= L.w;
-    ctx.globalAlpha = a; for (; x<vw; x+=L.w) ctx.drawImage(c, Math.round(x), y); ctx.globalAlpha = 1; }
+    ctx.globalAlpha = a; for (; x<vw; x+=L.w) ctx.drawImage(c, Math.round(x), y, L.w, L.h); ctx.globalAlpha = 1; }
   if (B.back) B.back(vw, t);
 }
 // OBSCURITÉ : voile sombre au quart de résolution, percé d'un halo par source de lumière

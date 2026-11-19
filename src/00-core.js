@@ -48,7 +48,10 @@ function resize() {
   if (wrap){ wrap.style.height = wh+'px'; wrap.style.width = ww+'px'; }
   cv.style.width = cw+'px'; cv.style.height = ch+'px';
   const dpr = Math.min(window.devicePixelRatio||1, 2);
-  cv.width = Math.round(cw*dpr); cv.height = Math.round(ch*dpr);
+  // ne réassigner width/height QUE si la taille change : l'affectation vide le canvas (défilement du viewport mobile = scintillement)
+  const nw = Math.round(cw*dpr), nh = Math.round(ch*dpr);
+  if (cv.width!==nw) cv.width = nw;
+  if (cv.height!==nh) cv.height = nh;
   SCALE = cv.width / W;
   ctx.setTransform(SCALE,0,0,SCALE,0,0);
   // rendu lissé pour les dégradés sculptés (style relief)

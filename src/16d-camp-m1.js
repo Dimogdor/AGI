@@ -41,22 +41,24 @@ function m1Text(g, s, x, y, px, col, maxW){
   g.fillStyle = col || '#1f1b17'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   let f = px; for (; f>7; f-=0.5){ g.font = '700 '+f+'px "Courier New",monospace'; if (g.measureText(s).width <= maxW) break; }
   g.fillText(s, x, y); }
+// libellés dessinés dans les planches (non prononcés)
+const M1_PL = { hospital:{fr:"HÔPITAL", en:"HOSPITAL", es:"HOSPITAL", de:"KRANKENHAUS", it:"OSPEDALE", pt:"HOSPITAL", ru:"БОЛЬНИЦА", zh:"医院", ar:"مستشفى"} };
 const M1_PLATES = {
   // P1 · Le robinet : un évier, un robinet, le compteur « intelligent »
   tap(g, w, h, t){ plateBase(g, w, h);
     const n = clamp(t/1.6, 0, 1), m = clamp((t-0.5)/1.2, 0, 1);
     inkWash(g, m1R(0,0,480,270), '#8a8f98', 0.10);                                                          // lavis gris léger
-    inkLine(g, [60,80, 160,80, 160,122], n, 9);                                                              // le robinet : un seul trait (bec, coude, descente)
-    inkLine(g, m1R(152,122,16,10), n, 2.4);                                                                  // l'embout
-    inkLine(g, [100,80, 100,66], n, 3); inkLine(g, [86,64, 114,64], n, 4);                                   // la manette en T (traits séparés)
-    inkWash(g, [110,214, 270,214, 252,236, 128,236, 110,214], '#1f1b17', 0.2); inkLine(g, [110,214, 270,214, 252,236, 128,236, 110,214], n, 2.4);   // le bac de l'évier
-    inkHatch(g, 134, 216, 112, 18, 6, '#1f1b17', 0.22); inkLine(g, [184,228, 196,228], n, 2);                // la bonde
-    // trois dernières gouttes, puis plus rien
-    for (const t0 of [1.1, 2.3, 3.5]){
-      const sw = clamp((t-(t0-0.55))/0.55, 0, 1), k = (t-t0)/0.8;
-      if (sw>0 && k<0){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(160, 135+sw*2, 1.2+sw*1.3, 1.6+sw*2.4, 0, 0, 6.283); g.fill(); }        // la goutte grossit au bout du bec
-      if (k>=0 && k<1){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(160, 136+k*k*76, 2.4, 4, 0, 0, 6.283); g.fill(); }                    // elle tombe
-      if (k>=1 && k<1.7){ const r = (k-1)/0.7; g.strokeStyle = 'rgba(31,27,23,'+(0.55*(1-r)).toFixed(3)+')'; g.lineWidth = 1.3; g.beginPath(); g.ellipse(160, 214, 4+r*16, 1.5+r*3, 0, 0, 6.283); g.stroke(); } }
+    inkWash(g, m1R(0,16,60,214), '#1f1b17', 0.10); inkHatch(g, 0, 16, 60, 214, 7, '#1f1b17', 0.16); inkLine(g, [60,16, 60,230], n, 3);   // la ligne du mur (face hachurée)
+    inkWash(g, m1R(54,70,10,24), '#1f1b17', 0.7); inkLine(g, m1R(54,70,10,24), n, 1.6);                      // la platine du robinet, vissée au mur
+    inkLine(g, [64,82, 118,82, 128,90, 128,108], n, 8);                                                      // le robinet : tuyau sorti du mur, col de cygne
+    inkLine(g, m1R(121,108,14,9), n, 2.2);                                                                   // l'embout
+    inkLine(g, [92,82, 92,68], n, 3); inkLine(g, [80,66, 104,66], n, 4);                                     // la manette en T
+    inkWash(g, [60,166, 214,166, 198,196, 60,196], '#1f1b17', 0.2); inkLine(g, [60,166, 214,166, 198,196, 60,196], n, 2.6);   // l'évier, accroché au mur, juste sous le bec
+    inkHatch(g, 64, 169, 140, 24, 6, '#1f1b17', 0.22); inkLine(g, [122,190, 136,190], n, 2);                // la bonde
+
+    // la goutte se forme au bout du bec, grossit, tremble… et ne tombe pas
+    const gk = clamp((t-0.8)/3.6, 0, 1);
+    if (gk>0){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(128, 120+gk*3+gk*3.5, 1.2+gk*2.2, 1.8+gk*4.2 + Math.sin(t*5)*0.25*gk, 0, 0, 6.283); g.fill(); }
     // le compteur
     inkWash(g, m1R(320,70,100,100), '#3d4a5a', 0.3); inkLine(g, m1R(320,70,100,100), m, 2.6);
     inkLine(g, m1R(334,86,72,30), m, 1.6);
@@ -69,13 +71,19 @@ const M1_PLATES = {
   // P2 · La rue s'éteint : les fenêtres s'éteignent de gauche à droite, la croix de l'hôpital en dernier
   street(g, w, h, t){ plateBase(g, w, h, 'rgba(30,34,70,0.10)');
     const B = [[20,64,150],[92,58,110],[158,66,176],[232,60,128],[300,64,160],[372,90,120]];                 // x, largeur, hauteur (le dernier : l'hôpital)
-    B.forEach(([x,bw,bh], i)=>{ const top = 230-bh, p = m1R(x, top, bw, bh);
+    B.forEach(([x,bw,bh], i)=>{ const top = 230-bh, p = m1R(x, top, bw, bh), last = i===B.length-1;
       inkWash(g, p, '#1f1b17', 0.16); inkLine(g, p, clamp(t/1.2-i*0.08, 0, 1), 1.8);
-      const cols = Math.floor((bw-8)/17), rows = Math.floor((bh-14)/22);
-      for (let r=0;r<rows;r++) for (let c=0;c<cols;c++){ const wx = x+7+c*17, off = t > 1.4 + ((wx-20)/442)*2.7 + ((i*7+r*3+c*5)%5)*0.07;
-        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(wx, top+9+r*22, 9, 12); } });
-    const hx = 417, ht = 230-120, lit = t<4.6 || t>5.8, ca = t<4.6? 1 : 0.35;                                 // la croix du toit : s'éteint, puis se rallume faiblement
-    g.globalAlpha = lit? ca : 1; g.fillStyle = lit? '#e8a53c' : 'rgba(31,27,23,0.45)'; g.fillRect(hx-3, ht-26, 6, 20); g.fillRect(hx-10, ht-19, 20, 6); g.globalAlpha = 1;
+      const cols = Math.floor((bw-8)/17), rows = last? 3 : Math.floor((bh-14)/22);
+      for (let r=0;r<rows;r++) for (let c=0;c<cols;c++){
+        // les fenêtres s'éteignent immeuble par immeuble (0,55 s d'écart), l'hôpital en dernier
+        const off = t > 1.3 + i*0.55 + ((i*7+r*3+c*5)%5)*0.06 + (last? 0.4 : 0);
+        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(x+7+c*17, top+9+r*22+(last? 41 : 0), 9, 12); } });
+    // l'hôpital : enseigne « HÔPITAL » et croix VERTE sur la façade (jamais de croix rouge : emblème protégé)
+    const hx = 417, ht = 230-120, dim = t>4.8 && t<5.8;
+    g.fillStyle = '#e9dfc6'; g.fillRect(hx-38, ht+3, 76, 14); g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.strokeRect(hx-38, ht+3, 76, 14);
+    m1Text(g, cT(M1_PL.hospital), hx, ht+14, 10, '#1f1b17', 68);
+    g.globalAlpha = dim? 0.4 : 1; g.fillStyle = '#2f8f4e'; g.fillRect(hx-10, ht+22, 20, 20); g.fillStyle = '#f4f1e8'; g.fillRect(hx-2.5, ht+25, 5, 14); g.fillRect(hx-7, ht+29.5, 14, 5); g.globalAlpha = 1;
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.strokeRect(hx-10, ht+22, 20, 20);
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.2);
     inkFolk(g, 126, 230, 26); inkFolk(g, 262, 230, 24); inkFolk(g, 340, 230, 27);
     plateEnd(g, w, h); },
@@ -89,11 +97,15 @@ const M1_PLATES = {
     inkWash(g, m1R(12,70,66,60), '#2b2f2c', 0.92); inkLine(g, m1R(12,70,66,60), n, 2.2);                      // le tableau noir
     inkLine(g, [10,134, 80,134], n, 2.4);
     if (n>=1) m1Text(g, 'GERMINAL', 45, 104, 11, '#efe6cf', 58);
-    for (let i=0;i<7;i++){ const arm = [1,2,4,5].indexOf(i), up = arm>=0 && t > 1.8+arm*0.3? 1 : 0;           // sept personnes ; les bras se lèvent à 0,3 s d'écart
-      inkFolk(g, 113+i*43, 198, 26, '#1f1b17', up); }
-    inkWash(g, m1R(80,190,320,10), '#6b5a44', 0.6); inkLine(g, [80,190, 400,190], n, 3);                      // la table
-    inkLine(g, [100,200, 100,232], n, 2.4); inkLine(g, [380,200, 380,232], n, 2.4);
-    inkLine(g, [0,232, 480,232], 1, 2); inkHatch(g, 0, 232, 480, 38, 7, '#1f1b17', 0.2);
+    // sept personnes derrière la table : on ne voit que les têtes et les épaules au-dessus du plateau ; les bras se lèvent à 0,3 s d'écart
+    g.save(); g.beginPath(); g.rect(0, 0, 480, 200); g.clip();
+    const AR = [1, 0.62, 0.85, 0.5];                                                                         // hauteurs de bras variées
+    for (let i=0;i<7;i++){ const arm = [1,2,4,5].indexOf(i), up = arm>=0 && t > 1.8+arm*0.3? AR[arm] : 0;
+      inkFolk(g, 113+i*43, 200+46*0.4, 46, '#1f1b17', up); }
+    g.restore();
+    inkWash(g, m1R(70,198,340,16), '#6b5a44', 0.85); inkLine(g, [70,200, 410,200], n, 3.4);                    // la table, au premier plan
+    inkLine(g, [86,214, 86,240], n, 2.6); inkLine(g, [394,214, 394,240], n, 2.6);
+    inkLine(g, [0,242, 480,242], 1, 2); inkHatch(g, 0, 242, 480, 28, 7, '#1f1b17', 0.2);
     plateEnd(g, w, h); },
 
   // P4 · La radio : la table de Sol, le poste, l'antenne et ses ondes rouges
@@ -117,11 +129,14 @@ const M1_PLATES = {
   // P5 · Halvard : la rue vue de la Fraternelle ; la foule et le drapeau rouge avancent vers le hangar
   halvard(g, w, h, t){ plateBase(g, w, h, 'rgba(30,34,70,0.12)');
     inkWash(g, m1R(300,96,170,134), '#1f1b17', 0.5); inkLine(g, m1R(300,96,170,134), 1, 2.4);                // le hangar
-    m1Text(g, 'HALVARD', 385, 128, 15, '#e9dfc6', 120);                                                      // l'enseigne
-    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.5; g.fillStyle = '#1f1b17';                                    // six drones posés sur le toit
-    for (let i=0;i<6;i++){ const dx = 318+i*27, dy = 93; g.beginPath(); g.moveTo(dx-6,dy-4); g.lineTo(dx+6,dy+1); g.moveTo(dx+6,dy-4); g.lineTo(dx-6,dy+1); g.stroke();
-      for (const q of [-6,6]){ g.beginPath(); g.arc(dx+q,dy-4.6,2,0,6.283); g.fill(); } }
-    g.fillStyle = Math.sin(t*3)>0? '#3aa0e0' : 'rgba(58,160,224,0.35)'; for (let i=0;i<3;i++) g.fillRect(328+i*52, 160, 12, 4);   // trois voyants bleus
+    m1Text(g, 'HALVARD', 385, 140, 15, '#e9dfc6', 120);                                                      // l'enseigne
+    // une seule ligne de barbelés ondulée sur le toit, avec un petit x tous les 8 px
+    { const pts = []; for (let x=296; x<=474; x+=2) pts.push(x, 92+Math.sin(x*0.22)*2.6); inkLine(g, pts, 1, 1.4);
+      g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.lineCap = 'round';
+      for (let x=300; x<=470; x+=8){ const y = 92+Math.sin(x*0.22)*2.6; g.beginPath(); g.moveTo(x-2.5,y-2.5); g.lineTo(x+2.5,y+2.5); g.moveTo(x+2.5,y-2.5); g.lineTo(x-2.5,y+2.5); g.stroke(); } }
+    // deux drones à voyant bleu, en vol stationnaire au-dessus du hangar
+    for (const [dx,dy,ph] of [[350,62,0],[430,50,1.9]]){ const by = dy+Math.sin(t*2+ph)*2.5;
+      inkDrone(g, dx, by, 26, Math.sin(t*3+ph)>-0.3? '#3aa0e0' : 'rgba(58,160,224,0.35)'); }
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.2);
     const adv = Math.min(1, t/5)*60;                                                                        // la foule avance de 60 px en 5 s
     for (let i=0;i<11;i++) inkFolk(g, 16+i*19+adv, 232+((i*3)%3)*2, 26+((i*7)%4)*1.5, '#1f1b17', 0);
@@ -161,17 +176,13 @@ const M1_PLATES = {
 
   // P8 · Le bipeur : sur la table, de nuit ; « 55 » s'affiche après 1,4 s
   pager(g, w, h, t){ plateBase(g, w, h, 'rgba(14,16,34,0.2)');
-    inkLine(g, [20,210, 460,210], 1, 3); inkHatch(g, 20, 210, 440, 28, 6);
-    if (t>1.4) inkWash(g, [196,210, 284,210, 330,238, 150,238], '#9db79a', 0.22);                             // l'écran éclaire la table
-    const body = [176,150, 304,150, 310,156, 310,210, 170,210, 170,156, 176,150];
-    inkWash(g, body, '#23292b', 0.92); inkLine(g, body, 1, 2.2);
-    inkWash(g, m1R(190,160,100,30), '#9db79a', 1); inkLine(g, m1R(190,160,100,30), 1, 1.4);
-    for (let i=0;i<3;i++){ g.fillStyle = '#4a5558'; g.fillRect(196+i*28, 196, 18, 6); }
-    if (t>1.4 && Math.sin(t*5)>-0.4) m1Text(g, '55', 240, 184, 26, '#1b2a1c', 90);
+    inkLine(g, [10,214, 470,214], 1, 3); inkHatch(g, 10, 214, 460, 28, 6);
+    if (t>1.4) inkWash(g, [196,214, 284,214, 330,240, 150,240], '#9db79a', 0.22);                             // l'écran éclaire la table
+    inkNotebook(g, 170, 214, 290, 1);                                                                         // le carnet, à plat ; le bipeur est posé dessus
+    const pg = inkPager(g, 232, 201, 124, { led: (t>1.4 && Math.sin(t*5)>0)? '#0b6fa8' : null });
+    if (t>1.4 && Math.sin(t*5)>-0.4) m1Text(g, '55', pg.cx, pg.cy+9, 28, '#1b2a1c', pg.w-8);
     if (t>1.4) for (let i=0;i<3;i++){ const r = (t*0.9+i/3)%1; g.strokeStyle = 'rgba(11,111,168,'+(0.8*(1-r)).toFixed(3)+')'; g.lineWidth = 2;
-      g.beginPath(); g.arc(240, 186, 78+r*46, 3.75, 5.67); g.stroke(); }                                      // la vibration
-    inkWash(g, [20,210, 34,186, 126,184, 140,210], '#1f1b17', 0.08); inkLine(g, [20,210, 34,186, 126,184, 140,210], 1, 2);   // le coin du carnet
-    for (let i=0;i<3;i++) inkLine(g, [44+i*2,193+i*5, 112,191+i*5], 1, 0.9);
+      g.beginPath(); g.arc(232, pg.top+24, 78+r*46, 3.75, 5.67); g.stroke(); }                               // la vibration
     plateEnd(g, w, h); },
 
   // P9 · La rue noire : un lampadaire éteint, cinq silhouettes qui s'éloignent vers la gauche (8 px/s)
@@ -185,6 +196,7 @@ const M1_PLATES = {
 
 /* ---------- textes de la mission (fr verbatim de docs/campagne/M1.md ; 9 langues) ---------- */
 const M1_TX = {
+  when:{fr:"Octobre 2028", en:"October 2028", es:"Octubre de 2028", de:"Oktober 2028", it:"Ottobre 2028", pt:"Outubro de 2028", ru:"Октябрь 2028", zh:"2028年10月", ar:"أكتوبر 2028"},
   // briefing
   recap:{fr:"Depuis le printemps, Omnicorp gère l'eau et le courant de Valmont. Ses compteurs coupent les foyers dont le « score de fiabilité » baisse. Hier, ils ont coupé l'hôpital.",
     en:"Since spring, Omnicorp has run Valmont's water and power. Its meters cut off any household whose “reliability score” drops. Yesterday they cut off the hospital.",
@@ -195,15 +207,15 @@ const M1_TX = {
     ru:"С весны Omnicorp управляет водой и светом в Valmont. Её счётчики отключают семьи, у которых падает «рейтинг надёжности». Вчера они отключили больницу.",
     zh:"自春天起，Omnicorp 接管了 Valmont 的水和电。它的电表会切断“信用评分”下降的住户。昨天，他们连医院也切断了。",
     ar:"منذ الربيع تدير Omnicorp الماء والكهرباء في Valmont. وتقطع عدّاداتها الخدمة عن البيوت التي ينخفض «تصنيف موثوقيتها». أمس قطعوها عن المستشفى."},
-  where:{fr:"Valmont, rue des Tanneurs — nuit du 14 octobre 2025, sous la pluie.",
-    en:"Valmont, Rue des Tanneurs — the night of 14 October 2025, in the rain.",
-    es:"Valmont, calle de los Curtidores — noche del 14 de octubre de 2025, bajo la lluvia.",
-    de:"Valmont, Gerberstraße — Nacht auf den 14. Oktober 2025, im Regen.",
-    it:"Valmont, via dei Conciatori — notte del 14 ottobre 2025, sotto la pioggia.",
-    pt:"Valmont, rua dos Curtidores — noite de 14 de outubro de 2025, sob a chuva.",
-    ru:"Valmont, улица Кожевников — ночь на 14 октября 2025 года, под дождём.",
-    zh:"Valmont，制革匠街——2025年10月14日夜，细雨中。",
-    ar:"Valmont، شارع الدبّاغين — ليلة 14 أكتوبر 2025، تحت المطر."},
+  where:{fr:"Valmont, rue des Tanneurs — une nuit d'octobre 2028, sous la pluie.",
+    en:"Valmont, Rue des Tanneurs — a night in October 2028, in the rain.",
+    es:"Valmont, calle de los Curtidores — una noche de octubre de 2028, bajo la lluvia.",
+    de:"Valmont, Gerberstraße — eine Nacht im Oktober 2028, im Regen.",
+    it:"Valmont, via dei Conciatori — una notte d'ottobre del 2028, sotto la pioggia.",
+    pt:"Valmont, rua dos Curtidores — uma noite de outubro de 2028, sob a chuva.",
+    ru:"Valmont, улица Кожевников — одна октябрьская ночь 2028 года, под дождём.",
+    zh:"Valmont，制革匠街——2028年10月的一个夜晚，细雨中。",
+    ar:"Valmont، شارع الدبّاغين — ليلة من ليالي أكتوبر 2028، تحت المطر."},
   goal:{fr:"Détruire le dépôt Halvard, au bout de la rue : c'est lui qui pilote les compteurs.",
     en:"Destroy the Halvard depot at the end of the street: it controls the meters.",
     es:"Destruir el depósito Halvard, al final de la calle: es él quien controla los contadores.",
@@ -213,15 +225,15 @@ const M1_TX = {
     ru:"Уничтожить депо Halvard в конце улицы: оно управляет счётчиками.",
     zh:"摧毁街尽头的 Halvard 仓库：电表正是由它操控的。",
     ar:"دمّروا مستودع Halvard في آخر الشارع: فهو الذي يتحكم بالعدّادات."},
-  goal2:{fr:"Facultatif : rallumer les trois transformateurs ensemble · tenir les deux bornes d'incendie · finir avant l'aube (14:00).",
-    en:"Optional: relight all three transformers together · hold both fire hydrants · finish before dawn (14:00).",
-    es:"Opcional: encender los tres transformadores a la vez · mantener las dos bocas de incendio · terminar antes del alba (14:00).",
-    de:"Optional: alle drei Transformatoren gleichzeitig einschalten · beide Hydranten halten · vor der Morgendämmerung fertig sein (14:00).",
-    it:"Facoltativo: riaccendere insieme i tre trasformatori · tenere i due idranti · finire prima dell'alba (14:00).",
-    pt:"Opcional: religar os três transformadores ao mesmo tempo · segurar os dois hidrantes · terminar antes do amanhecer (14:00).",
-    ru:"По желанию: включить все три трансформатора одновременно · удерживать оба гидранта · закончить до рассвета (14:00).",
-    zh:"可选：同时点亮三台变压器 · 守住两个消防栓 · 在黎明前（14:00）结束。",
-    ar:"اختياري: إعادة تشغيل المحوّلات الثلاثة معًا · الإمساك بصنبوري الإطفاء · الإنهاء قبل الفجر (14:00)."},
+  goal2:{fr:"Facultatif : rallumer les trois transformateurs ensemble · tenir les deux bornes d'incendie · finir avant l'aube (en moins de 14 minutes).",
+    en:"Optional: relight all three transformers together · hold both fire hydrants · finish before dawn (in under 14 minutes).",
+    es:"Opcional: encender los tres transformadores a la vez · mantener las dos bocas de incendio · terminar antes del alba (en menos de 14 minutos).",
+    de:"Optional: alle drei Transformatoren gleichzeitig einschalten · beide Hydranten halten · vor der Morgendämmerung fertig sein (in weniger als 14 Minuten).",
+    it:"Facoltativo: riaccendere insieme i tre trasformatori · tenere i due idranti · finire prima dell'alba (in meno di 14 minuti).",
+    pt:"Opcional: religar os três transformadores ao mesmo tempo · segurar os dois hidrantes · terminar antes do amanhecer (em menos de 14 minutos).",
+    ru:"По желанию: включить все три трансформатора одновременно · удерживать оба гидранта · закончить до рассвета (меньше чем за 14 минут).",
+    zh:"可选：同时点亮三台变压器 · 守住两个消防栓 · 在黎明前结束（14分钟内）。",
+    ar:"اختياري: إعادة تشغيل المحوّلات الثلاثة معًا · الإمساك بصنبوري الإطفاء · الإنهاء قبل الفجر (في أقل من 14 دقيقة)."},
   rule:{fr:"Il fait nuit. On ne voit leurs machines que dans la lumière ; nos tireurs portent moins loin dans le noir (−{n} %). Reprenez les transformateurs pour rallumer la rue. Ère I, une seule vie.",
     en:"It is night. Their machines can only be seen in the light; our shooters reach less far in the dark (−{n}%). Retake the transformers to relight the street. Era I, one life.",
     es:"Es de noche. Solo se ven sus máquinas bajo la luz; nuestros tiradores alcanzan menos en la oscuridad (−{n} %). Recuperen los transformadores para volver a encender la calle. Era I, una sola vida.",
@@ -230,16 +242,16 @@ const M1_TX = {
     pt:"É noite. Só se veem as máquinas deles na luz; os nossos atiradores alcançam menos no escuro (−{n}%). Retomem os transformadores para reacender a rua. Era I, uma só vida.",
     ru:"Ночь. Их машины видны только на свету; наши стрелки в темноте бьют ближе (−{n}%). Отбейте трансформаторы, чтобы вернуть свет на улицу. Эпоха I, одна жизнь.",
     zh:"现在是夜晚。只有在灯光下才看得见他们的机器；我们的射手在黑暗中射程缩短（−{n}%）。夺回变压器，让街道重新亮起来。第一时代，只有一条命。",
-    ar:"الوقت ليل. لا تُرى آلاتهم إلا في الضوء، ويقلّ مدى رماتنا في العتمة (−{n}%). استعيدوا المحوّلات لتضيء الشارع من جديد. العصر الأول، وحياة واحدة."},
-  tip1:{fr:"Ferme et marché d'abord : sans vivres ni métal, pas d'armée. Comme en escarmouche.",
-    en:"Farm and market first: no food or metal, no army. Just like in skirmish.",
-    es:"Primero granja y mercado: sin comida ni metal no hay ejército. Como en escaramuza.",
-    de:"Zuerst Farm und Markt: ohne Nahrung und Metall keine Armee. Wie im Scharmützel.",
-    it:"Prima fattoria e mercato: senza viveri né metallo non c'è esercito. Come in scaramuccia.",
-    pt:"Primeiro fazenda e mercado: sem comida nem metal, não há exército. Como na escaramuça.",
-    ru:"Сначала ферма и рынок: без еды и металла нет армии. Как в обычной схватке.",
-    zh:"先建农场和市场：没有粮食和金属，就没有军队。和遭遇战一样。",
-    ar:"المزرعة والسوق أولًا: بلا غذاء ومعدن لا جيش. كما في المناوشة."},
+    ar:"الوقت ليل. لا تُرى آلاتهم إلا في الضوء، ويقلّ مدى رماتنا في العتمة (\u2066−{n}%\u2069). استعيدوا المحوّلات لتضيء الشارع من جديد. العصر الأول، وحياة واحدة."},
+  tip1:{fr:"Ferme et marché d'abord : sans vivres ni argent, pas d'armée. Comme en escarmouche.",
+    en:"Farm and market first: no food or money, no army. Just like in skirmish.",
+    es:"Primero granja y mercado: sin comida ni dinero no hay ejército. Como en escaramuza.",
+    de:"Zuerst Farm und Markt: ohne Nahrung und Geld keine Armee. Wie im Scharmützel.",
+    it:"Prima fattoria e mercato: senza viveri né denaro non c'è esercito. Come in scaramuccia.",
+    pt:"Primeiro fazenda e mercado: sem comida nem dinheiro, não há exército. Como na escaramuça.",
+    ru:"Сначала ферма и рынок: без еды и денег нет армии. Как в обычной схватке.",
+    zh:"先建农场和市场：没有粮食和金钱，就没有军队。和遭遇战一样。",
+    ar:"المزرعة والسوق أولًا: بلا غذاء ومال لا جيش. كما في المناوشة."},
   tip2:{fr:"Avancez groupés, de lampe en lampe. Une unité seule dans le noir est une unité perdue.",
     en:"Advance together, from lamp to lamp. A unit alone in the dark is a unit lost.",
     es:"Avancen juntos, de farol en farol. Una unidad sola en la oscuridad es una unidad perdida.",
@@ -280,7 +292,7 @@ const M1_TX = {
   place:{fr:"Valmont, quartier des Tanneurs", en:"Valmont, the Tanners' district", es:"Valmont, barrio de los Curtidores", de:"Valmont, Gerberviertel", it:"Valmont, quartiere dei Conciatori", pt:"Valmont, bairro dos Curtidores", ru:"Valmont, квартал Кожевников", zh:"Valmont，制革工区", ar:"Valmont، حيّ الدبّاغين"},
   flare:{fr:"FUSÉE ÉCLAIRANTE", en:"FLARE", es:"BENGALA", de:"LEUCHTRAKETE", it:"RAZZO LUMINOSO", pt:"FOGUETE DE SINALIZAÇÃO", ru:"ОСВЕТИТЕЛЬНАЯ РАКЕТА", zh:"照明弹", ar:"قنبلة إنارة"},
   // ouverture
-  o1:{fr:"Octobre 2025. Chez nous, l'eau s'est arrêtée un mardi. Ce n'était pas une panne. C'était une décision.", en:"October 2025. In our street the water stopped on a Tuesday. It was not a breakdown. It was a decision.", es:"Octubre de 2025. En nuestra calle el agua se cortó un martes. No fue una avería. Fue una decisión.", de:"Oktober 2025. Bei uns in der Straße wurde an einem Dienstag das Wasser abgestellt. Das war keine Panne. Das war eine Entscheidung.", it:"Ottobre 2025. Da noi l'acqua si è fermata un martedì. Non era un guasto. Era una decisione.", pt:"Outubro de 2025. Na nossa rua a água parou numa terça-feira. Não foi uma avaria. Foi uma decisão.", ru:"Октябрь 2025-го. У нас на улице воду отключили во вторник. Это была не авария. Это было решение.", zh:"2025年10月。我们这条街的水在一个星期二停了。那不是故障，是一项决定。", ar:"أكتوبر 2025. في شارعنا انقطع الماء ذات ثلاثاء. لم يكن عطلًا. كان قرارًا."},
+  o1:{fr:"Octobre 2028. Chez nous, l'eau s'est arrêtée un mardi. Ce n'était pas une panne. C'était une décision.", en:"October 2028. In our street the water stopped on a Tuesday. It was not a breakdown. It was a decision.", es:"Octubre de 2028. En nuestra calle el agua se cortó un martes. No fue una avería. Fue una decisión.", de:"Oktober 2028. Bei uns in der Straße wurde an einem Dienstag das Wasser abgestellt. Das war keine Panne. Das war eine Entscheidung.", it:"Ottobre 2028. Da noi l'acqua si è fermata un martedì. Non era un guasto. Era una decisione.", pt:"Outubro de 2028. Na nossa rua a água parou numa terça-feira. Não foi uma avaria. Foi uma decisão.", ru:"Октябрь 2028-го. У нас на улице воду отключили во вторник. Это была не авария. Это было решение.", zh:"2028年10月。我们这条街的水在一个星期二停了。那不是故障，是一项决定。", ar:"أكتوبر 2028. في شارعنا انقطع الماء ذات ثلاثاء. لم يكن عطلًا. كان قرارًا."},
   o2:{fr:"Puis le courant, rue après rue, selon un « score de fiabilité ». Hier soir, ils ont coupé l'hôpital onze minutes.",
     en:"Then the power, street after street, by a “reliability score”. Last night they cut off the hospital for eleven minutes.",
     es:"Luego la luz, calle tras calle, según una «puntuación de fiabilidad». Anoche cortaron el hospital once minutos.",
@@ -318,7 +330,7 @@ const M1_TX = {
     zh:"街尽头的 Halvard 仓库操控着抄表的无人机。它一倒，这个街区就能喘口气。",
     ar:"في آخر الشارع يدير مستودع Halvard الطائرات المسيّرة التي تقرأ العدّادات. إن سقط تنفّس الحيّ."},
   cardT:{fr:"I · La nuit des compteurs", en:"I · The night of the meters", es:"I · La noche de los contadores", de:"I · Die Nacht der Zähler", it:"I · La notte dei contatori", pt:"I · A noite dos contadores", ru:"I · Ночь счётчиков", zh:"I · 电表之夜", ar:"I · ليلة العدّادات"},
-  cardS:{fr:"Valmont, rue des Tanneurs — octobre 2025", en:"Valmont, Rue des Tanneurs — October 2025", es:"Valmont, calle de los Curtidores — octubre de 2025", de:"Valmont, Gerberstraße — Oktober 2025", it:"Valmont, via dei Conciatori — ottobre 2025", pt:"Valmont, rua dos Curtidores — outubro de 2025", ru:"Valmont, улица Кожевников — октябрь 2025", zh:"Valmont，制革匠街 — 2025年10月", ar:"Valmont، شارع الدبّاغين — أكتوبر 2025"},
+  cardS:{fr:"Valmont, rue des Tanneurs — octobre 2028", en:"Valmont, Rue des Tanneurs — October 2028", es:"Valmont, calle de los Curtidores — octubre de 2028", de:"Valmont, Gerberstraße — Oktober 2028", it:"Valmont, via dei Conciatori — ottobre 2028", pt:"Valmont, rua dos Curtidores — outubro de 2028", ru:"Valmont, улица Кожевников — октябрь 2028", zh:"Valmont，制革匠街 — 2028年10月", ar:"Valmont، شارع الدبّاغين — أكتوبر 2028"},
   o7:{fr:"Ici, la Fraternelle : notre local, notre base. Si elle tombe cette nuit, c'est fini. Pas de deuxième chance.",
     en:"This is the Fraternelle: our hall, our base. If it falls tonight, it's over. No second chance.",
     es:"Aquí, la Fraternelle: nuestro local, nuestra base. Si cae esta noche, se acabó. No hay segunda oportunidad.",
@@ -411,14 +423,14 @@ const M1_TX = {
     zh:"黑暗里有东西在动，我什么也看不见。放一枚照明弹，指挥官，或者退回灯光里。",
     ar:"شيء يتحرّك في العتمة ولا أرى شيئًا. قنبلة إنارة أيها القائد، أو تراجعوا نحو الضوء."},
   s1:{fr:"Ça y est… regardez les fenêtres. Ils rallument. Ils nous regardent, commandant. C'est la première fois qu'ils regardent.", en:"There… look at the windows. They are switching the lights back on. They are watching us, commander. It is the first time they have watched.", es:"Ya está… miren las ventanas. Vuelven a encender. Nos miran, comandante. Es la primera vez que miran.", de:"Da … seht euch die Fenster an. Sie machen das Licht wieder an. Sie sehen uns an, Kommandant. Zum ersten Mal sehen sie hin.", it:"Ecco… guardate le finestre. Riaccendono. Ci guardano, comandante. È la prima volta che guardano.", pt:"Pronto… vejam as janelas. Estão a acender de novo. Estão a olhar para nós, comandante. É a primeira vez que olham.", ru:"Вот оно… смотрите на окна. Свет снова включают. Они смотрят на нас, командир. Впервые — смотрят.", zh:"成了……看那些窗户。灯又亮了。他们在看我们，指挥官。这是他们第一次看过来。", ar:"ها قد حصل… انظروا إلى النوافذ. يُشعلون الأنوار من جديد. إنهم ينظرون إلينا، أيها القائد. إنها المرة الأولى التي ينظرون فيها."},
-  rHyd:{fr:"L'eau coule ! Avec l'eau, on bâtit un puits et une tourelle. Mettez des Fusiliers dans la tourelle.",
-    en:"The water's flowing! With water we can build a well and a turret. Put Riflemen in the turret.",
-    es:"¡El agua corre! Con agua se construye un pozo y una torreta. Pongan Fusileros en la torreta.",
-    de:"Das Wasser fließt! Mit Wasser bauen wir einen Brunnen und einen Turm. Stecken Sie Schützen in den Turm.",
-    it:"L'acqua scorre! Con l'acqua si costruiscono un pozzo e una torretta. Mettete dei Fucilieri nella torretta.",
-    pt:"A água corre! Com água construímos um poço e uma torreta. Ponham Fuzileiros na torreta.",
+  rHyd:{fr:"L'eau coule ! Avec l'eau, on bâtit un puits et une tourelle. Mettez des Francs-tireurs dans la tourelle.",
+    en:"The water's flowing! With water we can build a well and a turret. Put Irregulars in the turret.",
+    es:"¡El agua corre! Con agua se construye un pozo y una torreta. Pongan Guerrilleros en la torreta.",
+    de:"Das Wasser fließt! Mit Wasser bauen wir einen Brunnen und einen Turm. Stecken Sie Freischärler in den Turm.",
+    it:"L'acqua scorre! Con l'acqua si costruiscono un pozzo e una torretta. Mettete dei Franchi tiratori nella torretta.",
+    pt:"A água corre! Com água construímos um poço e uma torreta. Ponham Guerrilheiros na torreta.",
     ru:"Вода пошла! С водой можно построить колодец и башню. Посадите стрелков в башню.",
-    zh:"水来了！有了水，就能建水井和炮塔。让步枪手进炮塔。",
+    zh:"水来了！有了水，就能建水井和炮塔。让游击射手进炮塔。",
     ar:"الماء يجري! بالماء نبني بئرًا وبرجًا. ضعوا الرماة في البرج."},
   rTower:{fr:"Une tourelle garnie de tireurs, c'est un réverbère qui mord. Bâtissez-la sur un pas-de-porte, près d'un transformateur.",
     en:"A turret full of shooters is a streetlamp that bites. Build it on a shop doorstep, near a transformer.",
@@ -438,24 +450,24 @@ const M1_TX = {
     ru:"Они снова отключили трансформатор. Квартал опять погрузился во тьму. Отбейте его.",
     zh:"他们又切断了一台变压器。那片街区重新陷入黑暗。把它夺回来。",
     ar:"قطعوا محوّلًا من جديد. وعاد الحيّ إلى العتمة. استعيدوه."},
-  rCrs:{fr:"Les voisins descendent : on peut équiper des CRS lourds. Mettez-les devant, ils encaissent pour les autres.",
-    en:"The neighbours are coming down: we can equip Heavy CRS. Put them in front; they take the hits for the others.",
-    es:"Los vecinos bajan: podemos equipar CRS pesados. Pónganlos delante, aguantan por los demás.",
-    de:"Die Nachbarn kommen herunter: Wir können Schwere CRS ausrüsten. Stellen Sie sie nach vorn, sie fangen die Schläge für alle ab.",
-    it:"I vicini scendono: possiamo equipaggiare CRS pesanti. Metteteli davanti, incassano per gli altri.",
-    pt:"Os vizinhos estão a descer: podemos equipar CRS pesados. Ponham-nos à frente, eles aguentam por todos.",
-    ru:"Соседи спускаются: можно экипировать Тяжёлый ОМОН. Ставьте их вперёд — они принимают удар за остальных.",
-    zh:"邻居们下来了：我们可以装备重型镇暴队。让他们站在前面，替其他人挡住攻击。",
-    ar:"نزل الجيران: يمكننا تجهيز CRS ثقيل. ضعوهم في المقدّمة فهم يتحمّلون الضربات عن الآخرين."},
-  rHeavy:{fr:"Un châssis lourd sort du dépôt. Il est lent. Les CRS le retiennent, les Fusiliers le finissent.",
-    en:"A heavy chassis is coming out of the depot. It is slow. The CRS hold it, the Riflemen finish it.",
-    es:"Un chasis pesado sale del depósito. Es lento. Los CRS lo frenan, los Fusileros lo rematan.",
-    de:"Ein schweres Chassis rollt aus dem Depot. Es ist langsam. Die CRS halten es auf, die Schützen erledigen es.",
-    it:"Un telaio pesante esce dal deposito. È lento. I CRS lo trattengono, i Fucilieri lo finiscono.",
-    pt:"Um chassi pesado sai do depósito. É lento. Os CRS seguram-no, os Fuzileiros acabam com ele.",
-    ru:"Из депо выходит тяжёлое шасси. Оно медленное. ОМОН его удержит, стрелки добьют.",
-    zh:"一台重型底盘正从仓库开出来。它很慢。镇暴队拖住它，步枪手收拾它。",
-    ar:"هيكل ثقيل يخرج من المستودع. إنه بطيء. يمسك به CRS وتُجهز عليه البنادق."},
+  rCrs:{fr:"Les voisins descendent : on peut équiper des Barricadiers. Mettez-les devant, ils encaissent pour les autres.",
+    en:"The neighbours are coming down: we can equip Barricaders. Put them in front; they take the hits for the others.",
+    es:"Los vecinos bajan: podemos equipar Barricaderos. Pónganlos delante, aguantan por los demás.",
+    de:"Die Nachbarn kommen herunter: Wir können Barrikadenbauer ausrüsten. Stellen Sie sie nach vorn, sie fangen die Schläge für alle ab.",
+    it:"I vicini scendono: possiamo equipaggiare dei Barricadieri. Metteteli davanti, incassano per gli altri.",
+    pt:"Os vizinhos estão a descer: podemos equipar Barricadeiros. Ponham-nos à frente, eles aguentam por todos.",
+    ru:"Соседи спускаются: можно снарядить Баррикадчиков. Ставьте их вперёд — они принимают удар за остальных.",
+    zh:"邻居们下来了：我们可以装备筑垒者。让他们站在前面，替其他人挡住攻击。",
+    ar:"نزل الجيران: يمكننا تجهيز بناة المتاريس. ضعوهم في المقدّمة فهم يتحمّلون الضربات عن الآخرين."},
+  rHeavy:{fr:"Un châssis lourd sort du dépôt. Il est lent. Les Barricadiers le retiennent, les Francs-tireurs le finissent.",
+    en:"A heavy chassis is coming out of the depot. It is slow. The Barricaders hold it, the Irregulars finish it.",
+    es:"Un chasis pesado sale del depósito. Es lento. Los Barricaderos lo frenan, los Guerrilleros lo rematan.",
+    de:"Ein schweres Chassis rollt aus dem Depot. Es ist langsam. Die Barrikadenbauer halten es auf, die Freischärler erledigen es.",
+    it:"Un telaio pesante esce dal deposito. È lento. I Barricadieri lo trattengono, i Franchi tiratori lo finiscono.",
+    pt:"Um chassi pesado sai do depósito. É lento. Os Barricadeiros seguram-no, os Guerrilheiros acabam com ele.",
+    ru:"Из депо выходит тяжёлое шасси. Оно медленное. Баррикадчики его удержат, вольные стрелки добьют.",
+    zh:"一台重型底盘正从仓库开出来。它很慢。筑垒者拖住它，游击射手收拾它。",
+    ar:"هيكل ثقيل يخرج من المستودع. إنه بطيء. يمسك به بناة المتاريس ويُجهز عليه رماة الحيّ."},
   rBase:{fr:"La Fraternelle prend des coups ! Ramenez du monde, et réparez dès que ça se calme.",
     en:"The Fraternelle is taking hits! Bring people back, and repair as soon as it calms down.",
     es:"¡La Fraternelle recibe golpes! Traigan gente de vuelta y reparen en cuanto se calme.",
@@ -649,7 +661,7 @@ if (!drawBase.m1){ const f0 = drawBase; drawBase = function(side){
 
 campMission(0, {
   ownBase:true,                                                   // drawBase enveloppé : pas de halos de fenêtres de l'escarmouche (drawBaseGlow)
-  num:'I', year:"2025", ai:[0,1,1], eraCap:0, oneLife:true, dev0:0,
+  num:'I', when:M1_TX.when, ai:[0,1,1], eraCap:0, oneLife:true, dev0:0,
   title:M1_TX.title, place:M1_TX.place,
   recap:M1_TX.recap, where:M1_TX.where, goal:M1_TX.goal, goal2:M1_TX.goal2,
   tips:[M1_TX.tip1, M1_TX.tip2, M1_TX.tip3],
@@ -755,12 +767,7 @@ campMission(0, {
     const x = z.x-camX; if (x<-80 || x>vw+80) return; const y = gY(z.x), mine = z.owner==='p', foe = z.owner==='e';
     ctx.save(); ctx.translate(x, y);
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(2,1,26,5,0,0,6.283); ctx.fill();
-    ctx.fillStyle = '#4c5058'; ctx.fillRect(-18,-40,36,40); ctx.fillStyle = '#3a3d45'; ctx.fillRect(-20,-44,40,5); ctx.fillRect(12,-40,6,40);   // armoire
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'; for (let i=0;i<5;i++) ctx.fillRect(-14,-34+i*4,14,1.4);                                                  // ouïes
-    ctx.fillStyle = '#e8b830'; ctx.beginPath(); ctx.moveTo(4,-14); ctx.lineTo(10,-26); ctx.lineTo(-2,-14); ctx.closePath(); ctx.fill();           // danger
-    ctx.fillStyle = '#1f1b17'; ctx.beginPath(); ctx.moveTo(4.6,-23); ctx.lineTo(2.6,-19.4); ctx.lineTo(4.6,-19.4); ctx.lineTo(3.2,-15.6); ctx.lineTo(6.4,-20.4); ctx.lineTo(4.4,-20.4); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#22232b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-8,-44); ctx.lineTo(-8,-78); ctx.moveTo(-18,-70); ctx.lineTo(2,-70); ctx.stroke();   // poteau
-    ctx.fillStyle = '#8a8f98'; for (const ix of [-16,-8,0]) ctx.fillRect(ix-1.5,-76,3,6);                                                         // isolateurs
+    blitObj('M1TRF', 64, 92, 32, 88, paintTransformer);
     const col = mine? '#ffd98a' : foe? '#5ad0ff' : '#6a6f78';
     ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-8,-81,3.4,0,6.283); ctx.fill();
     if (mine || foe){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22+0.06*Math.sin(t*6+z.x); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(-8,-81,15,0,6.283); ctx.fill(); ctx.restore(); }
@@ -774,12 +781,7 @@ campMission(0, {
     ctx.save(); ctx.translate(x, y);
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(1,1,15,3.6,0,0,6.283); ctx.fill();
     if (mine){ ctx.fillStyle = 'rgba(110,170,205,0.35)'; ctx.beginPath(); ctx.ellipse(-16,1,17,3,0,0,6.283); ctx.fill(); }              // flaque
-    ctx.fillStyle = '#7d1d15'; ctx.fillRect(-8,-3,16,3);                                                                                    // embase
-    ctx.fillStyle = '#c0301f'; ctx.fillRect(-5.5,-26,11,24);                                                                                // fût
-    ctx.fillStyle = '#d8402c'; ctx.fillRect(-5.5,-26,3,24);
-    ctx.fillStyle = '#c0301f'; ctx.beginPath(); ctx.arc(0,-26,6.5,Math.PI,0); ctx.fill();                                                   // dôme
-    ctx.fillStyle = '#8e1d14'; ctx.fillRect(-10,-19,5,6); ctx.fillRect(5,-19,5,6);                                                          // buses
-    ctx.fillStyle = '#e8c04a'; ctx.beginPath(); ctx.arc(0,-33,2.2,0,6.283); ctx.fill(); ctx.fillRect(-0.8,-33,1.6,7);                         // clé des pompiers
+    blitObj('M1HYD', 30, 46, 15, 42, paintHydrant);
     if (mine){ ctx.strokeStyle = 'rgba(150,205,235,0.8)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
       for (let i=0;i<4;i++){ const ph = (t*1.7+i/4)%1; ctx.globalAlpha = 1-ph; ctx.beginPath(); ctx.moveTo(-10, -16); ctx.quadraticCurveTo(-10-ph*8, -22+ph*6, -10-ph*16, -16+ph*18); ctx.stroke(); } ctx.globalAlpha = 1; }
     const col = mine? '#ffd98a' : foe? '#5ad0ff' : '#6a6f78'; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(8,-30,2.4,0,6.283); ctx.fill();

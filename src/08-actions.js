@@ -6,7 +6,7 @@ function unitCost(side, ri){
   for (const r in c){
     let v = c[r]*k;
     // PASSIF HUM — ferveur de la révolte : l'infanterie coûte 5 % de moins (production populaire).
-    if (side.facKey==='HUM' && inf) v *= 0.95;
+    if (inf) v *= FAC_TRAITS[side.facKey].infCost;
     out[r] = Math.round(v);
   }
   return out;
@@ -23,7 +23,7 @@ function tryBuy(side, ri){
   const role = ROLES[ri];
   // quota strict de SOUTIEN (médic humain ET ruche GPT) : 1, +1 par niveau d'amélioration (max 3)
   if (role.key==='support'){
-    const maxS = 1 + Math.min(2, side.upg.support||0);
+    const maxS = 1 + Math.min(2, side.upg.support||0) + ((side.trans && side.facKey==='HUM' && asymOn('trans'))? ft('HUM','transSup') : 0);
     const nS = side.units.filter(u=>u.role==='support').length
              + side.queue.filter(q=>ROLES[q].key==='support').length;
     if (nS>=maxS){
@@ -68,7 +68,7 @@ function unitStats(side, ri){
   // HUM frappe vite & léger, GPT fort & lent. dégât×cadence inchangé. Siège & Soutien exemptés.
   let cdmg=1, crate=1;
   if (r.key!=='support' && r.key!=='siege'){
-    if (side.facKey==='HUM'){ cdmg=0.82; crate=0.82; } else { cdmg=1.22; crate=1.22; }
+    const T = FAC_TRAITS[side.facKey]; cdmg = asymOn('unit')? T.texDU : T.texD; crate = T.texR;
   }
   // ARCHÉTYPES DE MÊLÉE (valable à chaque ère) : le Tank (mêlée DÉFENSIVE) devient un vrai mur —
   // beaucoup de PV, dégâts faibles, plus lent ; la Mêlée (OFFENSIVE) devient un assaillant
@@ -78,11 +78,13 @@ function unitStats(side, ri){
   else if (r.key==='melee'){ ahp=0.82; admg=1.34; aspd=1.14; }
   const rate = r.rate*Math.max(0.55, 1-0.05*side.era-0.04*lvl)*crate;
   let hp = r.hp*m*up*ahp;
-  // PASSIF GPT — robustesse industrielle : châssis blindés, +5 % de PV de base (asymétrie subtile ;
-  // contrepartie = électricité un peu plus chère, voir unitCost). DPS strictement miroir inchangé.
-  if (side.facKey==='IA') hp *= 1.05;
+  // PASSIF GPT — robustesse industrielle : châssis blindés, +5 % de PV de base (FAC_TRAITS.IA.hpMul). Il n'a PAS de
+  // contrepartie de coût (le commentaire d'origine en promettait une, jamais codée) : sa contrepartie est la surchauffe,
+  // plus dure que la fatigue humaine (updateUnits) et, avec `econ`, une économie plus lente à démarrer. Premier levier de
+  // réglage de la balance (FACTIONS.md §5) : on le retire si l'IA prend l'avantage au banc.
+  if (side.facKey==='IA') hp *= FAC_TRAITS.IA.hpMul;
   return { hp, dmg:r.dmg*m*up*cdmg*admg, spd:r.spd*aspd, range, rate,
-           arc:r.arc, aoe:r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
+           arc:r.arc, aoe:(r.aoe && side.facKey==='IA' && asymOn('unit'))? r.aoe*FAC_TRAITS.IA.siegeAoe : r.aoe, fly:!!r.fly, xpv:Math.round(r.xp*(1+side.era*0.7)) };
 }
 function spawnUnit(side, ri, gremlin=false, atX=null){
   const m = statMul(side.era);
@@ -116,7 +118,7 @@ function spawnUnit(side, ri, gremlin=false, atX=null){
   u.ord = null; u.holdX = null; u.task = null;
   u.heat = 0; u.tiredT = 0; u.kills = 0; u.vet = false; u.lastHit = null;
   u.farFatigued = false; u.farT = 0;   // fatigue de traversée (déclenchée une fois, loin de la base)
-  u.id = UID++;
+  u.id = UID++; u._born = game.t;      // l'entrée en scène se joue à la naissance, pas à l'arrivée dans le champ
   side.units.push(u);
 }
 function tryUpgRole(side, ri){
@@ -138,10 +140,11 @@ function tryEvolve(side){
   // onde lumineuse d'évolution : le passage d'ère SE VOIT sur la base (les deux camps)
   addLight(side.x, gY(side.x)-70, side.fac.accent, 340, 0.9);
   burst(side.x, gY(side.x)-60, side.fac.accent, 26, 1.4);
-  announce(fmt(side===game.p? 'a_evolve_you':'a_evolve_foe', {era:lEra(side.facKey,side.era)}), side.fac.accent);
+  announce(fmt(side===game.p? 'a_evolve_you':'a_evolve_foe', {era:lEra(side.facKey,side.era)}), side.fac.accent,
+    {q:side===game.p? 'a_evolve_you':'a_evolve_foe', v:{era:{L:'era', f:side.facKey, i:side.era}}});
   if (side===game.p){ sfx('evolve'); voice(side.facKey); game.shake=8;
     // LORE CONTEXTUEL : une courte phrase historique s'affiche au passage d'ère.
-    addFloater(camX+VW()/2, 96, lEraLore(side.facKey, side.era), '#e8d8a0', 14);
+    addFloaterLocal(camX+VW()/2, 96, lEraLore(side.facKey, side.era), '#e8d8a0', 14);   // (repère d'écran de l'hôte : pas envoyé)
   }
   return true;
 }
@@ -149,13 +152,16 @@ function checkTrans(side){
   if (side.trans || side.era<4 || side.xp < TRANS_XP) return;
   side.trans = true;
   for (const u of side.units) u.trans = true; // les troupes existantes changent d'allure
-  announce(side.fac.sym+" "+lTransName(side.facKey)+" "+side.fac.sym, side.fac.accent);
-  addFloater(side.x, gY(side.x)-150, lTransTxt(side.facKey), side.fac.accent, 15);
+  announce(side.fac.sym+" "+lTransName(side.facKey)+" "+side.fac.sym, side.fac.accent, {r:{L:'tn', f:side.facKey}, pr:side.fac.sym+' ', sx:' '+side.fac.sym});
+  addFloater(side.x, gY(side.x)-150, lTransTxt(side.facKey), side.fac.accent, 15, {r:{L:'ttx', f:side.facKey}});
+  if (asymOn('trans')) addFloater(side.x, gY(side.x)-176, tr(side.facKey==='HUM'? 'f_trans2_hum' : 'f_trans2_ia'), side.fac.accent, 13);
   game.flash = 0.8; game.shake = 12;
   if (side===game.p) sfx('trans');
 }
 const SPECIAL_CD = 45;
-// PASSIF HUM — adaptabilité de la résistance : les capacités spéciales se rechargent 10 % plus vite.
+// PASSIF COMMUN aux deux camps : les capacités spéciales se rechargent 5 % plus vite (v1.17 : le commentaire d'origine
+// promettait « −10 % pour l'Humanité » alors que le code l'appliquait aux deux camps ; on garde le comportement mesuré,
+// sans écart de faction — le pouvoir ✸ se différencie par son effet, voir FACTIONS.md M7).
 function specialCd(side){ return SPECIAL_CD * 0.95; }
 // l'ultime demande du temps ET de l'XP accumulée ; il ne peut JAMAIS one-shot une unité
 function specialXpCost(side){ return 60 + side.era*40; }
@@ -177,14 +183,25 @@ function trySpecial(side){
   side.specialCd = specialCd(side);
   const foe = side===game.p? game.e: game.p;
   const dmg = 35 + side.era*22;
-  for (const u of foe.units){
-    u.hp -= Math.min(dmg, u.maxhp*0.65);   // plafonné : impossible de one-shot
-    u.flash=0.3; burst(u.x, gY(u.x)-22, side.fac.accent, 10);
+  const pw = asymOn('power');
+  // M7 : chaque faction a SON pouvoir — Soulèvement (nombre : 0,7·D partout, mais nos troupes sont soignées) / Frappe chirurgicale (précision)
+  const hum = side.facKey==='HUM';
+  let elite = null;
+  if (pw && !hum){
+    const sc = u => (u.role==='hero'? 1e9 : 0) + u.maxhp*u.dmg;
+    elite = new Set(foe.units.filter(u=>u.role!=='gremlin').sort((a,b)=>sc(b)-sc(a)).slice(0, ft('IA','strikeN')));
   }
-  for (const s of sideBuildSlots(foe)) if (s.b) { s.b.hp -= dmg*0.5; burst(s.x, gY(s.x)-30, side.fac.accent, 8); }
+  for (const u of foe.units){
+    const k = !pw? 1 : hum? ft('HUM','upDmg') : (elite.has(u)? ft('IA','strikeK') : ft('IA','strikeRest'));
+    u.hp -= Math.min(dmg*k, u.maxhp*0.65);   // plafonné : impossible de one-shot
+    u.flash=0.3; burst(u.x, gY(u.x)-22, side.fac.accent, elite && elite.has(u)? 16 : 10);
+  }
+  if (pw && hum) for (const u of side.units){ u.hp = Math.min(u.maxhp, u.hp + u.maxhp*ft('HUM','upHeal')); u.heat = 0; u.tiredT = 0; burst(u.x, gY(u.x)-22, '#6dff8a', 5, 0.6); }
+  for (const s of sideBuildSlots(foe)) if (s.b) { s.b.hp -= dmg*0.5*((pw && !hum)? ft('IA','strikeBld') : 1); burst(s.x, gY(s.x)-30, side.fac.accent, 8); }
   foe.hp -= dmg*0.4;
   game.shake=14; game.flash=0.5; game.specialsUsed++;
-  announce("✸ "+lSpecial(side.facKey,side.era)+" ✸", side.fac.accent);
+  announce("✸ "+lSpecial(side.facKey,side.era)+" ✸", side.fac.accent, {r:{L:'sp', f:side.facKey, i:side.era}, pr:'✸ ', sx:' ✸'});
+  if (pw && side===game.p && game.msg){ game.msg.sub = tr(hum? 'a_spec_hum' : 'a_spec_ia'); game.msgT = Math.max(game.msgT||0, 4.2); }   // sous-titre : ce que fait CE pouvoir
   sfx('spec');
   return true;
 }
@@ -207,11 +224,27 @@ function castLastStand(side){
 }
 function mkB(side, type){
   const b = BUILDS[type];
-  return { type, hp:b.hp*(1+side.era*0.4), maxhp:b.hp*(1+side.era*0.4), atkT:0, lvl:1, gar:[], age:0 };
+  return { type, hp:b.hp*(1+side.era*0.4), maxhp:b.hp*(1+side.era*0.4), atkT:0, lvl:1, gar:[], age:0, fk:side.facKey };
 }
+// coût d'une construction pour CE camp sur CE socle : M5 (muraille humaine −25 %) et M1 (rebâtir le même type sur une ruine
+// de moins de 90 s : −50 % pour l'Humanité). Sert au paiement, au remboursement et à tous les menus.
+function ruinActive(side, slot, type){
+  const r = slot && slot.ruin;
+  return !!(r && side.facKey==='HUM' && asymOn('econ') && r.side===side.side && r.type===type && game.t-r.t <= ft('HUM','rebuildT'));
+}
+function buildCost(side, type, slot){
+  const base = BUILDS[type].cost; let k = 1;
+  if (side.facKey==='HUM' && type==='wall' && asymOn('bld')) k *= ft('HUM','wallCost');
+  if (ruinActive(side, slot, type)) k *= ft('HUM','rebuildK');
+  if (k===1) return base;
+  const out = {}; for (const r in base) out[r] = Math.round(base[r]*k);
+  return out;
+}
+const siteMax = side => (side.facKey==='HUM' && asymOn('bld'))? ft('HUM','siteMax') : 2;
 function tryBuild(side, slot, type){
   if (isGuest(side)){ guestCmd({c:'build', ref:slotRef(side,slot), type}); sfx('build'); return true; }
-  if (slot.b || !canPay(side, BUILDS[type].cost)) return false;
+  const cost = buildCost(side, type, slot);
+  if (slot.b || !canPay(side, cost)) return false;
   let near = side.slots.includes(slot);
   if (!near) for (const u of side.units) if (Math.abs(u.x-slot.x)<110){ near=true; break; }
   if (!near){
@@ -222,19 +255,22 @@ function tryBuild(side, slot, type){
     }
     let sites=0;
     for (const s2 of sideBuildSlots(side)) if (s2.b && s2.b.type==='site') sites++;
-    if (sites>=2){
+    if (sites>=siteMax(side)){
       if (side===game.p) announce(tr('a_twosites'), "#d88");
       return false;
     }
   }
-  pay(side, BUILDS[type].cost);
+  pay(side, cost);
+  if (cost!==BUILDS[type].cost && ruinActive(side, slot, type) && side===game.p) addFloater(slot.x, gY(slot.x)-44, tr('f_rebuild'), '#9dc88a', 12);
+  slot.ruin = null;
   slot.owner = side;
   if (near){
     slot.b = mkB(side, type);
     burst(slot.x, gY(slot.x)-14, '#cdbf9a', 8, 0.7);   // poussière de chantier (accompagne le pop)
   } else {
     // chantier fragile : une troupe du pool viendra le terminer
-    slot.b = { type:'site', buildType:type, hp:140, maxhp:140, lvl:1, gar:[] };
+    const sh = (side.facKey==='HUM' && asymOn('bld'))? ft('HUM','siteHp') : 140;
+    slot.b = { type:'site', buildType:type, hp:sh, maxhp:sh, lvl:1, gar:[], paid:cost, fk:side.facKey };
     if (side===game.p) announce(tr('a_siteopen'), "#e8d8a0");
   }
   if (side===game.p) sfx('build');
@@ -259,7 +295,7 @@ function dispatchGarrison(side, slot, role){
   // tourelles et murailles, unités à distance uniquement. Les places déjà PROMISES (unités en
   // route vers ce bâtiment) comptent : des taps rapides envoyaient 5 recrues vers 2 places libres.
   const enRoute = side.units.filter(u=>u.task && u.task.kind==='garrison' && u.task.slot===slot).length;
-  if (!canGar(slot.b) || slot.b.gar.length+enRoute>=GAR_MAX) return false;
+  if (!canGar(slot.b) || slot.b.gar.length+enRoute>=garMax(slot.b)) return false;
   if (role!=='ranged' && role!=='siege') role = 'ranged';
   let best=null, bd=1e9;
   for (const u of side.units){
@@ -289,7 +325,7 @@ function repairAllCost(side){
   if (side.hp < side.maxhp){ f+=120; m+=120; }
   for (const s of sideBuildSlots(side))
     if (s.b && s.b.type!=='site' && s.b.hp<s.b.maxhp){
-      const c = repairCost(s.b.hp, s.b.maxhp, 60); f+=c.f; m+=c.m;
+      const c = repairCost(s.b.hp, s.b.maxhp, 60, side); f+=c.f; m+=c.m;
     }
   return {f, m};
 }
@@ -315,7 +351,7 @@ function tryFortify(side){
 function tryAutoRepair(side){
   if (isGuest(side)){ guestCmd({c:'autorep'}); return true; }
   if (side.autoRepair) return false;
-  const c = {m:380, w:100};
+  const c = autoRepCost(side);
   if (!canPay(side,c)) return false;
   pay(side,c); side.autoRepair = true;
   if (side===game.p){ sfx('cap'); announce(tr('bm_autorep_on'), '#9dc88a'); }
@@ -324,7 +360,7 @@ function tryAutoRepair(side){
 function demolish(slot, killGar=false){
   // chantier ANNULÉ par le joueur : le coût est rendu (un chantier qui s'effondre seul ne rend rien)
   if (slot.b && slot.b.type==='site' && !killGar && slot.owner && slot.b.buildType && BUILDS[slot.b.buildType]){
-    const c = BUILDS[slot.b.buildType].cost, sd = slot.owner;
+    const c = slot.b.paid || BUILDS[slot.b.buildType].cost, sd = slot.owner;
     for (const r in c){ if (r==='m' && sd.trans) continue; sd[r] += c[r]; }
   }
   if (slot.b && slot.b.gar && slot.b.gar.length && slot.owner){
@@ -335,17 +371,28 @@ function demolish(slot, killGar=false){
       slot.owner.units.push(g);
     }
   }
+  // M1 : un bâtiment DÉTRUIT (killGar) laisse une ruine — l'Humanité la rebâtit à moitié prix pendant 90 s ; la machine
+  // qui perd un nœud éco voit son bonus réseau tomber à 0 pendant 12 s (« resynchronisation »)
+  if (killGar && slot.b && slot.b.type!=='site' && slot.owner && asymOn('econ')){
+    const ow = slot.owner;
+    if (ow.facKey==='HUM') slot.ruin = { type:slot.b.type, t:game.t, side:ow.side };
+    else if (ECO_TYPES[slot.b.type] && ow.facKey==='IA'){ ow.netT = game.t + ft('IA','netCut'); if (ow===game.p) addFloater(slot.x, gY(slot.x)-44, tr('f_netcut'), '#5ad0ff', 12); }
+  }
   slot.b = null; slot._w = null;
   for (const sd of [game.p, game.e]) for (const u of sd.units) if (u.task && u.task.slot===slot) u.task = null;
   if (!game.p.slots.includes(slot) && !game.e.slots.includes(slot)) slot.owner=null;
 }
-function repairCost(curHp, maxHp, scale){
+function repairCost(curHp, maxHp, scale, side){
   const miss = clamp(1-curHp/maxHp, 0, 1);
+  if (side && side.facKey==='HUM' && asymOn('heal')) scale *= FAC_TRAITS.HUM.repairK;   // M3 : réparations −30 % pour l'Humanité
   return {f:Math.ceil(miss*scale), m:Math.ceil(miss*scale)};
 }
+// M3 : coût et vitesse de la nano-réparation (moins chère et plus rapide pour la machine)
+const autoRepCost = side => (side.facKey==='IA' && asymOn('heal'))? FAC_TRAITS.IA.arCost : {m:380, w:100};
+const autoRepRate = (side, base) => (side.facKey==='IA' && asymOn('heal'))? (base? FAC_TRAITS.IA.arBase : FAC_TRAITS.IA.arBld) : (base? 8 : 4);
 function tryRepair(side, slot){
   if (isGuest(side)){ guestCmd({c:'srep', ref:slotRef(side,slot)}); return true; }
-  const c = repairCost(slot.b.hp, slot.b.maxhp, 60);
+  const c = repairCost(slot.b.hp, slot.b.maxhp, 60, side);
   if (!canPay(side,c)) return false;
   pay(side,c); slot.b.hp = slot.b.maxhp;
   if (side===game.p) sfx('build');
@@ -382,7 +429,7 @@ function tryUpgBuild(side, slot){
 function tryGarrison(side, slot){
   if (isGuest(side)){ guestCmd({c:'garsel', ref:slotRef(side,slot), ids:[...game.sel].map(u=>u.id)}); return true; }
   if (!canGar(slot.b) || slot.owner!==side) return false;
-  const free = GAR_MAX - slot.b.gar.length;
+  const free = garMax(slot.b) - slot.b.gar.length;
   if (free<=0) return false;
   const eligible = [...game.sel].filter(u=>u.range>60 && !u.fly && u.role!=='support' && Math.abs(u.x-slot.x)<260).slice(0, free);
   if (!eligible.length){ announce(tr('a_nogar'), "#d88"); return false; }
@@ -416,10 +463,15 @@ function tryHero(side){
   if (!canPay(side, HERO_COST)){
     if (side===game.p) announce(fmt('a_hero_cost',{cost:costStr(side,HERO_COST)}), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
-  spawnHero(side);
+  spawnHero(side); moraleAdd(side, ft('HUM','moraleHero'));
+  if (asymOn('herofx') && side.facKey==='HUM'){      // M6 : ralliement — la troupe est reposée, le moral monte à 100
+    for (const u of side.units){ u.heat = 0; u.tiredT = 0; }
+    if (asymOn('rhythm')) side.morale = 100;
+    addFloater(side.x, gY(side.x)-110, tr('f_rally'), '#9dc88a', 14);
+  }
   if (side===game.p){ game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
-  announce(tr(side.facKey==='HUM'? 'a_hero_hum':'a_hero_ia'), side.fac.accent);
+  announce(side.facKey==='HUM'? tr('a_hero_hum') : '◆ '+heroNameOf('IA', side.era)+' — '+tr('a_hero_ia'), side.fac.accent);
   return true;
 }
 function spawnHero(side, power){
@@ -430,14 +482,14 @@ function spawnHero(side, power){
   // soin ; Singularité = frappeuse. v1.12 : PV alignés (1,45 contre 0,7 donnait 88 % de victoires
   // au même joueur en Humanité contre 25 % en GPT, mesuré par simulation).
   const hp = HERO.hp*mm*(hum? 1.2 : 1.2)*power;
-  const dmg = HERO.dmg*mm*(hum? 0.7 : 1.3)*power;
+  const dmg = HERO.dmg*mm*FAC_TRAITS[side.facKey].heroDmg*power;
   const u = { role:'hero', hp, maxhp:hp, dmg, spd:HERO.spd,
     range:HERO.range, rate:HERO.rate, fly:false, xpv:Math.round(140*(1+side.era*0.7)) };
   u.x = side.x + side.side*60;
   u.side=side.side; u.era=side.era; u.fac=side.facKey; u.trans=side.trans;
   u.atkT=0; u.bob=Math.random()*6.28; u.flash=0; u.supT=2;
   u.ord=null; u.holdX=null; u.task=null; u.heat=0; u.tiredT=0;
-  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++;
+  u.kills=0; u.vet=false; u.lastHit=null; u.id=UID++; u._born = game.t;
   u.atkN = 0; u.hstate = null; u.barkT = 5+Math.random()*5;
   warmHero(side); heroSfx(side.facKey, 'spawn', u.x);
   u.heroPow = power;     // l'aura d'équipe (dégâts/vitesse) est réduite d'autant si la légende est affaiblie

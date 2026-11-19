@@ -104,7 +104,7 @@ cv.addEventListener('pointermove', e=>{
   if (!game || game.over || paused || buildMenu){ hoverUnitBtn=-1; hoverHudBtn=null; return; }
   const {sx,sy} = evXY(e); hoverUnitBtn=-1; hoverHudBtn=null;
   for (const b of HUD.btns) if (!btnHidden(b) && inRect(sx,sy,b)){
-    if (b.type==='unit') hoverUnitBtn=b.i; else if (b.type==='hstance') hoverHudBtn=b;
+    if (b.type==='unit') hoverUnitBtn=b.i; else if (b.type==='hstance' || b.type==='special') hoverHudBtn=b;
     break; }
 });
 // le point (sx, sy) tombe-t-il sur l'interface (bandeau, bouton, bannière de sélection, fil) ?
@@ -312,6 +312,7 @@ function handleTap(sx, sy, shift, opts){
       else if (r.key==='quit'){
         netDisconnect();
         paused=false; settingsOpen=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null;
+        M1_RETRY = M3_RETRY = M4_RETRY = false;                  // campagne quittée : plus de reprise allégée
         $('menu').style.display='flex';
       }
       sfx('sel'); return;

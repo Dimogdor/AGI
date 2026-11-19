@@ -143,7 +143,8 @@ console.log('\nGRÈVE GÉNÉRALE / MISE À JOUR FORCÉE');
     for (let i=0;i<4;i++) update(0.05); const sub1 = game.msg && game.msg.sub;
     game.wClock = 29.9 + 150 - 0.1; for (let i=0;i<20*16;i++){ game.aiThink = 1e9; update(0.05); }
     game.msg = null; for (let i=0;i<20*140 && game.weather!=='strike';i++){ game.aiThink = 1e9; update(0.05); }
-    out.sub1 = sub1 === tr('evx_strike'); out.sub2 = !(game.msg && game.msg.sub);
+    out.sub1 = sub1 === tr('evx_strike_hum').replace(/\{(\w+)\}/g, (m,k)=>evNums()[k]);   // les valeurs ({dmg}, {acq}…) viennent de FAC_TRAITS   // asymétrie (v1.17) : ligne propre à la faction du joueur
+    out.sub2 = !(game.msg && game.msg.sub);
     return out; });
   for (const k of ['hum','ia']){ const o = r[k];
     check(o.frozen!==undefined && o.moved===0 && o.dmg>0 && o.hero && o.heal && o.wall===0,
@@ -205,13 +206,13 @@ console.log('\nGUIDE (menu) ET TEXTES');
       const secs = [...document.querySelectorAll('#guideBox details')];
       const keys = document.querySelectorAll('#guideBox .gKeys b').length;
       const keysOk = keys === Object.keys(DEFKEYS).length + guideTbl().gestures.length;
-      const filled = secs.length===11 && secs.every(d => d.querySelector('summary').textContent.length>2 && d.querySelector('.gBody').textContent.length>40);
+      const filled = secs.length===12 && secs.every(d => d.querySelector('summary').textContent.length>2 && d.querySelector('.gBody').textContent.length>40);
       const evx = ['strike','patch','rain','signal','bonuszone','acid','heat','flood','sand','nuke','meteor','lake','zone'].every(k => I18N[L]['evx_'+k])
         && ['prudent','normal','offensive'].every(s => I18N[L]['hsx_'+s] && I18N[L]['hst_'+s]) && I18N[L].tab_guide;
       return (filled && keysOk && evx)? '' : L; }).filter(Boolean);
     SETTINGS.lang = 'fr'; applyLang();
     return out; });
-  check(r.visible && !r.langs.length, 'onglet GUIDE : 11 rubriques remplies, raccourcis réels, explications d\'événements et de postures dans les 9 langues'+(r.langs.length? ' — manque : '+r.langs.join(',') : ''));
+  check(r.visible && !r.langs.length, 'onglet GUIDE : 12 rubriques remplies, raccourcis réels, explications d\'événements et de postures dans les 9 langues'+(r.langs.length? ' — manque : '+r.langs.join(',') : ''));
   check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
   await ctx.close();
 }

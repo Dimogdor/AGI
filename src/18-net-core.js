@@ -10,7 +10,15 @@ function serBld(b){
   if (!b) return 0;
   return [bcode(b), Math.round(b.hp), Math.round(b.maxhp), b.lvl||1,
     (b.type==='site'? (BCODE_TYPE.indexOf(b.buildType)) : 0),
-    (b.gar||[]).map(g=>[ROLE_CODES[g.role]||0, g.era, g.fac==='HUM'?0:1])];
+    (b.gar||[]).map(g=>[ROLE_CODES[g.role]||0, g.era, g.fac==='HUM'?0:1]),
+    Math.round(b.age||0)];             // 7e champ : ancienneté (bonus de longévité, v1.17 — l'invité affichait des revenus sans lui)
+}
+// asymétrie des factions (v1.17) : état visible qui doit voyager — réseau coupé (secondes restantes), « acquis / correctif » en cours,
+// ruines reconstruisibles à −50 % (code = type·1000 + secondes restantes ; 0 = aucune)
+function ruinCode(slot, side){
+  const r = slot.ruin; if (!r || r.side!==side.side) return 0;
+  const left = ft('HUM','rebuildT') - (game.t - r.t); if (left<=0) return 0;
+  return bcode({type:r.type})*1000 + Math.ceil(left);
 }
 function serSide(s){
   return { hp:Math.round(s.hp), mh:Math.round(s.maxhp), f:Math.round(s.f), m:Math.round(s.m),
@@ -18,7 +26,11 @@ function serSide(s){
     fl:s.fortLvl||1, ar:s.autoRepair?1:0, scd:Math.round(s.specialCd*10)/10, lr:s.lastReady?1:0,
     lu:s.lastUsed?1:0, fm:s.formation?1:0, pm:Math.round((s.prodMul||1)*100)/100,
     hcd:Math.round(s.heroCd||0), hs:Math.max(0, HERO_STANCES.indexOf(s.heroStance)), q:s.queue?s.queue.length:0,
-    upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)) };
+    upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)),
+    mt:Math.max(0, Math.ceil((s.martyrT||0)-game.t)),
+    mo:Math.round(s.morale===undefined? 50 : s.morale),
+    nt:Math.max(0, Math.ceil((s.netT||0)-game.t)), at:Math.max(0, Math.ceil((s.afterT||0)-game.t)),
+    rn:s.slots.map(sl=>ruinCode(sl, s)) };
 }
 function serialize(){
   // héros : un 15e champ — n° d'attaque (3 bits, choisit l'animation), repli prudent (8), geste de ralliement (16)
@@ -34,9 +46,12 @@ function serialize(){
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
     pu:game.p.units.map(u2), eu:game.e.units.map(u2),
-    neut:game.neut.map(n=>[n.owner===game.p?1:n.owner===game.e?-1:0, serBld(n.b)]),
+    neut:game.neut.map(n=>[n.owner===game.p?1:n.owner===game.e?-1:0, serBld(n.b), ruinCode(n, game.p)||-ruinCode(n, game.e)]),
     nodes:game.nodes.map(n=>[n.owner==='p'?1:n.owner==='e'?-1:0, Math.round(n.prog*100)/100]),
     zones:game.zones.map(z=>[z.owner==='p'?1:z.owner==='e'?-1:0, Math.round(z.prog*100)/100]),
+    bz:game.bonusZone? [Math.round(game.bonusZone.x), game.bonusZone.owner==='p'?1:game.bonusZone.owner==='e'?-1:0, Math.round(game.bonusZone.prog*100)/100,
+      Math.round(game.bonusZone.t*10)/10, game.bonusZone.contested?1:0] : 0,
+    met:METEORS.slice(0,12).map(m=>[Math.round(m.tx), Math.round(m.t*100)/100, Math.round(m.dur*100)/100, Math.round(m.dx)]),
     shots:shots.map(s=>[Math.round(s.x),s.y,Math.round(s.tx),s.ty,s.t,s.dur,s.fac==='HUM'?0:1,s.era]),
     proj:projectiles.map(pr=>[Math.round(pr.sx),Math.round(pr.tx),pr.t,pr.dur,pr.fac==='HUM'?0:1,pr.era]),
   };
@@ -72,7 +87,7 @@ function applyStanceIds(side, st, ids){
   }
 }
 function garrisonByIds(side, slot, ids){
-  const free = GAR_MAX - slot.b.gar.length; if (free<=0) return;
+  const free = garMax(slot.b) - slot.b.gar.length; if (free<=0) return;
   const set = new Set(ids||[]);
   const elig = side.units.filter(u=>set.has(u.id) && u.range>60 && !u.fly && u.role!=='support'
     && Math.abs(u.x-slot.x)<260).slice(0, free);
@@ -131,11 +146,15 @@ function deBld(sb, ownerSide){
   if (!Array.isArray(sb) || !isIdx(sb[0], BCODE_TYPE.length) || !sb[0]) return null;
   const type = BCODE_TYPE[sb[0]];
   const maxhp = SN(sb[2], 1, 1e6, 100);
-  const b = { type, hp:SN(sb[1], 0, maxhp), maxhp, lvl:SN(sb[3], 1, 3, 1)|0, atkT:0, gar:[] };
+  const b = { type, hp:SN(sb[1], 0, maxhp), maxhp, lvl:SN(sb[3], 1, 3, 1)|0, atkT:0, gar:[], age:SN(sb[6], 0, 1e5), fk:ownerSide? ownerSide.facKey : undefined };
   if (type==='site') b.buildType = BCODE_TYPE[isIdx(sb[4], BCODE_TYPE.length)? sb[4] : 1] || 'wall';
-  b.gar = SA(sb[5], GAR_MAX).filter(g => Array.isArray(g) && CODE_ROLES[g[0]])
+  b.gar = SA(sb[5], 3).filter(g => Array.isArray(g) && CODE_ROLES[g[0]])
     .map(g=>({role:CODE_ROLES[g[0]], era:SN(g[1],0,4)|0, fac:g[2]?'IA':'HUM', atkT:0, rate:1, bob:0}));
   return b;
+}
+function ruinDecode(code, side){
+  const c = SN(code, 0, 9999)|0, ty = BCODE_TYPE[(c/1000)|0]; if (!c || !ty || ty==='site') return null;
+  return { type:ty, side:side.side, t:game.t - (ft('HUM','rebuildT') - (c%1000)) };
 }
 function applySnapshot(snap){
   if (!game || game.net!=='guest' || !snap || typeof snap!=='object') return;
@@ -162,6 +181,10 @@ function applySnapshot(snap){
     loc.upg = upg;
     if (!(loc._hsLock>performance.now())) loc.heroStance = HERO_STANCES[SN(ser.hs, 0, 2, 1)|0];
     loc.heroCd=SN(ser.hcd, 0, 1e4); loc.queueLen=SN(ser.q, 0, 99)|0;
+    loc.martyrT = g.t + SN(ser.mt, 0, 60);
+    loc.morale = SN(ser.mo, 0, 100, 50);
+    loc.netT = g.t + SN(ser.nt, 0, 60); loc.afterT = g.t + SN(ser.at, 0, 120);          // réseau coupé · acquis sociaux / correctif
+    const rn = SA(ser.rn, 8); for (let i=0;i<loc.slots.length;i++) loc.slots[i].ruin = ruinDecode(rn[i], loc);
     loc.gar = new Array(SN(ser.gn, 0, 3)|0).fill(0).map(()=>({}));   // longueur seule (compteur d'effectif)
     const sl = SA(ser.slots, 64);
     for (let i=0;i<loc.slots.length;i++){ loc.slots[i].b = deBld(sl[i], loc);
@@ -190,10 +213,11 @@ function applySnapshot(snap){
     if (role==='hero'){ const hb = SN(a[14], 0, 31)|0; u.atkN = hb&7; u.hstate = (hb&8)? 'flee' : null; u._hg = !!(hb&16); }
     const pv = GV[id];
     if (role==='hero'){ if (pv){ u._h = pv._h; u.gestT = pv.gestT; } if (u._hg && !(pv && pv._hg)) u.gestT = g.t; }
-    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
+    if (pv){ u.bob = pv.bob; u.flash = pv.flash>0? pv.flash : 0; u._born = pv._born; u._dust = pv._dust; u._mvT = pv._mvT; u._bk = pv._bk; u._wx = pv._wx; u._ab = pv._ab; u._hpS = pv._hpS; u._pit = pv._pit;
       if (u.hp < pv.hp-0.5) u.flash = Math.max(u.flash, 0.12);                 // touché depuis le dernier instantané
       // le coup en cours continue de se jouer (armé, frappe, retour) au lieu de rester figé sur sa 1re image
       if (!(a[13] && pv.atkT<0.75)) u.atkT = pv.atkT; }
+    else u._born = g.t;                                        // nouvelle venue : l'apparition se joue à sa création, pas à son entrée dans le champ
     GV2[id] = u;
     loc.units.push(u);
   };
@@ -209,12 +233,19 @@ function applySnapshot(snap){
   const sn = SA(snap.neut, 16), sd = SA(snap.nodes, 16), sz = SA(snap.zones, 16);
   for (let i=0;i<g.neut.length;i++){ const ns=sn[i]; if (!Array.isArray(ns)) continue;
     const own = ns[0]===-1? g.p : ns[0]===1? g.e : null;
-    g.neut[i].owner = own; g.neut[i].b = deBld(ns[1], own); }
+    g.neut[i].owner = own; g.neut[i].b = deBld(ns[1], own);
+    const rc = SN(ns[2], -9999, 9999)|0;                                  // ruine d'un spot neutre : + = hôte (local e), − = invité (local p)
+    g.neut[i].ruin = rc>0? ruinDecode(rc, g.e) : rc<0? ruinDecode(-rc, g.p) : null; }
   for (let i=0;i<g.nodes.length;i++){ const nd=sd[i]; if (!Array.isArray(nd)) continue;
     g.nodes[i].owner = nd[0]===-1? 'p' : nd[0]===1? 'e' : null;
     g.nodes[i].prog = -SN(nd[1], -1, 1); }
   if (g.zones) for (let i=0;i<g.zones.length;i++){ const zd=sz[i]; if (!Array.isArray(zd)) continue;
     g.zones[i].owner = zd[0]===-1? 'p' : zd[0]===1? 'e' : null; g.zones[i].prog = -SN(zd[1], -1, 1); }
+  // 4e zone bonus et météores (vue miroir : x → WORLD-x, propriétaire et progression inversés)
+  if (Array.isArray(snap.bz)){ const b = snap.bz, o = SN(b[1], -1, 1)|0;
+    g.bonusZone = { x:WORLD-SN(b[0], 0, WORLD), owner:o===-1? 'p' : o===1? 'e' : null, prog:-SN(b[2], -1, 1), t:SN(b[3], 0, 600), contested:!!b[4] }; }
+  else g.bonusZone = null;
+  METEORS = SA(snap.met, 12).filter(Array.isArray).map(m=>({ tx:WORLD-SN(m[0], 0, WORLD), t:SN(m[1], 0, 5), dur:SN(m[2], 0.1, 5, 1), dx:-SN(m[3], -400, 400) }));
   // tirs & obus (mirroir x)
   shots = SA(snap.shots, 400).filter(Array.isArray).map(s=>({x:WORLD-SN(s[0],0,WORLD), y:SN(s[1],-200,800), tx:WORLD-SN(s[2],0,WORLD), ty:SN(s[3],-200,800),
     t:SN(s[4],0,5), dur:SN(s[5],0.01,5,0.16), fac:s[6]?'IA':'HUM', era:SN(s[7],0,4)|0}));
@@ -229,8 +260,8 @@ function applyEvents(ev){
     const x = WORLD - SN(e.x, 0, WORLD), y = SN(e.y, -300, 900);
     if (e.k==='b') burst(x, y, SCOL(e.c), SN(e.n, 0, 60)|0, SN(e.p, 0, 3, 1));
     else if (e.k==='x') explode(x, y, SN(e.p, 0, 3, 1), SCOL(e.c));
-    else if (e.k==='f') addFloater(x, y, String(e.t==null? '' : e.t).slice(0, 48), SCOL(e.c), SN(e.s, 6, 40, 13));
-    else if (e.k==='a'){ game.msg={txt:String(e.t==null? '' : e.t).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
+    else if (e.k==='f') addFloaterLocal(x, y, netTxtOut(e).slice(0, 80), SCOL(e.c), SN(e.s, 6, 40, 13));
+    else if (e.k==='a'){ game.msg={txt:netTxtOut(e).slice(0, 120), color:SCOL(e.c)}; game.msgT=2.6; }
     else if (e.k==='s' && NET_SFX.has(e.n)) sfx(e.n, SN(e.p, 0, 8));
     else if (e.k==='h' && typeof e.n==='string' && HSFX_GAP.hasOwnProperty(e.n)) heroSfx(e.f? 'IA':'HUM', e.n, x, true);
   }
@@ -252,6 +283,8 @@ function netGuestTick(dt){
   }
   for (let i=shots.length-1;i>=0;i--){ shots[i].t+=dt; if (shots[i].t>shots[i].dur) shots.splice(i,1); }
   for (let i=projectiles.length-1;i>=0;i--){ projectiles[i].t+=dt; if (projectiles[i].t>projectiles[i].dur) projectiles.splice(i,1); }
+  for (const m of METEORS) m.t = Math.min(m.dur, m.t+dt);                   // la chute continue entre deux instantanés
+  if (game.bonusZone) game.bonusZone.t += dt;
   stepParticles(dt);
   for (let i=deaths.length-1;i>=0;i--){ deaths[i].t+=dt; if (deaths[i].t>deaths[i].life) deaths.splice(i,1); }
   for (let i=floaters.length-1;i>=0;i--){ const f=floaters[i]; f.t+=dt; f.y-=22*dt; if (f.t>1.6) floaters.splice(i,1); }
