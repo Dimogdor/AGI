@@ -382,14 +382,26 @@ function shellSprite(fac, era){
   });
 }
 // fumée de sillage : disques clairs cerclés d'une ombre sombre (contraste sur ciel clair comme sur sol sombre)
+// la traînée est stockée en coordonnées MONDE (x) : elle ne « glisse » plus quand la caméra bouge.
+// Chez l'invité les projectiles sont recréés à chaque instantané : la traînée est rattachée à une clé (départ·cible·camp) pour ne pas repartir de zéro.
+const _guestTrails = new Map();
+function shellTrailFor(pr){
+  if (pr._tr) return pr._tr;
+  if (game.net!=='guest') return (pr._tr = []);
+  const key = (pr.sx|0)+'_'+(pr.tx|0)+'_'+pr.fac, now = performance.now();
+  let e = _guestTrails.get(key);
+  if (!e){ e = {tr:[], at:now}; _guestTrails.set(key, e);
+    if (_guestTrails.size>60) for (const [k,v] of _guestTrails) if (now-v.at>600) _guestTrails.delete(k); }
+  e.at = now; return (pr._tr = e.tr);
+}
 function drawShellTrail(pr, px, py){
-  const tr = pr._tr || (pr._tr = []);
+  const tr = shellTrailFor(pr), wx = px+camX;
   const last = tr[tr.length-1];
-  if (!last || Math.hypot(last[0]-px, last[1]-py)>3.2){ tr.push([px,py]); if (tr.length>9) tr.shift(); }
+  if (!last || Math.hypot(last[0]-wx, last[1]-py)>3.2){ tr.push([wx,py]); if (tr.length>9) tr.shift(); }
   ctx.save();
-  for (let i=0;i<tr.length;i++){ const f = (i+1)/tr.length, r = 1.8+(1-f)*3.2, a = 0.2+0.55*f;
-    ctx.globalAlpha = a*0.55; ctx.fillStyle = 'rgba(30,26,28,1)'; ctx.beginPath(); ctx.arc(tr[i][0], tr[i][1]+0.7, r+1, 0, 6.283); ctx.fill();
-    ctx.globalAlpha = a; ctx.fillStyle = '#ece7de'; ctx.beginPath(); ctx.arc(tr[i][0], tr[i][1], r, 0, 6.283); ctx.fill(); }
+  for (let i=0;i<tr.length;i++){ const f = (i+1)/tr.length, r = 1.8+(1-f)*3.2, a = 0.2+0.55*f, tx = tr[i][0]-camX;
+    ctx.globalAlpha = a*0.55; ctx.fillStyle = 'rgba(30,26,28,1)'; ctx.beginPath(); ctx.arc(tx, tr[i][1]+0.7, r+1, 0, 6.283); ctx.fill();
+    ctx.globalAlpha = a; ctx.fillStyle = '#ece7de'; ctx.beginPath(); ctx.arc(tx, tr[i][1], r, 0, 6.283); ctx.fill(); }
   ctx.restore();
 }
 function drawShell(pr, px, py, ang, col){

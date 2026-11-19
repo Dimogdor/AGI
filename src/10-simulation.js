@@ -102,6 +102,7 @@ function unitK(u, target, side){
 // ---- M3 · SOIN ET RÉCUPÉRATION (asymOn('heal')) : l'Humanité RELÈVE un allié qui tombe (médic), la machine RECYCLE ses pertes ----
 function healSave(side, u){
   if (u.fac!=='HUM' || !asymOn('heal') || u.role==='hero' || u.role==='gremlin') return false;
+  if (u.drownT>0 && game.cata==='flood') return false;   // pas de relève d'une unité qui se noie (soin gaspillé)
   const lvl = side.upg.support||0;
   for (const a of side.units){
     if (a===u || a.role!=='support' || a.hp<=0 || (a.relAt||0)>game.t) continue;
