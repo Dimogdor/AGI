@@ -220,8 +220,9 @@ function drawNews(){
   // d'imprimante en mode G·P·T — même identité papier que le menu et les panneaux
   const pal = uiPal(), fontK = pal.ia? 'type' : 'cond';
   const padL = 16, padR = closed? 9 : 22, inner = maxW - padL - padR;
-  let fs = 11.5; ctx.font = uiF(pal, fontK, fs); let lines = newsWrap(txt, inner);
-  if (lines.length > 2){ fs = 10.5; ctx.font = uiF(pal, fontK, fs); lines = newsWrap(txt, inner); }
+  const kk = fontK==='type'? pal.k : 1, fsMin = uiK()<1? 11/(uiK()*kk) : 0;       // téléphone : au moins 11 px réels
+  let fs = Math.max(11.5, fsMin); ctx.font = uiF(pal, fontK, fs); let lines = newsWrap(txt, inner);
+  if (lines.length > 2){ fs = Math.max(10.5, fsMin); ctx.font = uiF(pal, fontK, fs); lines = newsWrap(txt, inner); }
   if (lines.length > 2){ lines = lines.slice(0,2); let l = lines[1]; while (l.length>1 && ctx.measureText(l+'…').width > inner) l = l.slice(0,-1); lines[1] = l+'…'; }
   const lh = fs*(pal.ia? 1.15 : 1) + 3.5, h = 9 + lines.length*lh;
   let tw = 0; for (const l of lines) tw = Math.max(tw, ctx.measureText(l).width);
