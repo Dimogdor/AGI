@@ -11,4 +11,8 @@ Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'au
 | 2 | Graphismes : unités ; réparateurs, garnisons, bâtiments, jauges, épaves, obus, objets de mission, parallaxe | dev-ui ×2 | **intégré** (84b011a), CI verte | restes mineurs pour Fable |
 | 3 | Asymétrie des factions, lots 0-1 (bancs, environnement, territoire, bâtiments, économie) | dev-gameplay | **intégré** (20a8f8e), CI verte | — |
 | 4 | Asymétrie, lots 2-3 (traits d'unités, soins, moral/refroidissement, pouvoirs, héros, transcendance, AI_KF) | dev-gameplay | **intégré** (5f84fc3) ; bancs B/E encore bruités (voir FACTIONS-BALANCE.md) | — |
-| fin | Audit indépendant + Fable conseiller (lecture seule), corrections, livraison v1.17 | reviewer, fable | **en cours** (lancés en parallèle) | corrections puis livraison |
+| fin | Audit indépendant (12 constats, aucun bloquant) → corrections + version 1.17.0 | dev-gameplay | en cours | — |
+| fin | Conseiller (opus, Fable indisponible) : unités/héros (couleurs chaudes, coiffes civiles, pentagramme, drapeau, croix verte, noms du héros IA, jauge de chaleur) | dev-ui | en cours | — |
+| fin | Conseiller : planches de cinématiques (anneaux, votes, tables, bipeur, objets, fin « Aube », cartouche) | dev-ui | en cours | — |
+| fin | Conseiller : HUD, menus, textes (fins de campagne, moral, événements, santé du monde, briefing, typographie, « argent », pouvoirs) | dev-ui | après la fin de l'agent d'audit (fichiers communs) | — |
+| fin | Livraison v1.17 | orchestrateur | à venir | — |
