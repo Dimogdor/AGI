@@ -40,7 +40,7 @@ function facFrozen(fac){ return !!game && ((fac==='HUM' && game.weather==='strik
 // ---- M10 · ENVIRONNEMENT PAR FACTION (asymOn('env') ; sinon les valeurs d'avant, identiques pour les deux camps) ----
 // Principe : aucun événement n'est neutre, mais la somme sur un cycle l'est (FACTIONS.md §2 M10 ; mesuré par le banc E).
 const envOn = () => asymOn('env');
-const frozenDmg = fk => envOn()? fte(fk,'frozen') : FROZEN_DMG;                       // riposte d'un camp figé : humains ×0,5, machines ×0,25
+const frozenDmg = fk => envOn()? fte(fk,'frozen') : FROZEN_DMG;                       // riposte d'un camp figé : humains ×0,3, machines ×0,5
 const rainBaseK = fk => game.boon!=='rain'? 1 : envOn()? fte(fk,'rainBase') : 1.3;     // pluie fertile : revenu de base 🌾/⚡
 const rainFarmK = fk => (game.boon==='rain' && envOn())? fte(fk,'rainFarm') : 1;       // … et production des fermes / panneaux
 const sigK = fk => game.boon!=='signal'? 1 : envOn()? fte(fk,'sigCd') : 1.3;            // signal renforcé : recharge du pouvoir ✸
@@ -102,6 +102,7 @@ function unitK(u, target, side){
 // ---- M3 · SOIN ET RÉCUPÉRATION (asymOn('heal')) : l'Humanité RELÈVE un allié qui tombe (médic), la machine RECYCLE ses pertes ----
 function healSave(side, u){
   if (u.fac!=='HUM' || !asymOn('heal') || u.role==='hero' || u.role==='gremlin') return false;
+  if (u.drownT>0 && game.cata==='flood') return false;   // pas de relève d'une unité qui se noie (soin gaspillé)
   const lvl = side.upg.support||0;
   for (const a of side.units){
     if (a===u || a.role!=='support' || a.hp<=0 || (a.relAt||0)>game.t) continue;

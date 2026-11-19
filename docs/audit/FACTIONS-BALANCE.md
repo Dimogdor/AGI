@@ -52,3 +52,15 @@ Constats :
 - Bench E : le couvre-feu coûte peu à l'Humanité alors que la mise à jour coûte beaucoup à la machine ; le bilan par graine bascule du signe. Acide et canicule recalés (19/28 contre 15/18 ; 16 contre 12), sable 15 % contre 30 %.
 - Bench A : `AI_KF` {HUM 0,78 ; IA 1,06} règle Difficile (2e passe) ; Brutal garde un écart de 13 à 17 pts (la machine joueuse perd davantage).
 - Campagne et tutoriel : aucune de ces mécaniques ne s'applique sans `asym` dans la mission ; `npm test`, `npm run test:camp` et `npm run test:extra` verts.
+
+## Audit final v1.17 — réglage du Soulèvement (`HUM.upHeal`)
+Banc B seul, graine 50, n=48 par niveau (victoires HUM, niveaux 1 · 2 · 3, moyenne) :
+
+| `upHeal` | niveau 1 | niveau 2 | niveau 3 | moyenne |
+|---|---|---|---|---|
+| 0,5 (actuel) | 32,8 | 51,6 | 41,7 | 42,0 |
+| 0,4 | 26,0 | 41,7 | 44,8 | 37,5 |
+| 0,35 | 27,6 | 22,4 | 33,9 | 28,0 |
+| 0,3 | 25,5 | 31,8 | 25,0 | 27,4 |
+
+Décision : **0,5 conservé**. L'Humanité est déjà sous 50 % au banc B ; baisser le soin l'en éloigne (≈ −5 pts par −0,1), et la Frappe chirurgicale n'a de contrepartie que par la fatigue et les dégâts (`upDmg`). Le constat « le Soulèvement domine » ne se confirme pas bot contre bot ; si l'on veut quand même plafonner le soin en valeur absolue, mieux vaut le limiter aux unités proches du front que baisser le pourcentage. Banc D (`power`) non relancé : A inchangé puisque la valeur n'a pas bougé.

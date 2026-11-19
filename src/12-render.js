@@ -3820,7 +3820,8 @@ function drawSlot(slot, side, neutral){
   projShadow(x, gy, 15);                          // ombre portée du bâtiment
   // POP DE CONSTRUCTION : le bâtiment SURGIT du sol avec un léger dépassement élastique
   // (b.age démarre à 0 à la pose — pur habillage, ancré au sol, sans effet de jeu).
-  const popK = (b.age!==undefined && b.age<0.45)? clamp(b.age/0.45,0,1) : 1;
+  const popK = (b.age!==undefined && b.age<0.45 && game.net!=='guest')?   // invité : bâtiment recréé à chaque instantané (âge entier) → pas de pop écrasé
+     clamp(b.age/0.45,0,1) : 1;
   const popped = popK<1;
   if (popped){
     const s = popK<0.8? (popK/0.8)*1.08 : 1.08-((popK-0.8)/0.2)*0.08;
@@ -3854,7 +3855,7 @@ function drawSlot(slot, side, neutral){
   // garnison : bustes par camp et par ère, arme pointée vers l'ennemi, aux créneaux
   if (b.gar && b.gar.length){
     for (let gi=0; gi<b.gar.length; gi++){
-      const g = b.gar[gi], gx = x + (b.gar.length>1? (gi? 8:-8) : 0), gyTop = gy - bh2 + 2;
+      const g = b.gar[gi], gx = x + (gi-(b.gar.length-1)/2)*9, gyTop = gy - bh2 + 2;
       drawGarBust(g.fac, clamp(g.era,0,4), g.role, g.range, gx, gyTop, owner.side, g.atkT > g.rate-0.12, 0);
     }
   }
