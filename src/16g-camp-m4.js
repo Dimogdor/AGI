@@ -281,10 +281,15 @@ const M4_PLATES = {
     const n = clamp(t/1.6, 0, 1), omega = mode==='omega' || t >= 3.8;
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, M4_INK0, 0.2);
     inkWash(g, m4R(160,40,160,70), '#3a4a58', 0.22); inkLine(g, m4R(160,40,160,70), n, 2.4);                    // l'écran, au mur
-    for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, x = 240+u*172, top = 138+14*u*u;                              // douze chaises vides, en arc
-      inkWash(g, m4R(x-8, top, 16, 178-top), M4_INK0, 0.16); inkLine(g, m4R(x-8, top, 16, 178-top), clamp(t/1.8-i*0.05, 0, 1), 1.4); }
-    inkWash(g, [60,180, 420,180, 414,192, 66,192], M4_INK0, 0.4); inkLine(g, [60,180, 420,180, 414,192, 66,192, 60,180], n, 2.6);   // la table, vue de face
-    inkLine(g, [80,192, 80,230], n, 2.2); inkLine(g, [400,192, 400,230], n, 2.2);
+    for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, x = 240+u*172, ch = 44 + (i%3)*3 - 8*u*u, k = clamp(t/1.8-i*0.05, 0, 1);   // douze dossiers de chaises vides, derrière la table, de travers
+      g.save(); g.translate(x, 204+8*u*u*0); g.rotate(Math.sin(i*2.3)*0.13 + u*0.05);
+      inkWash(g, m4R(-9, -ch, 18, ch), M4_INK0, 0.2); inkLine(g, m4R(-9, -ch, 18, ch), k, 1.6);
+      inkLine(g, [-11,-ch, 11,-ch], k, 3);                                                                         // la traverse du haut
+      inkLine(g, [-3,-ch+7, -3,-10], k, 1); inkLine(g, [3,-ch+7, 3,-10], k, 1);                                    // les barreaux
+      g.restore(); }
+    g.fillStyle = '#c4b99f'; g.fillRect(58, 200, 364, 14);                                                          // la table, vue de face, devant les chaises : opaque
+    inkWash(g, [60,200, 420,200, 414,214, 66,214], M4_INK0, 0.4); inkLine(g, [60,200, 420,200, 414,214, 66,214, 60,200], n, 2.6);
+    inkLine(g, [80,214, 80,230], n, 2.2); inkLine(g, [400,214, 400,230], n, 2.2);
     if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
       ls.forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), 240, 70+i*22, i? 13 : 14, '#1f2a33', 148); left -= l.length; }); }
     else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = (mode==='omega')? 1 : k; m4Text(g, 'Ω', 240, 100, 62, M4_BLUE, 120); g.globalAlpha = 1; }
@@ -302,15 +307,13 @@ const M4_PLATES = {
   pager(g, w, h, t){ plateBase(g, w, h, 'rgba(60,66,76,0.16)');
     const tot = (game && game.camp && game.camp.total) || 480, mm = s => ('0'+Math.floor(s/60)).slice(-2)+':'+('0'+Math.round(s%60)).slice(-2);
     const txt = '55 · '+(t < 2.2? mm(tot) : mm(tot-1));
-    inkLine(g, [20,210, 460,210], 1, 3); inkHatch(g, 20, 210, 440, 30, 6, M4_INK0, 0.28); inkHatch(g, 20, 198, 440, 12, 5, '#5a7a96', 0.4);   // la table et le givre au bord
-    if (t>1.2) inkWash(g, [196,210, 284,210, 330,238, 150,238], '#9db79a', 0.22);                                // l'écran éclaire la table
-    const body = [176,150, 304,150, 310,156, 310,210, 170,210, 170,156, 176,150];
-    inkWash(g, body, '#23292b', 0.92); inkLine(g, body, 1, 2.2);
-    inkWash(g, m4R(190,160,100,30), '#9db79a', 1); inkLine(g, m4R(190,160,100,30), 1, 1.4);
-    for (let i=0;i<3;i++){ g.fillStyle = '#4a5558'; g.fillRect(196+i*28, 196, 18, 6); }
-    m4Text(g, txt, 240, 182, 16, '#1b2a1c', 92);
+    inkLine(g, [10,214, 470,214], 1, 3); inkHatch(g, 10, 214, 460, 30, 6, M4_INK0, 0.28); inkHatch(g, 10, 202, 460, 12, 5, '#5a7a96', 0.4);   // la table et le givre au bord
+    if (t>1.2) inkWash(g, [196,214, 284,214, 330,240, 150,240], '#9db79a', 0.22);                                // l'écran éclaire la table
+    inkNotebook(g, 170, 214, 290, 1);                                                                             // le carnet ; le bipeur est posé dessus
+    const pg = inkPager(g, 232, 201, 124, { led: Math.sin(t*5)>0? M4_BLUE : null });
+    m4Text(g, txt, pg.cx, pg.cy+5, 15, '#1b2a1c', pg.w-8);
     for (let i=0;i<3;i++){ const r = (t*0.9+i/3)%1; g.strokeStyle = 'rgba(11,111,168,'+(0.8*(1-r)).toFixed(3)+')'; g.lineWidth = 2;
-      g.beginPath(); g.arc(240, 186, 78+r*46, 3.75, 5.67); g.stroke(); }                                        // la vibration (accent bleu)
+      g.beginPath(); g.arc(232, pg.top+24, 78+r*46, 3.75, 5.67); g.stroke(); }                                   // la vibration (accent bleu)
     plateEnd(g, w, h); },
   // P4 · Anselme : la façade d'un coron, une porte de cave entrouverte, Anselme dans l'embrasure avec sa lampe (seul accent ambre), trois enfants derrière
   anselme(g, w, h, t){ plateBase(g, w, h, 'rgba(120,128,140,0.14)');
@@ -387,7 +390,9 @@ const M4_PLATES = {
     g.strokeStyle = M4_INK0; g.lineWidth = 2.2; g.beginPath(); g.arc(240, 54, 20, 0, 6.283*n); g.stroke();         // la molette
     for (let k=0;k<3;k++){ const a = k*1.0472; inkLine(g, [240-20*Math.cos(a), 54-20*Math.sin(a), 240+20*Math.cos(a), 54+20*Math.sin(a)], n, 1.2); }
     const hut = [330,230, 330,186, 392,186, 392,230]; inkWash(g, hut, '#3a3a3c', 0.5); inkLine(g, hut, n, 2.2);     // la salle de l'émetteur
-    inkLine(g, [372,186, 372,84], n, 2.2); inkLine(g, [358,102, 386,102], n, 1.6);                                 // l'antenne
+    inkLine(g, [372,186, 372,96], n, 2.2);                                                                         // le mât de l'antenne, portant une parabole (pas de croix)
+    g.save(); g.translate(372, 98); g.rotate(-0.5); g.fillStyle = 'rgba(58,58,60,0.7)'; g.beginPath(); g.ellipse(0, 0, 10, 22, 0, -Math.PI/2, Math.PI/2, true); g.closePath(); g.fill();
+    g.strokeStyle = M4_INK0; g.lineWidth = 2; g.stroke(); inkLine(g, [0,0, -18,0], n, 1.3); g.restore();
     const sn = [0,230]; for (let x=0; x<=480; x+=24) sn.push(x, 230 - hs*(0.55+0.45*Math.sin(x*0.013+0.6)) - 2*Math.sin(x*0.09)); sn.push(480,230);
     inkWash(g, sn, '#f4f6f8', 0.92); inkLine(g, sn.slice(2, sn.length-2), 1, 1.6);                                 // la congère qui monte
     m4Flakes(g, t, 44, 0.45); plateEnd(g, w, h); },

@@ -41,22 +41,24 @@ function m1Text(g, s, x, y, px, col, maxW){
   g.fillStyle = col || '#1f1b17'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   let f = px; for (; f>7; f-=0.5){ g.font = '700 '+f+'px "Courier New",monospace'; if (g.measureText(s).width <= maxW) break; }
   g.fillText(s, x, y); }
+// libellés dessinés dans les planches (non prononcés)
+const M1_PL = { hospital:{fr:"HÔPITAL", en:"HOSPITAL", es:"HOSPITAL", de:"KRANKENHAUS", it:"OSPEDALE", pt:"HOSPITAL", ru:"БОЛЬНИЦА", zh:"医院", ar:"مستشفى"} };
 const M1_PLATES = {
   // P1 · Le robinet : un évier, un robinet, le compteur « intelligent »
   tap(g, w, h, t){ plateBase(g, w, h);
     const n = clamp(t/1.6, 0, 1), m = clamp((t-0.5)/1.2, 0, 1);
     inkWash(g, m1R(0,0,480,270), '#8a8f98', 0.10);                                                          // lavis gris léger
-    inkLine(g, [60,80, 160,80, 160,122], n, 9);                                                              // le robinet : un seul trait (bec, coude, descente)
-    inkLine(g, m1R(152,122,16,10), n, 2.4);                                                                  // l'embout
-    inkLine(g, [100,80, 100,66], n, 3); inkLine(g, [86,64, 114,64], n, 4);                                   // la manette en T (traits séparés)
-    inkWash(g, [110,214, 270,214, 252,236, 128,236, 110,214], '#1f1b17', 0.2); inkLine(g, [110,214, 270,214, 252,236, 128,236, 110,214], n, 2.4);   // le bac de l'évier
-    inkHatch(g, 134, 216, 112, 18, 6, '#1f1b17', 0.22); inkLine(g, [184,228, 196,228], n, 2);                // la bonde
-    // trois dernières gouttes, puis plus rien
-    for (const t0 of [1.1, 2.3, 3.5]){
-      const sw = clamp((t-(t0-0.55))/0.55, 0, 1), k = (t-t0)/0.8;
-      if (sw>0 && k<0){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(160, 135+sw*2, 1.2+sw*1.3, 1.6+sw*2.4, 0, 0, 6.283); g.fill(); }        // la goutte grossit au bout du bec
-      if (k>=0 && k<1){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(160, 136+k*k*76, 2.4, 4, 0, 0, 6.283); g.fill(); }                    // elle tombe
-      if (k>=1 && k<1.7){ const r = (k-1)/0.7; g.strokeStyle = 'rgba(31,27,23,'+(0.55*(1-r)).toFixed(3)+')'; g.lineWidth = 1.3; g.beginPath(); g.ellipse(160, 214, 4+r*16, 1.5+r*3, 0, 0, 6.283); g.stroke(); } }
+    inkWash(g, m1R(0,16,60,214), '#1f1b17', 0.10); inkHatch(g, 0, 16, 60, 214, 7, '#1f1b17', 0.16); inkLine(g, [60,16, 60,230], n, 3);   // la ligne du mur (face hachurée)
+    inkWash(g, m1R(54,70,10,24), '#1f1b17', 0.7); inkLine(g, m1R(54,70,10,24), n, 1.6);                      // la platine du robinet, vissée au mur
+    inkLine(g, [64,82, 118,82, 128,90, 128,108], n, 8);                                                      // le robinet : tuyau sorti du mur, col de cygne
+    inkLine(g, m1R(121,108,14,9), n, 2.2);                                                                   // l'embout
+    inkLine(g, [92,82, 92,68], n, 3); inkLine(g, [80,66, 104,66], n, 4);                                     // la manette en T
+    inkWash(g, [60,166, 214,166, 198,196, 60,196], '#1f1b17', 0.2); inkLine(g, [60,166, 214,166, 198,196, 60,196], n, 2.6);   // l'évier, accroché au mur, juste sous le bec
+    inkHatch(g, 64, 169, 140, 24, 6, '#1f1b17', 0.22); inkLine(g, [122,190, 136,190], n, 2);                // la bonde
+
+    // la goutte se forme au bout du bec, grossit, tremble… et ne tombe pas
+    const gk = clamp((t-0.8)/3.6, 0, 1);
+    if (gk>0){ g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(128, 120+gk*3+gk*3.5, 1.2+gk*2.2, 1.8+gk*4.2 + Math.sin(t*5)*0.25*gk, 0, 0, 6.283); g.fill(); }
     // le compteur
     inkWash(g, m1R(320,70,100,100), '#3d4a5a', 0.3); inkLine(g, m1R(320,70,100,100), m, 2.6);
     inkLine(g, m1R(334,86,72,30), m, 1.6);
@@ -69,13 +71,19 @@ const M1_PLATES = {
   // P2 · La rue s'éteint : les fenêtres s'éteignent de gauche à droite, la croix de l'hôpital en dernier
   street(g, w, h, t){ plateBase(g, w, h, 'rgba(30,34,70,0.10)');
     const B = [[20,64,150],[92,58,110],[158,66,176],[232,60,128],[300,64,160],[372,90,120]];                 // x, largeur, hauteur (le dernier : l'hôpital)
-    B.forEach(([x,bw,bh], i)=>{ const top = 230-bh, p = m1R(x, top, bw, bh);
+    B.forEach(([x,bw,bh], i)=>{ const top = 230-bh, p = m1R(x, top, bw, bh), last = i===B.length-1;
       inkWash(g, p, '#1f1b17', 0.16); inkLine(g, p, clamp(t/1.2-i*0.08, 0, 1), 1.8);
-      const cols = Math.floor((bw-8)/17), rows = Math.floor((bh-14)/22);
-      for (let r=0;r<rows;r++) for (let c=0;c<cols;c++){ const wx = x+7+c*17, off = t > 1.4 + ((wx-20)/442)*2.7 + ((i*7+r*3+c*5)%5)*0.07;
-        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(wx, top+9+r*22, 9, 12); } });
-    const hx = 417, ht = 230-120, lit = t<4.6 || t>5.8, ca = t<4.6? 1 : 0.35;                                 // la croix du toit : s'éteint, puis se rallume faiblement
-    g.globalAlpha = lit? ca : 1; g.fillStyle = lit? '#e8a53c' : 'rgba(31,27,23,0.45)'; g.fillRect(hx-3, ht-26, 6, 20); g.fillRect(hx-10, ht-19, 20, 6); g.globalAlpha = 1;
+      const cols = Math.floor((bw-8)/17), rows = last? 3 : Math.floor((bh-14)/22);
+      for (let r=0;r<rows;r++) for (let c=0;c<cols;c++){
+        // les fenêtres s'éteignent immeuble par immeuble (0,55 s d'écart), l'hôpital en dernier
+        const off = t > 1.3 + i*0.55 + ((i*7+r*3+c*5)%5)*0.06 + (last? 0.4 : 0);
+        g.fillStyle = off? 'rgba(31,27,23,0.55)' : '#e8a53c'; g.fillRect(x+7+c*17, top+9+r*22+(last? 41 : 0), 9, 12); } });
+    // l'hôpital : enseigne « HÔPITAL » et croix VERTE sur la façade (jamais de croix rouge : emblème protégé)
+    const hx = 417, ht = 230-120, dim = t>4.8 && t<5.8;
+    g.fillStyle = '#e9dfc6'; g.fillRect(hx-38, ht+3, 76, 14); g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.strokeRect(hx-38, ht+3, 76, 14);
+    m1Text(g, cT(M1_PL.hospital), hx, ht+14, 10, '#1f1b17', 68);
+    g.globalAlpha = dim? 0.4 : 1; g.fillStyle = '#2f8f4e'; g.fillRect(hx-10, ht+22, 20, 20); g.fillStyle = '#f4f1e8'; g.fillRect(hx-2.5, ht+25, 5, 14); g.fillRect(hx-7, ht+29.5, 14, 5); g.globalAlpha = 1;
+    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.strokeRect(hx-10, ht+22, 20, 20);
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.2);
     inkFolk(g, 126, 230, 26); inkFolk(g, 262, 230, 24); inkFolk(g, 340, 230, 27);
     plateEnd(g, w, h); },
@@ -89,11 +97,15 @@ const M1_PLATES = {
     inkWash(g, m1R(12,70,66,60), '#2b2f2c', 0.92); inkLine(g, m1R(12,70,66,60), n, 2.2);                      // le tableau noir
     inkLine(g, [10,134, 80,134], n, 2.4);
     if (n>=1) m1Text(g, 'GERMINAL', 45, 104, 11, '#efe6cf', 58);
-    for (let i=0;i<7;i++){ const arm = [1,2,4,5].indexOf(i), up = arm>=0 && t > 1.8+arm*0.3? 1 : 0;           // sept personnes ; les bras se lèvent à 0,3 s d'écart
-      inkFolk(g, 113+i*43, 198, 26, '#1f1b17', up); }
-    inkWash(g, m1R(80,190,320,10), '#6b5a44', 0.6); inkLine(g, [80,190, 400,190], n, 3);                      // la table
-    inkLine(g, [100,200, 100,232], n, 2.4); inkLine(g, [380,200, 380,232], n, 2.4);
-    inkLine(g, [0,232, 480,232], 1, 2); inkHatch(g, 0, 232, 480, 38, 7, '#1f1b17', 0.2);
+    // sept personnes derrière la table : on ne voit que les têtes et les épaules au-dessus du plateau ; les bras se lèvent à 0,3 s d'écart
+    g.save(); g.beginPath(); g.rect(0, 0, 480, 200); g.clip();
+    const AR = [1, 0.62, 0.85, 0.5];                                                                         // hauteurs de bras variées
+    for (let i=0;i<7;i++){ const arm = [1,2,4,5].indexOf(i), up = arm>=0 && t > 1.8+arm*0.3? AR[arm] : 0;
+      inkFolk(g, 113+i*43, 200+46*0.4, 46, '#1f1b17', up); }
+    g.restore();
+    inkWash(g, m1R(70,198,340,16), '#6b5a44', 0.85); inkLine(g, [70,200, 410,200], n, 3.4);                    // la table, au premier plan
+    inkLine(g, [86,214, 86,240], n, 2.6); inkLine(g, [394,214, 394,240], n, 2.6);
+    inkLine(g, [0,242, 480,242], 1, 2); inkHatch(g, 0, 242, 480, 28, 7, '#1f1b17', 0.2);
     plateEnd(g, w, h); },
 
   // P4 · La radio : la table de Sol, le poste, l'antenne et ses ondes rouges
@@ -117,11 +129,14 @@ const M1_PLATES = {
   // P5 · Halvard : la rue vue de la Fraternelle ; la foule et le drapeau rouge avancent vers le hangar
   halvard(g, w, h, t){ plateBase(g, w, h, 'rgba(30,34,70,0.12)');
     inkWash(g, m1R(300,96,170,134), '#1f1b17', 0.5); inkLine(g, m1R(300,96,170,134), 1, 2.4);                // le hangar
-    m1Text(g, 'HALVARD', 385, 128, 15, '#e9dfc6', 120);                                                      // l'enseigne
-    g.strokeStyle = '#1f1b17'; g.lineWidth = 1.5; g.fillStyle = '#1f1b17';                                    // six drones posés sur le toit
-    for (let i=0;i<6;i++){ const dx = 318+i*27, dy = 93; g.beginPath(); g.moveTo(dx-6,dy-4); g.lineTo(dx+6,dy+1); g.moveTo(dx+6,dy-4); g.lineTo(dx-6,dy+1); g.stroke();
-      for (const q of [-6,6]){ g.beginPath(); g.arc(dx+q,dy-4.6,2,0,6.283); g.fill(); } }
-    g.fillStyle = Math.sin(t*3)>0? '#3aa0e0' : 'rgba(58,160,224,0.35)'; for (let i=0;i<3;i++) g.fillRect(328+i*52, 160, 12, 4);   // trois voyants bleus
+    m1Text(g, 'HALVARD', 385, 140, 15, '#e9dfc6', 120);                                                      // l'enseigne
+    // une seule ligne de barbelés ondulée sur le toit, avec un petit x tous les 8 px
+    { const pts = []; for (let x=296; x<=474; x+=2) pts.push(x, 92+Math.sin(x*0.22)*2.6); inkLine(g, pts, 1, 1.4);
+      g.strokeStyle = '#1f1b17'; g.lineWidth = 1.2; g.lineCap = 'round';
+      for (let x=300; x<=470; x+=8){ const y = 92+Math.sin(x*0.22)*2.6; g.beginPath(); g.moveTo(x-2.5,y-2.5); g.lineTo(x+2.5,y+2.5); g.moveTo(x+2.5,y-2.5); g.lineTo(x-2.5,y+2.5); g.stroke(); } }
+    // deux drones à voyant bleu, en vol stationnaire au-dessus du hangar
+    for (const [dx,dy,ph] of [[350,62,0],[430,50,1.9]]){ const by = dy+Math.sin(t*2+ph)*2.5;
+      inkDrone(g, dx, by, 26, Math.sin(t*3+ph)>-0.3? '#3aa0e0' : 'rgba(58,160,224,0.35)'); }
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, '#1f1b17', 0.2);
     const adv = Math.min(1, t/5)*60;                                                                        // la foule avance de 60 px en 5 s
     for (let i=0;i<11;i++) inkFolk(g, 16+i*19+adv, 232+((i*3)%3)*2, 26+((i*7)%4)*1.5, '#1f1b17', 0);
@@ -161,17 +176,13 @@ const M1_PLATES = {
 
   // P8 · Le bipeur : sur la table, de nuit ; « 55 » s'affiche après 1,4 s
   pager(g, w, h, t){ plateBase(g, w, h, 'rgba(14,16,34,0.2)');
-    inkLine(g, [20,210, 460,210], 1, 3); inkHatch(g, 20, 210, 440, 28, 6);
-    if (t>1.4) inkWash(g, [196,210, 284,210, 330,238, 150,238], '#9db79a', 0.22);                             // l'écran éclaire la table
-    const body = [176,150, 304,150, 310,156, 310,210, 170,210, 170,156, 176,150];
-    inkWash(g, body, '#23292b', 0.92); inkLine(g, body, 1, 2.2);
-    inkWash(g, m1R(190,160,100,30), '#9db79a', 1); inkLine(g, m1R(190,160,100,30), 1, 1.4);
-    for (let i=0;i<3;i++){ g.fillStyle = '#4a5558'; g.fillRect(196+i*28, 196, 18, 6); }
-    if (t>1.4 && Math.sin(t*5)>-0.4) m1Text(g, '55', 240, 184, 26, '#1b2a1c', 90);
+    inkLine(g, [10,214, 470,214], 1, 3); inkHatch(g, 10, 214, 460, 28, 6);
+    if (t>1.4) inkWash(g, [196,214, 284,214, 330,240, 150,240], '#9db79a', 0.22);                             // l'écran éclaire la table
+    inkNotebook(g, 170, 214, 290, 1);                                                                         // le carnet, à plat ; le bipeur est posé dessus
+    const pg = inkPager(g, 232, 201, 124, { led: (t>1.4 && Math.sin(t*5)>0)? '#0b6fa8' : null });
+    if (t>1.4 && Math.sin(t*5)>-0.4) m1Text(g, '55', pg.cx, pg.cy+9, 28, '#1b2a1c', pg.w-8);
     if (t>1.4) for (let i=0;i<3;i++){ const r = (t*0.9+i/3)%1; g.strokeStyle = 'rgba(11,111,168,'+(0.8*(1-r)).toFixed(3)+')'; g.lineWidth = 2;
-      g.beginPath(); g.arc(240, 186, 78+r*46, 3.75, 5.67); g.stroke(); }                                      // la vibration
-    inkWash(g, [20,210, 34,186, 126,184, 140,210], '#1f1b17', 0.08); inkLine(g, [20,210, 34,186, 126,184, 140,210], 1, 2);   // le coin du carnet
-    for (let i=0;i<3;i++) inkLine(g, [44+i*2,193+i*5, 112,191+i*5], 1, 0.9);
+      g.beginPath(); g.arc(232, pg.top+24, 78+r*46, 3.75, 5.67); g.stroke(); }                               // la vibration
     plateEnd(g, w, h); },
 
   // P9 · La rue noire : un lampadaire éteint, cinq silhouettes qui s'éloignent vers la gauche (8 px/s)
