@@ -41,7 +41,7 @@ function __runGame(cfg){
   __seed(cfg.seed);
   const bot = cfg.mode==='bot';
   newGame(cfg.left, bot? 1 : cfg.diff, false, cfg.right);
-  if (bot){ game.d = __neutralD(); game.e.hp = game.e.maxhp = 1500; }
+  if (bot){ game.d = __neutralD(); game.noKF = true; game.e.hp = game.e.maxhp = 1500; }
   if (cfg.asym) game.asym = cfg.asym;
   if (cfg.flat) game.biome = {terrain:{a:0,b:0,c:0,f1:0,f2:0,f3:0,base:0}};   // carte plate : isole le biais gauche/droite du relief
   const lv = __LV[cfg.lv||2], st1={}, st2={}, eraT = {HUM:[0,0,0,0,0], IA:[0,0,0,0,0]}, rate = {};
@@ -73,7 +73,7 @@ const __EV = {
 };
 function __runE(cfg){
   __seed(cfg.seed);
-  newGame(cfg.left, 1, false, cfg.right); game.d = __neutralD(); game.e.hp = game.e.maxhp = 1500;
+  newGame(cfg.left, 1, false, cfg.right); game.d = __neutralD(); game.noKF = true; game.e.hp = game.e.maxhp = 1500;
   if (cfg.asym) game.asym = cfg.asym;
   // sans cataclysme (coupés ici) la partie est DÉTERMINISTE : la graine ne change rien. On la fait donc varier dans le « cerveau » des bots
   // (mélange d'unités, taille de la vague, phase de décision) et dans l'heure de l'événement.
