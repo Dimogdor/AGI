@@ -325,7 +325,7 @@ function repairAllCost(side){
   if (side.hp < side.maxhp){ f+=120; m+=120; }
   for (const s of sideBuildSlots(side))
     if (s.b && s.b.type!=='site' && s.b.hp<s.b.maxhp){
-      const c = repairCost(s.b.hp, s.b.maxhp, 60); f+=c.f; m+=c.m;
+      const c = repairCost(s.b.hp, s.b.maxhp, 60, side); f+=c.f; m+=c.m;
     }
   return {f, m};
 }

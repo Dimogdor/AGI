@@ -40,7 +40,7 @@ function facFrozen(fac){ return !!game && ((fac==='HUM' && game.weather==='strik
 // ---- M10 · ENVIRONNEMENT PAR FACTION (asymOn('env') ; sinon les valeurs d'avant, identiques pour les deux camps) ----
 // Principe : aucun événement n'est neutre, mais la somme sur un cycle l'est (FACTIONS.md §2 M10 ; mesuré par le banc E).
 const envOn = () => asymOn('env');
-const frozenDmg = fk => envOn()? fte(fk,'frozen') : FROZEN_DMG;                       // riposte d'un camp figé : humains ×0,5, machines ×0,25
+const frozenDmg = fk => envOn()? fte(fk,'frozen') : FROZEN_DMG;                       // riposte d'un camp figé : humains ×0,3, machines ×0,5
 const rainBaseK = fk => game.boon!=='rain'? 1 : envOn()? fte(fk,'rainBase') : 1.3;     // pluie fertile : revenu de base 🌾/⚡
 const rainFarmK = fk => (game.boon==='rain' && envOn())? fte(fk,'rainFarm') : 1;       // … et production des fermes / panneaux
 const sigK = fk => game.boon!=='signal'? 1 : envOn()? fte(fk,'sigCd') : 1.3;            // signal renforcé : recharge du pouvoir ✸

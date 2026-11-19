@@ -193,7 +193,7 @@ const FAC_TRAITS = {
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
-          frozen:0.5, safe:1, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
+          frozen:0.5, safe:1, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,5, production intacte ; puis « correctif »
           acidUnit:15, acidBld:18, heatUnit:12, heatTired:0.12, heatEco:0.9,
           sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.7 },
   },
