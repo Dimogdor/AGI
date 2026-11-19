@@ -117,9 +117,13 @@ function aiUpdate(dt){
     else if (pRanged>pMelee+1) pick = r<0.6? 1 : 0;      // tanks contre les tireurs
     else if (pMelee>pRanged+1) pick = r<0.5? 2 : 3;      // tireurs/siège contre la mêlée
     else pick = r<0.3?0 : r<0.5?1 : r<0.7?2 : r<0.85?4 : 3;
+    // asymétrie (M4) : la machine garde une réserve de 💧 ≥ 60 hors danger — c'est ce qui refroidit son armée
+    const keepW = e.facKey==='IA' && asymOn('rhythm') && !danger && !pushWin && e.w < 60;
+    const dry = i => keepW && ROLES[i].cost.w? Math.floor(Math.random()*3) : i;
+    pick = dry(pick);
     if (!tryBuy(e,pick)){ if (!tryBuy(e,2)) tryBuy(e,0); }
     // recrutement multiple aux hautes difficultés
-    if (game.diff>=2) tryBuy(e, Math.floor(Math.random()*4));
-    if (game.diff>=3) tryBuy(e, Math.floor(Math.random()*5));
+    if (game.diff>=2) tryBuy(e, dry(Math.floor(Math.random()*4)));
+    if (game.diff>=3) tryBuy(e, dry(Math.floor(Math.random()*5)));
   }
 }
