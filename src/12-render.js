@@ -2710,6 +2710,25 @@ function drawUnit(u){
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }
+  // jauge de chaleur des machines (v1.17) : 3 px sous la barre de vie, visible au-dessus de 0,3 ; flamme en surrégime (> 0,75), clignotement gris en surchauffe
+  if (u.fac==='IA' && u.role!=='gremlin'){
+    const over = u.tiredT>0, hv = over? 1 : clamp(u.heat||0, 0, 1);
+    if (hv>0.3){
+      const w = 24, yh = gy-top-fh + (frac<1? 4.6 : 1.2);
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-w/2,yh,w,3);
+      ctx.fillStyle = over? (Math.sin(game.t*14)>0? '#aeb4bc' : '#4e5258') : mix('#ff9d2e','#ff2a1e',clamp((hv-0.3)/0.7,0,1));
+      ctx.fillRect(x-w/2,yh,w*hv,3);
+      if (!over && hv>0.75){ const fx = x+w/2+2, fy = yh+1, fl = 1+0.25*Math.sin(game.t*17+u.bob*3);   // petite flamme
+        ctx.fillStyle='#ff7a1e'; ctx.beginPath(); ctx.moveTo(fx,fy-8*fl); ctx.bezierCurveTo(fx+3.2,fy-4,fx+3,fy,fx,fy+0.6); ctx.bezierCurveTo(fx-3,fy,fx-3.2,fy-4,fx,fy-8*fl); ctx.fill();
+        ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.moveTo(fx,fy-4.2*fl); ctx.bezierCurveTo(fx+1.6,fy-2,fx+1.4,fy,fx,fy+0.2); ctx.bezierCurveTo(fx-1.4,fy,fx-1.6,fy-2,fx,fy-4.2*fl); ctx.fill(); }
+    }
+  }
+  // fatigue humaine : goutte de sueur au-dessus de la tête
+  if (u.fac==='HUM' && u.role!=='gremlin' && (u.tiredT>0 || (u.heat||0)>0.75)){
+    const k = (game.t*0.9+u.bob*0.1)%1, sx = x+8, sy = gy-top-fh-1+k*6;
+    ctx.globalAlpha = 1-k*0.6; ctx.fillStyle='#8fd4ff'; ctx.strokeStyle='rgba(30,70,110,0.7)'; ctx.lineWidth=0.7;
+    ctx.beginPath(); ctx.moveTo(sx,sy-4); ctx.bezierCurveTo(sx+2.6,sy-1,sx+2.4,sy+2.2,sx,sy+2.2); ctx.bezierCurveTo(sx-2.4,sy+2.2,sx-2.6,sy-1,sx,sy-4); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+  }
   if (drowning) ctx.restore();
 }
 /* ---------- marqueur d'ordre de position (⚑) ---------- */
