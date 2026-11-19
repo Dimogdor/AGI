@@ -57,6 +57,7 @@ function winterK(side, res){
 function envSpd(side){ let k = 1;
   if (game.winter) k *= envOn()? fte(side.facKey,'winterSpd') : 0.82;
   if (game.cata==='heat' && envOn() && side.facKey==='HUM') k *= fte('HUM','heatSpd');
+  if (side.facKey==='HUM' && moraleOn() && (side.morale||50)<=ft('HUM','moraleLo')) k *= ft('HUM','moraleLoSpd');   // « débandade » (M4)
   return k; }
 // ---- M1 · ÉCONOMIE : « effet réseau » de G·P·T (asymOn('econ')) : +6 % de production par AUTRE bâtiment éco vivant (max +24 %) ----
 const ECO_TYPES = {farmF:1, farmM:1, well:1};
@@ -73,6 +74,17 @@ function turretLinked(side, slot){
   const R = ft('IA','turLinkR');
   for (const o of sideBuildSlots(side)) if (o!==slot && o.b && o.b.type==='turret' && Math.abs(o.x-slot.x)<=R) return true;
   return false;
+}
+// ---- M4 · RYTHME (asymOn('rhythm')) : moral de l'Humanité (jauge 0-100) ; la machine refroidit à l'eau et tourne en surrégime ----
+const moraleOn = () => asymOn('rhythm');
+function moraleAdd(side, v){ if (side.facKey==='HUM' && moraleOn()) side.morale = clamp((side.morale===undefined? 50 : side.morale)+v, 0, 100); }
+const moraleK = side => (side.facKey==='HUM' && moraleOn())? 1 + ft('HUM','moraleDmg')*((side.morale===undefined? 50 : side.morale)-50)/50 : 1;
+function moraleTick(side, dt){
+  if (side.facKey!=='HUM' || !moraleOn()){ return; }
+  let m = side.morale===undefined? 50 : side.morale;
+  m += clamp(50-m, -dt, dt);                                          // retour vers 50 à 1 point/s
+  if (side.hp < side.maxhp*0.5) m = Math.max(m, 50);                   // « on n'a plus rien à perdre » : jamais sous 50 base en danger
+  side.morale = m;
 }
 // ---- M2 · UNITÉS (asymOn('unit')) : l'Humanité frappe plus fort en groupe (« coude à coude »), la machine EXÉCUTE les cibles entamées ----
 function unitK(u, target, side){
@@ -123,6 +135,9 @@ function updateUnits(side, foe, dt){
   const envA = envOn();
   // M10 : pluie et hiver évacuent la chaleur des machines ×2 ; « correctif » de la mise à jour : cadence +10 % pendant 30 s
   const coolK = (envA && side.facKey==='IA' && (game.boon==='rain' || game.winter))? fte('IA','rainCool') : 1;
+  const coolOn = side.facKey==='IA' && moraleOn() && side.w>=ft('IA','coolMin');   // M4 : refroidissement actif (consomme de l'eau)
+  const eager = side.facKey==='HUM' && moraleOn() && (side.morale||50)>=ft('HUM','moraleHi')? ft('HUM','moraleHiK') : 1;   // « élan » : la fatigue monte moins vite
+  const moraleMul = moraleK(side);
   const fixK = (envA && side.facKey==='IA' && (side.afterT||0)>game.t)? fte('IA','fixK') : 1;
   for (const u of side.units){
     u.bob += dt*7; u.atkT -= dt; if (u.flash>0) u.flash-=dt;
@@ -137,7 +152,11 @@ function updateUnits(side, foe, dt){
     // récupération : les humains soufflent plus vite que les machines ne refroidissent. v1.17 (`fatigue`) : 0,05 → 0,035
     // pour l'Humanité — à 0,05/s la fatigue humaine ne se déclenchait quasiment jamais (tireur/tank : jamais), seule la
     // machine surchauffait ; elle devient un vrai rythme d'effort (mêlée ~25 s, tireur ~1 min), plus doux que la surchauffe.
-    if (u.heat>0) u.heat = Math.max(0, u.heat-(u.fac==='IA'? FAC_TRAITS.IA.heatRec*coolK : (asymOn('fatigue')? FAC_TRAITS.HUM.heatRec : 0.05))*dt);
+    if (u.heat>0){
+      let rec = (u.fac==='IA'? FAC_TRAITS.IA.heatRec*coolK : (asymOn('fatigue')? FAC_TRAITS.HUM.heatRec : 0.05));
+      if (coolOn && u.fac==='IA' && side.w>0){ rec = Math.max(rec, ft('IA','coolRec')*coolK); side.w = Math.max(0, side.w - ft('IA','coolW')*dt); }
+      u.heat = Math.max(0, u.heat-rec*dt);
+    }
     if (u.role==='support') u.supT -= dt;
     // aura du héros humain (Che) : soigne en continu les alliés proches, en plus de combattre
     // (v1.17 : la Singularité en a une aussi, plus faible — sans elle, bot contre bot, l'Humanité gagnait ~80 % des parties)
@@ -335,11 +354,11 @@ function updateUnits(side, foe, dt){
         u.atkT = u.rate * (tired? T.tiredRate : 1) / fixK;
         if (u.role==='hero'){ heroSfx(u.fac, HERO_SEQ[(u.atkN|0)&7]? 'atkB' : 'atkA', u.x); u.atkN = (u.atkN|0)+1; }   // alterne ses deux attaques (visuel + son)
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1) * unitK(u, target, side);   // figé : riposte, mais sans l'élan d'une troupe libre
+        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1) * unitK(u, target, side) * moraleMul * ((u.fac==='IA' && moraleOn() && u.heat>=ft('IA','overHeat'))? ft('IA','overK') : 1);   // figé : riposte, mais sans l'élan d'une troupe libre
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         // (v1.12 : surchauffe GPT adoucie — 0,08/6 s/−45 % donnaient ~18 % de DPS soutenu en moins que
         //  l'Humanité ; le même joueur gagnait 88 % en Humanité contre 25 % en GPT)
-        u.heat = (u.heat||0) + T.heatGain;
+        u.heat = (u.heat||0) + T.heatGain*eager;
         if (u.heat>=1){
           u.heat = 0; u.tiredT = T.tiredT;
           addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0),
@@ -434,6 +453,7 @@ function updateUnits(side, foe, dt){
         if (ri>=0){ const c = unitCost(side, ri), k = fte('IA','floodRefund'); for (const r in c){ if (r==='m' && side.trans) continue; side[r] += c[r]*k; }
           if (side===game.p) addFloater(u.x, gY(u.x)-40, tr('f_backup'), '#5ad0ff', 11); }
       }
+      if (u.role!=='gremlin'){ moraleAdd(side, -ft('HUM','moraleLoss')); moraleAdd(foe, ft('HUM','moraleKill')); }   // M4
       healSalvage(side, u);                          // M3 : la machine récupère une part du coût
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
       if (foe===game.p){ game.kills++; addFloater(u.x, gY(u.x)-50, "+"+u.xpv+"✦", "#cdb4ff"); sfx('die'); }
@@ -701,9 +721,9 @@ function updateNodes(dt){
     const push = capPush(np, ne, 0.12*dt);
     if (push!==0){
       n.prog = clamp(n.prog + push, -1, 1);
-      if (n.prog>=1 && n.owner!=='p'){ n.owner='p'; game.p.xp += 40;
+      if (n.prog>=1 && n.owner!=='p'){ n.owner='p'; game.p.xp += 40; moraleAdd(game.p, ft('HUM','moraleNode'));
         announce(tr('ev_lake'), "#5ad0ff"); evExplain('lake'); sfx('node'); }
-      if (n.prog<=-1 && n.owner!=='e'){ n.owner='e'; game.e.xp += 40;
+      if (n.prog<=-1 && n.owner!=='e'){ n.owner='e'; game.e.xp += 40; moraleAdd(game.e, ft('HUM','moraleNode'));
         announce(tr('ev_lake_lost'), "#d88"); }
     }
     if (n.owner){
@@ -722,8 +742,8 @@ function updateZones(dt){
     const push = capPush(np, ne, 0.10*dt);
     if (push!==0){
       z.prog = clamp(z.prog+push, -1, 1);
-      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; announce(tr('ev_zone'), '#9dd88a'); evExplain('zone'); }
-      if (z.prog<=-1 && z.owner!=='e'){ z.owner='e'; }
+      if (z.prog>=1 && z.owner!=='p'){ z.owner='p'; moraleAdd(p, ft('HUM','moraleNode')); announce(tr('ev_zone'), '#9dd88a'); evExplain('zone'); }
+      if (z.prog<=-1 && z.owner!=='e'){ z.owner='e'; moraleAdd(e, ft('HUM','moraleNode')); }
     }
     if (z.owner==='p') p.xp += 0.5*terrK(p)*dt; else if (z.owner==='e') e.xp += 0.5*terrK(e)*dt;
   }
@@ -795,11 +815,12 @@ function update(dt){
       game.weather = newW;
       if (envOn() && oldW){          // fin d'événement : « acquis sociaux » (humains, +20 % de production 30 s) / « correctif » (machines : chaleur remise à 0, cadence +10 %)
         for (const sd of [p,e]){
-          if (oldW==='strike' && sd.facKey==='HUM'){ sd.afterT = game.t + fte('HUM','acqT'); addFloater(sd.x, gY(sd.x)-120, tr('f_acq'), '#9dc88a', 14); }
+          if (oldW==='strike' && sd.facKey==='HUM'){ moraleAdd(sd, 10); sd.afterT = game.t + fte('HUM','acqT'); addFloater(sd.x, gY(sd.x)-120, tr('f_acq'), '#9dc88a', 14); }
           if (oldW==='patch' && sd.facKey==='IA'){ sd.afterT = game.t + fte('IA','fixT'); addFloater(sd.x, gY(sd.x)-120, tr('f_fix'), '#5ad0ff', 14);
             for (const u of sd.units){ u.heat = 0; u.tiredT = 0; } }
         }
       }
+      if (newW==='strike') for (const sd of [p,e]) moraleAdd(sd, -ft('HUM','moraleStrike'));   // M4 : le couvre-feu casse le moral
       if (newW==='strike') announce(tr('ev_strike'), '#ff9d45');
       else if (newW==='patch') announce(tr('ev_patch'), '#5ad0ff');
     }
@@ -843,6 +864,7 @@ function update(dt){
   if (game.net==='host'){ let c; while((c=net.cmdQ.shift())) applyCmd(c); } // commandes de l'invité
   else if (!game.net && !game.tut) aiUpdate(dt);                             // IA en solo (escarmouche ; jamais en tuto)
   processQueue(p); processQueue(e);                                          // file d'attente de production
+  moraleTick(p, dt); moraleTick(e, dt);
   updateUnits(p,e,dt); updateUnits(e,p,dt);
   updateBuildings(p,e,dt); updateBuildings(e,p,dt);
   updateBaseGarrison(p,e,dt); updateBaseGarrison(e,p,dt);

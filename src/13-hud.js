@@ -312,6 +312,20 @@ function drawHUD(){
     ctx.fillStyle=DESK_CREAM; ctx.fillText(val, cx0+18, 13);
     ctx.font='9.5px '+UI_TYPE; ctx.fillStyle='#a9b888'; ctx.fillText(rate, cx0+18, 28);
   }
+  // M4 : jauge de moral (✊, Humanité) / refroidissement actif (❄, G·P·T) sous le bandeau, à gauche — style papier
+  if (asymOn('rhythm') && !game.camp){
+    ctx.textAlign='left'; ctx.font='9px '+UI_TYPE;
+    if (p.facKey==='HUM'){
+      const mo = p.morale===undefined? 50 : p.morale;
+      ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(9, 43, 82, 7);
+      ctx.fillStyle=pal.paper; ctx.fillRect(8, 42, 82, 7);
+      ctx.fillStyle = mo>=ft('HUM','moraleHi')? '#6aa84f' : mo<=ft('HUM','moraleLo')? '#c43a24' : '#c9a227';
+      ctx.fillRect(9, 43, 80*mo/100, 5);
+      ctx.fillStyle=pal.red; ctx.fillText('✊ '+Math.round(mo), 96, 46);
+    } else if (p.w>=ft('IA','coolMin')){
+      ctx.fillStyle='#86b6dc'; ctx.fillText('❄ '+tr('f_cooling'), 8, 46);
+    }
+  }
   // ère : étiquette peinte au centre ; santé du monde : réglette graduée dessous
   ctx.textAlign='center';
   { const cm = game.camp && game.camp.m, etxt = cm && cm.when? cT(cm.when).toUpperCase()+' · '+cT(cm.place).split(/[,，،]/)[0].toUpperCase()   // campagne : le moment (saison, champ traduit when) et le lieu de la mission, pas l'ère de la faction

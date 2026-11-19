@@ -451,7 +451,7 @@ function tryHero(side){
   if (!canPay(side, HERO_COST)){
     if (side===game.p) announce(fmt('a_hero_cost',{cost:costStr(side,HERO_COST)}), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
-  spawnHero(side);
+  spawnHero(side); moraleAdd(side, ft('HUM','moraleHero'));
   if (side===game.p){ game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
   announce(tr(side.facKey==='HUM'? 'a_hero_hum':'a_hero_ia'), side.fac.accent);
