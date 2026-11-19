@@ -237,22 +237,16 @@ const M3_PLATES = {
     const arb = mode === 'arb', n = clamp(t/1.2, 0, 1), fade = arb? clamp(1 - (t-3.6)/2.6, 0, 1) : 1;       // l'écran s'éteint lentement
     const gl = g.createRadialGradient(240,146,10,240,146,170); gl.addColorStop(0, 'rgba(11,111,168,'+(0.30*fade).toFixed(3)+')'); gl.addColorStop(1, 'rgba(11,111,168,0)');
     g.fillStyle = gl; g.fillRect(0,0,480,270);
-    inkLine(g, [20,210, 460,210], n, 3); inkHatch(g, 20, 210, 440, 30, 7, M3_INK0, 0.28);
-    const pg = [160,210, 166,106, 314,106, 320,210];                                                          // le bipeur
-    inkWash(g, pg, '#1c2326', 0.92); m3Loop(g, pg, n, 2.6);
-    g.fillStyle = fade > 0.02? 'rgb('+Math.round(20+150*fade)+','+Math.round(36+170*fade)+','+Math.round(34+130*fade)+')' : '#101a1a'; g.fillRect(180,122,120,52);   // l'écran
-    inkLine(g, [180,122, 300,122, 300,174, 180,174, 180,122], n, 1.6, '#0d1416');
-    g.fillStyle = '#3a4448'; g.fillRect(186,186,30,7); g.fillRect(224,186,30,7);
-    g.fillStyle = (fade > 0.05 && Math.sin(t*5) > 0)? M3_BLUE : 'rgba(11,111,168,0.25)'; g.beginPath(); g.arc(292, 190, 4, 0, 6.283); g.fill();
-    g.save(); g.beginPath(); g.rect(182,124,116,48); g.clip();
+    inkLine(g, [10,214, 470,214], n, 3); inkHatch(g, 10, 214, 460, 30, 7, M3_INK0, 0.28);
+    inkNotebook(g, 150, 214, 300, n);                                                                         // le carnet, à plat ; le bipeur de poche est posé dessus
+    const pg = inkPager(g, 252, 201, 150, { fill: fade > 0.02? 'rgb('+Math.round(20+150*fade)+','+Math.round(36+170*fade)+','+Math.round(34+130*fade)+')' : '#101a1a',
+      led: (fade > 0.05 && Math.sin(t*5) > 0)? M3_BLUE : null });
+    g.save(); g.beginPath(); g.rect(pg.x+1, pg.y+1, pg.w-2, pg.h-2); g.clip();
     const typed = (s, k) => s.slice(0, Math.max(0, Math.floor(k*14)));
-    if (arb){ if (t < 3.4) m3Plate(g, typed(cT(M3_UI.arb), t-0.4), 240, 154, 15, '#10241c'); }
-    else { const off = clamp((t-2.8)/0.7, 0, 1)*16;
-      m3Plate(g, typed(cT(M3_UI.kname), t-0.3), 240, 150-off, 12, '#10241c'); m3Plate(g, typed(cT(M3_UI.codes), t-3.3), 240, 174-off, 11, '#10241c'); }
+    if (arb){ if (t < 3.4) m3Plate(g, typed(cT(M3_UI.arb), t-0.4), pg.cx, pg.cy+5, 14, '#10241c'); }
+    else { const off = clamp((t-2.8)/0.7, 0, 1)*pg.h*0.6;
+      m3Plate(g, typed(cT(M3_UI.kname), t-0.3), pg.cx, pg.y+pg.h*0.42-off, 11, '#10241c'); m3Plate(g, typed(cT(M3_UI.codes), t-3.3), pg.cx, pg.y+pg.h*0.8-off, 10, '#10241c'); }
     g.restore();
-    const nb = [40,208, 54,186, 134,186, 146,208];                                                            // le carnet
-    inkWash(g, nb, '#e9dfc6', 0.8); m3Loop(g, nb, n, 2); inkLine(g, [92,187, 92,207], n, 1.2);
-    inkLine(g, [60,196, 86,196], n, 1); inkLine(g, [98,196, 126,196], n, 1);
     plateEnd(g, w, h); },
   // P4 · Les vannes : coupe du barrage ; les trois vannes de fond passent au rouge l'une après l'autre (codes acceptés)
   sluices(g, w, h, t){ plateBase(g, w, h, 'rgba(40,80,130,0.10)');
@@ -263,8 +257,7 @@ const M3_PLATES = {
     for (let i=0;i<3;i++){ const x = 176 + i*50, on = t > 1.2 + i*0.9;                                        // les trois vannes de fond
       g.fillStyle = on? M3_RED : 'rgba(31,27,23,0.75)'; g.fillRect(x, 184, 28, 38);
       inkLine(g, [x,184, x+28,184, x+28,222, x,222, x,184], n, 1.6); }
-    inkLine(g, [340,230, 480,230], n, 2.2);                                                                   // le lit sec, craquelé
-    inkLine(g, [360,240, 376,252, 366,262], n, 1.2); inkLine(g, [410,238, 424,250, 440,246, 448,258], n, 1.2);
+    inkLine(g, [340,230, 480,230], n, 2.2); inkHatch(g, 340, 230, 140, 40, 6, M3_INK0, 0.22);               // le lit asséché : une hachure
     inkFolk(g, 240, 60, 32); g.fillStyle = '#f4f1e8'; g.beginPath(); g.arc(240, 31, 6, Math.PI, 6.283); g.closePath(); g.fill();       // Inès, casque blanc
     g.strokeStyle = M3_INK0; g.lineWidth = 1.3; g.beginPath(); g.arc(240, 31, 6, Math.PI, 6.283); g.closePath(); g.stroke();
     m3Plate(g, cT(M3_UI.vanne), 240, 254, 15);
@@ -296,9 +289,13 @@ const M3_PLATES = {
     inkLine(g, [0,190, 480,190], n, 2.4); inkHatch(g, 0, 190, 480, 80, 8, M3_INK0, 0.2);
     inkLine(g, [92,190, 118,98], n, 2.6); inkLine(g, [146,190, 120,98], n, 2.6); inkLine(g, [101,158, 137,158], n, 1.6);       // le chevalement
     g.strokeStyle = M3_INK0; g.lineWidth = 2.4; g.beginPath(); g.arc(119, 92, 10, 0, 6.283); g.stroke();
-    const tw = [330,190, 330,62, 398,62, 398,190];                                                            // la future Mnémosyne : lisse, sans fenêtre
-    inkWash(g, tw, '#4a505a', 0.55); m3Loop(g, tw, n, 2.4);
-    g.fillStyle = (Math.sin(t*3) > 0)? M3_RED : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(364, 56, 3.4, 0, 6.283); g.fill();
+    // le relais : un mât d'antenne (treillis) portant une parabole, un feu rouge au sommet
+    inkLine(g, [350,190, 362,58], n, 2.6); inkLine(g, [378,190, 366,58], n, 2.6);
+    for (let y=182, i=0; y>66; y-=22, i++){ const k = (190-y)/132, xl = 350+12*k, xr = 378-12*k; inkLine(g, i%2? [xl,y, xr,y-22] : [xr,y, xl,y-22], n, 1.2); inkLine(g, [xl,y, xr,y], n, 1.2); }
+    g.save(); g.translate(366, 104); g.rotate(-0.5);                                                          // la parabole
+    g.fillStyle = 'rgba(74,80,90,0.7)'; g.beginPath(); g.ellipse(0, 0, 11, 25, 0, -Math.PI/2, Math.PI/2, true); g.closePath(); g.fill();
+    g.strokeStyle = M3_INK0; g.lineWidth = 2.2; g.stroke(); inkLine(g, [0,0, -22,0], n, 1.4); g.fillStyle = M3_INK0; g.fillRect(-25, -2.5, 5, 5); g.restore();
+    g.fillStyle = (Math.sin(t*3) > 0)? M3_RED : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(364, 54, 3.4, 0, 6.283); g.fill();
     for (let i=0;i<20;i++){ const x = (i*61.3 + t*26 + 480) % 480, y = (i*47.1 + t*40) % 270; g.fillStyle = 'rgba(80,86,98,0.55)'; g.fillRect(x-0.6, y-0.6, 4.2, 4.2); g.fillStyle = '#fff'; g.fillRect(x, y, 3, 3); }
     plateEnd(g, w, h); },
   // P8 · La vanne fermée : la vanne, son volant, la chaîne et le cadenas Omnicorp, le lit craquelé, une feuille sèche
@@ -313,10 +310,7 @@ const M3_PLATES = {
     inkWash(g, [222,158, 258,158, 258,190, 222,190], '#2a2622', 0.9); m3Loop(g, [222,158, 258,158, 258,190, 222,190], n, 2);   // le cadenas
     g.strokeStyle = M3_INK0; g.lineWidth = 3; g.beginPath(); g.arc(240, 158, 9, Math.PI, 6.283); g.stroke();
     m3Plate(g, 'Ω', 240, 182, 20, M3_RED);
-    inkLine(g, [0,220, 140,220], n, 2.2); inkLine(g, [340,220, 480,220], n, 2.2);                                // le lit craquelé
-    inkLine(g, [30,232, 60,244, 48,258, 78,266], n, 1.3); inkLine(g, [150,236, 180,248, 200,244, 220,258], n, 1.3); inkLine(g, [380,234, 410,248, 396,262], n, 1.3); inkLine(g, [430,236, 452,252, 470,246], n, 1.3);
-    const ph = clamp((t-0.8)/5.5, 0, 1), fx = 420 - ph*90 + Math.sin(ph*9)*14, fy = 70 + ph*150;                // la feuille sèche tombe
-    g.save(); g.translate(fx, fy); g.rotate(ph*7); g.fillStyle = '#8a5a22'; g.beginPath(); g.ellipse(0, 0, 7, 3.6, 0, 0, 6.283); g.fill(); g.restore();
+    inkLine(g, [0,220, 480,220], n, 2.2); inkHatch(g, 0, 220, 480, 50, 7, M3_INK0, 0.22);                       // le lit asséché : une hachure
     plateEnd(g, w, h); },
 };
 M3_PLATES.kassandre = (g, w, h, t) => M3_PLATES.pager(g, w, h, t, 'k');
@@ -428,7 +422,9 @@ function m3DrawLits(c, t, vw){
       const h = Math.sin(x*12.9898)*43758.5453, r = h-Math.floor(h), y = gY(x) + 4 + r*8;
       ctx.fillStyle = r<0.5? 'rgba(130,124,112,0.55)' : 'rgba(168,160,146,0.55)'; ctx.beginPath(); ctx.ellipse(px+r*18, y, 3+r*3, 1.6+r, 0, 0, 6.283); ctx.fill(); }
     for (const e of [a, b]){ const x = e-camX; if (x<-20 || x>vw+20) continue; const y = gY(e);                         // échelle de crue
-      ctx.fillStyle = '#e9dfc6'; ctx.fillRect(x-2.4, y-36, 4.8, 36); ctx.fillStyle = M3_RED; for (let k=0;k<4;k++) ctx.fillRect(x-2.4, y-34+k*8, 4.8, 3.4);
+      ctx.fillStyle = M3_RED; ctx.fillRect(x-4.5, y-44, 2, 44); ctx.fillRect(x+2.5, y-44, 2, 44);                                // deux montants
+      for (let k=0;k<7;k++) ctx.fillRect(x-4.5, y-41+k*6, 9, 1.6);                                                              // les barreaux
+      ctx.fillStyle = 'rgba(31,27,23,0.55)'; ctx.fillRect(x-5.5, y-1, 4, 1.6); ctx.fillRect(x+1.5, y-1, 4, 1.6);               // les pieds
       const glow = (c.ladAt && performance.now()-c.ladAt < 7000 && Math.sin(t*9)>-0.3) || (siren && Math.sin(t*12)>0);
       if (glow){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,60,40,0.4)'; ctx.beginPath(); ctx.arc(x, y-20, 22, 0, 6.283); ctx.fill(); ctx.restore(); } }
     if (siren){ const x0 = Math.max(a, camX-20), x1 = Math.min(b, camX+vw+20); if (x1 > x0){                              // les lits clignotent en blanc, la flèche donne le sens de la vague
