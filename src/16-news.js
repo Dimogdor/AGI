@@ -196,7 +196,7 @@ function newsTick(dt){
 }
 // dépêche de démonstration (tutoriel) : affichée immédiatement
 function newsDemo(o){ NEWSF.game = game; NEWSF.cur = { txt:newsText(o), ev:false, t:0, dur:1e9, demo:true }; }
-function newsWrap(text, maxW){ const words = text.split(' '), lines = []; let cur = '';
+function newsWrap(text, maxW){ const words = frTypo(String(text)).split(' '), lines = []; let cur = '';
   for (const w of words){ const t2 = cur? cur+' '+w : w;
     if (ctx.measureText(t2).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t2; }
   if (cur) lines.push(cur);

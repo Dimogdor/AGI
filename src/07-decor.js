@@ -155,7 +155,7 @@ function netTxtKey(txt){
     return n? {q:FMT_LAST.key, v} : {q:FMT_LAST.key}; }
   const L = SETTINGS.lang; let rc = _revI18N[L];
   if (!rc){ rc = _revI18N[L] = {map:new Map(), list:[]}; const tbl = I18N[L]||I18N.fr;
-    for (const k in tbl){ const s = tbl[k]; if (typeof s==='string' && s.length>=3 && !rc.map.has(s)){ rc.map.set(s,k); if (s.length>=8) rc.list.push([s,k]); } } }
+    for (const k in tbl){ const s = frTypo(tbl[k], L); if (typeof s==='string' && s.length>=3 && !rc.map.has(s)){ rc.map.set(s,k); if (s.length>=8) rc.list.push([s,k]); } } }
   const k0 = rc.map.get(txt); if (k0) return {q:k0};
   for (const [s,k] of rc.list){ const i = txt.indexOf(s);                       // « 🏰⚔ »+texte : décor sans lettres autour d'une clé
     if (i>=0){ const rest = txt.slice(0,i)+txt.slice(i+s.length); if (!/\p{L}/u.test(rest)) return {q:k, pr:txt.slice(0,i), sx:txt.slice(i+s.length)}; } }
