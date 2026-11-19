@@ -242,7 +242,7 @@ const M1_TX = {
     pt:"É noite. Só se veem as máquinas deles na luz; os nossos atiradores alcançam menos no escuro (−{n}%). Retomem os transformadores para reacender a rua. Era I, uma só vida.",
     ru:"Ночь. Их машины видны только на свету; наши стрелки в темноте бьют ближе (−{n}%). Отбейте трансформаторы, чтобы вернуть свет на улицу. Эпоха I, одна жизнь.",
     zh:"现在是夜晚。只有在灯光下才看得见他们的机器；我们的射手在黑暗中射程缩短（−{n}%）。夺回变压器，让街道重新亮起来。第一时代，只有一条命。",
-    ar:"الوقت ليل. لا تُرى آلاتهم إلا في الضوء، ويقلّ مدى رماتنا في العتمة (−{n}%). استعيدوا المحوّلات لتضيء الشارع من جديد. العصر الأول، وحياة واحدة."},
+    ar:"الوقت ليل. لا تُرى آلاتهم إلا في الضوء، ويقلّ مدى رماتنا في العتمة (\u2066−{n}%\u2069). استعيدوا المحوّلات لتضيء الشارع من جديد. العصر الأول، وحياة واحدة."},
   tip1:{fr:"Ferme et marché d'abord : sans vivres ni argent, pas d'armée. Comme en escarmouche.",
     en:"Farm and market first: no food or money, no army. Just like in skirmish.",
     es:"Primero granja y mercado: sin comida ni dinero no hay ejército. Como en escaramuza.",

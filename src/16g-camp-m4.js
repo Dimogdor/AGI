@@ -423,7 +423,7 @@ const M4_TX = {
          pt:"Rochefroide, a cidade mineira do poço Sainte-Barbe — em pleno inverno cinzento, −26 °C.",
          ru:"Rochefroide, шахтёрский город при шахте Sainte-Barbe — разгар серой зимы, −26 °C.",
          zh:"Rochefroide，Sainte-Barbe矿井的矿城——灰色寒冬的最深处，零下26摄氏度。",
-         ar:"Rochefroide، مدينة منجم Sainte-Barbe — في قلب الشتاء الرمادي، −26 درجة مئوية."},
+         ar:"Rochefroide، مدينة منجم Sainte-Barbe — في قلب الشتاء الرمادي، \u2066−26\u2069 درجة مئوية."},
   // le nombre suit le niveau : {n} = « sept minutes » / « huit minutes » / « neuf minutes »
   goal:{fr:"Tenir le relais {n} : Kassandre l'utilise pour effacer Mnémosyne de l'intérieur.",
         en:"Hold the relay for {n}: Kassandre is using it to erase Mnemosyne from the inside.",
