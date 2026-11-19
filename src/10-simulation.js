@@ -784,7 +784,7 @@ function update(dt){
   // hiver nucléaire : malus dégressif (÷2 → ×1 en 6 min ; M10 : la machine ne perd que son ⚡) · PLUIE FERTILE : revenu de base
   // 🌾/⚡ +30 % pour tous (M10 : humains +40 %, machines −20 %)
   p.prodMul = 1 + 0.9*lp;
-  e.prodMul = (1 + 0.9*le) * (d.cheat||1) * (asymOn('econ') && !game.net? (AI_K[game.diff]||1) : 1);     // triche IA selon la difficulté
+  e.prodMul = (1 + 0.9*le) * (d.cheat||1) * (asymOn('econ') && !game.net? (AI_K[game.diff]||1)*(AI_KF[e.facKey]||1) : 1);     // triche IA selon la difficulté
   p.f += 4*p.prodMul*winterK(p,'f')*rainBaseK(p.facKey)*dt; p.m += 2.5*p.prodMul*winterK(p,'m')*dt; p.w += 0.6*p.prodMul*dt;
   e.f += 4*d.inc*e.prodMul*winterK(e,'f')*rainBaseK(e.facKey)*dt; e.m += 2.5*d.inc*e.prodMul*winterK(e,'m')*dt; e.w += 0.6*d.inc*e.prodMul*dt;
   // XP passive de base + bonus par niveau de fortification de la base principale

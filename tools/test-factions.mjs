@@ -107,7 +107,7 @@ async function mkPage(){
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'low', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(300);
   await page.evaluate(BOTS); await page.evaluate(HARNESS);
-  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); let path = p.split('.'); let o = FAC_TRAITS; if (path[0]==='AI_K'){ o = AI_K; path = path.slice(1); } for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
+  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); let path = p.split('.'); let o = FAC_TRAITS; if (path[0]==='AI_K'){ o = AI_K; path = path.slice(1); } else if (path[0]==='AI_KF'){ o = AI_KF; path = path.slice(1); } for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
   return page;
 }
 const pages = await Promise.all(Array.from({length:WORKERS}, mkPage));
@@ -128,7 +128,7 @@ let fails = 0;
 
 /* ---------- A : joueur scripté contre l'IA ---------- */
 if (ONLY.has('A')){
-  const diffs = FULL? [0,1,2,3] : [2];
+  const diffs = FULL? arg('diffs','0,1,2,3').split(',').map(Number) : [2];   // --diffs=2 : une seule difficulté
   const jobs = []; for (const fac of ['HUM','IA']) for (const diff of diffs) for (let s=0;s<N;s++) jobs.push({mode:'vs', left:fac, right:undefined, diff, seed:SEED0+1000+s*13+diff});
   const res = await runAll(jobs, '__runGame', 'A');
   console.log('\nA — joueur scripté contre l\'IA (victoires du joueur ; une partie non terminée à 45 min est jugée sur la base restante)');
