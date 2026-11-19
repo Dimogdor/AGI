@@ -83,6 +83,7 @@ function moraleTick(side, dt){
   if (side.facKey!=='HUM' || !moraleOn()){ return; }
   let m = side.morale===undefined? 50 : side.morale;
   m += clamp(50-m, -dt, dt);                                          // retour vers 50 à 1 point/s
+  if (side.trans && asymOn('trans')) m = Math.max(m, ft('HUM','transMorale'));   // M9 : communisme à visage humain — le moral ne tombe plus sous 70
   if (side.hp < side.maxhp*0.5) m = Math.max(m, 50);                   // « on n'a plus rien à perdre » : jamais sous 50 base en danger
   side.morale = m;
 }
@@ -360,7 +361,8 @@ function updateUnits(side, foe, dt){
         // (v1.12 : surchauffe GPT adoucie — 0,08/6 s/−45 % donnaient ~18 % de DPS soutenu en moins que
         //  l'Humanité ; le même joueur gagnait 88 % en Humanité contre 25 % en GPT)
         u.heat = (u.heat||0) + T.heatGain*eager;
-        if (u.heat>=1){
+        if (u.heat>=1 && u.fac==='IA' && side.trans && asymOn('trans')) u.heat = 0.99;   // M9 : AGI complète — plus aucune surchauffe (le surrégime reste actif)
+        else if (u.heat>=1){
           u.heat = 0; u.tiredT = T.tiredT;
           addFloater(u.x, gY(u.x)-60-(u.fly?u.flyH:0),
             tr(isIA? 'f_overheat':'f_tired'), '#d8a06a', 11);

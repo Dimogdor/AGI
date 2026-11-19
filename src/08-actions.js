@@ -23,7 +23,7 @@ function tryBuy(side, ri){
   const role = ROLES[ri];
   // quota strict de SOUTIEN (médic humain ET ruche GPT) : 1, +1 par niveau d'amélioration (max 3)
   if (role.key==='support'){
-    const maxS = 1 + Math.min(2, side.upg.support||0);
+    const maxS = 1 + Math.min(2, side.upg.support||0) + ((side.trans && side.facKey==='HUM' && asymOn('trans'))? ft('HUM','transSup') : 0);
     const nS = side.units.filter(u=>u.role==='support').length
              + side.queue.filter(q=>ROLES[q].key==='support').length;
     if (nS>=maxS){
@@ -154,6 +154,7 @@ function checkTrans(side){
   for (const u of side.units) u.trans = true; // les troupes existantes changent d'allure
   announce(side.fac.sym+" "+lTransName(side.facKey)+" "+side.fac.sym, side.fac.accent, {r:{L:'tn', f:side.facKey}, pr:side.fac.sym+' ', sx:' '+side.fac.sym});
   addFloater(side.x, gY(side.x)-150, lTransTxt(side.facKey), side.fac.accent, 15, {r:{L:'ttx', f:side.facKey}});
+  if (asymOn('trans')) addFloater(side.x, gY(side.x)-176, tr(side.facKey==='HUM'? 'f_trans2_hum' : 'f_trans2_ia'), side.fac.accent, 13);
   game.flash = 0.8; game.shake = 12;
   if (side===game.p) sfx('trans');
 }

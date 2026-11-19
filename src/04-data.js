@@ -142,8 +142,9 @@ const lvlF = b => Math.pow(1.5, (b.lvl||1)-1); // facteur de niveau bâtiment
 //   rhythm : M4 moral (HUM : jauge 0-100, dégâts ±10 %, élan/débandade) / refroidissement par l'eau et surrégime (IA)
 //   power : M7 pouvoir ✸ (HUM « Soulèvement » : 0,7·D partout + soin 20 % ; IA « Frappe chirurgicale » : 2,2·D sur les 5 unités les plus précieuses)
 //   herofx : M6 héros (Che : ralliement à l'invocation, martyr à sa mort ; Singularité : calcul distribué, assimilation, fragmentation)
+//   trans : M9 transcendance (HUM : un soutien de plus, moral ≥ 70 ; IA : plus aucune surchauffe)
 //   unit : M2 coude à coude (HUM, +dégâts par voisin) / verrouillage de cible (IA : tireurs sur le plus entamé, exécution, siège large)
-const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true, rhythm:true, power:true, herofx:true };
+const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true, rhythm:true, power:true, herofx:true, trans:true };
 // Les tests coupent une mécanique seule avec game.asym = {econ:false}. En CAMPAGNE, aucune mécanique par défaut : une mission
 // s'inscrit à la carte avec `asym:{env:true}` dans sa définition. Le tutoriel n'en a aucune.
 function asymOn(k){
@@ -168,6 +169,7 @@ const FAC_TRAITS = {
     moraleKill:2, moraleLoss:1.5, moraleNode:5, moraleHero:15, moraleStrike:10, moraleDmg:0.12, moraleHi:80, moraleLo:20, moraleHiK:0.7, moraleLoSpd:0.9,   // M4 : jauge de moral 0-100 (départ 50, retour à 50 à 1/s)
     upDmg:0.7, upHeal:0.2,                           // M7 : Soulèvement — 0,7·D sur toutes les unités ennemies, soin de 20 % des PV max et fin de fatigue pour tous les alliés
     martyrK:1.2, martyrT:20,                         // M6 : à la mort du Che, +20 % de dégâts pendant 20 s et moral à 100 ; à l'invocation : fatigue effacée, moral à 100
+    transSup:1, transMorale:70,                      // M9 : transcendance — quota de médics +1, plancher de moral 70
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
