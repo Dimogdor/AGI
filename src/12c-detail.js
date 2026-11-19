@@ -215,9 +215,9 @@ function humFarmF(era, lvl, h, cx, G){
     bLn([cx-24,G-4, cx-24,G-12, cx-13.5,G-20, cx-3,G-12, cx-3,G-4], 0.9, '#4a5258'); bLn([cx-13.5,G-20, cx-13.5,G-4], 0.6, '#4a5258');
     for (let k=0;k<3;k++) bDisc(cx-19+k*5.6,G-6.4,1.6,'#5aa84a');
   } else if (era===3){                                           // tour de culture verticale éclairée
-    plateT([cx-21,G-h-14, cx-6,G-h-14, cx-6,G, cx-21,G], '#3a3a4a');
-    for (let i=0;i<4;i++){ const yy=G-h-11+i*((h+11)/4); bBox(cx-19,yy,cx-8,yy+3.4,'#2e6a2e'); bloomT('#d27aff',4,()=>{ TC.fillStyle='rgba(210,122,255,0.9)'; TC.fillRect(cx-19,yy-1.2,11,0.9); }); }
-    bBox(cx-23,G-h-17,cx-4,G-h-14,'#5a5a6a');
+    plateT([cx-21,G-h-14, cx-6,G-h-14, cx-6,G, cx-21,G], '#3e4434');
+    for (let i=0;i<4;i++){ const yy=G-h-11+i*((h+11)/4); bBox(cx-19,yy,cx-8,yy+3.4,'#2e6a2e'); bloomT('#ffb35a',4,()=>{ TC.fillStyle='rgba(255,179,90,0.9)'; TC.fillRect(cx-19,yy-1.2,11,0.9); }); }
+    bBox(cx-23,G-h-17,cx-4,G-h-14,'#5a6048');
   } else {                                                       // éolienne + serre à toit de plantes
     bLn([cx-15,G-5, cx-15,G-38], 2.2, '#e8e4d8'); bDisc(cx-15,G-38,2.4,'#c8c4b8');
     plateT([cx-27,G-5, cx-26,G-12, cx-18,G-17, cx-8,G-12, cx-7,G-5], 'rgba(200,236,214,0.7)', false); bLn([cx-27,G-5, cx-26,G-12, cx-18,G-17, cx-8,G-12, cx-7,G-5], 0.8, '#4a6a3a');

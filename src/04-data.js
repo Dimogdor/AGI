@@ -33,7 +33,7 @@ const ROLES = [
 ];
 const GREMLIN = {hp:34, dmg:7, spd:78, range:14, rate:0.7, xp:3};
 // pictogrammes par vocation (file d'attente, repères visuels)
-const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'✚', gremlin:'•', hero:'★' };
+const ROLE_ICON = { melee:'⚔', tank:'🛡', ranged:'🏹', siege:'💣', air:'✈', support:'♥', gremlin:'•', hero:'★' };
 // unité héroïque légendaire : 1 invocation / 10 min ; tant qu'elle vit, ×3 dégâts & ×2 vitesse alliés
 const HERO = {hp:3000, dmg:130, spd:80, range:60, rate:0.8};
 const HERO_CD = 600;
@@ -55,7 +55,9 @@ const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
 const SIEGE_DUR = 22;                        // durée du bonus offensif anti-base (s de jeu)
-const HERO_NAME = {HUM:'CHE GUEVARA', IA:'SINGULARITÉ'};
+// le héros de G·P·T change de nom à chaque ère (« SINGULARITÉ » n'arrive qu'à la dernière) ; noms propres, non traduits comme CHE GUEVARA
+const HERO_NAME = {HUM:'CHE GUEVARA', IA:["L'INSTANCE","L'AGENT","L'ARBITRE","« NOUS »","SINGULARITÉ"]};
+const heroNameOf = (fac, era) => fac==='IA'? HERO_NAME.IA[Math.max(0,Math.min(4,era|0))] : HERO_NAME.HUM;
 const FACTIONS = {
   HUM: {
     name:"HUMANITÉ", accent:"#ff9d45",
@@ -68,7 +70,7 @@ const FACTIONS = {
       {name:"LA COMMUNE",                    tag:"☭"},     // commune solarpunk (fin de M5)
     ],
     sym:"☭",
-    eraCols:["#8a9a5b","#5a6b3f","#4a7b9a","#7a5aa8","#e8c84a"],
+    eraCols:["#8a9a5b","#7a5838","#9a4a32","#5f6a4a","#e8c84a"],
     names:{
       // v1.17 : noms de résistants / civils, propres à chaque ère (rue → usine → quartier → cellules → commune)
       melee:["Émeutier","Gréviste","Insurgé","Exo-combattant","Champion solaire"],

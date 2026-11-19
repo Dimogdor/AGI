@@ -1626,6 +1626,12 @@ function tubeT(x0,y0,x1,y1,r,col){
   rrectT(0,-r,Math.hypot(x1-x0,y1-y0),2*r,Math.min(r,1.6)); TC.fill(); TC.restore();
 }
 function crossT(x,y,s,col){ TC.fillStyle=col; TC.fillRect(x-s/2,y-s/6,s,s/3); TC.fillRect(x-s/6,y-s/2,s/3,s); }
+// emblème de soin : croix BLANCHE sur fond VERT (humains) — jamais la croix rouge, emblème protégé
+function medT(x,y,s){ s=Math.max(s,4); TC.fillStyle='#2f9a4a'; rrectT(x-s*0.62,y-s*0.62,s*1.24,s*1.24,s*0.2); TC.fill(); crossT(x,y,s*0.92,'#ffffff'); }
+// emblème de soin des machines : clé et engrenage bleus, aucune croix
+function techT(x,y,s){ tubeT(x-s*0.5,y+s*0.5,x+s*0.5,y-s*0.5,Math.max(1,s*0.16),'#9fd0ff');
+  TC.save(); TC.translate(x,y); TC.fillStyle='#3a9aff'; for (let i=0;i<6;i++){ TC.save(); TC.rotate(i*Math.PI/3); TC.fillRect(-s*0.11,-s*0.52,s*0.22,s*0.24); TC.restore(); }
+  TC.beginPath(); TC.arc(0,0,s*0.38,0,6.283); TC.fill(); TC.fillStyle='#10305a'; TC.beginPath(); TC.arc(0,0,s*0.15,0,6.283); TC.fill(); TC.restore(); }
 // point lumineux : seul élément néon des personnages (petit, net, cœur blanc)
 function glowDot(x,y,r,col,b){
   bloomT(col,b||6,()=>{ TC.fillStyle=col; TC.beginPath(); TC.arc(x,y,r,0,6.283); TC.fill(); });
@@ -1785,7 +1791,7 @@ function drawHumSprite(fac, role, era, trans, hero){
     const bx=cx-sw-7;
     if (era>=1){ TC.strokeStyle='#2a2a2e'; TC.lineWidth=1.2; strokeP([bx+2,F-45, bx-1,F-60]); TC.stroke(); glowDot(bx-1,F-60,1.2,'#ff5a4a',4); }
     TC.fillStyle=lgrad(bx,F-46,bx+9,F-26,[[0,era===4?'#fff6dc':'#f2f4f0'],[1,era===4?'#c8a860':'#a8aca8']]); rrectT(bx,F-46,9,20,3); TC.fill();
-    crossT(bx+4.5,F-37,6,RED);
+    medT(bx+4.5,F-37,6);
   } else if (role==='siege'){
     const bx=cx-sw-6;
     for (let i=0;i<2;i++){ tubeT(bx+1.5+i*3.4,F-44,bx+1.5+i*3.4,F-53,1.4,'#6a7048'); TC.fillStyle='#c84a2a';
@@ -1816,19 +1822,19 @@ function drawHumSprite(fac, role, era, trans, hero){
     TC.fillStyle=lgrad(cx-4,F-48,cx+5,F-43,[[0,shade(acc,1.15)],[1,shade(acc,0.7)]]);
     polyP([cx-4,F-48, cx+5,F-47.5, cx+5.5,F-44, cx-4,F-44]); TC.fill();
     polyP([cx-4,F-47, cx-10,F-41, cx-8,F-39, cx-3,F-44]); TC.fill();
-  } else if (era===1){
+  } else if (era===1){                                                                              // veste de travail à bretelles
     TC.fillStyle=shade(uni,0.8); TC.fillRect(cx-5,F-40,4.5,4.5); TC.fillRect(cx+1,F-40,4.5,4.5);   // poches
-    TC.lineCap='butt'; TC.strokeStyle='#4a3522'; TC.lineWidth=2.6; strokeP([cx-sw+2,F-44, cx+sw-2,F-26]); TC.stroke(); // cartouchière
-    TC.fillStyle='#d8b050'; for(let i=1;i<5;i++){ TC.fillRect(cx-sw+2+i*(2*sw-4)/5-0.8, F-44+i*18/5-1.6, 1.6, 2.2); }
-  } else if (era===2){
-    plateT([cx-sw+2,F-44, cx+sw-1,F-44, cx+sw-1,F-28, cx-sw+2,F-28], mix(uni,'#2e3238',0.5));   // gilet porte-plaques
-    TC.strokeStyle='rgba(0,0,0,0.3)'; for(let i=0;i<3;i++){ strokeP([cx-sw+3,F-40+i*3.4, cx+sw-2,F-40+i*3.4]); TC.stroke(); }
-    TC.fillStyle=mix(uni,'#2e3238',0.65); rrectT(cx-5,F-29,4.5,4,1); TC.fill(); rrectT(cx+1,F-29,4.5,4,1); TC.fill();
-    TC.fillStyle=acc; TC.fillRect(cx+3,F-42.5,3,2);                                              // écusson
-  } else if (era===3){
-    plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw-1,F-34, cx,F-31, cx-sw+1,F-34], shade(uni,1.12));     // plastron
-    strokeP([cx-4,F-29, cx+5,F-29]); TC.stroke(); strokeP([cx-4,F-26.5, cx+5,F-26.5]); TC.stroke();
-    bloomT(acc,5,()=>{ TC.fillStyle=acc; rrectT(cx-2,F-41,6,1.6,0.8); TC.fill(); });
+    TC.lineCap='butt'; TC.strokeStyle='#3a2a1e'; TC.lineWidth=1.9; strokeP([cx-3.6,F-45, cx-3,F-27]); TC.stroke(); strokeP([cx+4,F-45, cx+4.6,F-27]); TC.stroke();   // bretelles
+    TC.fillStyle='#d8b050'; for (let i=0;i<3;i++){ TC.beginPath(); TC.arc(cx+0.4,F-41+i*4.6,0.85,0,6.283); TC.fill(); }
+  } else if (era===2){                                                                              // veste de chantier rapiécée
+    plateT([cx-5.5,F-46, cx+1,F-44.5, cx-1,F-40, cx-6.5,F-43], shade(uni,1.25));                    // col
+    TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.9; strokeP([cx-1,F-40, cx-1.5,F-25]); TC.stroke();   // fermeture
+    TC.fillStyle=shade(uni,0.78); TC.fillRect(cx-6,F-37,4.6,4.4); TC.fillRect(cx+1.6,F-37,4.6,4.4);  // poches
+    TC.fillStyle='#e8d8b0'; TC.fillRect(cx+2.6,F-43,4.6,4.4); TC.fillStyle=acc; TC.fillRect(cx+3.6,F-42,2.6,2.4);   // écusson cousu
+  } else if (era===3){                                                                              // gilet de mineur à bandes réfléchissantes
+    plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw-1,F-28, cx-sw+1,F-28], shade(uni,1.1));
+    TC.fillStyle='#ff9d45'; TC.fillRect(cx-sw+1,F-40,2*sw-2,2.4); TC.fillRect(cx-sw+1,F-33,2*sw-2,2.4);
+    TC.fillStyle='rgba(255,255,255,0.5)'; TC.fillRect(cx-sw+1,F-39.2,2*sw-2,0.7); TC.fillRect(cx-sw+1,F-32.2,2*sw-2,0.7);
   } else {
     plateT([cx-sw+1,F-45, cx+sw-1,F-45, cx+sw-1,F-33, cx,F-30, cx-sw+1,F-33], '#f0d888');            // plastron d'or
     glowDot(cx+1,F-38.5,2.2,'#ffe9a0',6);
@@ -1845,12 +1851,10 @@ function drawHumSprite(fac, role, era, trans, hero){
   TC.fillStyle=shade(skin,0.75); TC.fillRect(cx-2,F-48,5,4);
   TC.fillStyle=rgrad(hx-3,hy-3,hr*1.5,[[0,shade(skin,1.12)],[0.65,skin],[1,shade(skin,0.68)]]);
   TC.beginPath(); TC.arc(hx,hy,hr,0,6.283); TC.fill(); TC.beginPath(); TC.arc(hx+7.3,hy+1.2,1.7,0,6.283); TC.fill();
-  const closed = era>=3 && !hero;                                                                  // casque intégral
-  if (!closed){
-    TC.fillStyle=shade(skin,0.8); TC.beginPath(); TC.ellipse(hx-2,hy+0.5,1.6,2.3,0,0,6.283); TC.fill();
-    TC.fillStyle='#1e1612'; rrectT(hx+3.4,hy-2,1.9,2.6,0.8); TC.fill();
-    TC.fillStyle=shade(skin,0.5); TC.fillRect(hx+2.5,hy-3.9,3.8,1);
-  }
+  // le visage reste TOUJOURS visible : ni casque intégral, ni visière fermée
+  TC.fillStyle=shade(skin,0.8); TC.beginPath(); TC.ellipse(hx-2,hy+0.5,1.6,2.3,0,0,6.283); TC.fill();
+  TC.fillStyle='#1e1612'; rrectT(hx+3.4,hy-2,1.9,2.6,0.8); TC.fill();
+  TC.fillStyle=shade(skin,0.5); TC.fillRect(hx+2.5,hy-3.9,3.8,1);
   const dome = (r, dy, col) => { TC.fillStyle=lgrad(hx-r,hy+dy-r,hx+r,hy+dy,[[0,shade(col,1.35)],[1,shade(col,0.62)]]);
     TC.beginPath(); TC.arc(hx,hy+dy,r,Math.PI,0); TC.closePath(); TC.fill(); };
   if (hero){                                                                                       // le Che
@@ -1864,30 +1868,55 @@ function drawHumSprite(fac, role, era, trans, hero){
     else if (role==='ranged'){ dome(hr+0.6,-1.5,'#3a3e44'); TC.fillStyle='#2a2e34'; rrectT(hx+3,hy-3.6,9,2,1); TC.fill(); }  // casquette
     else if (role==='siege'){ dome(hr+0.8,-1,'#5a4e46'); TC.fillStyle='#4a4038'; rrectT(hx-8.4,hy-3.2,17,3,1.4); TC.fill();  // bonnet
       TC.beginPath(); TC.arc(hx-1,hy-9.6,1.8,0,6.283); TC.fill(); }
-    else if (role==='support'){ dome(hr+0.5,-1.5,'#e8e8e4'); crossT(hx+1,hy-5.5,4,RED); }
+    else if (role==='support'){ dome(hr+0.5,-1.5,'#e8e8e4'); medT(hx+1,hy-5.5,4); }
     else { dome(hr+0.2,-1.2,'#3a2a1e'); TC.fillStyle=acc; rrectT(hx-7.6,hy-5,15.4,2.6,1); TC.fill();                   // bandeau
       TC.strokeStyle=acc; TC.lineWidth=1.4; strokeP([hx-7,hy-4, hx-12,hy-1]); TC.stroke(); strokeP([hx-7,hy-3.4, hx-11,hy+1.5]); TC.stroke(); }
-  } else if (era===1){
-    const hc = role==='support'? '#dcdcd4' : '#59633f';
-    dome(9.6,-1.5,hc); TC.fillStyle=shade(hc,0.7); rrectT(hx-10.5,hy-2.4,21,2.2,1); TC.fill();     // casque acier
-    if (role==='support'){ TC.fillStyle='#fff'; TC.beginPath(); TC.arc(hx,hy-6,3.2,0,6.283); TC.fill(); crossT(hx,hy-6,4.4,RED); }
-  } else if (era===2){
-    dome(9.4,-1.8,'#3c4652'); TC.fillStyle='#4a525c'; rrectT(hx-4.6,hy-1.6,3.2,4.6,1.4); TC.fill();  // casque + oreillette radio
-    TC.fillStyle='#2a2e34'; TC.fillRect(hx+5,hy-9,3,3); TC.fillStyle='#1a1d22'; rrectT(hx+4,hy-12.5,6,3.4,1); TC.fill();
-    TC.fillStyle='rgba(120,220,160,0.8)'; TC.fillRect(hx+8.4,hy-11.8,1.2,2);                        // JVN relevées
-    if (role==='support') crossT(hx-3,hy-6.5,4,RED);
-    if (tank){ TC.fillStyle='rgba(170,210,235,0.38)'; rrectT(hx+1,hy-6,8.6,11,2); TC.fill(); }       // visière anti-émeute
-  } else {
-    const hc = era===4? '#e8c860' : mix(uni,'#2a2a38',0.35);
-    TC.fillStyle=lgrad(hx-9,hy-10,hx+9,hy+8,[[0,shade(hc,1.4)],[0.5,hc],[1,shade(hc,0.55)]]);
-    TC.beginPath(); TC.arc(hx,hy-0.5,hr+1.4,0,6.283); TC.fill();
-    TC.fillStyle=shade(hc,0.6); polyP([hx+2,hy+3, hx+9,hy+2, hx+8,hy+7, hx+2,hy+8]); TC.fill();       // mentonnière
-    if (era===4) solarT([hx-1,hy-8.5, hx+3,hy-9.2, hx-3,hy-15.5, hx-10,hy-12.5]);                     // ailette solaire (plus de cimier)
-    else { TC.strokeStyle='#2a2a32'; TC.lineWidth=1.1; strokeP([hx-3,hy-8, hx-6,hy-16]); TC.stroke(); glowDot(hx-6,hy-16.4,1.1,acc,4); }  // antenne
-    const vc = era===4? '#fff0c0' : '#ffd34a';
-    TC.fillStyle='#15121c'; rrectT(hx+0.2,hy-4.2,10,5,2); TC.fill();                                  // fond sombre de visière
-    bloomT(vc,6,()=>{ TC.fillStyle=vc; rrectT(hx+1.2,hy-3,8.2,2.4,1.1); TC.fill(); });              // visière
-    if (role==='support') crossT(hx-3,hy-5,4,RED);
+  } else if (era===1){                                                                             // GRÈVE : casquettes, bonnets, foulard rouge
+    if (tank){ dome(hr+1.2,-2.4,'#e8c030'); TC.fillStyle='#c8a020'; rrectT(hx-9.6,hy-4.2,19.6,2.2,1); TC.fill();     // casque de chantier jaune
+      TC.fillStyle='#f4d848'; rrectT(hx-1.2,hy-11.6,2.4,4.4,0.8); TC.fill(); }
+    else if (role==='ranged'){ dome(hr+0.9,-2.4,'#7a3a2a'); TC.fillStyle='#5a2a1e'; rrectT(hx-8.7,hy-5,17.4,2.8,1.2); TC.fill();   // bonnet de laine
+      TC.beginPath(); TC.arc(hx-1,hy-11,1.7,0,6.283); TC.fill(); }
+    else if (role==='siege'){ dome(hr+0.6,-2.3,'#5a5448'); TC.fillStyle='#403c34'; rrectT(hx+2.6,hy-4.6,9.4,2,1); TC.fill(); }       // casquette plate
+    else if (role==='support'){ dome(hr+0.6,-2.2,'#ece8dc'); TC.fillStyle='#d8d4c6'; polyP([hx-7.4,hy-3.6, hx-12,hy-1, hx-9,hy+1.4, hx-6,hy-1]); TC.fill(); medT(hx+1.4,hy-6.6,4.4); }   // fichu blanc
+    else { dome(hr+0.6,-2.2,'#6a5238'); TC.fillStyle='#4a3826'; rrectT(hx+2.6,hy-4.6,9.4,2,1); TC.fill(); }                          // casquette
+    TC.fillStyle='#c8302a'; polyP([cx-4.5,F-47, cx+5,F-46.5, cx+3.5,F-42.4, cx-3,F-43.4]); TC.fill();                                 // foulard rouge noué
+    TC.fillStyle='#9a2420'; polyP([cx-3,F-46.5, cx-9,F-41, cx-7,F-39.6, cx-2,F-43.6]); TC.fill();
+  } else if (era===2){                                                                             // INSURRECTION : casques de moto / de vélo peints à la main
+    const shell = (col, rim) => { dome(9.2,-2.8,col); TC.fillStyle=rim; rrectT(hx-9.6,hy-4,19.4,2.2,1); TC.fill(); };
+    const stripe = col => { TC.fillStyle=col; rrectT(hx-1,hy-11.9,2.8,8.2,0.9); TC.fill(); };
+    const goggles = () => { TC.strokeStyle='#2a2018'; TC.lineWidth=1.3; strokeP([hx-8,hy-6, hx+9,hy-6]); TC.stroke();                  // lunettes de soudeur
+      for (const gx of [hx+0.4,hx+5.8]){ TC.fillStyle='#8a6a2a'; TC.beginPath(); TC.arc(gx,hy-6,2.7,0,6.283); TC.fill();
+        TC.fillStyle='#2a4a3a'; TC.beginPath(); TC.arc(gx,hy-6,1.7,0,6.283); TC.fill(); TC.fillStyle='rgba(255,255,255,0.55)'; TC.fillRect(gx-0.8,hy-7,0.9,0.9); } };
+    const gasMask = () => { TC.fillStyle='#4a4e44'; rrectT(hx+1,hy-8,9,4.8,2); TC.fill(); TC.fillStyle='#22241f';                     // masque à gaz relevé sur le front
+      TC.beginPath(); TC.arc(hx+3.6,hy-5.6,1.5,0,6.283); TC.arc(hx+7.8,hy-5.6,1.5,0,6.283); TC.fill();
+      TC.strokeStyle='#2a2a26'; TC.lineWidth=1.2; strokeP([hx+1,hy-6, hx-8,hy-6.4]); TC.stroke(); };
+    if (tank){ shell('#b8362a','#7a1e18'); stripe('#f0c030'); goggles(); }
+    else if (role==='ranged'){ shell('#d8d0b0','#a89e80'); TC.strokeStyle='rgba(60,50,40,0.7)'; TC.lineWidth=1.1;                       // casque de vélo aéré
+      for (const k of [-4.5,-1,2.5]){ strokeP([hx+k,hy-11, hx+k-1,hy-6.4]); TC.stroke(); } goggles(); }
+    else if (role==='siege'){ shell('#4a6a58','#2a4a38'); stripe('#e8e0c0'); gasMask(); }
+    else if (role==='support'){ shell('#ece8dc','#c8c4b4'); medT(hx+2,hy-7.6,5); }
+    else { shell('#c8782a','#8a4a18'); stripe('#f4ecd8'); }
+  } else if (era===3){                                                                             // CELLULES : casque de mineur + lampe, cagoule tricotée
+    const lamp = () => { TC.fillStyle='#3a3a34'; rrectT(hx+4.4,hy-8.6,5,3.2,1); TC.fill();
+      TC.fillStyle='rgba(255,196,80,0.16)'; polyP([hx+9.6,hy-7, hx+26,hy-13, hx+26,hy+1]); TC.fill();
+      bloomT('#fff0c0',7,()=>{ TC.fillStyle='#fff0c0'; TC.beginPath(); TC.arc(hx+9.2,hy-7,1.6,0,6.283); TC.fill(); }); };
+    const hat = col => { dome(hr+1.8,-2.6,col); TC.fillStyle=shade(col,0.7); rrectT(hx-10,hy-4.4,20.6,2.4,1); TC.fill();
+      TC.fillStyle=shade(col,1.25); rrectT(hx-1.4,hy-12.2,2.8,7.4,1); TC.fill(); };
+    if (tank){ hat('#e87a30'); }                                                                    // exosquelette de chantier : casque ouvert
+    else if (role==='ranged'){ dome(hr+0.9,-2.4,'#4a4438'); TC.fillStyle='#3a362c'; polyP([hx-8.6,hy-3, hx-2.4,hy-2.6, hx-2.4,hy+7.6, hx-7.4,hy+8.4]); TC.fill();
+      TC.strokeStyle='rgba(255,255,255,0.12)'; TC.lineWidth=0.7; for (let i=0;i<4;i++){ strokeP([hx-8+i*1.5,hy-8, hx-7.4+i*1.2,hy+7]); TC.stroke(); } }   // cagoule tricotée
+    else if (role==='siege'){ hat('#c8c0a8'); lamp(); }
+    else if (role==='support'){ hat('#ece8dc'); lamp(); medT(hx+0.4,hy-8,4.6); }
+    else { hat('#d09a2c'); lamp(); }
+  } else {                                                                                         // COMMUNE : visière solaire ou chapeau, visage découvert
+    const straw = (col, band) => { TC.fillStyle=col; TC.beginPath(); TC.ellipse(hx,hy-5.4,12.6,2.8,-0.05,0,6.283); TC.fill();
+      TC.fillStyle=shade(col,1.12); TC.beginPath(); TC.arc(hx,hy-6,6.4,Math.PI,0); TC.closePath(); TC.fill();
+      TC.fillStyle=band; TC.fillRect(hx-6.4,hy-7.6,12.8,1.8); };
+    const visor = () => { dome(hr+0.6,-2.4,'#f0d888'); solarT([hx+2.6,hy-5.4, hx+13,hy-4.6, hx+12.2,hy-2.2, hx+2.6,hy-3.2]); };
+    if (tank || role==='ranged') visor();
+    else if (role==='siege') straw('#cdb870','#5a8a3a');
+    else if (role==='support'){ straw('#f2ead0','#2f9a4a'); medT(hx+0.4,hy-11,4.6); }
+    else straw('#e0cc8a','#9a6434');
   }
   }
   if (SPART==='body') return;
@@ -1906,8 +1935,8 @@ function drawHumSprite(fac, role, era, trans, hero){
   function drawArm(){
     limbT(P.f, aw, shade(uni,0.95));
     if (era>=3) plateT([P.f[2]-3,P.f[3]-3, P.f[2]+3,P.f[3]-2.5, P.f[4]+1,P.f[5]+1.5, P.f[4]-2.5,P.f[5]+2], shade(uni,1.08));
-    const band = role==='support'? '#f4f4f0' : trans? '#e8302a' : hero? '#e8302a' : (era===1||era===2)? acc : null;
-    if (band){ bandT(P.f[0],P.f[1],P.f[2],P.f[3],0.5,aw+0.6,band); if (role==='support') crossT((P.f[0]+P.f[2])/2,(P.f[1]+P.f[3])/2,2.6,RED); }
+    const band = role==='support'? '#f4f4f0' : trans? '#e8302a' : hero? '#e8302a' : (era===1||era===2||era===3)? acc : null;
+    if (band){ bandT(P.f[0],P.f[1],P.f[2],P.f[3],0.5,aw+0.6,band); if (role==='support') medT((P.f[0]+P.f[2])/2,(P.f[1]+P.f[3])/2,2.6); }
     TC.fillStyle=lgrad(fh[0]-2,fh[1]-2,fh[0]+2,fh[1]+2,[[0,shade(glove,1.2)],[1,shade(glove,0.75)]]);
     TC.beginPath(); TC.arc(fh[0],fh[1],aw*0.5,0,6.283); TC.fill();
   }
@@ -1967,38 +1996,44 @@ function drawHumSprite(fac, role, era, trans, hero){
   function humMedic(){
     if (era<2){ TC.fillStyle='#4a4038'; TC.fillRect(fh[0]-0.8,fh[1],1.6,2.4);                               // trousse portée
       TC.fillStyle=lgrad(fh[0]-5,fh[1]+2,fh[0]+5,fh[1]+10,[[0,'#ffffff'],[1,'#b8bcb8']]); rrectT(fh[0]-5,fh[1]+2,10,8,1.6); TC.fill();
-      crossT(fh[0],fh[1]+6,5,RED); }
+      medT(fh[0],fh[1]+6,5); }
     else { const bc = era===4? '#fff6dc' : '#e4e8ec';                                                       // émetteur de soin
       plateT([fh[0]-3,fh[1]-3, fh[0]+8,fh[1]-2.4, fh[0]+9,fh[1]+1.2, fh[0]-2,fh[1]+2], bc);
-      crossT(fh[0]+3,fh[1]-0.6,3,RED); glowDot(fh[0]+9.6,fh[1]-0.6,1.6,'#7dffb0',6); }
+      medT(fh[0]+3,fh[1]-0.6,3); glowDot(fh[0]+9.6,fh[1]-0.6,1.6,'#7dffb0',6); }
   }
-  function humShield(){                                                                                // plaques anti-émeute / de barricade (jamais d'écu héraldique)
+  function humShield(){                                                                                // boucliers de fortune : tôle, portière, panneau, plaque de wagonnet (jamais de polycarbonate)
     const x=cx+8, y=F-50, w=12, h=46;
-    const slit = (yy) => { TC.fillStyle='#14161a'; rrectT(x+2.4,yy,w-4,2.4,1); TC.fill(); };
-    if (era===0){ plateT([x,y+1, x+w,y, x+w,y+h, x,y+h], '#7e8a8e');                                           // tôle ondulée de barricade
+    if (era===0){ plateT([x,y+1, x+w,y, x+w,y+h, x,y+h], '#7e8a8e');                                           // tôle ondulée de barricade, pleine
       TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=0.9; for (let i=1;i<5;i++){ strokeP([x+i*2.4,y+2, x+i*2.4,y+h-1]); TC.stroke(); }
       TC.strokeStyle='rgba(255,255,255,0.25)'; for (let i=1;i<5;i++){ strokeP([x+i*2.4+1,y+2, x+i*2.4+1,y+h-1]); TC.stroke(); }
-      slit(y+7);
       TC.fillStyle=acc; TC.fillRect(x,y+h*0.52,w,3.4);                                                          // bande peinte
       TC.fillStyle='#8a5a34'; TC.fillRect(x+1,y+h-14,5,6);                                                      // plaque de rouille
       TC.fillStyle='#c8ccd0'; for (const yy of [y+3,y+h-3]) for (const xx of [x+1.6,x+w-1.6]){ TC.beginPath(); TC.arc(xx,yy,0.8,0,6.283); TC.fill(); } }
-    else if (era===1){ plateT([x,y, x+w,y+1, x+w,y+h-1, x,y+h], '#8a9098');                                    // plaque d'acier
-      slit(y+5);
-      TC.fillStyle='#c8ccd2'; for (let i=0;i<5;i++){ TC.beginPath(); TC.arc(x+1.6,y+4+i*9.4,0.8,0,6.283); TC.arc(x+w-1.6,y+4+i*9.4,0.8,0,6.283); TC.fill(); } }
-    else if (era===2){ TC.fillStyle='rgba(150,190,215,0.62)'; rrectT(x,y,w,h,2); TC.fill();                    // polycarbonate
-      TC.strokeStyle='rgba(40,50,60,0.9)'; TC.lineWidth=1.4; rrectT(x,y,w,h,2); TC.stroke();
-      TC.fillStyle='rgba(255,255,255,0.45)'; TC.fillRect(x+2,y+3,1.6,h-8);
-      TC.fillStyle=acc; TC.fillRect(x+1,y+h*0.42,w-2,3); }
-    else if (era===3){ plateT([x,y, x+w,y, x+w,y+h, x,y+h], '#2e2e3c');                                        // plaque composite à voyants
-      slit(y+4);
-      TC.strokeStyle='rgba(255,255,255,0.14)'; TC.lineWidth=0.8; for (let i=0;i<5;i++){ strokeP([x+1,y+12+i*6.5, x+w-1,y+12+i*6.5]); TC.stroke(); }
-      bloomT(acc,5,()=>{ TC.fillStyle=acc; TC.fillRect(x+w-3,y+9,1.6,h-14); TC.fillRect(x+1.4,y+9,1.2,h-14); }); }
+    else if (era===1){ plateT([x,y+2, x+w,y, x+w,y+h-1, x,y+h], '#8a3a2c');                                   // portière de voiture
+      TC.fillStyle='#2a3840'; polyP([x+1.4,y+3, x+w-1.4,y+1.6, x+w-1.4,y+13, x+1.4,y+14]); TC.fill();           // vitre sombre (opaque)
+      TC.fillStyle='rgba(255,255,255,0.22)'; polyP([x+2.4,y+3.4, x+5,y+3, x+3,y+13.4, x+2.4,y+13.4]); TC.fill();
+      TC.fillStyle='#c8ccd2'; rrectT(x+w-5,y+17,4,1.6,0.8); TC.fill();                                          // poignée chromée
+      TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.9; strokeP([x+1,y+h*0.62, x+w-1,y+h*0.62+1]); TC.stroke();
+      TC.fillStyle='rgba(0,0,0,0.22)'; TC.beginPath(); TC.ellipse(x+4,y+h*0.78,3,2.2,0.3,0,6.283); TC.fill(); }  // bosse
+    else if (era===2){ TC.strokeStyle='#8a9096'; TC.lineWidth=2; strokeP([x+w/2,y, x+w/2,y+h]); TC.stroke();   // panneau « sens interdit » arraché, sur son poteau tordu
+      plateT([x,y+26, x+w,y+25, x+w,y+h, x,y+h-1], '#3a6a48'); TC.fillStyle='rgba(255,255,255,0.7)';           // plaque de rue
+      TC.fillRect(x+1.6,y+30,w-3.2,1.2); TC.fillRect(x+1.6,y+34,w-5,1.2); TC.fillRect(x+1.6,y+38,w-4,1.2);
+      TC.fillStyle='#c8302a'; TC.beginPath(); TC.arc(x+w/2+0.5,y+13,10.4,0,6.283); TC.fill();
+      TC.fillStyle='#f4f0e8'; TC.beginPath(); TC.arc(x+w/2+0.5,y+13,8.2,0,6.283); TC.fill();
+      TC.fillStyle='#c8302a'; TC.beginPath(); TC.arc(x+w/2+0.5,y+13,6.6,0,6.283); TC.fill();
+      TC.fillStyle='#f4f0e8'; rrectT(x+w/2-5.6,y+11.6,12.2,2.8,0.8); TC.fill();                                 // barre blanche
+      TC.strokeStyle='rgba(0,0,0,0.35)'; TC.lineWidth=0.8; strokeP([x+w/2-6,y+6, x+w/2-2,y+9]); TC.stroke(); strokeP([x+w/2+3,y+19, x+w/2+6,y+21]); TC.stroke(); }
+    else if (era===3){ plateT([x,y+1, x+w,y, x+w,y+h, x,y+h-1], '#6a5a3c');                                    // plaque de wagonnet de mine, rouillée
+      TC.fillStyle='rgba(120,60,20,0.35)'; TC.fillRect(x+1,y+h-16,6,10); TC.fillRect(x+w-5,y+8,4,6);
+      for (let i=0;i<4;i++){ TC.fillStyle=i%2? '#1e1a14' : '#ff9d45'; polyP([x,y+14+i*5, x+w,y+11+i*5, x+w,y+14+i*5, x,y+17+i*5]); TC.fill(); }   // chevrons de chantier
+      TC.fillStyle='#c8b890'; for (let i=0;i<5;i++){ TC.beginPath(); TC.arc(x+1.6,y+4+i*9.4,0.8,0,6.283); TC.arc(x+w-1.6,y+4+i*9.4,0.8,0,6.283); TC.fill(); }
+      TC.fillStyle='#1e1a14'; TC.fillRect(x+3,y+h-9,6,1.1); TC.fillRect(x+3,y+h-6.4,4,1.1); }                  // numéro pochoir
     else { plateT([x,y, x+w,y, x+w,y+h, x,y+h], '#e8c860');                                                    // plaque-panneau solaire
       TC.fillStyle='#1d3556'; TC.fillRect(x+1.4,y+8,w-2.8,h-10);
       TC.strokeStyle='rgba(140,190,235,0.55)'; TC.lineWidth=0.6;
       for (let i=1;i<4;i++){ strokeP([x+1.4,y+8+i*(h-10)/4, x+w-1.4,y+8+i*(h-10)/4]); TC.stroke(); }
       strokeP([x+w/2,y+8, x+w/2,y+h-2]); TC.stroke();
-      slit(y+2.6); }
+      TC.fillStyle='#2f9a4a'; TC.fillRect(x+1.4,y+3,w-2.8,2.6); }
   }
 }
 
@@ -2195,7 +2230,7 @@ function drawBotSprite(fac, role, era, trans, hero){
     TC.save(); TC.translate(fh[0],fh[1]); TC.fillStyle='#8a929c'; TC.rotate(-0.5); TC.fillRect(0,-2.6,6,1.6); TC.rotate(0.9); TC.fillRect(0,1,6,1.6); TC.restore();   // pince
     glowDot(fh[0]+6.5,fh[1]-0.2,1.3,lite,6);
     TC.fillStyle='#f2f4f2'; rrectT(cx-6,F-45,9.5,9.5,1.6); TC.fill();                                    // panneau de soin
-    crossT(cx-1.2,F-40.2,6.6,'#e0443a'); bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(cx-6,F-35.4,9.5,1); });
+    techT(cx-1.2,F-40.2,7.4); bloomT(lite,4,()=>{ TC.fillStyle=lite; TC.fillRect(cx-6,F-35.4,9.5,1); });
   } else {
     // tireur : long fusil à deux mains, crosse, lunette, bipied ; siège : bras sur la poignée du canon dorsal
     const sh=P.f; limbT([sh[0],sh[1], sh[2],sh[3]], 4.6, frame);
@@ -2675,6 +2710,25 @@ function drawUnit(u){
     ctx.fillStyle = frac>0.5?'#7dd84a':frac>0.25?'#ffd34a':'#ff5a4a';
     ctx.fillRect(x-w/2,yy,w*frac,3.4);
   }
+  // jauge de chaleur des machines (v1.17) : 3 px sous la barre de vie, visible au-dessus de 0,3 ; flamme en surrégime (> 0,75), clignotement gris en surchauffe
+  if (u.fac==='IA' && u.role!=='gremlin'){
+    const over = u.tiredT>0, hv = over? 1 : clamp(u.heat||0, 0, 1);
+    if (hv>0.3){
+      const w = 24, yh = gy-top-fh + (frac<1? 4.6 : 1.2);
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x-w/2,yh,w,3);
+      ctx.fillStyle = over? (Math.sin(game.t*14)>0? '#aeb4bc' : '#4e5258') : mix('#ff9d2e','#ff2a1e',clamp((hv-0.3)/0.7,0,1));
+      ctx.fillRect(x-w/2,yh,w*hv,3);
+      if (!over && hv>0.75){ const fx = x+w/2+2, fy = yh+1, fl = 1+0.25*Math.sin(game.t*17+u.bob*3);   // petite flamme
+        ctx.fillStyle='#ff7a1e'; ctx.beginPath(); ctx.moveTo(fx,fy-8*fl); ctx.bezierCurveTo(fx+3.2,fy-4,fx+3,fy,fx,fy+0.6); ctx.bezierCurveTo(fx-3,fy,fx-3.2,fy-4,fx,fy-8*fl); ctx.fill();
+        ctx.fillStyle='#ffd34a'; ctx.beginPath(); ctx.moveTo(fx,fy-4.2*fl); ctx.bezierCurveTo(fx+1.6,fy-2,fx+1.4,fy,fx,fy+0.2); ctx.bezierCurveTo(fx-1.4,fy,fx-1.6,fy-2,fx,fy-4.2*fl); ctx.fill(); }
+    }
+  }
+  // fatigue humaine : goutte de sueur au-dessus de la tête
+  if (u.fac==='HUM' && u.role!=='gremlin' && (u.tiredT>0 || (u.heat||0)>0.75)){
+    const k = (game.t*0.9+u.bob*0.1)%1, sx = x+8, sy = gy-top-fh-1+k*6;
+    ctx.globalAlpha = 1-k*0.6; ctx.fillStyle='#8fd4ff'; ctx.strokeStyle='rgba(30,70,110,0.7)'; ctx.lineWidth=0.7;
+    ctx.beginPath(); ctx.moveTo(sx,sy-4); ctx.bezierCurveTo(sx+2.6,sy-1,sx+2.4,sy+2.2,sx,sy+2.2); ctx.bezierCurveTo(sx-2.4,sy+2.2,sx-2.6,sy-1,sx,sy-4); ctx.fill(); ctx.stroke(); ctx.globalAlpha = 1;
+  }
   if (drowning) ctx.restore();
 }
 /* ---------- marqueur d'ordre de position (⚑) ---------- */
@@ -2777,7 +2831,7 @@ const HMAT = [
   { wall:'#8a6444', roof:'#6e6a66', trim:'#4a3428', lite:'#ffcf78' },   // ère 0 : planches, palettes, tôle
   { wall:'#8e4a34', roof:'#6e6a66', trim:'#4e4840', lite:'#ffcf78' },   // ère 1 : brique et tôle d'usine
   { wall:'#7c8084', roof:'#4e5256', trim:'#3a3e42', lite:'#fff0c0' },   // ère 2 : béton
-  { wall:'#4a4560', roof:'#2e2a3c', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
+  { wall:'#4e5640', roof:'#2c3226', trim:'#ffb35a', lite:'#ffb35a' },   // ère 3 : blindage
   { wall:'#e8dcc4', roof:'#5a9a3a', trim:'#9a6434', lite:'#ffe2a8' },   // ère 4 : bois clair, verre, toits végétaux
 ];
 const iaPlate = era => mix(FACTIONS.IA.eraCols[era],'#4a5260',0.55);
