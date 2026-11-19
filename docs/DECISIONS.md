@@ -29,3 +29,5 @@
   `power`, `herofx`, `trans`) ; `NET_PROTO` 5. Les bancs sont très bruités (±5 par case, trajectoires chaotiques) : seul `power` ressort de façon stable
   (le Soulèvement profite à l'Humanité). Aura de la Singularité 7 → 6. `AI_KF` (recalage par camp de l'IA adverse) pour la difficulté ; non appliqué au banc bot.
   Reste ouvert : niveaux de bot 1 et 3 de B à ~40 %, bench E instable d'une graine à l'autre. Détails : `docs/audit/FACTIONS-BALANCE.md`.
+- **2026-11 · Conseiller final v1.17 (auteur)** : Fable bloqué par la limite de dépense mensuelle → même brief confié à opus (lecture seule) ;
+  Fable sera relancé en second avis s'il redevient disponible avant la livraison.
