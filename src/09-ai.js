@@ -100,6 +100,7 @@ function aiUpdate(dt){
   // asymétrie (M10) : on profite de l'événement de l'adversaire — il est figé (couvre-feu / mise à jour) ou on est dans la fenêtre
   // « acquis sociaux » / « correctif » de 30 s qui suit le nôtre : on pousse
   const pushWin = asymOn('env') && (facFrozen(p.facKey) || (e.afterT||0)>game.t);
+  if (asymOn('power') && e.facKey==='IA' && e.specialCd<=0 && p.units.some(u=>u.role==='hero')) trySpecial(e);   // frappe chirurgicale : le héros adverse est la cible
   if (asymOn('env') && e.facKey==='IA' && game.boon==='signal' && e.specialCd<=0 && p.units.length>=3) trySpecial(e);   // « le jour de l'IA » : pouvoir ✸ +50 %
   if (danger || pushWin || (e.mode!=='push' && myN >= Math.min(wave, e.cap-4))){
     e.mode='push'; setStance(e,'charge');

@@ -182,14 +182,25 @@ function trySpecial(side){
   side.specialCd = specialCd(side);
   const foe = side===game.p? game.e: game.p;
   const dmg = 35 + side.era*22;
-  for (const u of foe.units){
-    u.hp -= Math.min(dmg, u.maxhp*0.65);   // plafonné : impossible de one-shot
-    u.flash=0.3; burst(u.x, gY(u.x)-22, side.fac.accent, 10);
+  const pw = asymOn('power');
+  // M7 : chaque faction a SON pouvoir — Soulèvement (nombre : 0,7·D partout, mais nos troupes sont soignées) / Frappe chirurgicale (précision)
+  const hum = side.facKey==='HUM';
+  let elite = null;
+  if (pw && !hum){
+    const sc = u => (u.role==='hero'? 1e9 : 0) + u.maxhp*u.dmg;
+    elite = new Set(foe.units.filter(u=>u.role!=='gremlin').sort((a,b)=>sc(b)-sc(a)).slice(0, ft('IA','strikeN')));
   }
-  for (const s of sideBuildSlots(foe)) if (s.b) { s.b.hp -= dmg*0.5; burst(s.x, gY(s.x)-30, side.fac.accent, 8); }
+  for (const u of foe.units){
+    const k = !pw? 1 : hum? ft('HUM','upDmg') : (elite.has(u)? ft('IA','strikeK') : ft('IA','strikeRest'));
+    u.hp -= Math.min(dmg*k, u.maxhp*0.65);   // plafonné : impossible de one-shot
+    u.flash=0.3; burst(u.x, gY(u.x)-22, side.fac.accent, elite && elite.has(u)? 16 : 10);
+  }
+  if (pw && hum) for (const u of side.units){ u.hp = Math.min(u.maxhp, u.hp + u.maxhp*ft('HUM','upHeal')); u.heat = 0; u.tiredT = 0; burst(u.x, gY(u.x)-22, '#6dff8a', 5, 0.6); }
+  for (const s of sideBuildSlots(foe)) if (s.b) { s.b.hp -= dmg*0.5*((pw && !hum)? ft('IA','strikeBld') : 1); burst(s.x, gY(s.x)-30, side.fac.accent, 8); }
   foe.hp -= dmg*0.4;
   game.shake=14; game.flash=0.5; game.specialsUsed++;
   announce("✸ "+lSpecial(side.facKey,side.era)+" ✸", side.fac.accent, {r:{L:'sp', f:side.facKey, i:side.era}, pr:'✸ ', sx:' ✸'});
+  if (pw && side===game.p && game.msg){ game.msg.sub = tr(hum? 'a_spec_hum' : 'a_spec_ia'); game.msgT = Math.max(game.msgT||0, 4.2); }   // sous-titre : ce que fait CE pouvoir
   sfx('spec');
   return true;
 }
