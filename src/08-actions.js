@@ -463,6 +463,11 @@ function tryHero(side){
     if (side===game.p) announce(fmt('a_hero_cost',{cost:costStr(side,HERO_COST)}), '#d88'); return false; }
   pay(side, HERO_COST); side.heroCd = HERO_CD;
   spawnHero(side); moraleAdd(side, ft('HUM','moraleHero'));
+  if (asymOn('herofx') && side.facKey==='HUM'){      // M6 : ralliement — la troupe est reposée, le moral monte à 100
+    for (const u of side.units){ u.heat = 0; u.tiredT = 0; }
+    if (asymOn('rhythm')) side.morale = 100;
+    addFloater(side.x, gY(side.x)-110, tr('f_rally'), '#9dc88a', 14);
+  }
   if (side===game.p){ game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
   announce(tr(side.facKey==='HUM'? 'a_hero_hum':'a_hero_ia'), side.fac.accent);

@@ -27,6 +27,7 @@ function serSide(s){
     lu:s.lastUsed?1:0, fm:s.formation?1:0, pm:Math.round((s.prodMul||1)*100)/100,
     hcd:Math.round(s.heroCd||0), hs:Math.max(0, HERO_STANCES.indexOf(s.heroStance)), q:s.queue?s.queue.length:0,
     upg:s.upg, gn:(s.gar||[]).length, slots:s.slots.map(sl=>serBld(sl.b)),
+    mt:Math.max(0, Math.ceil((s.martyrT||0)-game.t)),
     mo:Math.round(s.morale===undefined? 50 : s.morale),
     nt:Math.max(0, Math.ceil((s.netT||0)-game.t)), at:Math.max(0, Math.ceil((s.afterT||0)-game.t)),
     rn:s.slots.map(sl=>ruinCode(sl, s)) };
@@ -180,6 +181,7 @@ function applySnapshot(snap){
     loc.upg = upg;
     if (!(loc._hsLock>performance.now())) loc.heroStance = HERO_STANCES[SN(ser.hs, 0, 2, 1)|0];
     loc.heroCd=SN(ser.hcd, 0, 1e4); loc.queueLen=SN(ser.q, 0, 99)|0;
+    loc.martyrT = g.t + SN(ser.mt, 0, 60);
     loc.morale = SN(ser.mo, 0, 100, 50);
     loc.netT = g.t + SN(ser.nt, 0, 60); loc.afterT = g.t + SN(ser.at, 0, 120);          // réseau coupé · acquis sociaux / correctif
     const rn = SA(ser.rn, 8); for (let i=0;i<loc.slots.length;i++) loc.slots[i].ruin = ruinDecode(rn[i], loc);

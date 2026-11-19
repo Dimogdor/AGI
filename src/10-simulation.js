@@ -134,7 +134,8 @@ function updateUnits(side, foe, dt){
   const frozen = facFrozen(side.facKey);
   const envA = envOn();
   // M10 : pluie et hiver évacuent la chaleur des machines ×2 ; « correctif » de la mise à jour : cadence +10 % pendant 30 s
-  const coolK = (envA && side.facKey==='IA' && (game.boon==='rain' || game.winter))? fte('IA','rainCool') : 1;
+  let coolK = (envA && side.facKey==='IA' && (game.boon==='rain' || game.winter))? fte('IA','rainCool') : 1;
+  if (side.facKey==='IA' && side.heroAlive && asymOn('herofx')) coolK *= ft('IA','heroCool');   // M6 : « calcul distribué »
   const coolOn = side.facKey==='IA' && moraleOn() && side.w>=ft('IA','coolMin');   // M4 : refroidissement actif (consomme de l'eau)
   const eager = side.facKey==='HUM' && moraleOn() && (side.morale||50)>=ft('HUM','moraleHi')? ft('HUM','moraleHiK') : 1;   // « élan » : la fatigue monte moins vite
   const moraleMul = moraleK(side);
@@ -354,7 +355,7 @@ function updateUnits(side, foe, dt){
         u.atkT = u.rate * (tired? T.tiredRate : 1) / fixK;
         if (u.role==='hero'){ heroSfx(u.fac, HERO_SEQ[(u.atkN|0)&7]? 'atkB' : 'atkA', u.x); u.atkN = (u.atkN|0)+1; }   // alterne ses deux attaques (visuel + son)
         // ×3 si héros allié vivant, + bonus offensif de comeback ; pénalité d'épuisement par faction
-        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1) * unitK(u, target, side) * moraleMul * ((u.fac==='IA' && moraleOn() && u.heat>=ft('IA','overHeat'))? ft('IA','overK') : 1);   // figé : riposte, mais sans l'élan d'une troupe libre
+        const dmgOut = u.dmg * (tired? T.tiredDmg : 1) * (u.farT>0?0.9:1) * (1 + 0.12*elev) * (side.siegeT>0 && u.range>60?1.1:1) * (side.heroAlive? (1+2*(side.heroPow||1)) :1) * (1 + 0.25*(side.combatBuff||0)) * (1 + (side.zoneBuff||0)) * (frozen? frozenDmg(side.facKey) : 1) * unitK(u, target, side) * moraleMul * ((side.facKey==='HUM' && (side.martyrT||0)>game.t)? ft('HUM','martyrK') : 1) * ((u.fac==='IA' && moraleOn() && u.heat>=ft('IA','overHeat'))? ft('IA','overK') : 1);   // figé : riposte, mais sans l'élan d'une troupe libre
         // jauge d'effort : GPT chauffe vite et s'effondre longtemps ; HUM monte lentement, dip court
         // (v1.12 : surchauffe GPT adoucie — 0,08/6 s/−45 % donnaient ~18 % de DPS soutenu en moins que
         //  l'Humanité ; le même joueur gagnait 88 % en Humanité contre 25 % en GPT)
@@ -454,6 +455,12 @@ function updateUnits(side, foe, dt){
           if (side===game.p) addFloater(u.x, gY(u.x)-40, tr('f_backup'), '#5ad0ff', 11); }
       }
       if (u.role!=='gremlin'){ moraleAdd(side, -ft('HUM','moraleLoss')); moraleAdd(foe, ft('HUM','moraleKill')); }   // M4
+      if (asymOn('herofx')){                         // M6 : martyr du Che, fragmentation et assimilation de la Singularité
+        if (u.role==='hero' && u.fac==='HUM'){ side.martyrT = game.t + ft('HUM','martyrT'); if (moraleOn()) side.morale = 100; addFloater(u.x, gY(u.x)-80, tr('f_martyr'), '#ff9d45', 14); }
+        else if (u.role==='hero'){ for (let k=0;k<ft('IA','fragN');k++) spawnUnit(side, 0, true, u.x + (k-2)*14); addFloater(u.x, gY(u.x)-80, tr('f_fragment'), '#5ad0ff', 14); }
+        if (foe.facKey==='IA' && u.role!=='gremlin' && foe.units.some(h=>h.role==='hero' && h.hp>0 && Math.abs(h.x-u.x)<=ft('IA','assimR')) && droneCount(foe)<droneCap(foe)){
+          spawnUnit(foe, 0, true, u.x); addFloater(u.x, gY(u.x)-56, tr('f_drone'), '#5ad0ff'); }
+      }
       healSalvage(side, u);                          // M3 : la machine récupère une part du coût
       foe.xp += u.xpv; foe.f += u.xpv*0.5; foe.m += u.xpv*0.5;
       if (foe===game.p){ game.kills++; addFloater(u.x, gY(u.x)-50, "+"+u.xpv+"✦", "#cdb4ff"); sfx('die'); }

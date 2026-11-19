@@ -141,8 +141,9 @@ const lvlF = b => Math.pow(1.5, (b.lvl||1)-1); // facteur de niveau bâtiment
 //   heal : M3 brancardiers (HUM : relève d'un allié mourant, réparations −30 %) / recyclage (IA : 5-12 % du coût rendu, nano-réparation moins chère)
 //   rhythm : M4 moral (HUM : jauge 0-100, dégâts ±10 %, élan/débandade) / refroidissement par l'eau et surrégime (IA)
 //   power : M7 pouvoir ✸ (HUM « Soulèvement » : 0,7·D partout + soin 20 % ; IA « Frappe chirurgicale » : 2,2·D sur les 5 unités les plus précieuses)
+//   herofx : M6 héros (Che : ralliement à l'invocation, martyr à sa mort ; Singularité : calcul distribué, assimilation, fragmentation)
 //   unit : M2 coude à coude (HUM, +dégâts par voisin) / verrouillage de cible (IA : tireurs sur le plus entamé, exécution, siège large)
-const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true, rhythm:true, power:true };
+const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true, rhythm:true, power:true, herofx:true };
 // Les tests coupent une mécanique seule avec game.asym = {econ:false}. En CAMPAGNE, aucune mécanique par défaut : une mission
 // s'inscrit à la carte avec `asym:{env:true}` dans sa définition. Le tutoriel n'en a aucune.
 function asymOn(k){
@@ -166,6 +167,7 @@ const FAC_TRAITS = {
     reliefCd:25, reliefCd2:18, reliefHp:0.25, repairK:0.7,   // M3 : relève (recharge 25 s, 18 s au niveau 2 du soutien) à 25 % de PV ; réparations −30 %
     moraleKill:2, moraleLoss:1.5, moraleNode:5, moraleHero:15, moraleStrike:10, moraleDmg:0.12, moraleHi:80, moraleLo:20, moraleHiK:0.7, moraleLoSpd:0.9,   // M4 : jauge de moral 0-100 (départ 50, retour à 50 à 1/s)
     upDmg:0.7, upHeal:0.2,                           // M7 : Soulèvement — 0,7·D sur toutes les unités ennemies, soin de 20 % des PV max et fin de fatigue pour tous les alliés
+    martyrK:1.2, martyrT:20,                         // M6 : à la mort du Che, +20 % de dégâts pendant 20 s et moral à 100 ; à l'invocation : fatigue effacée, moral à 100
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
@@ -185,6 +187,7 @@ const FAC_TRAITS = {
     recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
     coolRec:0.05, coolW:0.04, coolMin:40, overHeat:0.75, overK:1.08,   // M4 : si 💧 ≥ 40, refroidissement 0,05/s (0,04 💧/s par unité chaude) ; chaleur ≥ 0,75 : +8 % de dégâts (surrégime)
     strikeN:5, strikeK:2.2, strikeRest:0.3, strikeBld:1.2,   // M7 : Frappe chirurgicale — 2,2·D sur les 5 unités les plus précieuses (héros d'abord), 0,3·D sur les autres, bâtiments ×1,2
+    heroCool:2, assimR:200, fragN:5,                 // M6 : Singularité vivante, chaleur ×2 plus vite évacuée ; un ennemi tué à ≤ 200 px fait naître un drone ; à sa mort 5 drones hors plafond
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
