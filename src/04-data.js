@@ -55,7 +55,9 @@ const HERO_SEQ = [0,1,0,0,1,0,1,1];        // enchaînement des deux attaques (0
 const HERO_COST = {f:700, m:700, w:200};
 const SIEGE_COST = {f:420, m:420, w:130};   // Mode Siège de base (héros, fin de partie)
 const SIEGE_DUR = 22;                        // durée du bonus offensif anti-base (s de jeu)
-const HERO_NAME = {HUM:'CHE GUEVARA', IA:'SINGULARITÉ'};
+// le héros de G·P·T change de nom à chaque ère (« SINGULARITÉ » n'arrive qu'à la dernière) ; noms propres, non traduits comme CHE GUEVARA
+const HERO_NAME = {HUM:'CHE GUEVARA', IA:["L'INSTANCE","L'AGENT","L'ARBITRE","« NOUS »","SINGULARITÉ"]};
+const heroNameOf = (fac, era) => fac==='IA'? HERO_NAME.IA[Math.max(0,Math.min(4,era|0))] : HERO_NAME.HUM;
 const FACTIONS = {
   HUM: {
     name:"HUMANITÉ", accent:"#ff9d45",
