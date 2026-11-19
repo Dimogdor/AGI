@@ -913,6 +913,27 @@ const m5Cone = (g, x, y, w, h, a, col) => { const gr = g.createLinearGradient(0,
   g.beginPath(); g.moveTo(x-3, y); g.lineTo(x+3, y); g.lineTo(x+w/2, y+h); g.lineTo(x-w/2, y+h); g.closePath(); g.fill(); };
 const m5Flakes = (g, t, n, col, speed, drift) => { for (let i=0;i<n;i++){ const x = (i*61.3 + t*drift + Math.sin(t*0.7+i)*8 + 480*4) % 480, y = (i*47.1 + t*speed) % 270; g.fillStyle = col; g.fillRect(x, y, 2.4+(i%3)*0.8, 2.4+(i%3)*0.8); } };
 const m5Bilan2 = c => { const s = m5BilanTxt(c), i = s.indexOf(' · '); return i<0? [s, ''] : [s.slice(0, i), s.slice(i+3)]; };
+const M5_DL = [   // étiquettes dessinées sur les trois portes (non prononcées)
+  {fr:"I · LE MUR", en:"I · THE WALL", es:"I · EL MURO", de:"I · DIE MAUER", it:"I · IL MURO", pt:"I · O MURO", ru:"I · СТЕНА", zh:"I · 城墙", ar:"I · الجدار"},
+  {fr:"II · LES HALLES", en:"II · THE HALLS", es:"II · LAS NAVES", de:"II · DIE HALLEN", it:"II · I CAPANNONI", pt:"II · OS GALPÕES", ru:"II · ЗАЛЫ", zh:"II · 机房", ar:"II · القاعات"},
+  {fr:"III · LE NOYAU", en:"III · THE CORE", es:"III · EL NÚCLEO", de:"III · DER KERN", it:"III · IL NUCLEO", pt:"III · O NÚCLEO", ru:"III · ЯДРО", zh:"III · 核心", ar:"III · النواة"} ];
+// biped de la G·P·T, à l'arrêt : jambes à deux segments, torse en trapèze, tête à un seul œil ; (x, y) = pieds
+function m5Biped(g, x, y, s, on){
+  const lg = (dx) => [x+dx*s, y, x+(dx*1.4+1.5)*s, y-12*s, x+dx*0.6*s, y-24*s];
+  inkLine(g, lg(-6), 1, 3.6); inkLine(g, lg(6), 1, 3.6);
+  const tq = [x-11*s,y-24*s, x+11*s,y-24*s, x+14*s,y-46*s, x-14*s,y-46*s]; inkWash(g, tq, M5_INK, 0.6); m5Loop(g, tq, 1, 2);
+  inkLine(g, [x-14*s,y-44*s, x-18*s,y-28*s], 1, 3); inkLine(g, [x+14*s,y-44*s, x+17*s,y-28*s], 1, 3);                 // les bras ballants
+  const hd = [x-7*s,y-47*s, x+7*s,y-47*s, x+6*s,y-58*s, x-6*s,y-58*s]; inkWash(g, hd, M5_INK, 0.8); m5Loop(g, hd, 1, 1.8);
+  g.fillStyle = on? M5_BLUE : 'rgba(31,27,23,0.75)'; g.beginPath(); g.arc(x+1*s, y-52.5*s, 2.2*s, 0, 6.283); g.fill(); }              // l'œil
+// drone posé au sol : coque, bras à hélices repliés, pieds
+function m5DroneLanded(g, x, y, s, on){ inkDrone(g, x, y-9*s, 34*s, on? M5_BLUE : 'rgba(31,27,23,0.75)', M5_INK);
+  inkLine(g, [x-9*s,y-4*s, x-12*s,y], 1, 1.8); inkLine(g, [x+9*s,y-4*s, x+12*s,y], 1, 1.8); }
+// jeune arbre tuteuré : tronc mince, petite couronne, tuteur et lien ; (x, y) = pied
+function m5Sapling(g, x, y, s){
+  inkLine(g, [x+5*s,y, x+5*s,y-24*s], 1, 1.6);                                                    // le tuteur
+  inkLine(g, [x,y, x+0.4*s,y-14*s, x-0.4*s,y-24*s], 1, 1.8);                                      // le tronc
+  inkLine(g, [x-1*s,y-12*s, x+5*s,y-14*s], 1, 1.1);                                               // le lien
+  g.fillStyle = 'rgba(80,110,60,0.6)'; g.beginPath(); g.ellipse(x, y-29*s, 6*s, 7.5*s, 0, 0, 6.283); g.fill(); }
 const M5_PLATES = {
   // P1 · La plaine : la citadelle comme un couvercle, trois colonnes de cellules qui convergent
   plain(g, w, h, t){ plateBase(g, w, h, 'rgba(120,70,40,0.12)');
@@ -943,9 +964,9 @@ const M5_PLATES = {
     inkLine(g, [20,232, 460,232], 1, 2.4); inkHatch(g, 20, 232, 440, 28, 7, M5_INK, 0.2);
     inkLine(g, [240,0, 240,22], 1, 1.2); g.fillStyle = '#fff2c8'; g.beginPath(); g.arc(240, 28, 6, 0, 6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 1.4; g.stroke();   // l'ampoule nue
     const bd = [140,46, 340,46, 340,76, 140,76]; inkWash(g, bd, '#dcd2b6', 0.85); m5Loop(g, bd, n, 1.8); m5Txt(g, cT(M5_TX.pVote), 240, 67, 15, M5_INK);                  // le tableau
-    for (let i=0;i<14;i++){ const x = 104 + i*26.6, up = clamp((t-0.6-i*0.14)/0.4, 0, 1), s = 52 + (i%3)*2;
-      inkFolk(g, x, 232, s, M5_INK, 0);
-      g.strokeStyle = M5_INK; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath(); g.moveTo(x+5, 232-s*0.62); g.lineTo(x+10, 232-s*0.62-(14+s*0.3)*up); g.stroke(); }          // le bras levé
+    for (let i=0;i<14;i++){ const x = 104 + i*26.6, up = clamp((t-0.6-i*0.14)/0.4, 0, 1), s = 52 + (i%3)*2, hv = [1, 0.62, 0.84, 0.5, 0.94, 0.72, 0.56][(i*3)%7];
+      inkFolk(g, x, 232, s, M5_INK, up>0? Math.max(0.12, hv*up) : 0, i%3===1);                                       // le bras levé en deux segments : paume ouverte ou carton blanc
+    }
     const sx = 52; const gl = g.createRadialGradient(sx, 205, 4, sx, 205, 60); gl.addColorStop(0,'rgba(232,165,60,0.55)'); gl.addColorStop(1,'rgba(232,165,60,0)'); g.fillStyle = gl; g.fillRect(sx-62, 140, 124, 100);   // le halo ambre sur Sol seulement
     inkFolk(g, sx, 232, 36, '#4a443c', 0); g.strokeStyle = '#4a443c'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx+3, 232-24); g.lineTo(sx+4, 232-8); g.stroke();                          // Sol, plus petite, voûtée, bras baissé
     inkWash(g, [sx-6,232-26, sx,232-21, sx+6,232-26, sx+6,232-29, sx-6,232-29], M5_RED, 0.95);
@@ -960,7 +981,8 @@ const M5_PLATES = {
     for (let x=172;x<320;x+=16) inkLine(g, [x,78, x,240], n2, 0.8, '#9fb4c4'); for (let y=90;y<240;y+=24) inkLine(g, [160,y, 320,y], n2, 0.8, '#9fb4c4');
     if (n3>0){ const gl = g.createRadialGradient(240,160,2,240,160,120); gl.addColorStop(0,'rgba(190,230,250,'+(0.7*n3).toFixed(2)+')'); gl.addColorStop(1,'rgba(190,230,250,0)'); g.fillStyle = gl; g.fillRect(100,30,280,220); }
     g.fillStyle = 'rgba(225,244,252,'+(0.95*n3).toFixed(2)+')'; g.beginPath(); g.arc(240,160,40*Math.max(0.01,n3),0,6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 2.2; g.beginPath(); g.arc(240,160,40*n3,0,6.283); g.stroke();   // la porte ronde de lumière
-    m5Txt(g, 'I', 110, 264, 15, M5_INK); m5Txt(g, 'II', 240, 264, 15, M5_INK); m5Txt(g, 'III', 370, 264, 15, M5_INK);
+    for (const [i,x,y,col] of [[0,106,47,'#e9dfc6'],[1,166,89,'#cfe0ec'],[2,204,118,'#223040']]){ g.globalAlpha = [n1,n2,n3][i]; g.font = '700 10px '+M5_COUR; const lw = g.measureText(cT(M5_DL[i])).width; g.fillStyle = 'rgba(14,18,24,0.82)'; g.fillRect(x-4, y-11, lw+8, 15); m5Txt(g, cT(M5_DL[i]), x, y, 10, '#efe6cf', 'left'); }
+    g.globalAlpha = 1;
     plateEnd(g, w, h); },
   // K1 · La brèche : le trou dans le mur, ceux qui restent le gardent ; le bilan
   breach(g, w, h, t){ const c = m5C(); plateBase(g, w, h, 'rgba(60,40,30,0.12)');
@@ -1009,12 +1031,8 @@ const M5_PLATES = {
   // A2 · Comme des outils qu'on pose : des machines immobiles, deux personnes qui regardent
   tools(g, w, h, t){ plateBase(g, w, h, 'rgba(150,150,146,0.16)');
     inkLine(g, [0,214, 480,214], 1, 2); inkHatch(g, 0, 214, 480, 56, 8, M5_INK, 0.14);
-    const chassis = (x, s) => { inkWash(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], M5_INK, 0.55); m5Loop(g, [x-18*s,214, x-18*s,198, x+14*s,198, x+14*s,214], 1, 1.8);
-      inkWash(g, [x-6*s,198, x-6*s,188, x+10*s,188, x+14*s,198], M5_INK, 0.7); m5Loop(g, [x-6*s,198, x-6*s,188, x+10*s,188, x+14*s,198], 1, 1.4);
-      inkLine(g, [x-18*s,214, x+14*s,214], 1, 3.4); inkLine(g, [x+14*s,196, x+30*s,193], 1, 1.8); };
-    const drone = (x, on) => { const q = [x-20,214, x-16,198, x+16,198, x+20,214]; inkWash(g, q, M5_INK, 0.6); m5Loop(g, q, 1, 2);
-      inkLine(g, [x-34,192, x+34,192], 1, 2.2); inkLine(g, [x,192, x,198], 1, 1.6); g.fillStyle = on? M5_RED : 'rgba(31,27,23,0.7)'; g.beginPath(); g.arc(x,207,3.4,0,6.283); g.fill(); };
-    chassis(52, 1.7); drone(130, false); chassis(212, 1.5); drone(318, false); chassis(400, 1.7); drone(452, t < 3.2);                    // l'un des drones garde un voyant, qui s'éteint
+    m5Biped(g, 54, 214, 1.15, false); m5DroneLanded(g, 126, 214, 1.1, false); m5Biped(g, 206, 214, 1.0, false);
+    m5DroneLanded(g, 330, 214, 1.1, false); m5Biped(g, 410, 214, 1.15, false); m5DroneLanded(g, 454, 214, 0.9, t < 3.2);       // l'un des drones garde son œil, qui s'éteint
     inkFolk(g, 262, 214, 44, M5_INK, 0); inkFolk(g, 292, 214, 36, M5_INK, 0);
     plateEnd(g, w, h); },
   // A3 · La cendre : une cour de ferme, quelqu'un qui balaie, la cendre qui tombe
@@ -1099,24 +1117,34 @@ const M5_PLATES = {
     const on = t > 1.5;
     inkLine(g, [10,232, 470,232], 1, 3); inkHatch(g, 10, 232, 460, 38, 7, M5_INK, 0.3);
     m5Cone(g, 90, 36, 190, 196, 0.34, '232,165,60'); inkLine(g, [90,232, 90,110], 1, 2.6); inkLine(g, [90,110, 110,80, 150,72], 1, 2.6); inkWash(g, [140,64, 176,66, 170,86, 144,84], M5_INK, 0.9);     // la lampe
-    const nb = [40,230, 50,196, 168,196, 176,230]; inkWash(g, nb, '#efe6cf', 0.9); m5Loop(g, nb, 1, 2); inkLine(g, [108,197, 110,229], 1, 1.4); for (let y=206;y<228;y+=9) inkLine(g, [58,y, 100,y+1], 1, 0.8, '#b9a98a');   // le carnet
-    const pg = [220,230, 226,110, 372,110, 380,230]; inkWash(g, pg, '#1c2326', 0.92); m5Loop(g, pg, 1, 2.6);                                  // le bipeur
-    g.fillStyle = on? '#9db79a' : '#2c3a30'; g.fillRect(240, 126, 120, 60); inkLine(g, [240,126, 360,126, 360,186, 240,186, 240,126], 1, 1.6, '#0d1416');
-    if (on){ const bl = Math.sin(t*5) > -0.3; if (bl) m5Txt(g, '55', 300, 170, 36, '#1b2a1c');
-      for (let i=0;i<3;i++){ const r = ((t*0.8+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.55*(1-r)).toFixed(2)+')'; g.lineWidth = 1.8; g.beginPath(); g.arc(300, 150, 52+r*60, 3.7, 5.7); g.stroke(); } }
-    g.fillStyle = '#3a4448'; g.fillRect(246, 198, 34, 8); g.fillRect(288, 198, 34, 8); g.fillStyle = on? M5_BLUE : 'rgba(11,111,168,0.3)'; g.beginPath(); g.arc(356, 202, 4, 0, 6.283); g.fill();
+    inkNotebook(g, 290, 232, 310, 1);                                                                                                         // le carnet, à plat ; le bipeur est posé dessus
+    const pg = inkPager(g, 300, 220, 150, { fill: on? '#9db79a' : '#2c3a30', led: on? M5_BLUE : null });
+    if (on){ const bl = Math.sin(t*5) > -0.3; if (bl) m5Txt(g, '55', pg.cx, pg.cy+13, 38, '#1b2a1c');
+      for (let i=0;i<3;i++){ const r = ((t*0.8+i/3)%1); g.strokeStyle = 'rgba(11,111,168,'+(0.55*(1-r)).toFixed(2)+')'; g.lineWidth = 1.8; g.beginPath(); g.arc(300, pg.top+30, 70+r*50, 3.7, 5.7); g.stroke(); } }
     plateEnd(g, w, h); },
   // D5 · L'aube sur la plaine : la tour éteinte au loin, des champs, de jeunes arbres, le soleil qui monte derrière elle
   sunrise(g, w, h, t){ plateBase(g, w, h, 'rgba(240,170,130,0.14)');
-    const k = clamp(t/6, 0, 1), sy = 168 - 20*k;
-    const gl = g.createRadialGradient(330, sy, 4, 330, sy, 120); gl.addColorStop(0,'rgba(255,200,130,'+(0.5*k+0.1).toFixed(2)+')'); gl.addColorStop(1,'rgba(255,200,130,0)'); g.fillStyle = gl; g.fillRect(200, 40, 260, 200);
-    g.fillStyle = 'rgba(244,160,110,0.85)'; g.beginPath(); g.arc(330, sy, 24, Math.PI, 0); g.closePath(); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 1.4; g.beginPath(); g.arc(330, sy, 24, Math.PI, 0); g.stroke();   // le demi-soleil
-    inkLine(g, [0,170, 480,170], 1, 2);
-    const dm = []; for (let i=0;i<=14;i++){ const a = Math.PI*(1 - i/14); dm.push(330+30*Math.cos(a), 170-18*Math.sin(a)); } inkWash(g, dm, M5_INK, 0.6); inkLine(g, dm, 1, 1.6);
-    inkWash(g, [326,166, 327,120, 333,120, 334,166], M5_INK, 0.8); inkLine(g, [326,166, 327,120, 333,120, 334,166], 1, 1.4);                  // la tour, plus petite, éteinte
-    for (let i=0;i<7;i++){ const y = 184 + i*11; inkLine(g, [0+i*6, y, 480-i*6, y], 1, 0.9+i*0.1, 'rgba(31,27,23,'+(0.25+i*0.05).toFixed(2)+')'); }          // les champs en lignes
-    for (let i=0;i<9;i++){ const x = 20 + i*54; inkLine(g, [x, 196, x, 176], 1, 1.8); g.fillStyle = 'rgba(80,110,60,0.55)'; g.beginPath(); g.ellipse(x, 172, 7, 10, 0, 0, 6.283); g.fill(); }   // une rangée d'arbres jeunes
-    for (let i=0;i<3;i++){ const bx = 120 + i*34 + t*5, by = 60 + (i%2)*18 + Math.sin(t*2+i)*2; inkLine(g, [bx-7,by-3, bx,by+2, bx+7,by-3], 1, 1.6); }                // trois oiseaux
+    const k = clamp(t/6, 0, 1), HY = 170, sy = HY - 4 + 0*k - 14*k;
+    const gl = g.createRadialGradient(330, HY, 6, 330, HY, 150); gl.addColorStop(0,'rgba(255,200,130,'+(0.45*k+0.15).toFixed(2)+')'); gl.addColorStop(1,'rgba(255,200,130,0)'); g.fillStyle = gl; g.fillRect(150, 20, 360, 190);
+    g.save(); g.beginPath(); g.rect(0, 0, 480, HY); g.clip();                                                                              // le soleil se lève derrière la tour
+    g.fillStyle = 'rgba(244,160,110,0.85)'; g.beginPath(); g.arc(330, sy+14, 46, 0, 6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 1.4; g.stroke(); g.restore();
+    inkLine(g, [0,HY, 480,HY], 1, 2);
+    for (let i=0;i<4;i++){ const y = HY+8+i*8; inkLine(g, [i*8, y, 480-i*8, y], 1, 0.8, 'rgba(31,27,23,'+(0.14+i*0.04).toFixed(2)+')'); }          // les sillons des champs
+    const dm = []; for (let i=0;i<=16;i++){ const a = Math.PI*(1 - i/16); dm.push(330+66*Math.cos(a), HY-30*Math.sin(a)); } g.fillStyle = '#3b3a3c'; g.beginPath(); dm.forEach((v,i)=>{ if (i%2===0) i? g.lineTo(v, dm[i+1]) : g.moveTo(v, dm[i+1]); }); g.closePath(); g.fill(); inkLine(g, dm, 1, 1.8);   // la tour de la citadelle : le dôme…
+    g.fillStyle = '#2a2a2c'; g.beginPath(); g.moveTo(326,HY-24); g.lineTo(327,60); g.lineTo(334,60); g.lineTo(335,HY-24); g.closePath(); g.fill(); inkLine(g, [326,HY-24, 327,60, 334,60, 335,HY-24], 1, 1.6);          // …et la lame
+    for (const [cx, cy, len, ph] of [[327,76,34,0],[334,92,46,1.3],[327,108,40,2.1],[334,124,30,3.4]]){                                          // des câbles coupés qui pendent
+      const sw = Math.sin(t*1.1+ph)*2.2, side = cx<330? -1 : 1, pts = [cx, cy, cx+side*5, cy+len*0.4, cx+side*4+sw*0.6, cy+len*0.8, cx+side*3+sw, cy+len];
+      inkLine(g, pts, 1, 2.8); g.fillStyle = '#e9dfc6'; g.fillRect(cx+side*3+sw-1.8, cy+len-1, 3.6, 3); }                                  // l'extrémité tranchée
+    for (const [x, y, s] of [[262,186,0.7],[300,184,0.75],[392,184,0.7],[430,186,0.75],[466,184,0.7]]) m5Sapling(g, x, y, s);   // jeunes arbres tuteurés, au fond
+    inkLine(g, [0,232, 480,232], 1, 2.4); inkHatch(g, 0, 232, 480, 38, 7, M5_INK, 0.2);
+    for (const [x, y, s] of [[312,214,1.3],[372,212,1.25],[436,214,1.3]]) m5Sapling(g, x, y, s);                                              // au milieu
+    inkLine(g, [14,176, 184,176], 1, 4); inkWash(g, [14,176, 184,176, 184,184, 14,184], '#4a3c2c', 0.55); inkLine(g, [26,184, 26,232], 1, 3); inkLine(g, [172,184, 172,232], 1, 3);   // la table
+    const lx = 140; inkLine(g, [lx,176, lx-4,146, lx+10,124], 1, 2.4); inkWash(g, [lx-1,112, lx+25,118, lx+18,130, lx+2,124], M5_INK, 0.9);   // la lampe de bureau, allumée
+    m5Cone(g, lx+10, 128, 110, 50, 0.7, '232,165,60'); g.fillStyle = 'rgba(255,214,130,0.95)'; g.beginPath(); g.ellipse(lx+10, 128, 8, 3, 0, 0, 6.283); g.fill();
+    inkLine(g, [lx-12,176, lx+12,176], 1, 4);
+    inkWash(g, [40,176, 44,166, 90,166, 94,176], '#efe6cf', 0.9); inkLine(g, [40,176, 44,166, 90,166, 94,176], 1, 1.4);                       // le carnet fermé, sur la table
+    inkLine(g, [196,232, 198,206, 238,206, 240,232], 1, 2.4); inkLine(g, [198,206, 196,150], 1, 3); inkLine(g, [197,164, 226,164], 1, 2.4); inkLine(g, [196,186, 222,186], 1, 2);   // la chaise vide
+    for (let i=0;i<3;i++){ const bx = 120 + i*38 + t*5, by = 58 + (i%2)*16 + Math.sin(t*2+i)*2; inkLine(g, [bx-7,by-3, bx,by+2, bx+7,by-3], 1, 1.6); }                // trois oiseaux
     plateEnd(g, w, h); },
   // F · La radio qui grésille : le poste de Sol, seul sur la plaine, les ondes rouges de plus en plus faibles
   radio(g, w, h, t){ plateBase(g, w, h, 'rgba(30,26,22,0.35)');
