@@ -138,7 +138,13 @@ const lvlF = b => Math.pow(1.5, (b.lvl||1)-1); // facteur de niveau bâtiment
 //   hero : la Singularité reçoit une aura de réparation (comme l'aura de soin du Che) — le banc a montré que sans elle l'Humanité gagnait ~80 %
 //   env : M10, chaque événement a un effet propre à chaque faction   terrain : M8 occupation (HUM) / extraction (IA)
 //   bld : M5 barricades populaires (HUM) / tourelles autonomes (IA)   econ : M1 économie populaire (HUM) / effet réseau (IA)
-const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true };
+//   heal : M3 brancardiers (HUM : relève d'un allié mourant, réparations −30 %) / recyclage (IA : 5-12 % du coût rendu, nano-réparation moins chère)
+//   rhythm : M4 moral (HUM : jauge 0-100, dégâts ±10 %, élan/débandade) / refroidissement par l'eau et surrégime (IA)
+//   power : M7 pouvoir ✸ (HUM « Soulèvement » : 0,7·D partout + soin 20 % ; IA « Frappe chirurgicale » : 2,2·D sur les 5 unités les plus précieuses)
+//   herofx : M6 héros (Che : ralliement à l'invocation, martyr à sa mort ; Singularité : calcul distribué, assimilation, fragmentation)
+//   trans : M9 transcendance (HUM : un soutien de plus, moral ≥ 70 ; IA : plus aucune surchauffe)
+//   unit : M2 coude à coude (HUM, +dégâts par voisin) / verrouillage de cible (IA : tireurs sur le plus entamé, exécution, siège large)
+const ASYM = { fatigue:true, hero:true, env:true, terrain:true, bld:true, econ:true, unit:true, heal:true, rhythm:true, power:true, herofx:true, trans:true };
 // Les tests coupent une mécanique seule avec game.asym = {econ:false}. En CAMPAGNE, aucune mécanique par défaut : une mission
 // s'inscrit à la carte avec `asym:{env:true}` dans sa définition. Le tutoriel n'en a aucune.
 function asymOn(k){
@@ -158,32 +164,45 @@ const FAC_TRAITS = {
     heatRec:0.04,                                    // fatigue : récupération /s (0,05 avant : la fatigue ne se déclenchait presque jamais)
     longevT:750,                                     // M1 : bonus de longévité à plein régime en 12,5 min (15 min pour la machine)
     rebuildK:0.5, rebuildT:90,                       // M1 : rebâtir le même type sur une ruine de moins de 90 s coûte −50 %
+    texDU:0.82, packStep:0.05, packMax:0.15, packR:50,   // M2 : +5 % de dégâts par allié au sol à ≤ 50 px, max +15 % (texture inchangée : le banc ne supportait pas de la baisser)
+    reliefCd:25, reliefCd2:18, reliefHp:0.25, repairK:0.7,   // M3 : relève (recharge 25 s, 18 s au niveau 2 du soutien) à 25 % de PV ; réparations −30 %
+    moraleKill:2, moraleLoss:1.5, moraleNode:5, moraleHero:15, moraleStrike:10, moraleDmg:0.12, moraleHi:80, moraleLo:20, moraleHiK:0.7, moraleLoSpd:0.9,   // M4 : jauge de moral 0-100 (départ 50, retour à 50 à 1/s)
+    upDmg:0.7, upHeal:0.5,                           // M7 : Soulèvement — 0,7·D sur toutes les unités ennemies, soin de 50 % des PV max et fin de fatigue pour tous les alliés
+    martyrK:1.2, martyrT:20,                         // M6 : à la mort du Che, +20 % de dégâts pendant 20 s et moral à 100 ; à l'invocation : fatigue effacée, moral à 100
+    transSup:1, transMorale:70,                      // M9 : transcendance — quota de médics +1, plancher de moral 70
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
-          frozen:0.5, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
-          acidUnit:18, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
+          frozen:0.3, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
+          acidUnit:19, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
           sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
   },
   IA: {
-    heroDmg:1.3, heroAura:7,                         // Singularité : dégâts ×1,3, aura de réparation 7·ère/s à 150 px (`hero`)
+    heroDmg:1.3, heroAura:6,                         // Singularité : dégâts ×1,3, aura de réparation 6·ère/s à 150 px (`hero`), recalée au lot 3 avec M6
     infCost:1,
     healBase:40, healLvl:9, healPeriod:1.35,         // ruche : soin 40 + 9 par niveau, 35 % plus lent (elle produit aussi des drones)
     texD:1.22, texR:1.22,                            // texture de frappe : dégâts ×1,22, cadence ×1,22 (lent et lourd)
     heatGain:0.065, tiredT:4, tiredDmg:0.7, tiredRate:1.5,   // effort : +0,065 de chaleur par coup, 4 s de surchauffe à −30 % de dégâts et cadence ×1,5
     hpMul:1.05, heatRec:0.030,                       // +5 % PV de base (« robustesse industrielle ») ; refroidissement /s
     netStep:0.07, netMax:0.28, netCut:12,            // M1 : +7 % de production par autre bâtiment éco (max +28 %), coupé 12 s si l'un d'eux tombe
+    texDU:1.06, execK:1.1, execHp:0.5, siegeAoe:1.14,   // M2 : texture ×1,06 (au lieu de ×1,22 : le ciblage concentré vaut beaucoup) ; tireurs/aériens : cible la plus entamée, +10 % sous 50 % de PV ; zone du siège ×1,14
+    recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
+    coolRec:0.05, coolW:0.04, coolMin:40, overHeat:0.75, overK:1.08,   // M4 : si 💧 ≥ 40, refroidissement 0,05/s (0,04 💧/s par unité chaude) ; chaleur ≥ 0,75 : +8 % de dégâts (surrégime)
+    strikeN:5, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres, bâtiments ×1,2
+    heroCool:2, assimR:200, fragN:5,                 // M6 : Singularité vivante, chaleur ×2 plus vite évacuée ; un ennemi tué à ≤ 200 px fait naître un drone ; à sa mort 5 drones hors plafond
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
     env:{ rainBase:0.8, rainFarm:0.8, rainCool:2, sigCd:1.5, sigDrone:1.5, sigTur:1.1,
-          frozen:0.25, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
-          acidUnit:16, acidBld:20, heatUnit:12, heatTired:0.12, heatEco:0.9,
+          frozen:0.5, safe:1, fixK:1.1, fixT:30,                              // mise à jour forcée : riposte ×0,25, production intacte ; puis « correctif »
+          acidUnit:15, acidBld:18, heatUnit:12, heatTired:0.12, heatEco:0.9,
           sand:0.70, sandTur:0.70, winterF:0.4, winterSpd:0.95, winterCool:2, floodRefund:0.7 },
   },
 };
 // Recalage de la difficulté de l'escarmouche : les mécaniques d'asymétrie renforcent l'IA (réseau, héros…) ; on baisse d'autant son bonus
 // caché de production à Difficile/Brutal pour garder la courbe de DIFFS (~100/88/48/25 %). Jamais en campagne, tutoriel ni en ligne.
 const AI_K = [1, 1, 0.8, 0.75];
+// 2e passe (lots 2-3) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
+const AI_KF = { HUM:0.78, IA:1.06 };
 const ft = (fk, k) => FAC_TRAITS[fk][k];
 const fte = (fk, k) => FAC_TRAITS[fk].env[k];
 // BONUS DE LONGÉVITÉ : une ferme/marché/puits gardé en vie monte lentement en régime,

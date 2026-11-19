@@ -95,7 +95,11 @@ check(await B.page.evaluate(() => game.e.slots[0].b===null || game.e.slots[0].b=
 const garH = await A.page.evaluate(() => { const p = game.p, s = p.slots[1]; if (s.b) demolish(s); p.f = p.m = 9000; tryBuild(p, s, 'wall'); return garMax(s.b); });
 await tick(2);
 check(garH === 3 && await B.page.evaluate(() => garMax(game.e.slots[1].b)) === 3, 'muraille humaine : 3 places de garnison des deux côtés');
-check(await A.page.evaluate(() => NET_PROTO) >= 4, 'NET_PROTO incrémenté');
+// lots 2-3 : moral de l'Humanité (jauge ✊) et martyr du Che voyagent vers l'invité ; l'indicateur de refroidissement se lit sur 💧
+await A.page.evaluate(() => { game.p.morale = 90; game.p.martyrT = game.t + 15; }); await tick(2);
+const moG = await B.page.evaluate(() => [game.e.morale, (game.e.martyrT||0)-game.t]);
+check(Math.abs(moG[0]-90) <= 6 && moG[1] > 8 && moG[1] <= 16, `moral et martyr de l'hôte lus par l'invité (${moG.map(v=>v.toFixed(1))})`);
+check(await A.page.evaluate(() => NET_PROTO) >= 5, 'NET_PROTO incrémenté');
 check(!A.errs.length && !B.errs.length, 'aucune erreur JS'+((A.errs[0]||B.errs[0])? ' — '+(A.errs[0]||B.errs[0]) : ''));
 await browser.close();
 if (fails){ console.log('\n'+fails+' échec(s)'); process.exit(1); }

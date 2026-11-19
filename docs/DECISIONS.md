@@ -25,3 +25,7 @@
   d'électricité). Fatigue humaine : récupération 0,05 → 0,04/s pour qu'elle se déclenche. **Constat du banc** : bot contre bot, l'Humanité
   gagnait ~80 % à cause de l'aura de soin du Che (la Singularité n'avait aucun équivalent) ; la Singularité reçoit une aura de réparation de
   7·ère/s — correction de calibration, à revoir avec M6. Difficulté d'escarmouche recalée par `AI_K`.
+- **2026-11 · Asymétrie des factions, lots 2-3** : mécaniques M2, M3, M4, M6, M7, M9 livrées, un interrupteur chacune (`unit`, `heal`, `rhythm`,
+  `power`, `herofx`, `trans`) ; `NET_PROTO` 5. Les bancs sont très bruités (±5 par case, trajectoires chaotiques) : seul `power` ressort de façon stable
+  (le Soulèvement profite à l'Humanité). Aura de la Singularité 7 → 6. `AI_KF` (recalage par camp de l'IA adverse) pour la difficulté ; non appliqué au banc bot.
+  Reste ouvert : niveaux de bot 1 et 3 de B à ~40 %, bench E instable d'une graine à l'autre. Détails : `docs/audit/FACTIONS-BALANCE.md`.

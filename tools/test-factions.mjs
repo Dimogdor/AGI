@@ -41,7 +41,7 @@ function __runGame(cfg){
   __seed(cfg.seed);
   const bot = cfg.mode==='bot';
   newGame(cfg.left, bot? 1 : cfg.diff, false, cfg.right);
-  if (bot){ game.d = __neutralD(); game.e.hp = game.e.maxhp = 1500; }
+  if (bot){ game.d = __neutralD(); game.noKF = true; game.e.hp = game.e.maxhp = 1500; }
   if (cfg.asym) game.asym = cfg.asym;
   if (cfg.flat) game.biome = {terrain:{a:0,b:0,c:0,f1:0,f2:0,f3:0,base:0}};   // carte plate : isole le biais gauche/droite du relief
   const lv = __LV[cfg.lv||2], st1={}, st2={}, eraT = {HUM:[0,0,0,0,0], IA:[0,0,0,0,0]}, rate = {};
@@ -73,7 +73,7 @@ const __EV = {
 };
 function __runE(cfg){
   __seed(cfg.seed);
-  newGame(cfg.left, 1, false, cfg.right); game.d = __neutralD(); game.e.hp = game.e.maxhp = 1500;
+  newGame(cfg.left, 1, false, cfg.right); game.d = __neutralD(); game.noKF = true; game.e.hp = game.e.maxhp = 1500;
   if (cfg.asym) game.asym = cfg.asym;
   // sans cataclysme (coupés ici) la partie est DÉTERMINISTE : la graine ne change rien. On la fait donc varier dans le « cerveau » des bots
   // (mélange d'unités, taille de la vague, phase de décision) et dans l'heure de l'événement.
@@ -107,7 +107,7 @@ async function mkPage(){
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'low', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(300);
   await page.evaluate(BOTS); await page.evaluate(HARNESS);
-  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); let path = p.split('.'); let o = FAC_TRAITS; if (path[0]==='AI_K'){ o = AI_K; path = path.slice(1); } for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
+  if (TUNE) await page.evaluate(`for (const kv of ${JSON.stringify(TUNE)}.split(',')){ const [p, v] = kv.split('='); let path = p.split('.'); let o = FAC_TRAITS; if (path[0]==='AI_K'){ o = AI_K; path = path.slice(1); } else if (path[0]==='AI_KF'){ o = AI_KF; path = path.slice(1); } for (let i=0;i<path.length-1;i++) o = o[path[i]]; o[path[path.length-1]] = +v; }`);
   return page;
 }
 const pages = await Promise.all(Array.from({length:WORKERS}, mkPage));
@@ -128,7 +128,7 @@ let fails = 0;
 
 /* ---------- A : joueur scripté contre l'IA ---------- */
 if (ONLY.has('A')){
-  const diffs = FULL? [0,1,2,3] : [2];
+  const diffs = FULL? arg('diffs','0,1,2,3').split(',').map(Number) : [2];   // --diffs=2 : une seule difficulté
   const jobs = []; for (const fac of ['HUM','IA']) for (const diff of diffs) for (let s=0;s<N;s++) jobs.push({mode:'vs', left:fac, right:undefined, diff, seed:SEED0+1000+s*13+diff});
   const res = await runAll(jobs, '__runGame', 'A');
   console.log('\nA — joueur scripté contre l\'IA (victoires du joueur ; une partie non terminée à 45 min est jugée sur la base restante)');

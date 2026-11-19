@@ -312,6 +312,20 @@ function drawHUD(){
     ctx.fillStyle=DESK_CREAM; ctx.fillText(val, cx0+18, 13);
     ctx.font='9.5px '+UI_TYPE; ctx.fillStyle='#a9b888'; ctx.fillText(rate, cx0+18, 28);
   }
+  // M4 : jauge de moral (✊, Humanité) / refroidissement actif (❄, G·P·T) sous le bandeau, à gauche — style papier
+  if (asymOn('rhythm') && !game.camp){
+    ctx.textAlign='left'; ctx.font='9px '+UI_TYPE;
+    if (p.facKey==='HUM'){
+      const mo = p.morale===undefined? 50 : p.morale;
+      ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(9, 43, 82, 7);
+      ctx.fillStyle=pal.paper; ctx.fillRect(8, 42, 82, 7);
+      ctx.fillStyle = mo>=ft('HUM','moraleHi')? '#6aa84f' : mo<=ft('HUM','moraleLo')? '#c43a24' : '#c9a227';
+      ctx.fillRect(9, 43, 80*mo/100, 5);
+      ctx.fillStyle=pal.red; ctx.fillText('✊ '+Math.round(mo), 96, 46);
+    } else if (p.w>=ft('IA','coolMin')){
+      ctx.fillStyle='#86b6dc'; ctx.fillText('❄ '+tr('f_cooling'), 8, 46);
+    }
+  }
   // ère : étiquette peinte au centre ; santé du monde : réglette graduée dessous
   ctx.textAlign='center';
   { const cm = game.camp && game.camp.m, etxt = cm && cm.when? cT(cm.when).toUpperCase()+' · '+cT(cm.place).split(/[,，،]/)[0].toUpperCase()   // campagne : le moment (saison, champ traduit when) et le lieu de la mission, pas l'ère de la faction
@@ -742,7 +756,7 @@ function buildOptions(side, slot){
     if (slot.b.type==='site')
       return [{key:'demolish', label:tr('bm_cancelsite'), cost:{}}];
     if (slot.b.hp < slot.b.maxhp)
-      opts.push({key:'repair', label:tr('bm_repair'), cost:repairCost(slot.b.hp, slot.b.maxhp, 60)});
+      opts.push({key:'repair', label:tr('bm_repair'), cost:repairCost(slot.b.hp, slot.b.maxhp, 60, p)});
     if ((slot.b.lvl||1)<3)
       opts.push({key:'upgrade', label:fmt('bm_upgrade',{n:(slot.b.lvl||1)+1}), cost:upgBuildCost(slot)});
     // garnison : RÉSERVÉE aux tourelles et murailles, unités à distance uniquement
@@ -796,7 +810,7 @@ function drawBuildMenu(){
     if ((p.fortLvl||1)<3)
       opts.push({key:'fortify', label:fmt('bm_fortify',{n:(p.fortLvl||1)+1}), cost:{f:250*(p.fortLvl||1), m:250*(p.fortLvl||1)}});
     if (!p.autoRepair)
-      opts.push({key:'autorep', label:tr('bm_autorep'), cost:{m:380, w:100}});
+      opts.push({key:'autorep', label:tr('bm_autorep'), cost:autoRepCost(p)});
     if (!opts.length)
       opts.push({key:'noop', label:tr('bm_noop'), cost:{}});
   } else {
