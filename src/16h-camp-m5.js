@@ -929,11 +929,22 @@ function m5Biped(g, x, y, s, on){
 function m5DroneLanded(g, x, y, s, on){ inkDrone(g, x, y-9*s, 34*s, on? M5_BLUE : 'rgba(31,27,23,0.75)', M5_INK);
   inkLine(g, [x-9*s,y-4*s, x-12*s,y], 1, 1.8); inkLine(g, [x+9*s,y-4*s, x+12*s,y], 1, 1.8); }
 // jeune arbre tuteuré : tronc mince, petite couronne, tuteur et lien ; (x, y) = pied
-function m5Sapling(g, x, y, s){
-  inkLine(g, [x+5*s,y, x+5*s,y-24*s], 1, 1.6);                                                    // le tuteur
-  inkLine(g, [x,y, x+0.4*s,y-14*s, x-0.4*s,y-24*s], 1, 1.8);                                      // le tronc
-  inkLine(g, [x-1*s,y-12*s, x+5*s,y-14*s], 1, 1.1);                                               // le lien
-  g.fillStyle = 'rgba(80,110,60,0.6)'; g.beginPath(); g.ellipse(x, y-29*s, 6*s, 7.5*s, 0, 0, 6.283); g.fill(); }
+// jeune arbre tuteuré, planté AU SOL en (x, y) : petite ombre de lavis, tronc fin un peu penché, tuteur, lien, houppier irrégulier
+// fait de 2-3 taches de lavis vert (v = variante 0..2 : inclinaison, nombre et teinte des taches) ; s = taille
+function m5Sapling(g, x, y, s, v){
+  v = v|0; const lean = [0.9, -0.7, 0.3][v%3]*s, H = (23 + v*4)*s;
+  g.fillStyle = 'rgba(31,27,23,0.22)'; g.beginPath(); g.ellipse(x+2*s, y+0.6, 8*s, 1.9*s, 0, 0, 6.283); g.fill();                    // l'ombre au pied : l'arbre touche la terre
+  inkLine(g, [x-9*s,y+0.4, x-5*s,y-0.4], 1, 0.9, 'rgba(31,27,23,0.45)'); inkLine(g, [x+7*s,y+0.6, x+11*s,y-0.2], 1, 0.9, 'rgba(31,27,23,0.45)');   // deux brins d'herbe
+  inkLine(g, [x+4.5*s,y, x+4.5*s,y-H*0.92], 1, 1.1);                                                                                   // le tuteur
+  inkLine(g, [x,y, x+lean*0.3,y-H*0.45, x+lean,y-H], 1, 1.5);                                                                           // le tronc, fin
+  inkLine(g, [x+lean*0.25-1.5*s,y-H*0.38, x+4.5*s,y-H*0.46], 1, 0.9);                                                                    // le lien
+  const cx = x+lean, cy = y-H, P = [[-4,-2,7,5.6,'rgba(86,120,62,0.62)'],[3.6,-6,6.4,5.2,'rgba(104,138,66,0.58)'],[0.6,3,5.4,4.2,'rgba(70,104,58,0.58)']];
+  const n = 2 + (v===1? 1 : v===2? 0 : 1);
+  for (let i=0;i<n;i++){ const [dx,dy,rx,ry,col] = P[i], bx = cx+dx*s, by = cy+dy*s, pts = [];                                          // une tache irrégulière (polygone bruité, pas une ellipse)
+    for (let k=0;k<9;k++){ const a = k/9*6.283, r = 1+0.22*Math.sin(k*2.3+v*1.7+i*3.1); pts.push(bx+Math.cos(a)*rx*s*r, by+Math.sin(a)*ry*s*r); }
+    inkWash(g, pts, col, 1); }
+  inkLine(g, [cx-1*s,cy+3*s, cx,cy+0.5*s], 1, 0.9, 'rgba(31,27,23,0.5)');                                                                 // une branchette sous le houppier
+}
 const M5_PLATES = {
   // P1 · La plaine : la citadelle comme un couvercle, trois colonnes de cellules qui convergent
   plain(g, w, h, t){ plateBase(g, w, h, 'rgba(120,70,40,0.12)');
@@ -1130,14 +1141,23 @@ const M5_PLATES = {
     g.fillStyle = 'rgba(244,160,110,0.85)'; g.beginPath(); g.arc(330, sy+14, 46, 0, 6.283); g.fill(); g.strokeStyle = M5_INK; g.lineWidth = 1.4; g.stroke(); g.restore();
     inkLine(g, [0,HY, 480,HY], 1, 2);
     for (let i=0;i<4;i++){ const y = HY+8+i*8; inkLine(g, [i*8, y, 480-i*8, y], 1, 0.8, 'rgba(31,27,23,'+(0.14+i*0.04).toFixed(2)+')'); }          // les sillons des champs
-    const dm = []; for (let i=0;i<=16;i++){ const a = Math.PI*(1 - i/16); dm.push(330+66*Math.cos(a), HY-30*Math.sin(a)); } g.fillStyle = '#3b3a3c'; g.beginPath(); dm.forEach((v,i)=>{ if (i%2===0) i? g.lineTo(v, dm[i+1]) : g.moveTo(v, dm[i+1]); }); g.closePath(); g.fill(); inkLine(g, dm, 1, 1.8);   // la tour de la citadelle : le dôme…
-    g.fillStyle = '#2a2a2c'; g.beginPath(); g.moveTo(326,HY-24); g.lineTo(327,60); g.lineTo(334,60); g.lineTo(335,HY-24); g.closePath(); g.fill(); inkLine(g, [326,HY-24, 327,60, 334,60, 335,HY-24], 1, 1.6);          // …et la lame
-    for (const [cx, cy, len, ph] of [[327,76,34,0],[334,92,46,1.3],[327,108,40,2.1],[334,124,30,3.4]]){                                          // des câbles coupés qui pendent
-      const sw = Math.sin(t*1.1+ph)*2.2, side = cx<330? -1 : 1, pts = [cx, cy, cx+side*5, cy+len*0.4, cx+side*4+sw*0.6, cy+len*0.8, cx+side*3+sw, cy+len];
-      inkLine(g, pts, 1, 2.8); g.fillStyle = '#e9dfc6'; g.fillRect(cx+side*3+sw-1.8, cy+len-1, 3.6, 3); }                                  // l'extrémité tranchée
-    for (const [x, y, s] of [[262,186,0.7],[300,184,0.75],[392,184,0.7],[430,186,0.75],[466,184,0.7]]) m5Sapling(g, x, y, s);   // jeunes arbres tuteurés, au fond
+    // la tour de la citadelle, éteinte : un dôme bas, un fût large qui s'affine, une coupole et une lame au sommet (même silhouette que M4-citadel)
+    const TX = 330, dm = []; for (let i=0;i<=20;i++){ const a = Math.PI*(1 - i/20); dm.push(TX+84*Math.cos(a), HY-30*Math.sin(a)); }
+    g.fillStyle = '#3b3a3c'; g.beginPath(); dm.forEach((v,i)=>{ if (i%2===0) i? g.lineTo(v, dm[i+1]) : g.moveTo(v, dm[i+1]); }); g.closePath(); g.fill(); inkLine(g, dm, 1, 1.8);
+    const fut = [TX-17,HY-26, TX-7,66, TX+7,66, TX+17,HY-26];                                                                               // le fût : large à la base, fin en haut
+    inkWash(g, fut, '#2a2a2c', 0.95); inkLine(g, fut, 1, 1.8);
+    for (const by of [112, 90]) inkLine(g, [TX-8-(by-66)*0.12, by, TX+8+(by-66)*0.12, by], 1, 0.9, 'rgba(233,223,198,0.5)');               // deux bandes de coursive, éteintes
+    const cap = []; for (let i=0;i<=10;i++){ const a = Math.PI*(1 - i/10); cap.push(TX+11*Math.cos(a), 66-8*Math.sin(a)); }
+    g.fillStyle = '#2a2a2c'; g.beginPath(); cap.forEach((v,i)=>{ if (i%2===0) i? g.lineTo(v, cap[i+1]) : g.moveTo(v, cap[i+1]); }); g.closePath(); g.fill(); inkLine(g, cap, 1, 1.6);   // la coupole
+    inkWash(g, [TX-2.6,60, TX,30, TX+2.6,60], '#2a2a2c', 0.95); inkLine(g, [TX-2.6,60, TX,30, TX+2.6,60], 1, 1.4);                            // la lame
+    for (const [sx, sy, dir, len, ph] of [[TX-6,76,-1,56,0],[TX+6,84,1,66,1.4],[TX-7,100,-1,38,2.6]]){                                      // trois câbles coupés qui pendent, en courbes souples
+      const sw = Math.sin(t*1.1+ph)*2.4, ex = sx+dir*(7+len*0.14)+sw, ey = sy+len;
+      g.strokeStyle = M5_INK; g.lineWidth = 2.1; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx, sy);
+      g.bezierCurveTo(sx+dir*5, sy+len*0.3, ex+dir*4, ey-len*0.38, ex, ey); g.stroke();
+      g.fillStyle = '#e9dfc6'; g.fillRect(ex-1.8, ey-0.5, 3.6, 3.2); g.strokeStyle = M5_INK; g.lineWidth = 0.8; g.strokeRect(ex-1.8, ey-0.5, 3.6, 3.2); }   // l'extrémité tranchée
+    for (const [x, y, s, v] of [[236,178,0.55,2],[266,181,0.62,0],[408,181,0.6,1],[446,179,0.58,2],[464,184,0.7,0]]) m5Sapling(g, x, y, s, v);   // jeunes arbres du fond, posés sur le sol
     inkLine(g, [0,232, 480,232], 1, 2.4); inkHatch(g, 0, 232, 480, 38, 7, M5_INK, 0.2);
-    for (const [x, y, s] of [[312,214,1.3],[372,212,1.25],[436,214,1.3]]) m5Sapling(g, x, y, s);                                              // au milieu
+    for (const [x, y, s, v] of [[300,205,0.95,1],[368,212,1.2,0],[426,208,0.85,2],[452,224,1.35,1]]) m5Sapling(g, x, y, s, v);                  // au milieu et devant
     inkLine(g, [14,176, 184,176], 1, 4); inkWash(g, [14,176, 184,176, 184,184, 14,184], '#4a3c2c', 0.55); inkLine(g, [26,184, 26,232], 1, 3); inkLine(g, [172,184, 172,232], 1, 3);   // la table
     const lx = 140; inkLine(g, [lx,176, lx-4,146, lx+10,124], 1, 2.4); inkWash(g, [lx-1,112, lx+25,118, lx+18,130, lx+2,124], M5_INK, 0.9);   // la lampe de bureau, allumée
     m5Cone(g, lx+10, 128, 110, 50, 0.7, '232,165,60'); g.fillStyle = 'rgba(255,214,130,0.95)'; g.beginPath(); g.ellipse(lx+10, 128, 8, 3, 0, 0, 6.283); g.fill();
