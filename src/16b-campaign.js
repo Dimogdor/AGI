@@ -684,12 +684,19 @@ function campBriefClose(toMenu){
 // musique du briefing : on enveloppe le choix de thème de 03-audio (sans le modifier) — un seul point d'entrée
 if (typeof musicMode==='function'){ const _musicMode = musicMode;
   musicMode = function(){ if (CAMP_BRIEF.open && !game) return MUSIC_THEMES.c_map? 'c_map' : 'carnet'; return _musicMode(); }; }
+// objectifs facultatifs d'une mission : le texte long « Facultatif : A · B · C. » coupé en lignes (sans le préfixe ni le point final)
+function campOptLines(m){
+  const raw = cT(m.goal2).replace(/^[^:：]{2,24}[:：]\s*/, '').replace(/[.。]\s*$/, '');
+  const a = raw.split(/\s*[·・]\s*/).map(x=>x.trim()).filter(Boolean);
+  return a.length>1? a : [cT(m.goal2)];
+}
 function campBriefRender(){
   const box = $('campBrief'); if (!box) return;
   const i = CAMP_BRIEF.i, m = CAMPAIGN[i]; if (!m) return;
   const keep = box.querySelector('.cbBody'), st = keep? keep.scrollTop : 0;
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt!=null) e.textContent = txt; return e; };
-  const sec = (title, cls) => { const s = el('section', 'cbSec'+(cls? ' '+cls : '')); s.appendChild(el('h3', null, title)); return s; };
+  // o = rang en deux colonnes (bureau), op = rang en colonne unique (téléphone) : le même contenu, deux ordres de lecture
+  const sec = (title, cls, o, op) => { const s = el('section', 'cbSec'+(cls? ' '+cls : '')); s.appendChild(el('h3', null, title)); s.style.setProperty('--o', o|0); s.style.setProperty('--op', op|0); return s; };
   box.textContent = '';
   const sheet = el('div', 'cbSheet'); box.appendChild(sheet);
   // en-tête : numéro, titre, lieu
@@ -700,32 +707,33 @@ function campBriefRender(){
   const body = el('div', 'cbBody'); sheet.appendChild(body);
   const L = el('div', 'cbCol'), R = el('div', 'cbCol'); body.appendChild(L); body.appendChild(R);
   // récit
-  { const s = sec(cT(CAMP_UI.recap));
+  { const s = sec(cT(CAMP_UI.recap), null, 1, 1);
     const prev = i>0 && CAMPAIGN[i-1] && CAMPAIGN[i-1].debrief;
     if (prev){ const q = el('blockquote', 'cbPrev'); q.appendChild(el('b', null, cT(CAMP_UI.prev)+' ')); q.appendChild(document.createTextNode(cT(prev))); s.appendChild(q); }
     for (const p of campParas(m, 'recap')) s.appendChild(el('p', null, p));
     L.appendChild(s); }
-  { const s = sec(cT(CAMP_UI.where)); s.appendChild(el('p', 'cbWhere', cT(m.place)));
+  { const s = sec(cT(CAMP_UI.where), null, 2, 2);                  // le lieu est déjà dans l'en-tête : pas de ligne en gras qui le répète
     for (const p of campParas(m, 'where')) s.appendChild(el('p', null, p));
     L.appendChild(s); }
   // ordres
-  { const s = sec(cT(CAMP_UI.goal), 'cbGoal'); s.appendChild(el('p', 'cbGoalTxt', cT(m.goal)));
-    if (m.goal2){ s.appendChild(el('h4', null, cT(CAMP_UI.goal2)+(CAMP_SAVE.bonus[i]? ' ★' : ''))); s.appendChild(el('p', null, cT(m.goal2))); }
+  { const s = sec(cT(CAMP_UI.goal), 'cbGoal', 1, 3); s.appendChild(el('p', 'cbGoalTxt', cT(m.goal)));
+    if (m.goal2){ s.appendChild(el('h4', null, cT(CAMP_UI.goal2)+(CAMP_SAVE.bonus[i]? ' ★' : '')));
+      const ul = el('ul', 'cbOpt'); for (const l of campOptLines(m)) ul.appendChild(el('li', null, l)); s.appendChild(ul); }    // un objectif facultatif par ligne
     R.appendChild(s); }
-  { const s = sec(cT(CAMP_UI.rule)); s.appendChild(el('p', null, cT(m.rule))); R.appendChild(s); }
-  if (m.tips && m.tips.length){ const s = sec(cT(CAMP_UI.tips)), ul = el('ul', 'cbTips'); for (const tp of m.tips) ul.appendChild(el('li', null, cT(tp))); s.appendChild(ul); R.appendChild(s); }
+  { const s = sec(cT(CAMP_UI.rule), null, 2, 4); s.appendChild(el('p', null, cT(m.rule))); R.appendChild(s); }
+  if (m.tips && m.tips.length){ const s = sec(cT(CAMP_UI.tips), null, 3, 5), ul = el('ul', 'cbTips'); for (const tp of m.tips) ul.appendChild(el('li', null, cT(tp))); s.appendChild(ul); R.appendChild(s); }
   // difficulté (réglage de la campagne, rappelé ici)
-  { const s = sec(cT(CAMP_UI.diffLbl), 'cbDiff'), row = el('div', 'cbPills');
+  { const s = sec(cT(CAMP_UI.diffLbl), 'cbDiff', 3, 6), row = el('div', 'cbPills');
     [0,1,2].forEach(k=>{ const b = el('button', 'cbPill'+(CAMP_SAVE.diff===k? ' sel' : ''), cT(CAMP_UI['d'+k]));
       b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campBriefRender(); }); row.appendChild(b); });
     s.appendChild(row); const D = campDiff(CAMP_SAVE.diff); if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);   // comme startMission()
     s.appendChild(el('p', 'cbDiffTag', cT(CAMP_UI['dTag'+D.i])));
     const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); s.appendChild(ul);
-    R.appendChild(s); }
-  // doctrine : deux fiches, explications longues
-  { const s = sec(cT(CAMP_UI.doc), 'cbDocs'), pair = campDocPair(i);
-    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc)));
-    if (pair){ const cards = el('div', 'cbCards');
+    L.appendChild(s); }                                                        // colonne de gauche, sous « Où nous sommes »
+  // doctrine : le titre et l'indication à gauche, les deux fiches (explications longues) en pleine largeur dessous
+  { const s = sec(cT(CAMP_UI.doc), 'cbDocHead', 4, 7), pair = campDocPair(i);
+    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc))); L.appendChild(s);
+    if (pair){ const cards = el('div', 'cbCards'); cards.style.setProperty('--o', 5); cards.style.setProperty('--op', 8);
       pair.forEach((id,k)=>{ const d = DOCTRINES[id], sel = (CAMP_SAVE.doc[i]? 1 : 0)===k;
         const cd = el('div', 'cbDoc'+(sel? ' sel' : '')); cd.setAttribute('role', 'button'); cd.tabIndex = 0;
         cd.appendChild(el('span', 'cbMark', cT(CAMP_UI.chosen)));
@@ -742,8 +750,8 @@ function campBriefRender(){
         const pick = ()=>{ if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
         cd.addEventListener('click', pick); cd.addEventListener('keydown', ev=>{ if (ev.key==='Enter' || ev.key===' '){ ev.preventDefault(); pick(); } });
         cards.appendChild(cd); });
-      s.appendChild(cards); }
-    body.appendChild(s); }
+      body.appendChild(cards); }
+  }
   // pied : retour / lancer
   const foot = el('div', 'cbFoot');
   const back = el('button', 'cbBack', (SETTINGS.lang==='ar'? '→ ' : '← ')+cT(CAMP_UI.back)); back.addEventListener('click', ()=>campBriefClose(true));
