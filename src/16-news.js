@@ -211,7 +211,7 @@ function drawNews(){
   if (!game || game.over || (!NEWSF.cur && !closed)) return;
   // sous la file de production (même coin) quand elle est visible, pour ne jamais la masquer
   const qn = (game.p && game.p.queue)? game.p.queue.length : 0;
-  const x0 = 6, y0 = 43 + (qn? 30 : 0), maxW = clamp(W/2 - 100 - 34 - x0, 200, 470);
+  const x0 = 6, y0 = 43 + (HUD.tlH||0) + (qn? 30 : 0), maxW = clamp(W/2 - 100 - 34 - x0, 200, 470);
   let txt, a = 1, ev = false;
   if (closed){ txt = tr('news_closed'); a = Math.min(1, NEWSF.closedT/0.5); }
   else { const c = NEWSF.cur; txt = c.txt; ev = c.ev; a = Math.min(1, c.t/0.45, (c.dur - c.t)/0.7); }

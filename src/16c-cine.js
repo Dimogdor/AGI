@@ -202,7 +202,6 @@ function cineFrame(){
   ctx.font = sf.toFixed(1)+'px '+UI_TYPE;
   const lbl = cT(CINE_UI.skip)+' ▸▸', hint = cineTouch()? '' : '  [Esc]';
   const sw = Math.round(ctx.measureText(lbl+hint).width + sf*2.4), y = Math.round(Math.max(5, (bh-sh)/2));
-  const FS_W = 44;                                                  // le bouton plein écran occupe le coin haut droit
   const skip = { x: rtl? 10 : W-10-FS_W-8-sw, y, w:sw, h:sh, lbl, hint, f:sf };
   const vok = typeof voiceIndex==='function' && !!voiceIndex();
   const vbtn = vok? { x: rtl? skip.x+sw+8 : skip.x-sh-8, y, w:sh, h:sh } : null;

@@ -119,3 +119,17 @@ ar:{ f_relief:"🩹 أُنقِذ!",
   f_trans2_ia:"لا مزيد من السخونة الزائدة" },
 };
 for (const L in I18N_ASYM2) Object.assign(I18N[L], I18N_ASYM2[L]);
+
+// v1.17 — HUD : libellés courts (le texte explicatif long reste dans l'infobulle / l'annonce)
+const I18N_HUDX = {
+fr:{ siege_btn:"MODE SIÈGE" },
+en:{ siege_btn:"SIEGE MODE" },
+es:{ siege_btn:"MODO ASEDIO" },
+de:{ siege_btn:"BELAGERUNG" },
+it:{ siege_btn:"MODO ASSEDIO" },
+pt:{ siege_btn:"MODO CERCO" },
+ru:{ siege_btn:"РЕЖИМ ОСАДЫ" },
+zh:{ siege_btn:"攻城模式" },
+ar:{ siege_btn:"وضع الحصار" },
+};
+for (const L in I18N_HUDX) Object.assign(I18N[L], I18N_HUDX[L]);

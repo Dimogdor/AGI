@@ -14,6 +14,12 @@ const UI_TYPE = '"AGI Type","Courier New",monospace', UI_STEN = '"AGI Stencil","
 // police du HUD : condensée de presse (Oswald 600) — plus typée que l'Arial gras et plus étroite,
 // donc moins de libellés comprimés par fitFont dans les langues longues
 const HF = px => '600 '+px+'px '+UI_COND;
+// RÉSERVE UNIQUE du coin haut droit pour le bouton plein écran flottant (DOM) : HUD et cinématiques s'en écartent
+const FS_W = 44;
+// taille réelle d'un pixel logique à l'écran (téléphone 844×390 : ~0,72) ; uiPx(n) : n px logiques, relevés pour valoir au moins
+// 11 px réels sur petit écran (jamais modifiés sur ordinateur, où l'échelle est ≥ 1)
+function uiK(){ const w = parseFloat(cv.style.width); return (w>0 && W>0)? w/W : 1; }
+function uiPx(n){ const k = uiK(); return k<1? Math.max(n, 11/k) : n; }
 // les polices embarquées (data: URI) ne se chargent qu'à la première utilisation : on les
 // demande dès le démarrage pour que le canvas ne dessine jamais avec la police de repli
 try { if (document.fonts && document.fonts.load)
@@ -161,7 +167,7 @@ function drawIcon(name, x, y, s, g){ g = g||ctx; const f = ICON.I[name]; if (!f)
     ctx.textAlign = al;
   };
 }
-const HUD = { btns:[], selRect:null, upgRects:[], press:null };
+const HUD = { btns:[], selRect:null, upgRects:[], press:null, tlH:0 };
 function layoutHUD(){
   HUD.btns = [];
   const bh=64, y=H-bh-6;            // rangée unités
@@ -185,9 +191,12 @@ function layoutHUD(){
   HUD.btns.push({type:'zoom', d:-1, x:W-88, y:sy, w:40, h:oh, label:'🔍−'});
   HUD.btns.push({type:'zoom', d:1,  x:W-44, y:sy, w:38, h:oh, label:'🔍+'});
   // cluster de contrôles, coin haut-droite (vitesse · pause · réglages) — agrandi pour le tactile
-  HUD.btns.push({type:'speed',     x:W-112, y:5, w:34, h:28});
-  HUD.btns.push({type:'softpause', x:W-75,  y:5, w:34, h:28});
-  HUD.btns.push({type:'pause',     x:W-38,  y:5, w:34, h:28, label:'⚙'});
+  // (le bouton plein écran flottant, quand il est visible — menus, pas en partie —, a sa réserve FS_W+4 à l'extrême droite)
+  let fsR = 0; try { fsR = fsBtnHidden()? 0 : FS_W+4; } catch(e){}
+  HUD.btns.push({type:'speed',     x:W-112-fsR, y:5, w:34, h:28});
+  HUD.btns.push({type:'softpause', x:W-75-fsR,  y:5, w:34, h:28});
+  HUD.btns.push({type:'pause',     x:W-38-fsR,  y:5, w:34, h:28, label:'⚙'});
+  HUD.fsR = fsR;
 }
 layoutHUD();
 // MASQUAGE DYNAMIQUE DU HUD : le bouton ⚡ ÉVOLUER disparaît une fois l'ère plafond atteinte.
@@ -205,12 +214,14 @@ function setZoom(nz, cxAnchor){
   camClamp();
 }
 function fmtRate(r){ return '+'+(Math.round(r*10)/10); }
+// valeur signée / chiffrée isolée de gauche à droite (arabe : « +11.6/s » ne doit pas se retourner en « s/11.6+ ») ; sans effet ailleurs
+function ltr(s){ return (SETTINGS && SETTINGS.lang==='ar')? '\u2066'+s+'\u2069' : s; }
 function fmtTime(s){ const m=Math.floor(s/60), ss=('0'+Math.floor(s%60)).slice(-2); return m+':'+ss; }
 // file d'attente : tickets des unités en attente d'une place sur la carte (en haut à gauche)
 function drawQueue(){
   const p=game.p, q=p.queue;
   if (!q || !q.length) return;
-  const pal = uiPal(), sz=20, gap=4, bx=10, by=43, n=Math.min(q.length,10);
+  const pal = uiPal(), sz=20, gap=4, bx=10, by=43+(HUD.tlH||0), n=Math.min(q.length,10);
   ctx.textAlign='center'; ctx.textBaseline='middle';
   for (let i=0;i<n;i++){
     const x=bx+i*(sz+gap), next=(i===0);
@@ -288,6 +299,47 @@ function paperChip(x, y, w, h, pal, col){
   if (pal.ia){ ctx.fillStyle = 'rgba(95,160,110,0.16)'; for (let yy=y+8; yy<y+h; yy+=16) ctx.fillRect(x, yy, w, Math.min(8, y+h-yy)); }
   else { ctx.fillStyle = paperGrain(); ctx.fillRect(x, y, w, h); }
 }
+// CARTOUCHE DE RYTHME (v1.17) : « MORAL » à l'encre, barre graduée à 20 et à 80, mot d'état à droite — ÉLAN (≥ 80, vert) / DÉBANDADE (≤ 20, rouge),
+// qui clignote au franchissement. Côté machine : « ❄ REFROIDISSEMENT · N machines chaudes ». Renvoie la hauteur occupée (0 : rien).
+function drawRhythmCartouche(pal, p){
+  const X = 8, Y = 40, f = uiPx(9.5), h = Math.max(16, Math.round(f*1.45)), ym = Y+h/2+0.5;
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  if (p.facKey==='HUM'){
+    const mo = p.morale===undefined? 50 : p.morale, hi = ft('HUM','moraleHi'), lo = ft('HUM','moraleLo');
+    const zone = mo>=hi? 1 : mo<=lo? -1 : 0, ink = zone>0? '#2f6a2a' : zone<0? pal.red : pal.ink2;
+    if (HUD.moZone!==undefined && HUD.moZone!==zone && zone!==0) HUD.moFlash = performance.now();
+    HUD.moZone = zone;
+    const lab = tr('f_moral'), elan = tr('f_elan'), deb = tr('f_deband');
+    ctx.font = HF(f);
+    const lw = ctx.measureText(lab).width, ww = Math.max(ctx.measureText(elan).width, ctx.measureText(deb).width, ctx.measureText('100').width);
+    const bw = Math.round(f*5), w = Math.max(130, Math.ceil(6+lw+6+bw+7+ww+6));
+    paperChip(X, Y, w, h, pal);
+    ctx.fillStyle = pal.ink; ctx.fillText(lab, X+6, ym);
+    const bx = X+6+lw+6, by = Y+h/2-3.5;
+    ctx.fillStyle = 'rgba(31,27,23,0.22)'; ctx.fillRect(bx, by, bw, 7);
+    ctx.fillStyle = zone>0? '#4f9a3c' : zone<0? '#c43a24' : '#c9a227'; ctx.fillRect(bx, by, bw*clamp(mo,0,100)/100, 7);
+    ctx.fillStyle = pal.ink; for (const v of [lo, hi]) ctx.fillRect(Math.round(bx+bw*v/100)-0.5, by-2.5, 1.2, 12);   // graduations : débandade à 20, élan à 80
+    ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.strokeRect(bx-0.5, by-0.5, bw+1, 8);
+    const fl = performance.now()-(HUD.moFlash||-1e9), blink = fl<2200 && Math.floor(fl/220)%2===1;
+    ctx.textAlign = 'right';
+    if (zone!==0){ if (!blink){ ctx.fillStyle = ink; ctx.fillText(zone>0? elan : deb, X+w-6, ym); } }
+    else { ctx.fillStyle = pal.ink2; ctx.fillText(String(Math.round(mo)), X+w-6, ym); }
+    ctx.textAlign = 'left';
+    return h+4;
+  }
+  HUD.moZone = undefined;
+  if (p.w>=ft('IA','coolMin')){
+    let n = 0; for (const u of p.units) if (u.fac==='IA' && u.role!=='gremlin' && (u.heat||0)>0) n++;
+    if (n>0){
+      const txt = fmt(n>1? 'f_cooln' : 'f_cool1', {n}); ctx.font = HF(f);
+      const w = Math.min(Math.max(130, ctx.measureText(txt).width+14), Math.max(160, W/2-130));
+      paperChip(X, Y, w, h, pal); ctx.fillStyle = pal.ia? pal.red : '#1d6a8f';
+      fitFont(txt, w-12, HF(f), 8); ctx.fillText(txt, X+6, ym);
+      return h+4;
+    }
+  }
+  return 0;
+}
 function drawHUD(){
   const p = game.p, fac = p.fac, pal = uiPal();
   const rates = calcRates(p);
@@ -307,25 +359,14 @@ function drawHUD(){
     [184, '💧',        '#86b6dc', String(Math.floor(p.w)), fmtRate(rates.w)+'/s'],
     [262, '✦',         pal.ia? '#6cc0ee' : '#e8694f', Math.floor(p.xp)+(nx?'/'+nx:''), fmtRate(xpr)+'/s'],
   ];
+  const phone = uiK()<1;                                       // petit écran : taux relevés à 11 px réels, lignes resserrées
   for (const [cx0, ic, icol, val, rate] of cells){
-    ctx.font=HF(14); ctx.fillStyle=icol; ctx.fillText(ic, cx0, 13);
-    ctx.fillStyle=DESK_CREAM; ctx.fillText(val, cx0+18, 13);
-    ctx.font='9.5px '+UI_TYPE; ctx.fillStyle='#a9b888'; ctx.fillText(rate, cx0+18, 28);
+    ctx.font=HF(14); ctx.fillStyle=icol; ctx.fillText(ic, cx0, phone? 11 : 13);
+    ctx.fillStyle=DESK_CREAM; ctx.fillText(val, cx0+18, phone? 11 : 13);
+    ctx.font=uiPx(9.5).toFixed(1)+'px '+UI_TYPE; ctx.fillStyle='#a9b888'; ctx.fillText(ltr(rate), cx0+18, phone? 27 : 28);
   }
-  // M4 : jauge de moral (✊, Humanité) / refroidissement actif (❄, G·P·T) sous le bandeau, à gauche — style papier
-  if (asymOn('rhythm') && !game.camp){
-    ctx.textAlign='left'; ctx.font='9px '+UI_TYPE;
-    if (p.facKey==='HUM'){
-      const mo = p.morale===undefined? 50 : p.morale;
-      ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(9, 43, 82, 7);
-      ctx.fillStyle=pal.paper; ctx.fillRect(8, 42, 82, 7);
-      ctx.fillStyle = mo>=ft('HUM','moraleHi')? '#6aa84f' : mo<=ft('HUM','moraleLo')? '#c43a24' : '#c9a227';
-      ctx.fillRect(9, 43, 80*mo/100, 5);
-      ctx.fillStyle=pal.red; ctx.fillText('✊ '+Math.round(mo), 96, 46);
-    } else if (p.w>=ft('IA','coolMin')){
-      ctx.fillStyle='#86b6dc'; ctx.fillText('❄ '+tr('f_cooling'), 8, 46);
-    }
-  }
+  // M4 : cartouche de papier sous le bandeau, à gauche — moral (Humanité) ou refroidissement (G·P·T) ; libère la place sous lui pour la file et le fil
+  HUD.tlH = (asymOn('rhythm') && !game.camp)? drawRhythmCartouche(pal, p) : 0;
   // ère : étiquette peinte au centre ; santé du monde : réglette graduée dessous
   ctx.textAlign='center';
   { const cm = game.camp && game.camp.m, etxt = cm && cm.when? cT(cm.when).toUpperCase()+' · '+cT(cm.place).split(/[,，،]/)[0].toUpperCase()   // campagne : le moment (saison, champ traduit when) et le lieu de la mission, pas l'ère de la faction
@@ -334,12 +375,18 @@ function drawHUD(){
     const tw = Math.min(230, ctx.measureText(etxt).width), lw = tw+20;
     ctx.fillStyle = p.trans? '#c9a227' : pal.red; ctx.fillRect(W/2-lw/2, 2, lw, 16);
     ctx.fillStyle = p.trans? '#1f1b17' : '#f4ecd8'; ctx.fillText(etxt, W/2, 10.5);
+    // santé du monde : barre PLEINE et verte quand tout va bien, qui se vide vers le rouge à mesure que le monde se dégrade (largeur 160·(1−dév))
+    const hk = 1-clamp(game.dev,0,1);
     ctx.fillStyle = '#0a0706'; ctx.fillRect(W/2-80, 27, 160, 5);
-    if (game.dev>0.01){ ctx.fillStyle = lerpCol([122,170,96],[196,58,36],game.dev); ctx.fillRect(W/2-80, 27, Math.max(3,160*game.dev), 5); }
+    if (hk>0.005){ ctx.fillStyle = lerpCol([122,170,96],[196,58,36],1-hk); ctx.fillRect(W/2-80, 27, Math.max(3,160*hk), 5); }
     ctx.fillStyle = 'rgba(10,7,6,0.55)'; for (let k=1;k<8;k++) ctx.fillRect(W/2-80+k*20, 27, 1, 5);
-    ctx.font='7.5px '+UI_TYPE; ctx.fillStyle=DESK_DIM; ctx.fillText(tr('world_health'), W/2, 22.5); }
+    ctx.fillStyle=DESK_DIM; ctx.textAlign='center';
+    { const wh = tr('world_health'), lf = uiPx(7.5); ctx.font = lf.toFixed(1)+'px '+UI_TYPE;
+      const lw = ctx.measureText(wh).width, free = W/2-80-8-346;      // place à gauche de la barre, après la cellule ✦ (≈ x 346)
+      if (lf>9 && lw<=free){ ctx.textAlign='right'; ctx.fillText(wh, W/2-86, 29.5); }                          // téléphone : à côté de la barre, lisible
+      else { ctx.font='7.5px '+UI_TYPE; ctx.fillText(wh, W/2, 22.5); } } }
   // droite : effectif + ennemi (calés À GAUCHE du cluster de contrôles → pas de chevauchement)
-  const RX = W-120;                                // 8 px d'air avant le bouton de vitesse (x = W-112)
+  const RX = W-120-(HUD.fsR||0);                   // 8 px d'air avant le bouton de vitesse (x = W-112, décalé de la réserve plein écran)
   ctx.textAlign='right'; ctx.font=HF(13);
   ctx.fillStyle = unitTotal(p)>=p.cap? '#ff6a55' : DESK_CREAM;
   const qn = (p.queue && p.queue.length) ? p.queue.length : (p.queueLen||0);
@@ -399,19 +446,22 @@ function drawHUD(){
     ctx.fillStyle=pal.paper; ctx.fillRect(mx+mw+8, my, tw, mh);
     ctx.textAlign='center'; ctx.fillStyle=pal.ink; ctx.fillText(ttxt, mx+mw+8+tw/2, my+mh/2+0.5); }
   drawQueue();
-  // ---- météo en cours ----
-  if (game.weather){
-    ctx.font=HF(10); ctx.textAlign='center';
-    const wt = game.weather==='strike'? tr('ev_strike_short') : tr('ev_patch_short');
-    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(wt, W/2+1, 72);
-    ctx.fillStyle = game.weather==='strike'? '#ff9d45':'#5ad0ff'; ctx.fillText(wt, W/2, 71);
-  } else if ((p.afterT||0) > game.t && asymOn('env')){     // « acquis sociaux » (humains) / « correctif » (machines) : bonus de 30 s après l'événement
-    ctx.font=HF(10); ctx.textAlign='center';
-    const at = fmt(p.facKey==='HUM'? 'ev_after_hum' : 'ev_after_ia', {n:Math.ceil(p.afterT-game.t)});
-    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(at, W/2+1, 72);
-    ctx.fillStyle = p.facKey==='HUM'? '#9dc88a' : '#5ad0ff'; ctx.fillText(at, W/2, 71);
+  // ---- UN SEUL BANDEAU par événement : titre court + compte à rebours, puis deux lignes d'explication (≥ 12 px, 11 px réels sur téléphone) ----
+  // Tant que l'annonce (titre + explication) est à l'écran, rien d'autre ne répète l'événement ; ensuite seul reste le compte à rebours.
+  const evBanner = game.msgT>0 && game.msg && (game.msg.txt===tr('ev_strike') || game.msg.txt===tr('ev_patch'));
+  if (game.weather && !evBanner){
+    const left = Math.ceil((game.weather==='strike'? 45 : 105) - game.wClock), wk = game.weather==='strike'? 'ev_strike_short' : 'ev_patch_short';
+    const wt = (left>0 && left<=15)? fmt(wk,{n:left}) : tr(wk).replace(/\s*·.*$/,'');
+    ctx.textAlign='center'; ctx.font=HF(uiPx(12));
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(wt, W/2+1, 74);
+    ctx.fillStyle = game.weather==='strike'? '#ff9d45':'#5ad0ff'; ctx.fillText(wt, W/2, 73);
+  } else if (!game.weather && (p.afterT||0) > game.t && asymOn('env')){     // « colère du quartier » (humains) / « correctif » (machines) : bonus de 30 s après l'événement
+    ctx.textAlign='center'; ctx.font=HF(uiPx(12));
+    const at = fmt(p.facKey==='HUM'? 'ev_after_hum' : 'ev_after_ia', Object.assign({n:Math.ceil(p.afterT-game.t)}, evNums()));
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(at, W/2+1, 74);
+    ctx.fillStyle = p.facKey==='HUM'? '#9dc88a' : '#5ad0ff'; ctx.fillText(at, W/2, 73);
   }
-  // ---- annonce (y=100) + ligne d'explication éventuelle (1re occurrence d'un événement, posture du héros) ----
+  // ---- annonce (y=100) + explication éventuelle en lignes courtes (1re occurrence d'un événement, posture du héros, pouvoir) ----
   if (game.msgT>0 && game.msg){
     ctx.globalAlpha = Math.min(1, game.msgT);
     ctx.textAlign='center';
@@ -419,11 +469,13 @@ function drawHUD(){
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillText(game.msg.txt, W/2+2, 102);
     ctx.fillStyle=game.msg.color; ctx.fillText(game.msg.txt, W/2, 100);
     if (game.msg.sub){
-      const sub = String(game.msg.sub), mw = Math.min(W-80, 680);
-      fitFont(sub, mw, uiF(pal,'type',12.5), 8);
-      const tw = Math.min(mw, ctx.measureText(sub).width);
-      ctx.fillStyle='rgba(14,10,9,0.66)'; ctx.fillRect(W/2-tw/2-10, 113, tw+20, 21);
-      ctx.fillStyle=DESK_CREAM; ctx.fillText(sub, W/2, 124);
+      const mw = Math.min(W-80, 640), sp = uiPx(12.5), lh = Math.round(sp*1.32);
+      ctx.font = uiF(pal,'type',sp/pal.k);                         // police « machine à écrire » à sp px (uiF applique déjà l'échelle de la police G·P·T)
+      const lines = []; for (const part of String(game.msg.sub).split('\n')) for (const l of newsWrap(part, mw-20)) lines.push(l);
+      if (lines.length>4) lines.length = 4;
+      let tw = 0; for (const l of lines) tw = Math.max(tw, ctx.measureText(l).width);
+      ctx.fillStyle='rgba(14,10,9,0.72)'; ctx.fillRect(W/2-tw/2-10, 113, tw+20, lines.length*lh+8);
+      ctx.fillStyle=DESK_CREAM; lines.forEach((l,k)=> ctx.fillText(l, W/2, 113+4+lh*(k+0.5)+1));
     }
     ctx.globalAlpha=1;
   }
@@ -449,6 +501,7 @@ function drawHUD(){
   }
   if (hoverUnitBtn>=0) drawUnitTooltip(hoverUnitBtn);
   if (hoverHudBtn && hoverHudBtn.type==='hstance' && !btnHidden(hoverHudBtn)) drawStanceTooltip(hoverHudBtn);
+  if (hoverHudBtn && hoverHudBtn.type==='special' && !btnHidden(hoverHudBtn) && !(p.lastReady && !p.lastUsed) && siegeReady(p)) drawTextTooltip(hoverHudBtn, tr('ev_siege'));
   drawLongPress();
   // ---- bandeau de sélection (y=H-132, jamais sur les boutons) : bande de papier ----
   HUD.selRect = null;
@@ -540,6 +593,26 @@ function hudPortrait(p, role, x, y, w, h, bg){
 }
 // FICHE DE RECRUTEMENT : papier vif quand l'unité est recrutable, terne sinon ; photo d'identité,
 // coût ressource par ressource (en rouge celle qui manque), recharge = volet sombre sur la photo.
+// mise en page commune des noms des six cartes d'unités (mémorisée par langue, faction, ère et largeur)
+let _unl = null;
+function unitNameLayout(p, maxW){
+  const key = SETTINGS.lang+'|'+p.facKey+'|'+p.era+'|'+maxW;
+  if (_unl && _unl.key===key) return _unl;
+  const names = ROLES.map(r=>lUnit(p.facKey, r.key, p.era));
+  const wrap = (txt, px)=>{                                    // 1 ou 2 lignes (coupe à l'espace le plus équilibré) ; null si ça ne tient pas
+    ctx.font = HF(px); const w = s=>ctx.measureText(s).width;
+    if (w(txt)<=maxW) return [txt];
+    const ws = txt.split(' '); let best = null;
+    for (let i=1;i<ws.length;i++){ const a = ws.slice(0,i).join(' '), c = ws.slice(i).join(' '); if (w(a)<=maxW && w(c)<=maxW){ const d = Math.abs(w(a)-w(c)); if (!best || d<best.d) best = {l:[a,c], d}; } }
+    return best? best.l : null; };
+  let px = 10.5;
+  if (!names.every(n=>wrap(n,px) && wrap(n,px).length===1)){        // au moins un nom long : taille commune plus petite, deux lignes autorisées
+    for (px = 9.5; px>=7.5; px -= 0.5) if (names.every(n=>wrap(n,px))) break;
+    if (px<7.5) px = 7.5;
+  }
+  const out = { key, px, lines: txt => { ctx.font = HF(px); return wrap(txt, px) || [txt]; } };
+  return (_unl = out);
+}
 function drawUnitCard(b){
   const A0 = ctx.globalAlpha, pal = uiPal();
   const p = game.p, role = ROLES[b.i], cat = UNIT_CAT_INK[b.i];
@@ -550,10 +623,13 @@ function drawUnitCard(b){
   paperChip(b.x, b.y, b.w, b.h, pal, ok? null : pal.dull);
   ctx.fillStyle = cat; ctx.globalAlpha = A0*(ok? 1 : 0.55); ctx.fillRect(b.x, b.y, b.w, 3); ctx.globalAlpha = A0;   // onglet de vocation
   if (ok){ ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.strokeRect(b.x+0.5, b.y+0.5, b.w-1, b.h-1); }
-  // nom
-  const name = lUnit(p.facKey, role.key, p.era);
+  // nom : une taille commune aux six cartes ; deux lignes pour les noms trop longs (« Guérisseur solaire »), jamais écrasés
+  const name = lUnit(p.facKey, role.key, p.era), NL = unitNameLayout(p, b.w-8);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = ok? pal.ink : pal.ink2;
-  fitFont(name, b.w-8, HF(10.5), 7); ctx.fillText(name, b.x+b.w/2, b.y+11);
+  ctx.font = HF(NL.px);
+  const nl = NL.lines(name);
+  if (nl.length>1){ ctx.fillText(nl[0], b.x+b.w/2, b.y+7.2); ctx.fillText(nl[1], b.x+b.w/2, b.y+7.2+NL.px*0.95); }
+  else { if (ctx.measureText(nl[0]).width>b.w-8) fitFont(nl[0], b.w-8, HF(NL.px), 6); ctx.fillText(nl[0], b.x+b.w/2, b.y+11); }
   // photo + recharge
   const px = b.x+4, py = b.y+18, pw = 33, ph = 30;
   ctx.globalAlpha = A0*(ok? 1 : 0.7);
@@ -603,6 +679,15 @@ function drawUnitCard(b){
 // rappel du raccourci clavier RÉEL (touches reconfigurables) — rien sur un écran tactile sans clavier
 const HK_TOUCH = !!(window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches);
 function hk(action){ const c = SETTINGS.keys[action]; return (HK_TOUCH || !c)? '' : ' ['+keyName(c)+']'; }
+// infobulle simple (souris) : une fiche de papier au-dessus du bouton, texte renvoyé à la ligne
+function drawTextTooltip(b, txt){
+  const pal = uiPal(), f = uiF(pal,'cond',12.5); ctx.font = f;
+  const lines = newsWrap(txt, 250), tw = Math.max(...lines.map(l=>ctx.measureText(l).width)), w = tw+24, h = 14+lines.length*16;
+  const x = clamp(b.x+b.w/2-w/2, 8, W-w-8), y = b.y-h-8;
+  paperPanel(x, y, w, h, pal);
+  ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle = pal.ink;
+  lines.forEach((l,i)=> ctx.fillText(l, x+12, y+14+i*16));
+}
 // ---- POSTURE DU HÉROS : pictogramme, et fiche explicative au survol du bouton ----
 const HST_ICON = { prudent:'🛡 ', normal:'★ ', offensive:'⚔ ' };
 function drawStanceTooltip(b){
@@ -661,6 +746,7 @@ function drawPointFlags(){
     ctx.restore();
   }
 }
+const siegeReady = p => p.heroAlive && p.era>=4 && p.siegeT<=0 && p.specialCd<=0 && canPay(p,SIEGE_COST);
 function drawBtn(b){
   const A0 = ctx.globalAlpha, pal = uiPal();
   const p=game.p;
@@ -675,9 +761,9 @@ function drawBtn(b){
       label=lSpecial(p.facKey, p.era); glyph='✸';
       const xc = specialXpCost(p);
       // héros en vie à la dernière ère : la touche déclenche le MODE SIÈGE (payé en ressources) — le bon l'annonce
-      const siegeOk = p.heroAlive && p.era>=4 && p.siegeT<=0 && p.specialCd<=0 && canPay(p,SIEGE_COST);
+      const siegeOk = siegeReady(p);
       ok = siegeOk || (p.specialCd<=0 && p.xp>=xc);
-      if (siegeOk) label = tr('ev_siege');
+      if (siegeOk) label = tr('siege_btn');          // libellé court, ajusté au bouton ; la phrase explicative est dans l'infobulle
       sub = siegeOk? costStr(p,SIEGE_COST)+hk('special') : (p.specialCd>0? '⏳'+Math.ceil(p.specialCd)+'s ':'') + '✦'+xc+hk('special');
       prog = Math.min(p.specialCd>0? 1-p.specialCd/SPECIAL_CD:1, Math.min(1,p.xp/xc));
     }
