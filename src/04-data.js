@@ -114,9 +114,9 @@ const DIFFS = [ // cheat = bonus de production caché de l'IA
   // Depuis que l'IA ne gèle plus ses dépenses pour son héros et fortifie toujours sa base, les
   // anciens réglages donnaient 71 % / 56 % / 21 % / 8 %.
   {name:"FACILE",    inc:0.3,  think:4.0,  eraLag:1.5,  hpMul:0.4,  cheat:0.6},
-  {name:"NORMAL",    inc:0.4,  think:2.6,  eraLag:0.8,  hpMul:0.55, cheat:0.8},
+  {name:"NORMAL",    inc:0.62, think:2.6,  eraLag:0.8,  hpMul:0.55, cheat:0.8},
   {name:"DIFFICILE", inc:0.75, think:1.3,  eraLag:0.15, hpMul:0.9,  cheat:0.95},
-  {name:"BRUTAL",    inc:1.3,  think:0.65, eraLag:0.03, hpMul:1.3,  cheat:1.7},
+  {name:"BRUTAL",    inc:1.3,  think:0.65, eraLag:0.03, hpMul:1.3,  cheat:1.8},
 ];
 const BUILDS = {
   wall:  {label:"Muraille",  hp:900,  cost:{f:90,m:50}},
