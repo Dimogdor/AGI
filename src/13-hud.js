@@ -442,6 +442,7 @@ function drawHUD(){
   // ---- chrono de partie (gelé en pause, accéléré/ralenti avec la vitesse de jeu) : étiquette ----
   { const ttxt = fmtTime(game.t)+((game.speed&&game.speed!==1)? '  ×'+game.speed : '');
     ctx.font='11px '+UI_TYPE; const tw = ctx.measureText(ttxt).width+12;
+    HUD.clockR = mx+mw+8+tw;                                   // bord droit du chrono (la campagne y cale son « ? »)
     ctx.fillStyle='rgba(0,0,0,0.42)'; ctx.fillRect(mx+mw+10, my+2.5, tw, mh);
     ctx.fillStyle=pal.paper; ctx.fillRect(mx+mw+8, my, tw, mh);
     ctx.textAlign='center'; ctx.fillStyle=pal.ink; ctx.fillText(ttxt, mx+mw+8+tw/2, my+mh/2+0.5); }
