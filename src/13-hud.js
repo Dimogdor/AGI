@@ -9,8 +9,19 @@ const UIPAL = {
         dull:'#b3c0bd', tab:'#b9c9cb', kraft:'#d3e2dc', photo:'#a9c6d2', photo2:'#9daeb2', bad:'#b3261e',
         head:'"AGI Term","Courier New",monospace', headW:400, type:'"AGI Term","Courier New",monospace', k:1.3, ia:true },
 };
-const UI_COND = '"AGI Cond","Arial Narrow",sans-serif';
-const UI_TYPE = '"AGI Type","Courier New",monospace', UI_STEN = '"AGI Stencil","AGI Cond",Impact,sans-serif';
+// polices du canvas ; en arabe, pile de polices SYSTÈME (les polices embarquées n'ont pas d'arabe → repli Courier New) ; uiFontsForLang() les rebascule au changement de langue
+const AR_STACK = '"Noto Naskh Arabic","Geeza Pro","Segoe UI",Tahoma,sans-serif';
+let UI_COND = '"AGI Cond","Arial Narrow",sans-serif';
+let UI_TYPE = '"AGI Type","Courier New",monospace', UI_STEN = '"AGI Stencil","AGI Cond",Impact,sans-serif';
+function uiFontsForLang(){
+  const ar = SETTINGS.lang==='ar';
+  UI_COND = ar? AR_STACK : '"AGI Cond","Arial Narrow",sans-serif';
+  UI_TYPE = ar? AR_STACK : '"AGI Type","Courier New",monospace';
+  UI_STEN = ar? AR_STACK : '"AGI Stencil","AGI Cond",Impact,sans-serif';
+  UIPAL.HUM.head = ar? AR_STACK : '"AGI Stencil","AGI Cond",Impact,sans-serif'; UIPAL.HUM.type = ar? AR_STACK : '"AGI Type","Courier New",monospace';
+  UIPAL.IA.head = ar? AR_STACK : '"AGI Term","Courier New",monospace';           UIPAL.IA.type = ar? AR_STACK : '"AGI Term","Courier New",monospace';
+}
+uiFontsForLang();
 // police du HUD : condensée de presse (Oswald 600) — plus typée que l'Arial gras et plus étroite,
 // donc moins de libellés comprimés par fitFont dans les langues longues
 const HF = px => '600 '+px+'px '+UI_COND;
@@ -172,9 +183,14 @@ function layoutHUD(){
   HUD.btns = [];
   const bh=64, y=H-bh-6;            // rangée unités
   let x=6;
-  for (let i=0;i<6;i++){ HUD.btns.push({type:'unit', i, x, y, w:80, h:bh}); x+=83; }
+  // téléphone (échelle < 1) : fiches d'unités élargies (jusqu'à 100) pour que noms et coûts tiennent à une taille lisible
+  const cw = uiK()<1? clamp(Math.floor((W-12-(87+87+77+70))/6)-3, 80, 100) : 80;
+  HUD.cardW = cw;
+  for (let i=0;i<6;i++){ HUD.btns.push({type:'unit', i, x, y, w:cw, h:bh}); x+=cw+3; }
   HUD.btns.push({type:'special', x, y, w:84, h:bh}); x+=87;
-  HUD.btns.push({type:'evolve', x, y, w:84, h:bh}); x+=87;
+  // ÉVOLUER masqué (ère plafond atteinte) : pas de trou de 87 px, les fiches suivantes se rapprochent
+  HUD.evoGap = !!(game && !game.tut && game.eraCap!=null && game.p && game.p.era>=game.eraCap);
+  HUD.btns.push({type:'evolve', x, y, w:84, h:bh}); if (!HUD.evoGap) x+=87;
   HUD.btns.push({type:'cap', x, y, w:74, h:bh}); x+=77;
   HUD.btns.push({type:'repairall', x, y, w:70, h:bh});
   const oh=31, sy = y-oh-3;           // rangée ordres / caméra (cibles tactiles agrandies)
@@ -204,6 +220,8 @@ function btnHidden(b){
   if (!game) return false;
   if (game.tut && TUT && tutBtnHidden(b)) return true;   // tuto : n'affiche que les boutons enseignés
   if (b.type==='evolve' && game.eraCap!=null && game.p.era>=game.eraCap) return true;
+  // posture du héros : inutile tant qu'aucun héros n'existe ni n'est invocable
+  if (b.type==='hstance' && game.p && !game.p.units.some(u=>u.role==='hero') && !heroBtnReady(game.p)) return true;
   return false;
 }
 function setZoom(nz, cxAnchor){
@@ -300,7 +318,7 @@ function paperChip(x, y, w, h, pal, col){
   else { ctx.fillStyle = paperGrain(); ctx.fillRect(x, y, w, h); }
 }
 // CARTOUCHE DE RYTHME (v1.17) : « MORAL » à l'encre, barre graduée à 20 et à 80, mot d'état à droite — ÉLAN (≥ 80, vert) / DÉBANDADE (≤ 20, rouge),
-// qui clignote au franchissement. Côté machine : « ❄ REFROIDISSEMENT · N machines chaudes ». Renvoie la hauteur occupée (0 : rien).
+// qui clignote au franchissement. Côté machine : « 🔥 N MACHINES EN SURCHAUFFE · 💧 refroidit » + mini-jauge. Renvoie la hauteur occupée (0 : rien).
 function drawRhythmCartouche(pal, p){
   const X = 8, Y = 40, f = uiPx(9.5), h = Math.max(16, Math.round(f*1.45)), ym = Y+h/2+0.5;
   ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
@@ -328,20 +346,27 @@ function drawRhythmCartouche(pal, p){
     return h+4;
   }
   HUD.moZone = undefined;
-  if (p.w>=ft('IA','coolMin')){
-    let n = 0; for (const u of p.units) if (u.fac==='IA' && u.role!=='gremlin' && (u.heat||0)>0) n++;
-    if (n>0){
-      const txt = fmt(n>1? 'f_cooln' : 'f_cool1', {n}); ctx.font = HF(f);
-      const w = Math.min(Math.max(130, ctx.measureText(txt).width+14), Math.max(160, W/2-130));
-      paperChip(X, Y, w, h, pal); ctx.fillStyle = pal.ia? pal.red : '#1d6a8f';
-      fitFont(txt, w-12, HF(f), 8); ctx.fillText(txt, X+6, ym);
-      return h+4;
-    }
+  // G·P·T : « 🔥 N MACHINES EN SURCHAUFFE · 💧 refroidit » (rouge « PAS D'EAU » sous le seuil d'eau) + mini-jauge de chaleur moyenne graduée au seuil du surrégime
+  let n = 0, hs = 0; for (const u of p.units) if (u.fac==='IA' && u.role!=='gremlin' && (u.heat||0)>0.25){ n++; hs += u.heat; }
+  if (n>0){
+    const dry = p.w<ft('IA','coolMin'), gw = Math.round(f*4.5);
+    const txt = dry? fmt('f_nowater', {n}) : fmt(n>1? 'f_cooln' : 'f_cool1', {n}); ctx.font = HF(f);
+    const w = Math.min(Math.max(130, ctx.measureText(txt).width+14+gw+8), Math.max(190, W/2-120));
+    paperChip(X, Y, w, h, pal);
+    fitFont(txt, w-12-gw-8, HF(f), 8); const tw = ctx.measureText(txt).width;
+    ctx.fillStyle = dry? pal.bad : (pal.ia? pal.ink : '#1d6a8f'); ctx.fillText(txt, X+6, ym);
+    const bx = X+6+tw+8, by = Y+h/2-3.5, hk = clamp(hs/n, 0, 1), oh = ft('IA','overHeat');
+    ctx.fillStyle = 'rgba(31,27,23,0.22)'; ctx.fillRect(bx, by, gw, 7);
+    ctx.fillStyle = hk>=oh? '#c43a24' : hk>=0.5? '#d98a1c' : '#c9a227'; ctx.fillRect(bx, by, gw*hk, 7);
+    ctx.fillStyle = pal.ink; ctx.fillRect(Math.round(bx+gw*oh)-0.5, by-2.5, 1.2, 12);     // graduation : surrégime à 75 %
+    ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.strokeRect(bx-0.5, by-0.5, gw+1, 8);
+    return h+4;
   }
   return 0;
 }
 function drawHUD(){
   const p = game.p, fac = p.fac, pal = uiPal();
+  { const sig = (game.tut? 't' : '')+(game.eraCap!=null && p.era>=game.eraCap? 'e' : '')+(uiK()<1? 'p' : ''); if (sig!==HUD.sig){ HUD.sig = sig; layoutHUD(); } }   // ÉVOLUER masqué / téléphone : fiches recalées
   const rates = calcRates(p);
   ctx.textBaseline='middle';
   // ---- bandeau haut (h=38) : rebord du bureau, chiffres au pochoir ----
@@ -397,7 +422,7 @@ function drawHUD(){
   ctx.fillText(diffTxt, RX, 28);
   const dw = ctx.measureText(diffTxt).width;
   ctx.font=HF(11); ctx.fillStyle=game.e.fac.accent;
-  ctx.fillText(lFacName(game.e.facKey)+' '+game.e.fac.eras[game.e.era].tag+(game.e.trans? ' '+game.e.fac.sym:''), RX-dw-10, 28);
+  ctx.fillText(lFacName(game.e.facKey)+' '+game.e.fac.eras[game.e.era].tag+((game.e.trans && game.e.fac.eras[game.e.era].tag!==game.e.fac.sym)? ' '+game.e.fac.sym : ''), RX-dw-10, 28);
   // ---- minimap (y=42) : bande de carte d'état-major, repères à l'encre ----
   const mw=200, mh=13, mx=W/2-mw/2, my=42;
   ctx.fillStyle='rgba(0,0,0,0.42)'; ctx.fillRect(mx+2, my+2.5, mw, mh);
@@ -442,6 +467,7 @@ function drawHUD(){
   // ---- chrono de partie (gelé en pause, accéléré/ralenti avec la vitesse de jeu) : étiquette ----
   { const ttxt = fmtTime(game.t)+((game.speed&&game.speed!==1)? '  ×'+game.speed : '');
     ctx.font='11px '+UI_TYPE; const tw = ctx.measureText(ttxt).width+12;
+    HUD.clockR = mx+mw+8+tw;                                   // bord droit du chrono (la campagne y cale son « ? »)
     ctx.fillStyle='rgba(0,0,0,0.42)'; ctx.fillRect(mx+mw+10, my+2.5, tw, mh);
     ctx.fillStyle=pal.paper; ctx.fillRect(mx+mw+8, my, tw, mh);
     ctx.textAlign='center'; ctx.fillStyle=pal.ink; ctx.fillText(ttxt, mx+mw+8+tw/2, my+mh/2+0.5); }
@@ -624,14 +650,24 @@ function drawUnitCard(b){
   ctx.fillStyle = cat; ctx.globalAlpha = A0*(ok? 1 : 0.55); ctx.fillRect(b.x, b.y, b.w, 3); ctx.globalAlpha = A0;   // onglet de vocation
   if (ok){ ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.strokeRect(b.x+0.5, b.y+0.5, b.w-1, b.h-1); }
   // nom : une taille commune aux six cartes ; deux lignes pour les noms trop longs (« Guérisseur solaire »), jamais écrasés
-  const name = lUnit(p.facKey, role.key, p.era), NL = unitNameLayout(p, b.w-8);
+  // téléphone (compact) : une seule ligne, la plus grande taille lisible qui tient (≥ 9 px réels), tronquée par « … » au-delà
+  const compact = uiK()<1;
+  const name = lUnit(p.facKey, role.key, p.era), NL = compact? null : unitNameLayout(p, b.w-8);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = ok? pal.ink : pal.ink2;
-  ctx.font = HF(NL.px);
-  const nl = NL.lines(name);
-  if (nl.length>1){ ctx.fillText(nl[0], b.x+b.w/2, b.y+7.2); ctx.fillText(nl[1], b.x+b.w/2, b.y+7.2+NL.px*0.95); }
-  else { if (ctx.measureText(nl[0]).width>b.w-8) fitFont(nl[0], b.w-8, HF(NL.px), 6); ctx.fillText(nl[0], b.x+b.w/2, b.y+11); }
+  if (compact){
+    let fs = uiPx(10); ctx.font = HF(fs);
+    while (ctx.measureText(name).width>b.w-6 && fs>9/uiK()) { fs -= 0.5; ctx.font = HF(fs); }
+    let txt = name; while (txt.length>2 && ctx.measureText(txt).width>b.w-6) txt = txt.slice(0,-1);
+    if (txt!==name) txt = txt.replace(/\s+$/,'')+'…';
+    ctx.fillText(txt, b.x+b.w/2, b.y+10);
+  } else {
+    ctx.font = HF(NL.px);
+    const nl = NL.lines(name);
+    if (nl.length>1){ ctx.fillText(nl[0], b.x+b.w/2, b.y+7.2); ctx.fillText(nl[1], b.x+b.w/2, b.y+7.2+NL.px*0.95); }
+    else { if (ctx.measureText(nl[0]).width>b.w-8) fitFont(nl[0], b.w-8, HF(NL.px), 6); ctx.fillText(nl[0], b.x+b.w/2, b.y+11); }
+  }
   // photo + recharge
-  const px = b.x+4, py = b.y+18, pw = 33, ph = 30;
+  const px = b.x+4, py = b.y+(compact? 22 : 18), pw = 33, ph = compact? 28 : 30;
   ctx.globalAlpha = A0*(ok? 1 : 0.7);
   hudPortrait(p, role, px, py, pw, ph, ok? pal.photo : pal.photo2);
   ctx.globalAlpha = A0;
@@ -644,14 +680,15 @@ function drawUnitCard(b){
   const cx0 = b.x+41;
   ctx.textAlign = 'left';
   {
-    let yy = b.y+23;
+    const nR = Object.keys(cost).length, st = compact? (nR>2? 13 : 16) : 10;
+    let yy = b.y+(compact? 29 : 23);
     for (const r in cost){
       const free = r==='m' && p.trans, have = free || p[r]>=cost[r];
-      ctx.font = HF(9); ctx.fillStyle = pal.ink2;
+      ctx.font = HF(compact? 11 : 9); ctx.fillStyle = pal.ink2;
       ctx.fillText(p.fac.icons[r], cx0, yy);
-      ctx.font = HF(10.5); ctx.fillStyle = have? (ok? pal.ink : pal.ink2) : pal.bad;
-      ctx.fillText(free? '∞' : String(cost[r]), cx0+13, yy+0.5);
-      yy += 10;
+      ctx.font = HF(compact? uiPx(10) : 10.5); ctx.fillStyle = have? (ok? pal.ink : pal.ink2) : pal.bad;
+      ctx.fillText(free? '∞' : String(cost[r]), cx0+(compact? 15 : 13), yy+0.5);
+      yy += st;
     }
     if (full){ ctx.font = HF(8); ctx.fillStyle = pal.bad; ctx.fillText('👥 '+p.cap, cx0, b.y+46); }
   }
@@ -666,12 +703,13 @@ function drawUnitCard(b){
     ctx.textAlign = 'center'; ctx.font = HF(10); ctx.fillStyle = can? '#f4ecd8' : pal.ink2;
     ctx.globalAlpha = A0*(can? 1 : 0.6); ctx.fillText(lvl>=3? '★' : '⬆', r.x+r.w/2, r.y+r.h/2+0.5); ctx.globalAlpha = A0;
     ctx.fillStyle = pal.ink; for (let k=0;k<lvl;k++) ctx.fillRect(r.x+1.5+k*6, r.y-3.5, 4.5, 2.2);    // niveaux acquis
-    if (lvl<3){
+    if (lvl<3 && !compact){                  // coût d'amélioration avec les icônes de ressource ; sur téléphone : annoncé au toucher du ⬆
       ctx.textAlign = 'left'; ctx.font = '7.5px '+UI_TYPE;
-      let xx = b.x+5; const yy = b.y+b.h-8;
+      let xx = b.x+4; const yy = b.y+b.h-8;
       for (const k2 of ['f','m']){ const have = (k2==='m' && p.trans) || p[k2]>=upc[k2];
         ctx.fillStyle = have? pal.ink2 : pal.bad;
-        const tx = (k2==='m' && p.trans)? '∞' : String(upc[k2]); ctx.fillText(tx, xx, yy); xx += ctx.measureText(tx).width+4; }
+        const tx = (k2==='m' && p.trans)? '∞' : String(upc[k2]); ctx.fillText(tx, xx, yy); xx += ctx.measureText(tx).width+1;
+        ctx.font = '7px '+UI_TYPE; ctx.fillText(p.fac.icons[k2], xx, yy); xx += 9; ctx.font = '7.5px '+UI_TYPE; }
     }
   }
   ctx.textBaseline = 'middle';
@@ -983,19 +1021,19 @@ function drawPause(){
   const bw=316, bx=W/2-bw/2;
   const items = [
     {key:'h1', head:tr('opts_h_audio')},
-    {key:'music',  half:true, label:t('p_music')+' : '+(SETTINGS.music?t('on'):t('off'))},
-    {key:'sfx',    half:true, label:t('p_sfx')+' : '+(SETTINGS.sfx?t('on'):t('off'))},
+    {key:'music',  half:true, label:t('p_music')+' : '+(SETTINGS.music?t('yes'):t('no'))},
+    {key:'sfx',    half:true, label:t('p_sfx')+' : '+(SETTINGS.sfx?t('yes'):t('no'))},
     {key:'vol',    label:''},                       // slider de volume
     {key:'h2', head:tr('opts_h_display')},
     {key:'lang',   label:t('set_lang')+' : '+((typeof LANG_NATIVE!=='undefined'&&LANG_NATIVE[SETTINGS.lang])||String(SETTINGS.lang).toUpperCase())},
     {key:'quality',label:tr('set_quality')+' : '+qualityName()},
-    {key:'shake',  half:true, label:t('p_shake')+' : '+(SETTINGS.shake?t('on'):t('off'))},
+    {key:'shake',  half:true, label:t('p_shake')+' : '+(SETTINGS.shake?t('yes'):t('no'))},
     {key:'follow', half:true, label:t('p_follow')+' : '+(camFollow?t('yes'):t('no'))},
-    {key:'news',   half:true, label:tr('set_news')+' : '+(SETTINGS.newsFeed?t('on'):t('off'))},
+    {key:'news',   half:true, label:tr('set_news')+' : '+(SETTINGS.newsFeed?t('yes'):t('no'))},
   ];
   // plein écran : en partie le bouton flottant ⛶ est masqué (il recouvrait le HUD), on le
   // propose donc ici — seulement là où l'API existe (ni appli native, ni iOS)
-  if (FS_AVAILABLE) items.push({key:'fs', half:true, label:tr('fs_btn')+' : '+(isFullscreen()?t('on'):t('off'))});
+  if (FS_AVAILABLE) items.push({key:'fs', half:true, label:tr('fs_btn')+' : '+(isFullscreen()?t('yes'):t('no'))});
   items.push({key:'quit', label:t('p_quit')});
   // DEUX réglages par ligne (paires consécutives « half ») : le panneau reste dans les 540 px
   // logiques même avec le plein écran et le fil d'actualités en plus

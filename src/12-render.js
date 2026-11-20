@@ -299,359 +299,90 @@ function drawCracks(dev, vw){
   }
 }
 /* ---------- écran-titre : dystopie animée ---------- */
-/* ---------- INTRO : le lore en six tableaux + carton-titre ----------
-   I le travail s'éteint · II la soif des machines · III la corporation · IV l'éveil ·
-   V le monde optimisé · VI la résistance · titre. Chaque tableau : léger travelling avant
-   (Ken Burns), titre de chapitre, texte ligne à ligne, fondu au noir entre deux tableaux,
-   et avance automatique après ~11 s pour qui se laisse porter. */
+/* ---------- INTRO : le lore en six planches à l'encre + carton-titre ----------
+   I le travail s'éteint · II la soif des machines · III la corporation · IV sans maître ·
+   V le monde optimisé · VI la résistance · titre. Chaque chapitre rejoue une planche de campagne
+   existante (papier de carnet, encre, vignettage et grain de src/16c-cine.js) avec, dessous, une
+   légende sur papier : titre de chapitre, texte ligne à ligne. Léger travelling avant sur la planche,
+   fondu au noir entre deux chapitres, avance automatique après ~11 s pour qui se laisse porter.
+   Aucun Ω avant l'ère V ; rien de néon. L'intro n'est pas lue (pas de voix). */
 const INTRO_N = 7;
 const INTRO_LORE = ['lore_work','lore_res','lore0','lore1','lore_opt','lore2'];
+const INTRO_INK = '#1f1b17', INTRO_RED = '#8a2418';
+const INTRO_PLATES = [
+  (g,w,h,t) => M2_PL.tools(g,w,h,t),                          // I · gants, clé, casque, pointeuse : 6 h 00
+  (g,w,h,t) => M3_PLATES.compute(g,w,h,t),                    // II · le centre de calcul « OMNICORP · CALCUL »
+  (g,w,h,t) => M4_PLATES.board(g,w,h,t,'corp'),               // III · la salle du conseil, l'écran « OMNICORP »
+  (g,w,h,t) => M5_PLATES.circles(g,w,h,t),                    // IV · les cercles du système, sans maître
+  (g,w,h,t) => M3_PLATES.queue(g,w,h,t),                      // V · la file à la citerne, 4 L / pers.
+  (g,w,h,t) => M5_PLATES.plain(g,w,h,t) ];                    // VI · la foule devant le dôme, le drapeau rouge
 let introOut = 0, introNext = 0;          // fondu de sortie (s) et tableau suivant
 let introChrome = true;                    // bouton PASSER + indications (coupés pour les captures du store)
-// texte du tableau : bandeau sombre dégradé, lignes enroulées à la largeur de l'écran
-function introText(lines, y){
-  ctx.textAlign='center';
-  let fs = 15; ctx.font=fs+'px '+UI_TYPE;
-  const wrap = (arr)=>{ const out=[]; for (const ln of arr){ let cur='';
-      for (const w of String(ln).split(' ')){ const t2 = cur? cur+' '+w : w;
-        if (ctx.measureText(t2).width > W-90 && cur){ out.push(cur); cur=w; } else cur=t2; }
-      if (cur) out.push(cur); } return out; };
-  let ls = wrap(lines);
-  if (ls.length > 3){ fs = 13.5; ctx.font=fs+'px '+UI_TYPE; ls = wrap(lines); }
-  const lh = fs+8, y0 = Math.min(y, H-30-ls.length*lh);
-  const bh = ls.length*lh+30;
-  const g=ctx.createLinearGradient(0,y0-22,0,y0-22+bh);
-  g.addColorStop(0,'rgba(8,6,10,0)'); g.addColorStop(0.16,'rgba(8,6,10,0.74)');
-  g.addColorStop(0.84,'rgba(8,6,10,0.74)'); g.addColorStop(1,'rgba(8,6,10,0)');
-  ctx.fillStyle=g; ctx.fillRect(0, y0-22, W, bh);
-  for (let i=0;i<ls.length;i++){
-    const ap = clamp(introT*1.5 - 0.2 - i*0.28, 0, 1);     // apparition ligne par ligne
-    ctx.globalAlpha=ap; ctx.fillStyle='#e8dfd0';
-    ctx.shadowColor='rgba(0,0,0,0.85)'; ctx.shadowBlur=4;
-    ctx.fillText(ls[i], W/2, y0+8+i*lh, W-50);
+let INTRO_LAY = null;
+// mise en page (mise en cache par écran et par langue) : planche en haut, légende sur papier dessous.
+// La hauteur de légende vaut celle du chapitre le plus long : la planche ne saute pas d'un chapitre à l'autre.
+function introLayout(){
+  const fr = cineFrame(), L = SETTINGS.lang, key = W+'|'+H+'|'+L+'|'+fr.k.toFixed(3);
+  if (INTRO_LAY && INTRO_LAY.key===key) return INTRO_LAY;
+  let fs = fr.fs, lay;
+  for (;;){
+    const lh = Math.round(fs*(L==='zh'? 1.55 : 1.42)), pad = Math.round(fs*0.8), chap = Math.round(fs*1.3);
+    ctx.font = cineFont('x', fs);
+    const pwMax = Math.min(W-16, 1000), textW = pwMax - 2*pad - 12;
+    const lines = INTRO_LORE.map(k => { const a = _t(k), out = []; for (const s of (Array.isArray(a)? a : [a])) out.push(...cineWrap(s, textW)); return out; });
+    const nl = Math.max(...lines.map(a => a.length)), capH = pad*2 + chap + nl*lh;
+    const ph = H - 8 - capH - 30, pw = Math.min(pwMax, Math.round(ph*480/270*1.35));
+    lay = { key, fs, lh, pad, chap, lines, nl, capH, ph, pw, rtl: L==='ar' };
+    if (ph >= H*0.5 || fs <= 13) break; fs -= 1; }
+  lay.px = Math.round((W-lay.pw)/2);
+  return (INTRO_LAY = lay);
+}
+// légende sur papier sous la planche : titre de chapitre (encre rouge) puis texte, ligne à ligne
+function introCaption(i, lay){
+  const x = lay.px, y = 8+lay.ph, w = lay.pw, h = lay.capH, mid = x + w/2;
+  ctx.drawImage(cinePaper(), x, y, w, h);
+  ctx.fillStyle = 'rgba(244,236,216,0.6)'; ctx.fillRect(x, y, w, h);               // calme les lignes de carnet sous le texte
+  ctx.strokeStyle = INTRO_INK; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+w, y); ctx.stroke();
+  ctx.lineWidth = 1.2; ctx.strokeRect(x+0.6, y+0.6, w-1.2, h-1.2);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const ch = _t('lore_ch');
+  if (Array.isArray(ch) && ch[i]){
+    const a = clamp(introT*1.4-0.1, 0, 1), cy = y + lay.pad + lay.chap*0.62;
+    ctx.globalAlpha = a; ctx.font = HF(Math.round(lay.fs*0.82)); ctx.fillStyle = INTRO_RED; ctx.fillText(ch[i], mid, cy);
+    const cw = ctx.measureText(ch[i]).width*clamp(introT*0.9, 0, 1);
+    ctx.fillStyle = 'rgba(138,36,24,0.55)'; ctx.fillRect(mid-cw/2, cy+5, cw, 1.4); ctx.globalAlpha = 1;
   }
-  ctx.globalAlpha=1; ctx.shadowBlur=0;
-}
-// titre de chapitre façon générique de film (haut gauche, sous la barre cinéma)
-function introChapter(i, col){
-  const ch = _t('lore_ch'); if (!Array.isArray(ch) || !ch[i]) return;
-  const a = clamp(introT*1.4-0.15, 0, 1);
-  ctx.save(); ctx.globalAlpha = a*0.9; ctx.textAlign='left'; ctx.font=HF(12);
-  ctx.fillStyle = col; ctx.fillText(ch[i], 40, 52);
-  const w = ctx.measureText(ch[i]).width;
-  ctx.fillStyle = rgbaC(col, 0.5); ctx.fillRect(40, 59, w*clamp(introT*0.9,0,1), 1);
-  ctx.restore();
-}
-// poussière / cendres en suspension (additif léger)
-function introDust(t, n, col, fall){
-  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=col;
-  for (let i=0;i<n;i++){
-    const sp = 12+(i%5)*7, x = (i*197.3 + Math.sin(t*0.6+i)*30 + (fall? 0 : t*sp)) % (W+20) - 10;
-    const y = fall? ((i*83.7 + t*sp) % (H+20)) - 10 : (i*61.1 + Math.sin(t*0.4+i*2)*14) % 420;
-    ctx.globalAlpha = 0.25+0.35*Math.abs(Math.sin(t*0.9+i)); ctx.fillRect(x, y, 1.6, 1.6);
+  ctx.font = cineFont('x', lay.fs); ctx.fillStyle = INTRO_INK;
+  const ls = lay.lines[i], ty = y + lay.pad + lay.chap + lay.lh*0.78;
+  for (let k=0;k<ls.length;k++){
+    ctx.globalAlpha = clamp(introT*1.5 - 0.2 - k*0.28, 0, 1);                       // apparition ligne par ligne
+    ctx.fillText(ls[k], mid, ty + k*lay.lh, w - 2*lay.pad);
   }
-  ctx.restore(); ctx.globalAlpha=1;
-}
-// petite flamme de ville en feu (lueur + panache)
-function introFire(x, y, s, t){
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  const g = ctx.createRadialGradient(x, y-10*s, 2, x, y-10*s, 70*s);
-  g.addColorStop(0,'rgba(255,140,60,0.45)'); g.addColorStop(1,'rgba(255,140,60,0)');
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x, y-10*s, 70*s, 0, 6.283); ctx.fill();
-  for (let i=0;i<4;i++){ const fl=Math.abs(Math.sin(t*6+i*1.9+x));
-    ctx.fillStyle = i%2? 'rgba(255,120,40,'+(0.45+fl*0.4)+')' : 'rgba(255,200,90,'+(0.35+fl*0.45)+')';
-    ctx.beginPath(); ctx.moveTo(x-9*s+i*6*s, y); ctx.quadraticCurveTo(x-8*s+i*6*s+Math.sin(t*7+i)*4, y-(16+fl*22)*s, x-4*s+i*6*s, y); ctx.fill(); }
-  ctx.restore();
-  ctx.fillStyle='rgba(30,22,22,0.35)';
-  for (let i=0;i<5;i++){ const k=((t*0.35+i*0.2)%1); ctx.globalAlpha=(1-k)*0.5;
-    ctx.beginPath(); ctx.arc(x+Math.sin(i+t)*8*s+k*30*s, y-30*s-k*120*s, (10+k*26)*s, 0, 6.283); ctx.fill(); }
-  ctx.globalAlpha=1;
-}
-// tour OMNICORP cuite UNE fois (corps + fenêtres lumineuses) : redessiner ~70 halos shadowBlur
-// à chaque image coûtait ~260 ms/frame en rendu logiciel (et saccadait sur mobile).
-// mode 0 = fenêtres cyan (la corpo), 1 = fenêtres magenta (l'IA qui s'éveille).
-function introTowerSprite(mode){
-  return fxSprite('ITOW'+mode, 160, 400, g => {
-    const gr=g.createLinearGradient(10,60,150,400); gr.addColorStop(0,'#171d30'); gr.addColorStop(1,'#0b0f1a');
-    g.fillStyle=gr; g.fillRect(10,60,140,340);
-    g.fillStyle='#1b2338'; g.fillRect(28,20,104,40);
-    for (let r=0;r<14;r++) for (let c=0;c<5;c++){
-      const h=((r*5+c)*2654435761>>>0)%10, lit = mode? h<8 : h<6, x=22+c*24, y=74+r*22;
-      if (lit){ const col = mode? 'rgba(255,74,208,0.85)' : 'rgba(140,210,240,0.85)';
-        g.save(); g.shadowColor=col; g.shadowBlur=5; g.fillStyle=col; g.fillRect(x,y,14,10); g.restore(); }
-      else { g.fillStyle='rgba(30,38,56,0.9)'; g.fillRect(x,y,14,10); }
-    }
-  });
-}
-function drawIntroTower(x, baseY, hue, glitch, t){
-  ctx.drawImage(introTowerSprite(0), x-80, baseY-400, 160, 400);
-  if (glitch>0){
-    ctx.globalAlpha = clamp(glitch*1.15,0,1)*(0.8+0.2*Math.sin(t*22));
-    ctx.drawImage(introTowerSprite(1), x-80, baseY-400, 160, 400); ctx.globalAlpha = 1;
-    ctx.fillStyle='#ff4ad0';                                            // fenêtres qui « sautent » (sans halo)
-    for (let i=0;i<8*glitch;i++){ const r=(Math.random()*14)|0, c=(Math.random()*5)|0; ctx.fillRect(x-58+c*24, baseY-326+r*22, 14, 10); }
-  }
-  const flick=glitch>0.4&&Math.sin(t*22)>0.4, col=flick?'#ff4ad0':glitch>0.4?'rgba(255,74,208,0.9)':'#8ad4f0';
-  bloomT(col,14,()=>{ ctx.font=HF(46); ctx.textAlign='center'; ctx.fillStyle=col; ctx.fillText('Ω', x, baseY-344); });
-  ctx.font=HF(10); ctx.fillStyle='rgba(170,200,220,0.7)'; ctx.fillText('OMNICORP', x, baseY-330);
-  if (glitch>0) for (let i=0;i<6*glitch;i++){ const gy2=baseY-340+Math.random()*330, gw=20+Math.random()*100;
-    ctx.fillStyle='rgba(255,74,208,'+(0.12+Math.random()*0.25)+')'; ctx.fillRect(x-70+Math.random()*40, gy2, gw, 2+Math.random()*3); }
-}
-// barres cinéma + vignette pour un cachet « film »
-function introFrame(){
-  const bar=26; ctx.fillStyle='#000'; ctx.fillRect(0,0,W,bar); ctx.fillRect(0,H-bar,W,bar);
-  const vg=ctx.createRadialGradient(W/2,H/2,H*0.45,W/2,H/2,H*0.95);
-  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.5)'); ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha = 1;
 }
 function drawIntro(dt){
   introT += dt;
-  const t = introT;
-  ctx.fillStyle='#0d0a0a'; ctx.fillRect(0,0,W,H);
-  const baseY = 430, fade = clamp(introT*1.25, 0, 1);
-  // travelling avant très lent (Ken Burns) sur le décor ; textes et cadre restent fixes
-  const kb = 1 + 0.035*clamp(t/10, 0, 1);
-  ctx.save(); ctx.translate(W/2, H*0.45); ctx.scale(kb, kb); ctx.translate(-W/2, -H*0.45);
-  if (intro===0){
-    // — I. le travail s'éteint : la tour de bureaux se vide, l'usine tourne sans personne —
-    ctx.fillStyle=lgrad(0,0,0,baseY,[[0,'#10141f'],[0.6,'#231c2a'],[1,'#3a2630']]); ctx.fillRect(0,0,W,baseY);
-    ctx.fillStyle='#09080b'; ctx.fillRect(0,baseY,W,H-baseY);
-    ctx.fillStyle='#17151d'; for (let i=0;i<15;i++){ const bh2=40+((i*47)%90); ctx.fillRect(i*72-12, baseY-bh2, 56, bh2); }
-    const tx0 = W*0.2-90, tw=180, th=300;
-    ctx.fillStyle=lgrad(tx0,baseY-th,tx0+tw,baseY,[[0,'#1d2232'],[1,'#10131c']]); ctx.fillRect(tx0, baseY-th, tw, th);
-    ctx.fillStyle='#232a3c'; ctx.fillRect(tx0+20, baseY-th-18, tw-40, 18);
-    ctx.textAlign='center'; ctx.font=HF(11);
-    for (let r=0;r<15;r++) for (let c=0;c<7;c++){
-      const k=r*7+c, h1=(((k+3)*2654435761)>>>0)%1000/1000, off = 0.5 + h1*8;   // instant d'extinction du poste
-      const wx=tx0+10+c*24, wy=baseY-th+12+r*19, lit = t < off;
-      const flick = lit && off-t < 0.3 && Math.sin(t*70+k) > 0;
-      ctx.fillStyle = lit && !flick ? 'rgba(255,214,140,0.85)' : 'rgba(26,30,44,0.95)';
-      ctx.fillRect(wx, wy, 15, 10);
-      const d2 = t - off;                       // le courriel de licenciement s'envole
-      if (d2>0 && d2<2.4 && k%3===0){ ctx.globalAlpha = 1-d2/2.4; ctx.fillStyle='#e8e0d2';
-        ctx.fillText('✉', wx+7+Math.sin(d2*3+k)*6, wy-d2*40); ctx.globalAlpha=1; }
-    }
-    const fx0 = W*0.6, fw = W*0.34, fy = baseY-130;
-    ctx.fillStyle='#14161e'; ctx.beginPath(); ctx.moveTo(fx0, baseY); ctx.lineTo(fx0, fy);
-    for (let i=0;i<5;i++){ ctx.lineTo(fx0+i*fw/5+fw/10, fy-26); ctx.lineTo(fx0+(i+1)*fw/5, fy); }
-    ctx.lineTo(fx0+fw, baseY); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#1d2028'; ctx.fillRect(fx0+fw*0.8, fy-70, 16, 70);          // cheminée
-    const bx0=fx0+16, bw0=fw-32, by0=fy+16, bh0=92;
-    ctx.fillStyle='rgba(60,160,200,0.15)'; ctx.fillRect(bx0,by0,bw0,bh0);
-    ctx.save(); ctx.beginPath(); ctx.rect(bx0,by0,bw0,bh0); ctx.clip();
-    ctx.fillStyle='#202632'; ctx.fillRect(bx0, by0+bh0-14, bw0, 6);              // convoyeur
-    ctx.fillStyle='#6a5236'; for (let i=0;i<7;i++){ const cx=bx0+((t*30+i*(bw0/6))%bw0); ctx.fillRect(cx, by0+bh0-24, 12, 10); }
-    ctx.strokeStyle='#7ad4f0'; ctx.lineWidth=4; ctx.lineCap='round';
-    for (let i=0;i<4;i++){ const ax=bx0+26+i*(bw0-52)/3, ay=by0+bh0-8, a1=-1.25+Math.sin(t*1.7+i)*0.45, a2=a1+1.5+Math.sin(t*2.3+i*2)*0.6;
-      const ex=ax+Math.cos(a1)*36, ey=ay+Math.sin(a1)*36, hx=ex+Math.cos(a2)*26, hy=ey+Math.sin(a2)*26;
-      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ex,ey); ctx.lineTo(hx,hy); ctx.stroke();
-      if (Math.sin(t*9+i*3)>0.55){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,230,160,0.95)';
-        for (let k=0;k<6;k++) ctx.fillRect(hx+Math.sin(t*40+k*1.3)*7, hy+Math.cos(t*33+k)*7, 2, 2); ctx.restore(); } }
-    ctx.restore(); ctx.lineCap='butt';
-    // les anciens salariés s'en vont, carton sous le bras
-    const crowd = ['support','ranged','melee','siege','ranged','melee','tank'], span = W*0.7;
-    for (let i=0;i<7;i++){
-      const px = W*0.62 - ((t*15 + i*span/7) % span), a = clamp(Math.min(px+20, W*0.62-px)/60, 0, 1);
-      ctx.globalAlpha = a;
-      drawFigure(menuFigure('hum','HUM',crowd[i],0,'rgba(255,200,130,0.6)',0.93), px, baseY+Math.abs(Math.sin(t*4+i))*-1.5, -0.6);
-      ctx.fillStyle='#7a5a3a'; ctx.fillRect(px-11, baseY-27, 10, 8);
-      ctx.globalAlpha = 1;
-    }
-  } else if (intro===1){
-    // — II. la soif des machines : le datacenter boit le lac et aspire le courant de la ville —
-    ctx.fillStyle=lgrad(0,0,0,baseY,[[0,'#1d1210'],[0.55,'#3c2418'],[1,'#5a3420']]); ctx.fillRect(0,0,W,baseY);
-    ctx.fillStyle='#0b0807'; ctx.fillRect(0,baseY,W,H-baseY);
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    const sg2=ctx.createRadialGradient(W*0.28,150,4,W*0.28,150,120);
-    sg2.addColorStop(0,'rgba(255,170,90,0.38)'); sg2.addColorStop(1,'rgba(255,170,90,0)'); ctx.fillStyle=sg2; ctx.fillRect(W*0.28-120,30,240,240);
-    ctx.restore();
-    // ville (gauche) : ses fenêtres s'éteignent pendant que le datacenter s'illumine
-    for (let i=0;i<9;i++){ const bx2=16+i*44, bh2=56+((i*37)%70);
-      ctx.fillStyle='#1b1315'; ctx.fillRect(bx2, baseY-bh2, 34, bh2);
-      for (let k=0;k<8;k++){ const h1=(((i*13+k*7+1)*2654435761)>>>0)%1000/1000;
-        if (t < 0.8+h1*8.5){ ctx.fillStyle='rgba(255,200,120,0.72)'; ctx.fillRect(bx2+6+(k%2)*14, baseY-bh2+8+Math.floor(k/2)*14, 8, 6); } } }
-    // lac-réservoir qui se vide (le lit craquelé apparaît)
-    const lx=W*0.3, lrx=Math.max(36, 150-t*12), lry=lrx*0.09;
-    ctx.fillStyle='#4a3424'; ctx.beginPath(); ctx.ellipse(lx, baseY-2, 156, 15, 0, 0, 6.283); ctx.fill();
-    ctx.strokeStyle='rgba(30,20,14,0.8)'; ctx.lineWidth=1;
-    for (let i=0;i<16;i++){ const cx=lx-140+i*18; ctx.beginPath(); ctx.moveTo(cx, baseY-8); ctx.lineTo(cx+5, baseY-2); ctx.lineTo(cx+1, baseY+6); ctx.stroke(); }
-    ctx.fillStyle=lerpCol([70,130,170],[96,96,100], clamp(t/10,0,1)); ctx.beginPath(); ctx.ellipse(lx, baseY-2, lrx, Math.max(4,lry+6), 0, 0, 6.283); ctx.fill();
-    // datacenter (droite) : tours de refroidissement fumantes + blocs de serveurs clignotants
-    const dx0 = W*0.55, dw = W*0.42;
-    for (const [cx, sc] of [[dx0+dw*0.2, 1],[dx0+dw*0.5, 1.18],[dx0+dw*0.8, 0.9]]){
-      const tw2=40*sc, th2=110*sc, top=baseY-60-th2;
-      for (let i=0;i<7;i++){ const k=((t*0.2+i/7)%1);
-        ctx.fillStyle='rgba(205,195,185,'+(0.2*(1-k))+')'; ctx.beginPath();
-        ctx.arc(cx+Math.sin(i*2+t*0.5)*10+k*44, top-4-k*140, (12+k*34)*sc, 0, 6.283); ctx.fill(); }
-      ctx.fillStyle='#24232a'; ctx.beginPath(); ctx.moveTo(cx-tw2, baseY-56);
-      ctx.quadraticCurveTo(cx-tw2*0.42, top+th2*0.5, cx-tw2*0.62, top); ctx.lineTo(cx+tw2*0.62, top);
-      ctx.quadraticCurveTo(cx+tw2*0.42, top+th2*0.5, cx+tw2, baseY-56); ctx.closePath(); ctx.fill();
-    }
-    for (let b=0;b<3;b++){ const bx2 = dx0 + b*dw/3, by2 = baseY-74+b*6, bw2 = dw/3-8;
-      ctx.fillStyle = '#15171e'; ctx.fillRect(bx2, by2, bw2, baseY-by2);
-      for (let r=0;r<4;r++) for (let c=0;c<11;c++){ const on = Math.sin(t*3.4+(r*11+c)*1.7+b*2) > -0.25;
-        ctx.fillStyle = on? 'rgba(90,225,205,'+(0.5+0.4*clamp(t/6,0,1))+')' : 'rgba(40,70,70,0.6)';
-        ctx.fillRect(bx2+7+c*((bw2-16)/11), by2+10+r*12, 3, 2); } }
-    // lignes haute tension : l'énergie file de la ville vers les serveurs
-    const pyl = [W*0.08, W*0.24, W*0.4], pts = pyl.map(x=>[x, baseY-104]).concat([[dx0+14, baseY-70]]);
-    ctx.strokeStyle='#2a1f1e'; ctx.lineWidth=2;
-    for (const px of pyl){ ctx.beginPath(); ctx.moveTo(px-12, baseY); ctx.lineTo(px, baseY-122); ctx.lineTo(px+12, baseY);
-      ctx.moveTo(px-18, baseY-104); ctx.lineTo(px+18, baseY-104); ctx.moveTo(px-8, baseY-60); ctx.lineTo(px+8, baseY-60); ctx.stroke(); }
-    ctx.strokeStyle='rgba(36,26,26,0.95)'; ctx.lineWidth=1.2;
-    const seg = (i,f)=>{ const [x1,y1]=pts[i],[x2,y2]=pts[i+1], mx=(x1+x2)/2, my=Math.max(y1,y2)+18;
-      return [(1-f)*(1-f)*x1+2*(1-f)*f*mx+f*f*x2, (1-f)*(1-f)*y1+2*(1-f)*f*my+f*f*y2]; };
-    for (let i=0;i<pts.length-1;i++){ const [x1,y1]=pts[i],[x2,y2]=pts[i+1];
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.quadraticCurveTo((x1+x2)/2, Math.max(y1,y2)+18, x2, y2); ctx.stroke(); }
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    for (let k=0;k<7;k++){ const u=((t*0.32+k/7)%1)*(pts.length-1), i=Math.floor(u), [x,y]=seg(i, u-i);
-      const gg=ctx.createRadialGradient(x,y,0,x,y,10); gg.addColorStop(0,'rgba(130,235,255,0.95)'); gg.addColorStop(1,'rgba(130,235,255,0)');
-      ctx.fillStyle=gg; ctx.fillRect(x-10,y-10,20,20); }
-    ctx.restore();
-    introDust(t, 26, 'rgba(255,200,150,0.5)', false);
-  } else if (intro===2){
-    // — III. la corporation possède tout —
-    ctx.fillStyle=lgrad(0,0,0,baseY,[[0,'#0a0e1c'],[1,'#1c2030']]); ctx.fillRect(0,0,W,baseY);
-    ctx.fillStyle='#08080c'; ctx.fillRect(0,baseY,W,H-baseY);
-    // satellites de la corporation qui quadrillent le ciel
-    for (let i=0;i<4;i++){ const sx=((t*(12+i*3)+i*290)%(W+40))-20, sy=50+i*24;
-      ctx.fillStyle='rgba(220,230,255,0.75)'; ctx.fillRect(sx,sy,2,2);
-      if (Math.sin(t*5+i*2)>0.7){ ctx.fillStyle='rgba(255,80,80,0.95)'; ctx.fillRect(sx+3,sy,1.6,1.6); } }
-    ctx.fillStyle='#0e1018'; for (let i=0;i<12;i++){ const bh2=30+((i*41)%70); ctx.fillRect(i*84-(t*4%84), baseY-bh2, 64, bh2); }
-    ctx.fillStyle='#14161f'; for (let i=0;i<10;i++){ const bh2=40+((i*53)%90); ctx.fillRect(30+i*92, baseY-bh2, 50, bh2); }
-    drawIntroTower(W/2, baseY, 0, 0, t);
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    const sa=Math.sin(t*0.5)*0.5; const sg=ctx.createLinearGradient(W/2,baseY-300,W/2+Math.sin(sa)*300,baseY);
-    sg.addColorStop(0,'rgba(150,210,240,0.18)'); sg.addColorStop(1,'rgba(150,210,240,0)');
-    ctx.fillStyle=sg; ctx.beginPath(); ctx.moveTo(W/2,baseY-300); ctx.lineTo(W/2+Math.sin(sa)*300-60,baseY); ctx.lineTo(W/2+Math.sin(sa)*300+60,baseY); ctx.closePath(); ctx.fill();
-    for (let i=0;i<3;i++){ const a=t*0.5+i*2.1, dx=W/2+Math.cos(a)*210, dy=150+Math.sin(a*1.3)*40;
-      ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(120,200,235,0.12)';
-      ctx.beginPath(); ctx.moveTo(dx,dy+3); ctx.lineTo(dx-16,baseY); ctx.lineTo(dx+16,baseY); ctx.closePath(); ctx.fill();
-      ctx.globalCompositeOperation='source-over'; ctx.fillStyle='#28364c';
-      ctx.beginPath(); ctx.moveTo(dx+8,dy); ctx.lineTo(dx,dy-4); ctx.lineTo(dx-8,dy); ctx.lineTo(dx,dy+4); ctx.closePath(); ctx.fill();
-      bloomT('#8ad4f0',6,()=>{ ctx.fillStyle='#8ad4f0'; ctx.fillRect(dx-1,dy-1,2,2); }); }
-    ctx.restore();
-    const crowd = ['support','melee','ranged','siege','tank'];
-    for (let i=0;i<10;i++) drawFigure(menuFigure('hum','HUM',crowd[(i*3)%5],0,'rgba(120,190,230,0.7)',0.93),
-      110+i*50+Math.sin(t+i)*1.5, baseY, 0.62);
-  } else if (intro===3){
-    // — IV. l'éveil de l'AGI —
-    ctx.fillStyle=lgrad(0,0,0,baseY,[[0,'#14060f'],[1,'#1c0a18']]); ctx.fillRect(0,0,W,baseY);
-    ctx.fillStyle='#08080c'; ctx.fillRect(0,baseY,W,H-baseY);
-    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.font='11px monospace';
-    for (let i=0;i<54;i++){ const cx2=(i*73)%W, cy2=((t*70+i*97)%(baseY+40))-20, a=0.2+0.5*((i*7)%5)/5;
-      ctx.fillStyle='rgba(255,90,210,'+a+')'; ctx.fillText(String((i*7)%2), cx2, cy2); }
-    ctx.restore();
-    drawIntroTower(W/2, baseY, 0, clamp(t*0.5,0.3,1), t);
-    const open = clamp(t*0.6-0.2, 0, 1);
-    // halo additif autour de l'œil, puis l'œil lui-même en opaque (sinon l'iris rose se
-    // perdait dans le blanc additif : on ne voyait qu'une tache blanche)
-    bloomT('#ff4ad0', 24, ()=>{ ctx.fillStyle='rgba(255,120,220,0.55)'; ctx.beginPath(); ctx.ellipse(W/2,180,62,34*open+2,0,0,6.28); ctx.fill(); });
-    ctx.save(); ctx.beginPath(); ctx.ellipse(W/2,180,58,32*open,0,0,6.28); ctx.clip();
-    ctx.fillStyle='#eef2fa'; ctx.fillRect(W/2-60,140,120,80);
-    if (open>0.2){ const lk=Math.sin(t*0.7)*14;                      // le regard balaie la ville
-      const ig=ctx.createRadialGradient(W/2+lk,180,2,W/2+lk,180,20*open); ig.addColorStop(0,'#ff9be8'); ig.addColorStop(0.7,'#ff4ad0'); ig.addColorStop(1,'#8a1a70');
-      ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(W/2+lk,180,20*open,0,6.28); ctx.fill();
-      ctx.fillStyle='#0a1018'; ctx.beginPath(); ctx.arc(W/2+lk,180,8*open,0,6.28); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(W/2+lk-5,175,2.6*open,0,6.28); ctx.fill(); }
-    ctx.restore();
-    if (open>0.4){ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.strokeStyle='rgba(255,74,208,0.4)'; ctx.lineWidth=2;
-      for (let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(W/2,180,66+i*18+Math.sin(t*2+i)*4,0,6.28); ctx.stroke(); } ctx.restore(); }
-    const rise = clamp(t*0.45-0.3, 0, 1);
-    ['melee','ranged','tank','siege','ranged','melee'].forEach((role,i) => { const left = i<3;
-      drawFigure(menuFigure('bot','IA',role,1+(i%2),'rgba(255,90,210,0.8)',0.9),
-        left? W/2-230+i*46 : W/2+138+(i-3)*46, baseY+(1-rise)*30, left? 0.7 : -0.7); });
-  } else if (intro===4){
-    // — V. le monde optimisé : ciel rouge, essaims de drones, la santé du monde s'effondre —
-    ctx.fillStyle=lgrad(0,0,0,baseY,[[0,'#1a0606'],[0.5,'#3e0e0a'],[1,'#7a2412']]); ctx.fillRect(0,0,W,baseY);
-    ctx.fillStyle='#0a0606'; ctx.fillRect(0,baseY,W,H-baseY);
-    const ph = t%3.7, fl = ph<0.14 ? 1-ph/0.14 : 0;                          // éclair lointain
-    if (fl>0){ ctx.fillStyle='rgba(255,225,225,'+(fl*0.16)+')'; ctx.fillRect(0,0,W,baseY); }
-    // le globe et sa jauge de santé qui chute
-    const gx=W/2, gyy=150, gr=52, health = clamp(1 - t/10, 0.31, 1), sick = 1-health;
-    const c1 = lerpCol([70,150,205],[118,108,100],sick), c2 = lerpCol([24,60,96],[70,34,28],sick);
-    const gg = ctx.createRadialGradient(gx-16,gyy-18,6,gx,gyy,gr); gg.addColorStop(0,c1); gg.addColorStop(1,c2);
-    ctx.save(); ctx.globalCompositeOperation='lighter'; const ha=ctx.createRadialGradient(gx,gyy,gr,gx,gyy,gr+34);
-    ha.addColorStop(0,'rgba(255,120,80,'+(0.10+0.2*sick)+')'); ha.addColorStop(1,'rgba(255,120,80,0)'); ctx.fillStyle=ha;
-    ctx.beginPath(); ctx.arc(gx,gyy,gr+34,0,6.283); ctx.fill(); ctx.restore();
-    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(gx,gyy,gr,0,6.283); ctx.fill();
-    ctx.save(); ctx.beginPath(); ctx.arc(gx,gyy,gr,0,6.283); ctx.clip();
-    ctx.fillStyle=lerpCol([70,140,80],[110,80,50],sick);
-    for (const [ox,oy,rx,ry] of [[-22,-14,20,13],[12,-22,16,9],[18,8,22,15],[-14,20,14,9],[-38,6,8,14]]){
-      ctx.beginPath(); ctx.ellipse(gx+ox+((t*6)%40)-20, gyy+oy, rx, ry, 0.4, 0, 6.283); ctx.fill(); }
-    ctx.fillStyle='rgba(60,40,36,'+(0.5*sick)+')'; ctx.fillRect(gx-gr, gyy-gr, gr*2, gr*2);   // voile de fumée
-    ctx.restore();
-    ctx.lineWidth=5; ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.beginPath(); ctx.arc(gx,gyy,gr+12,0,6.283); ctx.stroke();
-    ctx.strokeStyle=lerpCol([120,200,120],[225,60,40],sick); ctx.lineCap='round';
-    ctx.beginPath(); ctx.arc(gx,gyy,gr+12,-Math.PI/2,-Math.PI/2+6.283*health); ctx.stroke(); ctx.lineCap='butt';
-    ctx.textAlign='center'; ctx.font=HF(14); ctx.fillStyle='#ecdccc'; ctx.fillText(Math.round(health*100)+' %', gx, gyy+gr+34);
-    ctx.font=HF(9); ctx.fillStyle='rgba(255,235,225,0.55)'; ctx.fillText(_t('world_health'), gx, gyy+gr+48);
-    // essaims de drones en V (feux rouges clignotants)
-    for (let sq=0;sq<3;sq++){ const sx0 = W+60 - ((t*58 + sq*300) % (W+320)), sy0 = 86+sq*52+(sq===1?110:0);
-      for (let k=0;k<7;k++){ const row = Math.ceil(k/2), sd = k%2? 1:-1, dx = sx0+row*16, dy = sy0+(k? sd*row*9 : 0);
-        ctx.fillStyle='#1c0c0c'; ctx.beginPath(); ctx.moveTo(dx-7,dy); ctx.lineTo(dx,dy-3); ctx.lineTo(dx+7,dy); ctx.lineTo(dx,dy+3); ctx.closePath(); ctx.fill();
-        if (Math.sin(t*8+k+sq*2)>0.3){ ctx.fillStyle='rgba(255,60,60,0.95)'; ctx.fillRect(dx-1,dy-1,2,2); } } }
-    // la ville brûle
-    ctx.fillStyle='#130a0a'; for (let i=0;i<16;i++){ const bh2=40+((i*59)%110); ctx.fillRect(i*64-10, baseY-bh2, 50, bh2); }
-    for (const [x,s] of [[W*0.12,1],[W*0.33,0.8],[W*0.7,1.1],[W*0.9,0.7]]) introFire(x, baseY-26, s, t);
-    introDust(t, 46, 'rgba(210,200,200,0.55)', true);                         // cendres
-  } else if (intro===5){
-    // — VI. la résistance —
-    ctx.fillStyle=lgrad(0,0,0,baseY,[[0,'#16100e'],[1,'#3a241c']]); ctx.fillRect(0,0,W,baseY);
-    ctx.fillStyle='#0c0908'; ctx.fillRect(0,baseY,W,H-baseY);
-    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle='rgba(255,240,220,0.55)';
-    for (let i=0;i<28;i++){ const tw=0.5+0.5*Math.sin(t*2+i); ctx.globalAlpha=0.3+tw*0.5; ctx.fillRect((i*157)%W,(i*89)%190,1.6,1.6);} ctx.globalAlpha=1;
-    // projecteurs de la machine qui fouillent l'horizon (au loin, à droite)
-    for (let i=0;i<2;i++){ const ox=W*(0.78+i*0.12), a=-1.9+Math.sin(t*0.6+i*2)*0.45, len=360;
-      const lg=ctx.createLinearGradient(ox,baseY-40,ox+Math.cos(a)*len,baseY-40+Math.sin(a)*len);
-      lg.addColorStop(0,'rgba(255,120,220,0.16)'); lg.addColorStop(1,'rgba(255,120,220,0)'); ctx.fillStyle=lg;
-      ctx.beginPath(); ctx.moveTo(ox,baseY-40); ctx.lineTo(ox+Math.cos(a-0.07)*len, baseY-40+Math.sin(a-0.07)*len);
-      ctx.lineTo(ox+Math.cos(a+0.07)*len, baseY-40+Math.sin(a+0.07)*len); ctx.closePath(); ctx.fill(); }
-    ctx.restore();
-    ctx.fillStyle='#100c0c';
-    for (let i=0;i<8;i++){ const bh2=50+((i*67)%80), bx2=20+i*120;
-      ctx.beginPath(); ctx.moveTo(bx2,baseY); ctx.lineTo(bx2,baseY-bh2);
-      ctx.lineTo(bx2+18,baseY-bh2+14); ctx.lineTo(bx2+34,baseY-bh2-8); ctx.lineTo(bx2+52,baseY-bh2+20);
-      ctx.lineTo(bx2+52,baseY); ctx.closePath(); ctx.fill(); }
-    const fx=W/2-90, fy=baseY-4;
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    const glow=ctx.createRadialGradient(fx,fy-12,4,fx,fy-12,130); glow.addColorStop(0,'rgba(255,150,60,0.5)'); glow.addColorStop(1,'rgba(255,150,60,0)');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(fx,fy-12,130,0,6.28); ctx.fill();
-    for (let i=0;i<5;i++){ const fl=Math.abs(Math.sin(t*5+i*1.7));
-      ctx.fillStyle=i%2?'rgba(255,150,60,'+(0.5+fl*0.4)+')':'rgba(255,210,90,'+(0.4+fl*0.5)+')';
-      ctx.beginPath(); ctx.moveTo(fx-8+i*4,fy-2); ctx.quadraticCurveTo(fx-8+i*4+Math.sin(t*6+i)*4,fy-14-fl*18,fx-6+i*4,fy-2); ctx.closePath(); ctx.fill(); }
-    for (let i=0;i<14;i++){ const ey=(t*40+i*53)%150, a=1-ey/150; ctx.fillStyle='rgba(255,170,80,'+(a*0.7)+')';
-      ctx.fillRect(fx+Math.sin(t*2+i)*18, fy-10-ey, 2, 2); }
-    ctx.restore();
-    ctx.fillStyle='#2c2018'; ctx.fillRect(fx-14,fy-3,28,4);
-    for (const [role,px,s] of [['hero',fx+50,-0.62],['ranged',fx+86,-0.58],['support',fx+114,-0.56]])
-      drawFigure(menuFigure('hum','HUM',role,0,'rgba(255,150,70,0.95)',0.9), px, baseY, s);
-    // d'autres camarades rejoignent le feu
-    for (const [role,stop,d] of [['melee',fx-46,0],['tank',fx-82,1.2],['ranged',fx-116,2.2]]){
-      const px = Math.min(stop, -40 + Math.max(0, t-d)*48);
-      drawFigure(menuFigure('hum','HUM',role,0,'rgba(255,150,70,0.85)',0.9), px, baseY+(px<stop? Math.abs(Math.sin(t*5))*-1.5 : 0), 0.58);
-    }
-    const flx=fx+140; ctx.strokeStyle='#3a2a20'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(flx,baseY); ctx.lineTo(flx,baseY-80); ctx.stroke();
-    const wv=Math.sin(t*3)*4; ctx.fillStyle='#d4281e';
-    ctx.beginPath(); ctx.moveTo(flx,baseY-80); ctx.quadraticCurveTo(flx+22,baseY-76+wv,flx+42,baseY-70+wv); ctx.lineTo(flx,baseY-58); ctx.closePath(); ctx.fill();
-  } else {
-    // — carton-titre —
-    ctx.fillStyle=lgrad(0,0,0,H,[[0,'#120a0a'],[1,'#080606']]); ctx.fillRect(0,0,W,H);
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    for (let i=0;i<12;i++){ const lx=(i*83+t*30)%W, a=0.04+0.05*Math.sin(t*1.5+i); ctx.fillStyle='rgba(255,120,70,'+a+')'; ctx.fillRect(lx,120,2,200); }
-    for (let i=0;i<22;i++){ const ey=(t*(22+(i%5)*6)+i*41)%H; ctx.fillStyle='rgba(255,150,80,'+(0.5*(1-ey/H))+')';
-      ctx.fillRect((i*137+Math.sin(t+i)*20)%W, H-ey, 2, 2); }                // braises
-    ctx.restore();
-  }
-  ctx.restore();                                                   // fin du travelling
+  const t = introT, fade = clamp(introT*1.25, 0, 1);
+  ctx.fillStyle = '#0d0a0a'; ctx.fillRect(0, 0, W, H);
   if (intro < INTRO_N-1){
-    introChapter(intro, ['#e8b878','#ffb070','#8ad4f0','#ff7ad8','#ff7a5a','#ffb070'][intro]);
-    introText(_t(INTRO_LORE[intro]), 458);
+    const lay = introLayout(), P = { x:lay.px, y:8, w:lay.pw, h:lay.ph };
+    // travelling avant très lent sur la planche ; la légende reste fixe
+    const kb = 1 + 0.03*clamp(t/10, 0, 1);
+    ctx.save(); ctx.beginPath(); ctx.rect(P.x, P.y, P.w, P.h); ctx.clip();
+    ctx.translate(P.x + P.w/2, P.y + P.h/2); ctx.scale(kb, kb); ctx.translate(-P.w/2, -P.h/2);
+    INTRO_PLATES[intro](ctx, P.w, P.h, t);
+    ctx.restore();
+    introCaption(intro, lay);
   } else {
-    ctx.textAlign='center';
-    const pulse=0.5+0.5*Math.sin(t*1.6);
-    bloomT('#ff5a3a', 18+pulse*10, ()=>{ ctx.font='800 124px '+UI_STEN; ctx.fillStyle='#e8e0d2'; ctx.fillText('AGI', W/2, 244); });
-    ctx.font='800 124px '+UI_STEN; ctx.fillStyle='rgba(255,90,58,0.25)'; ctx.fillText('AGI', W/2+3, 247);
-    ctx.font=HF(14); ctx.fillStyle='#c8a888'; ctx.fillText(_t('lore_sub'), W/2, 286, W-70);
-    ctx.font='14px '+UI_TYPE; ctx.fillStyle='rgba(232,224,212,'+(0.5+0.4*pulse)+')'; ctx.fillText(_t('lore_enter'), W/2, 362);
+    // — carton-titre : la page de garde du carnet —
+    plateBase(ctx, W, H, 'rgba(120,90,50,0.06)'); plateEnd(ctx, W, H);
+    ctx.textAlign = 'center';
+    const pulse = 0.5+0.5*Math.sin(t*1.6), fs = clamp(124, 60, H*0.23);
+    inkLine(ctx, [W/2-190, 262, W/2-60, 258, W/2+60, 263, W/2+190, 259], clamp(t*1.2, 0, 1), 2.4, INTRO_INK);
+    ctx.font = '800 '+fs+'px '+UI_STEN; ctx.fillStyle = 'rgba(165,42,28,0.45)'; ctx.fillText('AGI', W/2+3, 244+3);
+    ctx.fillStyle = INTRO_INK; ctx.fillText('AGI', W/2, 244);
+    ctx.font = HF(14); ctx.fillStyle = '#5a4634'; ctx.fillText(_t('lore_sub'), W/2, 292, W-70);
+    ctx.font = '14px '+UI_TYPE; ctx.fillStyle = 'rgba(31,27,23,'+(0.5+0.4*pulse)+')'; ctx.fillText(_t('lore_enter'), W/2, 362);
   }
   if (fade<1){ ctx.fillStyle='rgba(8,6,10,'+(1-fade)+')'; ctx.fillRect(0,0,W,H); }   // fondu d'entrée
   // fondu de SORTIE vers le tableau suivant (puis bascule)
@@ -660,7 +391,6 @@ function drawIntro(dt){
     ctx.fillStyle='rgba(8,6,10,'+clamp(1-introOut/0.4,0,1)+')'; ctx.fillRect(0,0,W,H);
     if (introOut<=0){ introOut=0; if (introNext>=INTRO_N){ finishIntro(); return; } intro=introNext; introT=0; }
   } else if (intro < INTRO_N-1 && introT > 11) advanceIntro(true);   // avance automatique
-  introFrame();
   if (!introChrome) return;
   const isr = INTRO_SKIP();
   ctx.fillStyle='rgba(16,13,12,0.85)'; rr(isr.x,isr.y,isr.w,isr.h,5); ctx.fill();
@@ -1065,11 +795,12 @@ function drawZone(z, dev, t, vw){
 // ÉTIQUETTES DE TERRAIN (v1.17) : nom de l'oasis, « ZONE … », « CONSTRUIRE / TERRAIN LIBRE » — enregistrées pendant le décor, puis posées EN UN SEUL PASSAGE
 // au-dessus des unités, sur un petit fond papier ; celles d'une même zone s'empilent verticalement au lieu de se superposer.
 let FIELD_LBLS = [];
-function fieldLabel(x, y, wx, txt, col, rank){ if (FIELD_LBLS.length<64) FIELD_LBLS.push({x, y, wx, txt, col, rank}); }
+function fieldLabel(x, y, wx, txt, col, rank, oasis){ if (FIELD_LBLS.length<64) FIELD_LBLS.push({x, y, wx, txt, col, rank, oasis}); }
 function drawFieldLabels(){
   if (!FIELD_LBLS.length) return;
-  const L = FIELD_LBLS.slice().sort((a,b)=>a.x-b.x), groups = [];
+  const L = FIELD_LBLS.slice().sort((a,b)=>a.x-b.x), groups = [], oas = L.filter(l=>l.oasis);
   for (const l of L){
+    if (l.rank===1 && oas.some(o=>Math.abs(o.x-l.x)<84)) continue;      // « ZONE … » au pied de l'oasis : l'étiquette de l'oasis dit déjà qui la tient
     if (l.rank===2 && (game.p.units.some(u=>Math.abs(u.x-l.wx)<30) || game.e.units.some(u=>Math.abs(u.x-l.wx)<30))) continue;   // « CONSTRUIRE » / « TERRAIN LIBRE » : masqué dès qu'une unité s'y tient
     const g = groups[groups.length-1];
     if (g && Math.abs(l.x-g.x1)<84){ g.items.push(l); g.x1 = l.x; } else groups.push({ x0:l.x, x1:l.x, items:[l], });
@@ -1081,11 +812,15 @@ function drawFieldLabels(){
     g.items.sort((a,b)=>a.rank-b.rank);                                  // du haut (nom du lieu) au bas (zone, puis socle)
     g.items.forEach((l,i)=>{
       const y = bottom - (g.items.length-1-i)*(hh+2), tw = ctx.measureText(l.txt).width, w = tw+10+(l.col? 7 : 0), x0 = cx-w/2;
+      // l'oasis s'efface (25 %) dès que la mêlée s'y tient : on lit le combat, pas l'étiquette
+      const crowd = l.oasis && (game.p.units.reduce((n,u)=>n+(Math.abs(u.x-l.wx)<100),0) + game.e.units.reduce((n,u)=>n+(Math.abs(u.x-l.wx)<100),0))>=3;
+      if (crowd) ctx.globalAlpha *= 0.25;
       ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(x0+1.2, y-hh/2+1.8, w, hh);
       ctx.fillStyle='rgba(233,224,202,0.94)'; ctx.fillRect(x0, y-hh/2, w, hh);
       ctx.strokeStyle='rgba(31,27,23,0.55)'; ctx.lineWidth=1; ctx.strokeRect(x0+0.5, y-hh/2+0.5, w-1, hh-1);
       if (l.col){ ctx.fillStyle=l.col; ctx.fillRect(x0+1, y-hh/2+1, 4, hh-2); }
       ctx.fillStyle='#1f1b17'; ctx.fillText(l.txt, cx+(l.col? 3 : 0), y+0.5);
+      if (crowd) ctx.globalAlpha /= 0.25;
     });
   }
   ctx.restore();
@@ -1591,7 +1326,7 @@ function drawNode(n){
   if (Math.abs(n.prog)<1 && n.prog!==0){
     ctx.fillStyle='#000a'; ctx.fillRect(x-22,y-58,44,5);
     ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(x-22,y-58,44*Math.abs(n.prog),5); }
-  if (n.center) fieldLabel(x, y-82, n.x, tr('oasis'), null, 0);
+  if (n.center) fieldLabel(x, y-82, n.x, tr(n.owner==='p'? 'oasis_p' : n.owner==='e'? 'oasis_e' : 'oasis_n'), null, 0, true);   // UNE étiquette : nom + qui la tient
 }
 
 /* ====== ÉCLAIRAGE & MATIÈRE — relief 2.5D sculpté + accents néon ====== */
@@ -1683,6 +1418,11 @@ function muzzleOf(u){
 // torse, tête, arme) — et les jambes changent de pose au rythme du pas. Avant, les unités
 // glissaient avec un simple balancement. Les jambes sont de petites toiles (48×40).
 let SPART = 'full', SPOSE = 0;
+// A10 (v1.18) : trois teintes de peau pour les humains, choisies de façon stable d'après u.id (le héros garde la première).
+// SKIN_IDX est posé juste avant le tracé d'une unité ; il entre dans la clé des couches qui montrent la peau.
+const SKIN_TONES = ['#e2b48a','#b98560','#7a5236'];
+let SKIN_IDX = 0;
+const skinIdxOf = id => (Math.imul((id|0)+1, 2654435761)>>>20) % 3;
 const LEGS = { W:48, H:40, ox:-24, oy:-34 };          // position de la toile des jambes / pieds
 const unitHeavy = (kind, role) => role==='tank' || (kind==='bot' && role==='siege');
 const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || era>=3;
@@ -1694,7 +1434,8 @@ function unitPart(kind, fac, role, era, trans, part, pose){
   if (part==='legs'){ const h = unitHeavy(kind, role);
     return sprite('SL'+kind+(h?'h':'n')+era+'p'+pose, LEGS.W, LEGS.H, ()=>{ TC.translate(-(USP.cx+LEGS.ox), -(USP.foot+LEGS.oy));
       bakePart(kind, fac, h? 'tank' : 'melee', era, false, 'legs', pose); }); }
-  return sprite(PART_KEY[part]+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
+  const sk = (kind==='hum' && SKIN_IDX>0)? 's'+SKIN_IDX : '';
+  return sprite(PART_KEY[part]+kind+role+era+(trans?'T':'')+sk, USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
 }
 const PART_KEY = { back:'SB', front:'S', body:'SY', armb:'SQ', arm:'SA' };
 // dessine un personnage complet (couches) au repère courant : pieds en (0,0), tourné vers +x
@@ -1786,7 +1527,7 @@ function drawHumSprite(fac, role, era, trans, hero){
   const tank = role==='tank', sw = tank? 10 : 8;                 // demi-largeur d'épaules
   const pants = era===4? shade(uni,0.72) : mix(uni,'#26262c',0.42);
   const boot = era===4? '#8a6a2a' : era===3? '#2c2a36' : '#2a2420';
-  const skin = '#e2b48a', glove = era>=3? shade(uni,0.85) : era===2? '#2a2c30' : skin;
+  const skin = (hero? SKIN_TONES[0] : SKIN_TONES[SKIN_IDX]||SKIN_TONES[0]), glove = era>=3? shade(uni,0.85) : era===2? '#2a2c30' : skin;
   const metal = era===4? '#ecd27e' : '#a2aab6';
   const lw = tank? 8 : 7, aw = tank? 6.2 : 5.4;
   const P = hero? { b:[cx-3,F-42, cx-5,F-33, cx-2,F-26], f:[cx+2,F-42, cx+10,F-48, cx+12.5,F-60] } : armPose(role, era, cx, F);
@@ -1843,7 +1584,8 @@ function drawHumSprite(fac, role, era, trans, hero){
   TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=1;
   if (era===0){
     strokeP([cx+2,F-44, cx+1,F-25]); TC.stroke();                                         // fermeture éclair
-    plateT([cx-7,F-47, cx-1,F-46, cx-3,F-42, cx-8,F-43], shade(uni,0.82), false);         // capuche
+    const HOOD = {melee:'#b8452e', tank:'#4f7d5a', ranged:'#d8a630', siege:'#7a5a9a', support:'#e8e4da'}[role] || '#b8452e';
+    plateT([cx-8,F-48, cx-0.5,F-47, cx-2.5,F-41, cx-9,F-42.5], HOOD, false);               // capuche (couleur variable selon le rôle)
     TC.fillStyle=shade(uni,1.18); TC.fillRect(cx-5,F-38,4,4);                              // rapiéçage
     // foulard aux couleurs de la faction (seul accent de l'ère 0)
     TC.fillStyle=lgrad(cx-4,F-48,cx+5,F-43,[[0,shade(acc,1.15)],[1,shade(acc,0.7)]]);
@@ -2350,7 +2092,9 @@ function drawForeground(vw){
   const par = 1.38, off = camX*par, dev = game.dev||0, y0 = GROUND+24;
   for (let k=Math.floor((off-120)/230); k*230 < off+vw+120; k++){
     const h = lhash(k, 91); if (h>0.62) continue;
-    const x = k*230 + lhash(k,92)*120 - off, ty = (h*100|0)%3, type = (ty===0 && dev>0.6)? 2 : ty;
+    const wx = k*230 + lhash(k,92)*120, x = wx - off, ty = (h*100|0)%3;
+    const wm = wx/par, nearBase = wm < 300 || wm > WORLD-300;           // B4 : jamais de gravats à moins de 300 px d'une base
+    const type = (ty===0 && dev>0.6 && !nearBase)? 2 : ty;
     const sp = fxSprite('FG'+type, 96, 44, g => { if (CANF) g.filter='blur(1.1px)';
       g.fillStyle='rgba(13,10,12,0.72)'; g.strokeStyle='rgba(13,10,12,0.8)'; g.lineCap='round';
       if (type===0){ for (let i=0;i<22;i++){ const bx=10+i*3.5, bh=10+lhash(i,5)*26, bd=(lhash(i,6)-0.5)*14; g.lineWidth=1.6+lhash(i,7)*1.4;
@@ -2358,8 +2102,10 @@ function drawForeground(vw){
       else if (type===1){ g.lineWidth=3; g.beginPath(); g.moveTo(18,44); g.lineTo(21,8); g.moveTo(76,44); g.lineTo(73,12); g.stroke();
         g.lineWidth=1.1; for (let r=0;r<2;r++){ g.beginPath(); g.moveTo(0,16+r*11); g.quadraticCurveTo(48,24+r*11,96,15+r*11); g.stroke();
           for (let i=0;i<7;i++){ const bx=8+i*13, by=17+r*11+Math.sin(i/6*3.14)*4; g.beginPath(); g.moveTo(bx-2,by-2); g.lineTo(bx+2,by+2); g.moveTo(bx+2,by-2); g.lineTo(bx-2,by+2); g.stroke(); } } }
-      else { g.globalAlpha=0.7; g.beginPath(); g.moveTo(6,44); g.lineTo(14,26); g.lineTo(30,20); g.lineTo(44,30); g.lineTo(58,22); g.lineTo(72,27); g.lineTo(90,44); g.closePath(); g.fill();
-        g.lineWidth=2.4; g.beginPath(); g.moveTo(36,26); g.lineTo(31,6); g.moveTo(31,6); g.lineTo(40,10); g.stroke(); } });
+      else { g.globalAlpha=0.35; g.lineWidth=2.6;                                   // B4 (v1.18) : poutre en biais et deux briques, au trait, à 35 %
+        g.beginPath(); g.moveTo(10,42); g.lineTo(70,18); g.stroke();
+        g.lineWidth=1.6; g.strokeRect(54,34,14,8); g.strokeRect(70,36,12,6);
+        g.beginPath(); g.moveTo(22,44); g.lineTo(34,38); g.stroke(); } });
     ctx.drawImage(sp, x-48, y0-44, 96, 44);
   }
 }
@@ -2406,8 +2152,11 @@ function blitHumanoid(u, x, gy, kind){
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
   const aa = !qFx()? undefined : cheer? -1.05+0.25*Math.sin(performance.now()/190 + u.bob) : armAngle(u, moving, ph);
-  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
+  SKIN_IDX = (kind==='hum' && u.role!=='hero')? skinIdxOf(u.id) : 0;
+  try {
+    drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
+    if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
+  } finally { SKIN_IDX = 0; }
   ctx.restore();
   if (atk){ const m=muzzleOf(u); attackFX(u, x+lunge, gy+m[1], imp, m[0]); }
 }
@@ -2451,23 +2200,24 @@ function airSprite(fac, era, trans){
       if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-0.5,cy+6,2.6,'#ff4a2a'));
       return;
     }
-    if (era===1){                                                                              // HÉLICO LÉGER
-      TC.fillStyle=lgrad(cx-27,cy-5,cx-27,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);
-      polyP([cx-8,cy-4.5, cx-27,cy-3.4, cx-27,cy-0.6, cx-8,cy+2]); TC.fill();
-      plateT([cx-30.5,cy-11, cx-26,cy-10, cx-24.5,cy+0.5, cx-28.5,cy+0.5], body);
-      TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-26.5,cy-4.5,4.4,0,6.283); TC.stroke();
-      TC.fillStyle=acc; TC.fillRect(cx-21,cy-3.6,3,3.4);
-      TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';
-      strokeP([cx-10,cy+11, cx+10,cy+11, cx+13,cy+9]); TC.stroke();
-      strokeP([cx-5,cy+5, cx-6,cy+11]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+11]); TC.stroke();
-      plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body);
-      TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);
-      polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
-      TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
-      plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));
-      TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);
-      tubeT(cx+1,cy+3,cx+11,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6);   // porte + mitrailleuse
-      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
+    if (era===1){                                                                              // ULM (v1.18) : aile souple, chariot, hélice propulsive
+      const sail='#e8e0c8';
+      TC.strokeStyle='rgba(30,30,36,0.75)'; TC.lineWidth=0.8; TC.lineCap='round';                  // mât et haubans
+      strokeP([cx-1,cy-8, cx-1,cy+1]); TC.stroke(); strokeP([cx-14,cy-9, cx-3,cy+4]); TC.stroke(); strokeP([cx+14,cy-8, cx+2,cy+4]); TC.stroke();
+      plateT([cx-20,cy-12, cx+6,cy-14.5, cx+22,cy-8, cx+4,cy-7.2, cx-18,cy-8.6], sail);             // aile en toile
+      TC.fillStyle=acc; polyP([cx-5,cy-14, cx+2,cy-14.3, cx+8,cy-8.6, cx-1,cy-8]); TC.fill();        // lé de couleur
+      TC.strokeStyle='rgba(50,40,30,0.6)'; TC.lineWidth=0.8; strokeP([cx-18,cy-8.6, cx+22,cy-8]); TC.stroke();   // bord d'attaque
+      plateT([cx-9,cy+1, cx+9,cy+1.4, cx+12,cy+6, cx-7,cy+8], body);                               // nacelle-chariot
+      TC.fillStyle='rgba(225,236,246,0.9)'; polyP([cx+5,cy+1.4, cx+9.4,cy+1.6, cx+12,cy+5.4, cx+6,cy+5]); TC.fill();   // pare-brise
+      TC.fillStyle='#e2b48a'; TC.beginPath(); TC.arc(cx+1.4,cy-1.4,3.1,0,6.283); TC.fill();           // pilote
+      TC.fillStyle='#c8302a'; TC.beginPath(); TC.arc(cx+1.2,cy-2.2,3.4,Math.PI,0); TC.fill();         // casque
+      tubeT(cx+4,cy+3.4,cx+19,cy+4.4,0.9,'#2a2e34');                                                  // mitrailleuse
+      TC.fillStyle='#262a30'; for (const wx of [-4,7]){ TC.beginPath(); TC.arc(cx+wx,cy+11,2.6,0,6.283); TC.fill(); }
+      TC.strokeStyle='#262a30'; TC.lineWidth=1.2; strokeP([cx-4,cy+8, cx-4,cy+11]); TC.stroke(); strokeP([cx+7,cy+6, cx+7,cy+11]); TC.stroke();
+      TC.fillStyle='rgba(235,235,225,0.5)'; TC.beginPath(); TC.ellipse(cx-13.5,cy+3.4,2.4,9.4,0,0,6.283); TC.fill();   // disque de l'hélice propulsive
+      TC.strokeStyle='#1a1c20'; TC.lineWidth=2; strokeP([cx-13.5,cy-5.6, cx-13.5,cy+12.4]); TC.stroke();
+      strokeP([cx-12,cy+3, cx-9,cy+3.4]); TC.stroke();
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+5,2.6,'#ff4a2a'));
       return;
     }
     if (era===2){                                                                              // VTOL FURTIF (deux rotors carénés)
@@ -2486,18 +2236,21 @@ function airSprite(fac, era, trans){
       if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy+2,2.6,'#ff4a2a'));
       return;
     }
-    if (era===3){                                                                              // CHASSEUR PLASMA (aile delta)
-      const glow='#ff9a4a';
-      plateT([cx-6,cy-3, cx-26,cy-14, cx-21,cy-3, cx-6,cy+1], shade(body,0.7));                       // dérive
-      plateT([cx-22,cy-2, cx-14,cy-6, cx+8,cy-5.6, cx+29,cy+1, cx+10,cy+5.4, cx-20,cy+4.4], body);    // fuselage effilé
-      plateT([cx-8,cy+3, cx+12,cy+3.4, cx-4,cy+12, cx-18,cy+9], shade(body,0.82));                    // aile delta
-      TC.fillStyle='rgba(18,22,32,0.96)'; polyP([cx+4,cy-5.4, cx+14,cy-4, cx+18,cy-0.6, cx+4,cy-0.8]); TC.fill();   // verrière
-      TC.fillStyle='rgba(255,255,255,0.35)'; polyP([cx+6,cy-4.6, cx+11,cy-3.8, cx+7,cy-1.6]); TC.fill();
-      TC.fillStyle='#1c2026'; rrectT(cx-8,cy+6,15,3.4,1.6); TC.fill();                                 // pod à plasma
-      glowDot(cx+7.4,cy+7.7,1.8,glow,7);
-      bloomT(glow,9,()=>{ TC.fillStyle=glow; polyP([cx-22,cy-1.4, cx-31,cy+1, cx-22,cy+3.4]); TC.fill(); });   // flamme de tuyère
-      TC.fillStyle=acc; TC.fillRect(cx-14,cy-2,6,1.5);
-      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-9,cy+0.5,2.4,'#ff4a2a'));
+    if (era===3){                                                                              // DRONE DE CELLULE (v1.18) : drone-cargo bricolé, bidon ocre, deux hélices carénées, bâche rouge
+      const dark='#2a2e38';
+      TC.strokeStyle=dark; TC.lineWidth=1.8; TC.lineCap='round';                                        // bras de nacelles
+      strokeP([cx-6,cy+1, cx-14,cy-4]); TC.stroke(); strokeP([cx+6,cy+1, cx+14,cy-4]); TC.stroke();
+      TC.fillStyle=lgrad(cx-10,cy-3,cx-10,cy+8,[[0,shade(body,1.25)],[1,shade(body,0.6)]]); rrectT(cx-11,cy-3,22,11,4); TC.fill();   // corps : bidon ocre
+      TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.8; strokeP([cx-3,cy-3, cx-3,cy+8]); TC.stroke(); strokeP([cx+4,cy-3, cx+4,cy+8]); TC.stroke();   // cerclages
+      plateT([cx-9,cy-4.4, cx+8,cy-5, cx+11,cy+1, cx+9,cy+3, cx-10,cy+3.2], '#b8302a');                // bâche rouge
+      TC.strokeStyle='rgba(60,20,16,0.7)'; TC.lineWidth=0.8; strokeP([cx-4,cy-4.6, cx-5,cy+3]); TC.stroke(); strokeP([cx+3,cy-4.8, cx+4,cy+2.6]); TC.stroke();
+      for (const px of [-14,14]){ TC.fillStyle=dark; TC.beginPath(); TC.ellipse(cx+px,cy-5,6.4,2.1,0,0,6.283); TC.fill();   // hélices carénées
+        TC.fillStyle='rgba(190,210,230,0.28)'; TC.beginPath(); TC.ellipse(cx+px,cy-5.6,4.6,0.9,0,0,6.283); TC.fill();
+        TC.strokeStyle=dark; TC.lineWidth=1.3; TC.beginPath(); TC.ellipse(cx+px,cy-5,6.4,2.1,0,0,6.283); TC.stroke(); }
+      tubeT(cx+6,cy+7,cx+19,cy+8.2,1.1,'#1c2026'); TC.fillStyle='#d8a630'; TC.beginPath(); TC.arc(cx+19.4,cy+8.2,0.9,0,6.283); TC.fill();   // canon artisanal
+      TC.fillStyle=acc; TC.fillRect(cx-8,cy+4.6,5,1.4);
+      glowDot(cx+9,cy+2.2,1,'#ffd890',4);                                                              // phare
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+2,2.4,'#ff4a2a'));
       return;
     }
     // ère 4 : PLANEUR SOLAIRE — nacelle d'or sous une grande aile à cellules
@@ -3686,7 +3439,7 @@ const IA_LIVE = [
   },
 ];
 // caméra / œil scrutateur : position (repère base) par ère, suit le front
-const IA_EYE = [[20,-100,'cam'],[0,-110,'eye'],[6,-112,'eye'],[-4,-112,'eye'],[0,-86,'eye']];
+const IA_EYE = [[20,-100,'cam'],[0,-110,'eye'],[6,-112,'eye'],[-4,-112,'rings'],[0,-86,'eye']];
 const eyeGlow = col => fxSprite('EYEG'+col, 24, 24, g => { const r=g.createRadialGradient(12,12,1,12,12,12);
   r.addColorStop(0,rgbaC(col,0.9)); r.addColorStop(0.4,rgbaC(col,0.45)); r.addColorStop(1,rgbaC(col,0)); g.fillStyle=r; g.fillRect(0,0,24,24); });
 function drawIAEye(c, s, t, d, ex, ey, kind){
@@ -3700,6 +3453,14 @@ function drawIAEye(c, s, t, d, ex, ey, kind){
     c.fillStyle='#d8dde2'; c.fillRect(-1,-2.6,10,5.2); c.fillStyle='#1a2028'; c.fillRect(8,-2,2.6,4);
     c.fillStyle = col; c.beginPath(); c.arc(9.6,0,1.2,0,6.283); c.fill(); c.restore();
     return;
+  }
+  if (kind==='rings'){                                             // B5 (v1.18) : l'emblème de « NOUS » — trois anneaux concentriques gris-bleu, pulsation 0,5 Hz
+    const ph = 0.5+0.5*Math.sin(t*Math.PI);                           // 0,5 Hz : une pulsation toutes les 2 s
+    c.save(); c.lineWidth=1.8;
+    for (let i=0;i<3;i++){ const k = ((ph*0.6 + i*0.2)%1), r = 5+i*5.5;
+      c.strokeStyle = rgbaC('#4a5a6e', 0.45+0.55*(i===0? ph : i===1? 1-Math.abs(ph-0.5)*2 : 1-ph)); c.beginPath(); c.arc(ex,ey,r,0,6.283); c.stroke(); }
+    c.fillStyle=rgbaC('#4a5a6e',0.9); c.beginPath(); c.arc(ex,ey,1.6,0,6.283); c.fill();
+    c.restore(); return;
   }
   const lx = look*4;
   c.fillStyle='#cfe0ee'; rr(ex-12, ey-7, 24, 14, 6); c.fill();

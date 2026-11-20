@@ -560,7 +560,8 @@ console.log('\nHÉROS : POSTURES, ÈRES, ANIMATION');
     const b = setup('normal', 1), sB = [b.maxhp, b.dmg, b.spd, b.range, b.rate].join(); run(2);
     out.stats = sA===sB && powA===game.p.heroPow && powA===1;
     // commande : bouton du HUD, touche, valeur invalide refusée côté hôte
-    newGame('HUM', 1, false); R(); const bt = HUD.btns.find(b=>b.type==='hstance');
+    // (v1.18 : le bouton de posture est masqué tant qu'aucun héros n'est en jeu ni invocable → on fait apparaître le héros)
+    newGame('HUM', 1, false); spawnHero(game.p); R(); const bt = HUD.btns.find(b=>b.type==='hstance' && !btnHidden(b));
     handleTap(bt.x+bt.w/2, bt.y+bt.h/2); const s1 = game.p.heroStance;
     window.dispatchEvent(new KeyboardEvent('keydown', {code:'KeyJ'})); const s2 = game.p.heroStance; R();
     out.ui = !!bt && s1==='offensive' && s2==='prudent';

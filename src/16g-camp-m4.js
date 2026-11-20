@@ -275,24 +275,37 @@ function m4Lie(g, x, y, s, d, col){ g.fillStyle = col || M4_INK0;
   g.beginPath(); g.moveTo(x-d*s*0.3, y); g.lineTo(x-d*s*0.3, y-s*0.16); g.lineTo(x+d*s*0.26, y-s*0.18); g.lineTo(x+d*s*0.26, y); g.closePath(); g.fill(); }
 const m4Flakes = (g, t, n, a) => { g.fillStyle = 'rgba(31,27,23,'+(a||0.3)+')'; for (let i=0;i<n;i++){ const x = ((i*83.1 - t*14*(1+(i%3)*0.4)) % 480 + 480) % 480, y = (i*47.3 + t*17*(1+(i%4)*0.3)) % 270; g.fillRect(x, y, 1.8, 1.8); } };
 
+// une chaise vide, de face, pieds en (0,0) : dossier ajouré (montants, traverse, barreaux), assise, quatre pieds
+const m4Chair = (g, k, sc) => { g.save(); g.scale(sc, sc);
+  inkLine(g, [-8,-1, -8,-25], k, 1.5); inkLine(g, [8,-1, 8,-25], k, 1.5);                                          // pieds de devant
+  inkLine(g, [-6,-4, -6,-25], k, 1.1, '#5a5148'); inkLine(g, [6,-4, 6,-25], k, 1.1, '#5a5148');                    // pieds de derrière, plus clairs
+  inkWash(g, [-12,-27, 12,-27, 10,-23, -10,-23], M4_INK0, 0.3); inkLine(g, [-12,-27, 12,-27, 10,-23, -10,-23, -12,-27], k, 1.7);   // l'assise
+  inkLine(g, [-9,-27, -9,-72], k, 1.6); inkLine(g, [9,-27, 9,-72], k, 1.6);                                        // les montants du dossier
+  inkLine(g, [-11,-72, 11,-72], k, 3.2);                                                                           // la traverse du haut
+  inkLine(g, [-9,-35, 9,-35], k, 1.3);                                                                             // la traverse du bas
+  for (const x of [-4.5, 0, 4.5]) inkLine(g, [x,-38, x,-69], k, 1);                                                // les barreaux : le dossier est ajouré
+  g.restore(); };
+
 const M4_PLATES = {
-  // P1 · La dissolution : la table du conseil, douze chaises vides, l'écran affiche le vote puis « Ω » (accent bleu)
+  // P1 · La dissolution : la table du conseil, douze chaises vides, l'écran affiche le vote puis « G·P·T v8 » ; board2 : « NOUS » en bleu
   board(g, w, h, t, mode){ plateBase(g, w, h, 'rgba(70,92,120,0.08)');
-    const n = clamp(t/1.6, 0, 1), omega = mode==='omega' || t >= 3.8;
-    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, M4_INK0, 0.2);
+    const n = clamp(t/1.6, 0, 1), corp = mode==='corp', omega = mode==='omega' || (!corp && t >= 3.8);
+    inkLine(g, [0,200, 480,200], 1, 2.2); inkHatch(g, 0, 200, 480, 70, 7, M4_INK0, 0.13);                            // le pied du mur ; le sol de la salle, en hachures claires
     inkWash(g, m4R(160,40,160,70), '#3a4a58', 0.22); inkLine(g, m4R(160,40,160,70), n, 2.4);                    // l'écran, au mur
-    for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, x = 240+u*172, ch = 44 + (i%3)*3 - 8*u*u, k = clamp(t/1.8-i*0.05, 0, 1);   // douze dossiers de chaises vides, derrière la table, de travers
-      g.save(); g.translate(x, 204+8*u*u*0); g.rotate(Math.sin(i*2.3)*0.13 + u*0.05);
-      inkWash(g, m4R(-9, -ch, 18, ch), M4_INK0, 0.2); inkLine(g, m4R(-9, -ch, 18, ch), k, 1.6);
-      inkLine(g, [-11,-ch, 11,-ch], k, 3);                                                                         // la traverse du haut
-      inkLine(g, [-3,-ch+7, -3,-10], k, 1); inkLine(g, [3,-ch+7, 3,-10], k, 1);                                    // les barreaux
-      g.restore(); }
-    g.fillStyle = '#c4b99f'; g.fillRect(58, 200, 364, 14);                                                          // la table, vue de face, devant les chaises : opaque
-    inkWash(g, [60,200, 420,200, 414,214, 66,214], M4_INK0, 0.4); inkLine(g, [60,200, 420,200, 414,214, 66,214, 60,200], n, 2.6);
-    inkLine(g, [80,214, 80,230], n, 2.2); inkLine(g, [400,214, 400,230], n, 2.2);
-    if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
+    for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, k = clamp(t/1.8-i*0.05, 0, 1);                                  // douze chaises vides rangées derrière la table, quelques-unes de travers
+      g.save(); g.translate(240+u*170+Math.sin(i*4.1)*3, 226+(i%2)*3); g.rotate(Math.sin(i*2.3)*0.08 + (i===4||i===9? 0.1 : 0)); m4Chair(g, k, 1.12+(i%3)*0.03); g.restore(); }
+    g.save(); g.translate(240, 170); g.rotate(-0.022); g.translate(-240, -170);                                     // la table du conseil, au premier plan, légèrement de travers
+    g.fillStyle = '#d6ccb3'; g.beginPath(); g.moveTo(66,160); g.lineTo(414,160); g.lineTo(430,168); g.lineTo(50,168); g.closePath(); g.fill();   // le plateau (opaque)
+    inkLine(g, [66,160, 414,160, 430,168, 50,168, 66,160], n, 2.2);
+    g.fillStyle = '#c4b99f'; g.fillRect(50, 168, 380, 10);                                                         // la tranche, devant les chaises : opaque
+    inkWash(g, [50,168, 430,168, 430,178, 50,178], M4_INK0, 0.35); inkLine(g, [50,168, 430,168, 430,178, 50,178, 50,168], n, 2.4);
+    inkLine(g, [72,178, 72,248], n, 2.6); inkLine(g, [408,178, 408,248], n, 2.6);                                  // ses pieds
+    g.restore();
+    if (corp) m4Text(g, 'OMNICORP', 240, 96, 27, M4_INK0, 146);                                                      // intro de l'escarmouche : l'écran porte le nom de la corporation
+    else if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
       ls.forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), 240, 70+i*22, i? 13 : 14, '#1f2a33', 148); left -= l.length; }); }
-    else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = (mode==='omega')? 1 : k; m4Text(g, 'Ω', 240, 100, 62, M4_BLUE, 120); g.globalAlpha = 1; }
+    else if (mode==='omega') m4Text(g, '« NOUS »', 240, 98, 40, '#0b6fa8', 140);                                 // A13 : le système change de nom (seconde planche)
+    else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = k; m4Text(g, 'G·P·T v8', 240, 98, 30, M4_INK0, 140); g.globalAlpha = 1; }
     plateEnd(g, w, h); },
   // P2 · Mnémosyne : le plateau, le monolithe au centre-droit, des pages qui dérivent de gauche à droite (40 px/s) et entrent dedans
   mnemo(g, w, h, t){ plateBase(g, w, h, 'rgba(120,124,132,0.25)');
@@ -301,7 +314,9 @@ const M4_PLATES = {
     inkWash(g, m4R(280,30,80,170), M4_INK0, 0.55); inkLine(g, m4R(280,30,80,170), n, 2.4);
     inkLine(g, [282,34, 358,34], n, 3.2, M4_BLUE);                                                               // le liseré bleu au sommet
     for (let i=0;i<34;i++){ const x = ((i*43.7 + t*40) % 290) - 10, fy = (i*29) % 66, y = 128 + fy + Math.sin(t*2+i)*3, a = clamp((278-x)/16, 0, 1);
-      if (a <= 0.02) continue; g.globalAlpha = a; g.fillStyle = '#fffdf4'; g.fillRect(x, y, 4, 6); g.strokeStyle = M4_INK0; g.lineWidth = 0.9; g.strokeRect(x, y, 4, 6); g.globalAlpha = 1; }
+      if (a <= 0.02) continue; g.globalAlpha = a; const red = i%5===2, rot = Math.sin(i*1.7+t*1.3)*0.25;                         // C5 : de vraies pages (8×10, deux lignes d'écriture), certaines rouges (carnets)
+      g.save(); g.translate(x+4, y+5); g.rotate(rot); g.fillStyle = red? '#c42a1c' : '#fffdf4'; g.fillRect(-4, -5, 8, 10); g.strokeStyle = M4_INK0; g.lineWidth = 0.9; g.strokeRect(-4, -5, 8, 10);
+      g.strokeStyle = red? '#f4d8d0' : M4_INK0; g.lineWidth = 0.7; g.beginPath(); g.moveTo(-2.4,-1.8); g.lineTo(2.4,-1.8); g.moveTo(-2.4,1.2); g.lineTo(1.2,1.2); g.stroke(); g.restore(); g.globalAlpha = 1; }
     plateEnd(g, w, h); },
   // P3 · Huit minutes : le bipeur sur une table givrée ; « 55 · 08:00 » puis « 07:59 » (le nombre suit le niveau) ; accent bleu
   pager(g, w, h, t){ plateBase(g, w, h, 'rgba(60,66,76,0.16)');
@@ -377,7 +392,7 @@ const M4_PLATES = {
     const tw = [236,210, 236,32, 244,32, 244,210, 236,210];
     inkWash(g, tw, '#2a2a2c', 0.8); inkLine(g, tw, n, 2.2);
     const bl = Math.sin(t*4.2) > -0.2? 1 : 0.2; g.globalAlpha = bl; inkLine(g, [244,34, 244,120], 1, 2.4, M4_BLUE); g.globalAlpha = 1;      // le liseré bleu clignote
-    for (let i=0;i<9;i++) inkFolk(g, 18+i*34+t*12, 252, 26+(i%3)*2, '#2a2520', 0);                                 // ils marchent vers elle (12 px/s)
+    for (let i=0;i<9;i++) inkFolk(g, 18+((i*21+t*12)%182), 210, 26+(i%3)*2, '#2a2520', 0);                                 // ils marchent vers elle (12 px/s)
     for (let i=0;i<46;i++){ const x = (i*61.7 + Math.sin(t*0.6+i)*8) % 480, y = (i*37.1 + t*(14+(i%4)*4)) % 270; g.fillStyle = 'rgba(70,60,52,0.4)'; g.fillRect(x, y, 1.8, 1.8); }   // la cendre tombe
     plateEnd(g, w, h); },
   // P8 · Le relais muet : le chevalement sous la neige (deux montants, la molette, l'antenne) ; la neige monte et recouvre la base
@@ -397,7 +412,7 @@ const M4_PLATES = {
     inkWash(g, sn, '#f4f6f8', 0.92); inkLine(g, sn.slice(2, sn.length-2), 1, 1.6);                                 // la congère qui monte
     m4Flakes(g, t, 44, 0.45); plateEnd(g, w, h); },
 };
-M4_PLATES.board2 = (g, w, h, t) => M4_PLATES.board(g, w, h, t, 'omega');                    // même planche : l'écran affiche « Ω »
+M4_PLATES.board2 = (g, w, h, t) => M4_PLATES.board(g, w, h, t, 'omega');                    // même planche : l'écran affiche « NOUS »
 M4_PLATES.copy2 = (g, w, h, t) => M4_PLATES.copy(g, w, h, t+3);
 M4_PLATES.mute2 = (g, w, h, t) => M4_PLATES.mute(g, w, h, t+5);
 
@@ -637,7 +652,7 @@ campMission(3, {
   ownBase:true,                                                   // drawBase enveloppé : pas de halos de fenêtres de l'escarmouche (drawBaseGlow)
   num:'IV', when:M4_TX.when, ai:[0,2,2], doctrines:['caisse','ordre'], eraCap:3, era0:2, oneLife:true, dev0:0.25,
   dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6, think:2.4, eraLag:0.8}, {inc:0.15, cheat:0.6, think:2.2, eraLag:0.8}],   // IA « Difficile » en Lutte et Dernier carré
-  dAdj:[null, null, { wave:1, gap:1, base:1, eBase:1, res:1, eHp:1, eDmg:1 }],                               // Dernier carré : la rue ne tient pas plus de machines et il n'y a plus de métal passif ; avec le modèle commun (colonnes ×1,25, machines ×1,12, ressources ×0,9) le joueur scripté s'effondre avant la fin, on tempère donc les colonnes, la vie et les dégâts des machines et la caisse
+  dAdj:[null, null, { wave:1, gap:1, base:1, eBase:1, res:1, eHp:1, eDmg:1 }],                               // v1.18 : essayé vagues ×1,1 / vie et dégâts ×1,05 (et variantes) : le joueur scripté perd alors certaines graines (2 sur 6, base −1 à −8 % au lieu de 97–99 %) — résultat binaire, valeurs 1 conservées ; Dernier carré : la rue ne tient pas plus de machines et il n'y a plus de métal passif ; avec le modèle commun (colonnes ×1,25, machines ×1,12, ressources ×0,9) le joueur scripté s'effondre avant la fin, on tempère donc les colonnes, la vie et les dégâts des machines et la caisse
   title:M4_TX.title, place:M4_TX.place, recap:M4_TX.recap, where:M4_TX.where, goal2:M4_TX.goal2, rule:M4_TX.rule,
   tips:M4_TX.tips, docWhy:M4_TX.docWhy, debrief:M4_TX.debrief, fail:M4_TX.fail,
   radio:[

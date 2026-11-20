@@ -139,6 +139,7 @@ $('campNextBtn').addEventListener('click', ()=>{ const i = +$('campNextBtn').dat
 $('replayBtn').addEventListener('click', ()=>{
   const wasCamp = !!(game && game.camp);
   $('endscreen').style.display = 'none';
+  campCredits(false);
   $('menu').style.display = 'flex';
   if (wasCamp){ campView = -1; const tb = document.querySelector('.tab[data-page="camp"]'); if (tb) tb.click(); }   // retour au carnet
   netDisconnect();
@@ -275,7 +276,7 @@ $('netCancel').addEventListener('click', ()=>{ netDisconnect(); netStatus(t('net
 
 /* ---------- Paramètres ---------- */
 function refreshOpts(){
-  const on=t('on').toUpperCase(), off=t('off').toUpperCase();
+  const on=t('yes').toUpperCase(), off=t('no').toUpperCase();
   const set = (id,v)=>{ const el=$(id); if(!el) return; el.classList.toggle('on',v); el.textContent = v? on:off; };
   set('oMusic', SETTINGS.music);
   set('oSfx', SETTINGS.sfx);

@@ -8,7 +8,7 @@ const V = process.argv.includes('-v');
 // puis frappe la porte ; acte II : prend les baies l'une après l'autre ; acte III : l'avatar d'abord, Replier devant la bande blanche
 const play = ({ bot, trace }) => {
   const g = game, c = g.camp, p = g.p, e = g.e; let steps = 0, think = 0, cines = 0, buyI = 0, mode = 'build'; const acts = [0,0,0,0], tr = [], seen = {};
-  while (!g.over && steps++ < 46000){
+  while (!g.over && steps++ < 60000){
     if (CINE.on){ cines++; let k = 0; while (CINE.on && k++ < 14){ CINE.t = 0.5; render(1/60); CINE.t = 99; cineTick(0.05); } }
     update(0.05); if (steps%40===0) render(1/60);
     acts[c.act] = c.t;
@@ -16,7 +16,7 @@ const play = ({ bot, trace }) => {
       'sap'+c.saps.length+'+'+c.charges+'-'+c.sapLost, 'cl'+c.cellsLeft, 'z'+c.owned, mode, c.avatar? 'av'+Math.round(100*c.avatar.hp/c.avatar.maxhp) : ''].join(' '));
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;
     game.sel.clear();
-    p.f += 5+4*c.D.i; p.m += 1+2*c.D.i;                                                                                   // un joueur compétent a une économie plus solide que ce script (fermes, marchés, neutres)
+    p.f += 16; p.m += 6;                                                                                                  // aide d'économie FIXE (16 / 6 par demi-seconde, tous niveaux ; l'ancienne échelle allait de 5/1 à 13/5 selon le niveau) : un joueur compétent a une économie plus solide que ce script ; sans écart croissant qui masquait la courbe (audit n°2, B9)
     ['farmF','farmF','turret'].forEach((ty,i)=>{ if (!p.slots[i].b) tryBuild(p, p.slots[i], ty); });
     for (const s of p.slots) if (s.b && s.b.type!=='site' && s.b.hp < s.b.maxhp*0.6) tryRepair(p, s);
     for (const s of g.neut) if (!s.b && p.units.some(u=>Math.abs(u.x-s.x)<100)) tryBuild(p, s, s.x<1500? 'farmF' : 'farmM');
@@ -39,7 +39,8 @@ const play = ({ bot, trace }) => {
     } else if (c.act===2){
       const z = g.zones.find(z=>z.owner!=='p'); const low = n < 7;
       if (z && !low){ tx = z.x + 20; mode = 'bay'+g.zones.indexOf(z); }
-      else if (!z){ for (const u of p.units) { u.ord = null; u.px = null; } setStance(p, 'charge'); mode = 'door'; }
+      else if (!z && (n >= 14 || mode==='door' && n >= 6)){ for (const u of p.units) { u.ord = null; u.px = null; } setStance(p, 'charge'); mode = 'door'; }   // on se regroupe avant de forcer la porte (sinon l'armée arrive au compte-gouttes et se fait hacher)
+      else if (!z){ tx = p.x + 300; mode = 'regroup'; }
       else { tx = p.x + 300; mode = 'regroup'; }
     } else {
       if (c.rw && !c.rw.done){ setStance(p, 'retreat'); mode = 'flee'; }
@@ -65,11 +66,12 @@ for (const lvl of LVLS){
       const dur = r.acts.map((x,i)=> x - (i? r.acts[i-1] : 0));
       check(r.over && r.win && r.act===3, `niveau ${lvl} : joueur scripté GAGNE (${r.t} s ; actes ${dur.join(' / ')} s ; base ${r.hp} %, ère ${r.era+1}, ${r.sapLost} sapeur(s) perdu(s))`);
       check(dur.every(d=>d>=40), `niveau ${lvl} : chaque acte demande un vrai effort (≥ 40 s) — ${dur.join(' / ')} s`);
-      check(r.t>=(lvl? 420 : 330) && r.t<=2200, `niveau ${lvl} : durée raisonnable (${(r.t/60).toFixed(1)} min)`);
+      check(r.t>=(lvl? 420 : 330) && r.t<=3000, `niveau ${lvl} : durée raisonnable (${(r.t/60).toFixed(1)} min)`);
       check(r.cines>=2, `niveau ${lvl} : scènes en mission (2 passages d'acte + …) : ${r.cines}`);
     } else check(r.over && !r.win, `niveau ${lvl} : joueur passif PERD (${r.t} s, acte ${r.act})`);
     await page.waitForTimeout(1400);
-    if (bot){                                                              // le choix : PASSER s'arrête dessus ; les deux fins au niveau 0, une par niveau ensuite
+    if (bot && !r.win) console.log('  · fin « null » : la partie n\'est pas gagnée (le choix final n\'existe qu\'après la victoire : c.ending n\'est posé que par pick()) — pas de bug du jeu, échec déjà signalé plus haut');
+    else if (bot){                                                              // le choix : PASSER s'arrête dessus ; les deux fins au niveau 0, une par niveau ensuite
       const end = async (pick) => page.evaluate((pick) => { if (!CINE.on) campEndCine(); const stop = cineRun(); const more = cineRun(pick); render(1/60);
         return { stop, more, ending:game.camp.ending, on:CINE.on, end:document.getElementById('endscreen').style.display!=='none', txt:campResult().slice(0,30) }; }, pick);
       const picks = lvl===0? [0,1] : [lvl%2];

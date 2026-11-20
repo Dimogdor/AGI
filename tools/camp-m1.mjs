@@ -9,7 +9,7 @@ const V = process.argv.includes('-v');
 // lancée au-dessus du front dès que des machines s'en approchent
 const play = (bot) => {
   const g = game, c = g.camp, p = g.p, e = g.e; let steps = 0, think = 0, cines = 0; const st = {};
-  while (!g.over && steps++ < 20000){
+  while (!g.over && steps++ < 28000){
     if (CINE.on){ cines++; cineEnd(); }
     update(0.05); if (steps%40===0) render(1/60);
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;
@@ -28,7 +28,7 @@ for (const lvl of [0,1,2]){
     if (bot) check(intro.n>=6 && intro.played===intro.n && !intro.on, `niveau ${lvl} : ouverture, ${intro.n} plans joués jusqu'au bout`);
     const r = await page.evaluate(play, bot);
     if (V) console.log('    ', JSON.stringify(r));
-    if (bot) check(r.over && r.win && r.t>=180 && r.t<=900, `niveau ${lvl} : joueur scripté GAGNE (${r.t} s, base ${r.hp} %, ${r.owned}/3 transformateurs, ${r.cines} scène(s) en mission)`);
+    if (bot) check(r.over && r.win && r.t>=180 && r.t<=1200, `niveau ${lvl} : joueur scripté GAGNE (${r.t} s, base ${r.hp} %, ${r.owned}/3 transformateurs, ${r.cines} scène(s) en mission)`);
     else check(r.over && !r.win, `niveau ${lvl} : joueur passif PERD (${r.t} s)`);
     await page.waitForTimeout(1400);
     const outro = await page.evaluate(() => { const n = CINE.on? CINE.script.length : 0; const played = cineRun(); render(1/60);

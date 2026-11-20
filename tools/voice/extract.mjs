@@ -37,7 +37,8 @@ async function dynamic(){
     let src = '';
     const add = (who, txt) => { if (!txt) return; const L = SETTINGS.lang;
       if (typeof txt==='object' && !txt[L]) return;                     // pas de texte dans cette langue : pas de voix
-      const text = typeof txt==='string'? txt : cT(txt); if (!text) return;
+      const text = (typeof txt==='string'? txt : cT(txt)).replace(/[\u00A0\u202F]/g, ' ').replace(/\u2212/g, '-'); if (!text) return;   // mêmes empreintes que voiceText() du jeu
+      if (!text) return;
       const k = L+'|'+(who||'nar')+'|'+text; if (seen.has(k)) return; seen.add(k); out.push({ lang:L, who:who||'nar', text, src }); };
     const g0 = () => game, c0 = () => game && game.camp;
     const shots = (sc, depth) => { if (!Array.isArray(sc) || (depth|0) > 4) return;

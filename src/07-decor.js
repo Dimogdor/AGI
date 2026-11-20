@@ -180,7 +180,7 @@ function netTxtOut(e){
     const v = {}; if (e.v && typeof e.v==='object') for (const k of Object.keys(e.v).slice(0,8)){ const x = e.v[k]; v[k] = (x && typeof x==='object')? res(x) : String(x).slice(0,60); }
     out = fmt(Object.prototype.hasOwnProperty.call(I18N.fr, q)? q : e.q, v); }
   if (out==null) return String(e.t==null? '' : e.t);
-  return String(e.pr||'').slice(0,12) + out + String(e.sx||'').slice(0,12);
+  return String(e.pr||'').slice(0,28) + out + String(e.sx||'').slice(0,12);
 }
 // lumière dynamique (RTX simulé). FUSION : un éclair qui tombe sur une lumière encore vive de
 // taille voisine, au même endroit, la RAVIVE au lieu de s'empiler — en mêlée dense, des dizaines

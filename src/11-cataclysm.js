@@ -273,8 +273,12 @@ function drawCata(){
         ctx.globalAlpha=0.85*da; ctx.drawImage(PF.dust, x-r, gz-r*1.1, r*2, r*1.4); }
       ctx.globalAlpha=1; }
   }
-  ctx.globalAlpha=fade; ctx.font=HF(16); ctx.textAlign='center';
-  ctx.fillStyle=c.col; ctx.fillText(c.icon+'  '+cataName(k)+'  '+c.icon, W/2, 92);
+  // UN SEUL titre : l'annonce (13-hud) tant qu'elle est à l'écran, ensuite un compte à rebours court « 🔥 CANICULE · 9 s » comme le couvre-feu
+  if (!(game.msgT>0) && game.cataDur-tt>0){
+    const yy = game.weather? 90 : 73, ct = c.icon+' '+cataName(k).toUpperCase()+' · '+Math.ceil(game.cataDur-tt)+' '+tr('unit_s');
+    ctx.globalAlpha=Math.max(0.5,fade); ctx.font=HF(uiPx(12)); ctx.textAlign='center';
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillText(ct, W/2+1, yy+1); ctx.fillStyle=c.col; ctx.fillText(ct, W/2, yy);
+  }
   ctx.restore();
 }
 // nuage en champignon cuit une fois : pied, collerette, chapeau en tore (arrière puis avant),

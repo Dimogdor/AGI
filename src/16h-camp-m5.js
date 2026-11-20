@@ -28,7 +28,7 @@ const M5 = {
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
   hp:{ base:2200, gate:[2600,7000,24000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.5,1.0,1.2], eMulII:[1,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  eMul:[0.5,1.0,1.2], eMulII:[0.8,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -119,7 +119,7 @@ const M5_TX = {
   hudII: M5T(`Baies éteintes {a}/3`, `Bays out {a}/3`, `Bahías apagadas {a}/3`, `Racks aus {a}/3`, `Baie spente {a}/3`, `Baias apagadas {a}/3`, `Стоек погашено {a}/3`, `已关机柜 {a}/3`, `حجيرات مطفأة {a}/3`),
   hudAv: M5T(`Avatar`, `Avatar`, `Avatar`, `Avatar`, `Avatar`, `Avatar`, `Аватар`, `化身`, `التجسّد`),
   hudTw: M5T(`Tour`, `Tower`, `Torre`, `Turm`, `Torre`, `Torre`, `Башня`, `高塔`, `البرج`),
-  bilan: M5T(`Survivants : {n} — ils tiennent la brèche · +{f} vivres · +{m} argent · +{w} eau`, `Survivors: {n} — they hold the breach · +{f} food · +{m} money · +{w} water`, `Supervivientes: {n} — guardan la brecha · +{f} víveres · +{m} dinero · +{w} agua`, `Überlebende: {n} — sie halten die Bresche · +{f} Nahrung · +{m} Geld · +{w} Wasser`, `Superstiti: {n} — presidiano la breccia · +{f} viveri · +{m} denaro · +{w} acqua`, `Sobreviventes: {n} — guardam a brecha · +{f} víveres · +{m} dinheiro · +{w} água`, `Уцелевших: {n} — они держат пролом · +{f} еды · +{m} денег · +{w} воды`, `幸存者：{n} — 他们守住缺口 · +{f} 食物 · +{m} 金钱 · +{w} 水`, `الناجون: {n} — يحرسون الثغرة · +{f} غذاء · +{m} مال · +{w} ماء`),
+  bilan: M5T(`Survivants : {n} — ils tiennent la brèche · +{f} nourriture · +{m} argent · +{w} eau`, `Survivors: {n} — they hold the breach · +{f} food · +{m} money · +{w} water`, `Supervivientes: {n} — guardan la brecha · +{f} víveres · +{m} dinero · +{w} agua`, `Überlebende: {n} — sie halten die Bresche · +{f} Nahrung · +{m} Geld · +{w} Wasser`, `Superstiti: {n} — presidiano la breccia · +{f} viveri · +{m} denaro · +{w} acqua`, `Sobreviventes: {n} — guardam a brecha · +{f} víveres · +{m} dinheiro · +{w} água`, `Уцелевших: {n} — они держат пролом · +{f} еды · +{m} денег · +{w} воды`, `幸存者：{n} — 他们守住缺口 · +{f} 食物 · +{m} 金钱 · +{w} 水`, `الناجون: {n} — يحرسون الثغرة · +{f} غذاء · +{m} مال · +{w} ماء`),
   resume: M5T(`REPRENDRE À L'ACTE {n}`, `RESUME AT ACT {n}`, `REANUDAR EN EL ACTO {n}`, `AB AKT {n} WEITERMACHEN`, `RIPRENDI DALL'ATTO {n}`, `RETOMAR NO ATO {n}`, `ПРОДОЛЖИТЬ С АКТА {n}`, `从第{n}幕继续`, `استئناف من الفصل {n}`),
   rw: M5T(`RÉÉCRITURE `, `REWRITE `, `REESCRITURA `, `ÜBERSCHREIBUNG `, `RISCRITTURA `, `REESCRITA `, `ПЕРЕЗАПИСЬ `, `改写 `, `إعادة كتابة `),
   sortie: M5T(`SORTIE`, `SORTIE`, `SALIDA`, `AUSFALL`, `SORTITA`, `SAÍDA`, `ВЫЛАЗКА`, `出击`, `هجوم مضاد`),
@@ -553,6 +553,7 @@ function m5Halls(g, c, dt){
     if (M5.capK[D]<1 && z.prog>pr && z.prog<1) z.prog = pr + (z.prog-pr)*M5.capK[D];
     c.zProg[i] = z.prog; });
   g.zones.forEach((z,i)=>{ const was = c.zo[i];
+    if (D===0 && was==='p' && z.owner!=='p'){ z.owner = 'p'; z.prog = 1; }                                   // Récit (v1.18) : une baie éteinte ne se rallume plus (l'acte II durait 20 à 30 min)
     if (z.owner!==was){
       if (z.owner==='p'){ c.offN++; sfx('node'); g.shake = Math.max(g.shake, 5); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOff), '#9fd6ea', 14); }       // son coupé net
       else if (was==='p'){ c.relaunchN++; sfx('deny'); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOn), '#e0533f', 14); c.bayT[i] = 6; }
@@ -1012,7 +1013,7 @@ const M5_PLATES = {
   // K2 · Le silence : une allée de serveurs en perspective ; les voyants s'éteignent du premier plan vers le fond
   silence(g, w, h, t){ const c = m5C(); plateBase(g, w, h, 'rgba(10,14,24,0.55)');
     const V = [240, 118], n = clamp(t/1.0, 0, 1), D = [0, 0.3, 0.52, 0.68, 0.8, 0.89, 0.95];
-    g.fillStyle = 'rgba(8,10,16,0.8)'; g.fillRect(0, 0, 480, 270);
+    g.fillStyle = 'rgba(8,10,16,0.8)'; g.fillRect(12, 12, 456, 246);                                                                     // C6 : une marge de papier reste visible
     for (let side=-1; side<=1; side+=2){ for (let i=0;i<6;i++){
       const x0 = lerp(side<0? 20 : 460, V[0], D[i]), x1 = lerp(side<0? 20 : 460, V[0], D[i+1]);
       const t0 = lerp(24, V[1]-4, D[i]), t1 = lerp(24, V[1]-4, D[i+1]), b0 = lerp(238, V[1]+10, D[i]), b1 = lerp(238, V[1]+10, D[i+1]);
@@ -1024,6 +1025,7 @@ const M5_PLATES = {
     const wh = clamp((t-3.2)/1.2, 0, 1), gl = g.createRadialGradient(V[0], V[1], 2, V[0], V[1], 60); gl.addColorStop(0,'rgba(255,255,255,'+(0.5+0.5*wh).toFixed(2)+')'); gl.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gl; g.fillRect(150, 60, 180, 120);
     g.fillStyle = '#f6fbff'; g.beginPath(); g.arc(V[0], V[1], 14, 0, 6.283); g.fill();                                                  // la porte ronde, ouverte, d'où sort la lumière
     if (c){ const [l1, l2] = m5Bilan2(c); const a = clamp((t-1.2)/0.8, 0, 1); g.globalAlpha = a; g.fillStyle = 'rgba(8,10,16,0.82)'; g.fillRect(10, 238, 460, 28); m5Txt(g, l1, 240, 250, 11, '#e8d8a0'); m5Txt(g, l2, 240, 262, 11, '#dfe8ee'); g.globalAlpha = 1; }
+    g.save(); g.globalAlpha = 0.4; g.drawImage(cinePaper(), 0, 0, 480, 270); g.restore();                                                         // C6 : le grain du papier repasse à 40 %
     plateEnd(g, w, h); },
   // carton d'acte : la porte, de plus en plus étroite
   door(a){ return (g, w, h, t) => { plateBase(g, w, h, a===3? 'rgba(120,170,200,0.20)' : 'rgba(20,30,50,0.28)');
@@ -1097,18 +1099,27 @@ const M5_PLATES = {
     m5Cone(g, 262, 98, 150, 130, 0.42*fl, '232,165,60');
     for (const [x,s] of [[236,30],[262,34],[286,28]]) inkFolk(g, x, 226, s, M5_INK, 0);
     plateEnd(g, w, h); },
-  // D2 · Les câbles : cinq gros câbles sortent de la tour, deux personnes les coupent un à un ; un liseré bleu s'éteint à chaque coupure
+  // D2 · Les câbles : trois câbles fins pendent de la tour en courbes souples jusqu'au sol, deux personnes les coupent un à un ; un liseré bleu s'éteint à chaque coupure
   cables(g, w, h, t){ plateBase(g, w, h, 'rgba(255,255,255,0.14)');
     inkLine(g, [0,230, 480,230], 1, 2.4); inkHatch(g, 0, 230, 480, 40, 7, M5_INK, 0.2);
     const tw = [366,230, 366,14, 480,14, 480,230]; inkWash(g, tw, '#2c3038', 0.85); m5Loop(g, tw, 1, 2.6);
-    for (let i=0;i<5;i++){ const cut = t > 0.8 + i*0.7, y = 70 + i*28; g.fillStyle = cut? 'rgba(40,52,64,0.9)' : 'rgba(120,214,250,0.95)'; g.fillRect(372, 24 + i*40, 4, 28); }    // les liserés bleus
-    for (let i=0;i<5;i++){ const y0 = 70 + i*28, cut = t > 0.8 + i*0.7, cp = [[366,y0],[300,y0+10+i*4],[210,y0+30],[120,y0+34+i*8],[10,y0+36+i*10]];
-      g.strokeStyle = M5_INK; g.lineWidth = 7; g.lineCap = 'round';
-      if (!cut){ g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], cp[2][0],cp[2][1], cp[4][0],cp[4][1]); g.stroke(); }
-      else { g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], 270,y0+16, 250,y0+22); g.stroke();                                                    // le tronçon central a disparu
-        g.beginPath(); g.moveTo(150,y0+34+i*3); g.bezierCurveTo(100,y0+34+i*6, 60,y0+38+i*8, 10,y0+36+i*10); g.stroke(); }
-      g.strokeStyle = 'rgba(233,223,198,0.5)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(cp[0][0],cp[0][1]-2); g.bezierCurveTo(cp[1][0],cp[1][1]-2, cp[2][0],cp[2][1]-2, 330,y0-1); g.stroke(); }
-    inkFolk(g, 190, 230, 34, M5_INK, 0); inkFolk(g, 232, 230, 36, M5_INK, 0); inkLine(g, [200,206, 218,176], 1, 2.4); inkLine(g, [208,206, 224,176], 1, 2.4); inkLine(g, [240,208, 262,176], 1, 2.4); inkLine(g, [248,208, 266,180], 1, 2.4);   // les grandes pinces
+    const GX = [304, 238, 172], T0 = 0.8, DT = 0.9;
+    for (let i=0;i<3;i++){ const cut = t > T0 + i*DT, y0 = 64 + i*40; g.fillStyle = cut? 'rgba(40,52,64,0.9)' : 'rgba(120,214,250,0.95)'; g.fillRect(372, y0-14, 4, 28); }    // les liserés bleus
+    g.strokeStyle = M5_INK; g.lineWidth = 2.2; g.lineCap = 'round'; g.lineJoin = 'round';
+    for (let i=0;i<3;i++){ const y0 = 64 + i*40, gx = GX[i], cut = t > T0 + i*DT, ca = cut? t - T0 - i*DT : 0;
+      const bz = u => { const m = 1-u, x1 = 334-i*10, y1 = y0+78, x2 = gx+58, y2 = 222;                                // courbe souple : sort de la tour, retombe en arc, touche le sol en gx
+        return [m*m*m*366 + 3*m*m*u*x1 + 3*m*u*u*x2 + u*u*u*gx, m*m*m*y0 + 3*m*m*u*y1 + 3*m*u*u*y2 + u*u*u*227]; };
+      const top = cut? 0.84 : 1, sw = cut? Math.sin(ca*3)*Math.max(0, 1-ca*0.45)*4 : 0;
+      g.beginPath(); for (let k=0;k<=24;k++){ const u = top*k/24, q = bz(u); const x = q[0] + sw*u*u*u, y = q[1];    // coupé : le bout côté tour pend, mou, au-dessus du sol
+        k? g.lineTo(x, y) : g.moveTo(x, y); }
+      if (!cut) g.quadraticCurveTo(gx-18, 234, gx-52, 233);                                                         // entier : le câble se couche sur le sol et file vers le monde
+      g.stroke();
+      if (cut){ g.beginPath(); g.moveTo(gx-6, 229); g.quadraticCurveTo(gx-26, 235, gx-52, 233); g.stroke(); } }      // côté monde : le bout reste au sol, séparé
+    { const last = t > T0 + 2*DT;                                                                                        // l'étincelle rouge : l'unique accent, à la coupe du dernier câble
+      if (last && Math.sin(t*22) > -0.5){ const sx = GX[2]+3, sy = 221; g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(sx, sy, 3.2, 0, 6.283); g.fill();
+        g.strokeStyle = '#c42a1c'; g.lineWidth = 1.4; for (let k=0;k<5;k++){ const a = -0.4 - k*0.9, r1 = 5, r2 = 9 + (k%2)*4; g.beginPath(); g.moveTo(sx+Math.cos(a)*r1, sy+Math.sin(a)*r1); g.lineTo(sx+Math.cos(a)*r2, sy+Math.sin(a)*r2); g.stroke(); } } }
+    inkFolk(g, 206, 230, 34, M5_INK, 0); inkFolk(g, 270, 230, 36, M5_INK, 0);
+    inkLine(g, [198,206, 181,213], 1, 2.4); inkLine(g, [198,211, 183,219], 1, 2.4); inkLine(g, [278,206, 295,213], 1, 2.4); inkLine(g, [278,211, 293,219], 1, 2.4);   // les grandes pinces
     plateEnd(g, w, h); },
   // D3 · La table et la lampe : devant la porte de la tour, la nuit ; Sol veille, un papillon tourne autour de la lampe
   table(g, w, h, t){ plateBase(g, w, h, 'rgba(14,20,44,0.34)');
