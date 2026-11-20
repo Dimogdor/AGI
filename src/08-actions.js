@@ -401,9 +401,10 @@ function tryRepair(side, slot){
 function tryRepairBase(side){
   if (isGuest(side)){ guestCmd({c:'repbase'}); return true; }
   if (side.hp >= side.maxhp) return false;
+  if (game.t < (side.repBaseT||0)) return false;   // recharge de 20 s (v1.18, audit n°2) : sans elle, la réparation illimitée après la transcendance bloquait les parties (50 à 80 % non finies en Difficile/Brutal)
   const c = {f:120, m:120};
   if (!canPay(side,c)) return false;
-  pay(side,c); side.hp = Math.min(side.maxhp, side.hp+500);
+  pay(side,c); side.hp = Math.min(side.maxhp, side.hp+500); side.repBaseT = game.t + 20;
   if (side===game.p){ sfx('build'); announce(tr('a_baserepaired'), "#9dc88a"); }
   return true;
 }
