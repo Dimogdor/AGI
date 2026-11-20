@@ -994,8 +994,8 @@ function evWatch(){
   if (g.cata!==w.ca){ w.ca = g.cata; if (g.cata) evExplain(g.cata); }
   if (!!g.winter!==w.wi){ w.wi = !!g.winter; if (g.winter) evExplain('winter'); }
 }
-// valeurs réelles (FAC_TRAITS) injectées dans les textes d'événement : {dmg} {acq} {acqT} {fix} {fixT}
-function evNums(){ return { dmg:Math.round((1-fte('HUM','piquet'))*100), acq:Math.round((fte('HUM','acqK')-1)*100), acqT:fte('HUM','acqT'),
+// valeurs réelles (FAC_TRAITS) injectées dans les textes d'événement : {prod} {dmg} {acq} {acqT} {fix} {fixT}
+function evNums(){ return { prod:Math.round((1-fte('HUM','strikeProd'))*100), dmg:Math.round((1-fte('HUM','piquet'))*100), acq:Math.round((fte('HUM','acqK')-1)*100), acqT:fte('HUM','acqT'),
   fix:Math.round((fte('IA','fixK')-1)*100), fixT:fte('IA','fixT') }; }
 function evExplain(key){
   const g = game; if (!g) return;

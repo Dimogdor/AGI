@@ -175,7 +175,7 @@ const FAC_TRAITS = {
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
-          frozen:0.3, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
+          frozen:0.3, strikeProd:0.5, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à moitié (0 avant la v1.18 : audit n°2, ~10 points d'écart au banc B), −20 % de dégâts subis, puis « acquis sociaux »
           acidUnit:19, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
           sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
   },
