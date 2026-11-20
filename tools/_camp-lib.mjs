@@ -17,8 +17,9 @@ export async function open(lvl, mis){
       localStorage.setItem('agi_settings', JSON.stringify({ quality:'high', lang:'fr', music:false, sfx:false })); } catch(e){} });
   await page.goto(GAME); await page.waitForTimeout(400);
   if (process.env.OVERRIDE) await page.evaluate(process.env.OVERRIDE);       // essai d'équilibrage : ex. OVERRIDE='M5.avK=6' (constantes de mission, avant campStart)
-  await page.evaluate(([lvl, mis, doc]) => {
-    let s = 20251031 + lvl*977; Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };   // reproductible
+  await page.evaluate(([lvl, mis, doc, SEEDX]) => {
+    let s = 20251031 + lvl*977 + (+SEEDX)*104729;   // SEED=n : autre tirage (graine 0 = historique)
+    Math.random = () => { s = (s*16807)%2147483647; return (s-1)/2147483646; };   // reproductible
     CAMP_SAVE.done = 5; CAMP_SAVE.diff = lvl; if (doc) CAMP_SAVE.doc[mis] = 1; else delete CAMP_SAVE.doc[mis]; campStart(mis);   // DOC=1 : seconde doctrine
     // joue la cinématique en cours plan par plan (rendu compris) ; choix = index du bouton à presser sur un plan « choice »
     window.cineRun = (choice) => { let n = 0, guard = 0; while (CINE.on && guard++ < 80){ const s = CINE.script[CINE.i]; n++;
@@ -26,7 +27,7 @@ export async function open(lvl, mis){
         if (s && s.choice){ if (choice==null) return -n; cineEnd(); if (CINE.script[CINE.i]!==s) return -999; cineInput(-1,-1); cinePick(choice); }
         else { CINE.t = 99; cineTick(0.05); } }
       return n; };
-  }, [lvl, mis, process.env.DOC==='1']);
+  }, [lvl, mis, process.env.DOC==="1", +(process.env.SEED||0)]);
   return { page, errs };
 }
 export async function close(){ if (browser) await browser.close(); }

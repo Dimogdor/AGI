@@ -28,7 +28,7 @@ const M5 = {
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
   hp:{ base:2200, gate:[2600,7000,24000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.5,1.0,1.2], eMulII:[1,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  eMul:[0.5,1.0,1.2], eMulII:[0.8,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)
@@ -553,6 +553,7 @@ function m5Halls(g, c, dt){
     if (M5.capK[D]<1 && z.prog>pr && z.prog<1) z.prog = pr + (z.prog-pr)*M5.capK[D];
     c.zProg[i] = z.prog; });
   g.zones.forEach((z,i)=>{ const was = c.zo[i];
+    if (D===0 && was==='p' && z.owner!=='p'){ z.owner = 'p'; z.prog = 1; }                                   // Récit (v1.18) : une baie éteinte ne se rallume plus (l'acte II durait 20 à 30 min)
     if (z.owner!==was){
       if (z.owner==='p'){ c.offN++; sfx('node'); g.shake = Math.max(g.shake, 5); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOff), '#9fd6ea', 14); }       // son coupé net
       else if (was==='p'){ c.relaunchN++; sfx('deny'); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOn), '#e0533f', 14); c.bayT[i] = 6; }

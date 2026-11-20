@@ -193,7 +193,9 @@ function trySpecial(side){
   }
   for (const u of foe.units){
     const k = !pw? 1 : hum? ft('HUM','upDmg') : (elite.has(u)? ft('IA','strikeK') : ft('IA','strikeRest'));
-    u.hp -= Math.min(dmg*k, u.maxhp*0.65);   // plafonné : impossible de one-shot
+    let dd = dmg*k;
+    if (pw && !hum && u.role==='hero') dd = Math.max(dd, u.maxhp*ft('IA','strikeHeroPct'));   // v1.18 : contre le héros, au moins 6 % de ses PV max (172 PV sur 15 120 ne lui faisaient rien)
+    u.hp -= Math.min(dd, u.maxhp*0.65);   // plafonné : impossible de one-shot
     u.flash=0.3; burst(u.x, gY(u.x)-22, side.fac.accent, elite && elite.has(u)? 16 : 10);
   }
   if (pw && hum) for (const u of side.units){ u.hp = Math.min(u.maxhp, u.hp + u.maxhp*ft('HUM','upHeal')); u.heat = 0; u.tiredT = 0; burst(u.x, gY(u.x)-22, '#6dff8a', 5, 0.6); }
@@ -401,9 +403,10 @@ function tryRepair(side, slot){
 function tryRepairBase(side){
   if (isGuest(side)){ guestCmd({c:'repbase'}); return true; }
   if (side.hp >= side.maxhp) return false;
+  if (game.t < (side.repBaseT||0)) return false;   // recharge de 20 s (v1.18, audit n°2) : sans elle, la réparation illimitée après la transcendance bloquait les parties (50 à 80 % non finies en Difficile/Brutal)
   const c = {f:120, m:120};
   if (!canPay(side,c)) return false;
-  pay(side,c); side.hp = Math.min(side.maxhp, side.hp+500);
+  pay(side,c); side.hp = Math.min(side.maxhp, side.hp+(game.collapse? 250 : 500)); side.repBaseT = game.t + (game.collapse? 30 : 20);   // après l'effondrement du monde : 250 PV toutes les 30 s (sinon la réparation annulait l'effondrement : parties à 45 min)
   if (side===game.p){ sfx('build'); announce(tr('a_baserepaired'), "#9dc88a"); }
   return true;
 }

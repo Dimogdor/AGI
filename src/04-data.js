@@ -115,7 +115,7 @@ const DIFFS = [ // cheat = bonus de production caché de l'IA
   // anciens réglages donnaient 71 % / 56 % / 21 % / 8 %.
   {name:"FACILE",    inc:0.3,  think:4.0,  eraLag:1.5,  hpMul:0.4,  cheat:0.6},
   {name:"NORMAL",    inc:0.4,  think:2.6,  eraLag:0.8,  hpMul:0.55, cheat:0.8},
-  {name:"DIFFICILE", inc:0.85, think:1.3,  eraLag:0.15, hpMul:0.9,  cheat:1.05},
+  {name:"DIFFICILE", inc:0.75, think:1.3,  eraLag:0.15, hpMul:0.9,  cheat:0.95},
   {name:"BRUTAL",    inc:1.3,  think:0.65, eraLag:0.03, hpMul:1.3,  cheat:1.7},
 ];
 const BUILDS = {
@@ -175,7 +175,7 @@ const FAC_TRAITS = {
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
-          frozen:0.3, strikeProd:0, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à l'arrêt, −20 % de dégâts subis, puis « acquis sociaux »
+          frozen:0.3, strikeProd:0.5, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à moitié (0 avant la v1.18 : audit n°2, ~10 points d'écart au banc B), −20 % de dégâts subis, puis « acquis sociaux »
           acidUnit:19, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
           sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
   },
@@ -190,7 +190,7 @@ const FAC_TRAITS = {
     texDU:1.06, execK:1.1, execHp:0.5, siegeAoe:1.14,   // M2 : texture ×1,06 (au lieu de ×1,22 : le ciblage concentré vaut beaucoup) ; tireurs/aériens : cible la plus entamée, +10 % sous 50 % de PV ; zone du siège ×1,14
     recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
     coolRec:0.05, coolW:0.04, coolMin:40, overHeat:0.75, overK:1.08,   // M4 : si 💧 ≥ 40, refroidissement 0,05/s (0,04 💧/s par unité chaude) ; chaleur ≥ 0,75 : +8 % de dégâts (surrégime)
-    strikeN:5, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres, bâtiments ×1,2
+    strikeN:5, strikeHeroPct:0.06, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres (au moins 6 % des PV max pour le héros), bâtiments ×1,2
     heroCool:2, assimR:200, fragN:5,                 // M6 : Singularité vivante, chaleur ×2 plus vite évacuée ; un ennemi tué à ≤ 200 px fait naître un drone ; à sa mort 5 drones hors plafond
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %
@@ -203,8 +203,9 @@ const FAC_TRAITS = {
 // Recalage de la difficulté de l'escarmouche : les mécaniques d'asymétrie renforcent l'IA (réseau, héros…) ; on baisse d'autant son bonus
 // caché de production à Difficile/Brutal pour garder la courbe de DIFFS (~100/88/48/25 %). Jamais en campagne, tutoriel ni en ligne.
 const AI_K = [1, 1, 0.8, 0.75];
-// 2e passe (lots 2-3) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
+// 2e passe (lots 2-3 ; appliqué dès Difficile seulement depuis la v1.18) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
 const AI_KF = { HUM:0.78, IA:1.06 };
+const AI_KF_LOW = { HUM:0.62, IA:1 };   // Facile et Normal (v1.18) : pas le 1,06 de Difficile ; la machine joueuse bat l'Humanité adverse à 43 % (0,85), 58 % (0,78), 69 % (0,7) : 0,62 cale Normal près de 80 %, comme l'Humanité (84 %)
 const ft = (fk, k) => FAC_TRAITS[fk][k];
 const fte = (fk, k) => FAC_TRAITS[fk].env[k];
 // BONUS DE LONGÉVITÉ : une ferme/marché/puits gardé en vie monte lentement en régime,
