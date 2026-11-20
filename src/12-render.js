@@ -2461,23 +2461,24 @@ function airSprite(fac, era, trans){
       if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-0.5,cy+6,2.6,'#ff4a2a'));
       return;
     }
-    if (era===1){                                                                              // HÉLICO LÉGER
-      TC.fillStyle=lgrad(cx-27,cy-5,cx-27,cy+2,[[0,shade(body,1.3)],[1,shade(body,0.55)]]);
-      polyP([cx-8,cy-4.5, cx-27,cy-3.4, cx-27,cy-0.6, cx-8,cy+2]); TC.fill();
-      plateT([cx-30.5,cy-11, cx-26,cy-10, cx-24.5,cy+0.5, cx-28.5,cy+0.5], body);
-      TC.strokeStyle='rgba(30,34,40,0.6)'; TC.lineWidth=1; TC.beginPath(); TC.arc(cx-26.5,cy-4.5,4.4,0,6.283); TC.stroke();
-      TC.fillStyle=acc; TC.fillRect(cx-21,cy-3.6,3,3.4);
-      TC.strokeStyle='#262a30'; TC.lineWidth=1.4; TC.lineCap='round';
-      strokeP([cx-10,cy+11, cx+10,cy+11, cx+13,cy+9]); TC.stroke();
-      strokeP([cx-5,cy+5, cx-6,cy+11]); TC.stroke(); strokeP([cx+5,cy+5, cx+6,cy+11]); TC.stroke();
-      plateT([cx-11,cy-5, cx+2,cy-8, cx+9,cy-6, cx+14,cy-1, cx+12,cy+5, cx-2,cy+6, cx-11,cy+3], body);
-      TC.fillStyle=lgrad(cx+2,cy-7,cx+13,cy+2,[[0,'rgba(225,242,250,0.96)'],[1,'rgba(56,84,112,0.96)']]);
-      polyP([cx+2,cy-7, cx+8.5,cy-5.6, cx+13,cy-1, cx+12.4,cy+1.5, cx+3,cy+1.5]); TC.fill();
-      TC.fillStyle='rgba(255,255,255,0.6)'; polyP([cx+4,cy-6, cx+7,cy-5.4, cx+5,cy-1.5, cx+3.5,cy-1.5]); TC.fill();
-      plateT([cx-7,cy-9, cx+2,cy-10, cx+4,cy-7, cx-8,cy-5], shade(body,0.82));
-      TC.fillStyle='#262a30'; TC.fillRect(cx-2.6,cy-11.6,2.4,2.6);
-      tubeT(cx+1,cy+3,cx+11,cy+4,0.9,'#2a2e34'); TC.fillStyle='#1a1c20'; TC.fillRect(cx-4,cy-3.5,4,6);   // porte + mitrailleuse
-      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy-1,2.8,'#ff4a2a'));
+    if (era===1){                                                                              // ULM (v1.18) : aile souple, chariot, hélice propulsive
+      const sail='#e8e0c8';
+      TC.strokeStyle='rgba(30,30,36,0.75)'; TC.lineWidth=0.8; TC.lineCap='round';                  // mât et haubans
+      strokeP([cx-1,cy-8, cx-1,cy+1]); TC.stroke(); strokeP([cx-14,cy-9, cx-3,cy+4]); TC.stroke(); strokeP([cx+14,cy-8, cx+2,cy+4]); TC.stroke();
+      plateT([cx-20,cy-12, cx+6,cy-14.5, cx+22,cy-8, cx+4,cy-7.2, cx-18,cy-8.6], sail);             // aile en toile
+      TC.fillStyle=acc; polyP([cx-5,cy-14, cx+2,cy-14.3, cx+8,cy-8.6, cx-1,cy-8]); TC.fill();        // lé de couleur
+      TC.strokeStyle='rgba(50,40,30,0.6)'; TC.lineWidth=0.8; strokeP([cx-18,cy-8.6, cx+22,cy-8]); TC.stroke();   // bord d'attaque
+      plateT([cx-9,cy+1, cx+9,cy+1.4, cx+12,cy+6, cx-7,cy+8], body);                               // nacelle-chariot
+      TC.fillStyle='rgba(225,236,246,0.9)'; polyP([cx+5,cy+1.4, cx+9.4,cy+1.6, cx+12,cy+5.4, cx+6,cy+5]); TC.fill();   // pare-brise
+      TC.fillStyle='#e2b48a'; TC.beginPath(); TC.arc(cx+1.4,cy-1.4,3.1,0,6.283); TC.fill();           // pilote
+      TC.fillStyle='#c8302a'; TC.beginPath(); TC.arc(cx+1.2,cy-2.2,3.4,Math.PI,0); TC.fill();         // casque
+      tubeT(cx+4,cy+3.4,cx+19,cy+4.4,0.9,'#2a2e34');                                                  // mitrailleuse
+      TC.fillStyle='#262a30'; for (const wx of [-4,7]){ TC.beginPath(); TC.arc(cx+wx,cy+11,2.6,0,6.283); TC.fill(); }
+      TC.strokeStyle='#262a30'; TC.lineWidth=1.2; strokeP([cx-4,cy+8, cx-4,cy+11]); TC.stroke(); strokeP([cx+7,cy+6, cx+7,cy+11]); TC.stroke();
+      TC.fillStyle='rgba(235,235,225,0.5)'; TC.beginPath(); TC.ellipse(cx-13.5,cy+3.4,2.4,9.4,0,0,6.283); TC.fill();   // disque de l'hélice propulsive
+      TC.strokeStyle='#1a1c20'; TC.lineWidth=2; strokeP([cx-13.5,cy-5.6, cx-13.5,cy+12.4]); TC.stroke();
+      strokeP([cx-12,cy+3, cx-9,cy+3.4]); TC.stroke();
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+5,2.6,'#ff4a2a'));
       return;
     }
     if (era===2){                                                                              // VTOL FURTIF (deux rotors carénés)
@@ -2496,18 +2497,21 @@ function airSprite(fac, era, trans){
       if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy+2,2.6,'#ff4a2a'));
       return;
     }
-    if (era===3){                                                                              // CHASSEUR PLASMA (aile delta)
-      const glow='#ff9a4a';
-      plateT([cx-6,cy-3, cx-26,cy-14, cx-21,cy-3, cx-6,cy+1], shade(body,0.7));                       // dérive
-      plateT([cx-22,cy-2, cx-14,cy-6, cx+8,cy-5.6, cx+29,cy+1, cx+10,cy+5.4, cx-20,cy+4.4], body);    // fuselage effilé
-      plateT([cx-8,cy+3, cx+12,cy+3.4, cx-4,cy+12, cx-18,cy+9], shade(body,0.82));                    // aile delta
-      TC.fillStyle='rgba(18,22,32,0.96)'; polyP([cx+4,cy-5.4, cx+14,cy-4, cx+18,cy-0.6, cx+4,cy-0.8]); TC.fill();   // verrière
-      TC.fillStyle='rgba(255,255,255,0.35)'; polyP([cx+6,cy-4.6, cx+11,cy-3.8, cx+7,cy-1.6]); TC.fill();
-      TC.fillStyle='#1c2026'; rrectT(cx-8,cy+6,15,3.4,1.6); TC.fill();                                 // pod à plasma
-      glowDot(cx+7.4,cy+7.7,1.8,glow,7);
-      bloomT(glow,9,()=>{ TC.fillStyle=glow; polyP([cx-22,cy-1.4, cx-31,cy+1, cx-22,cy+3.4]); TC.fill(); });   // flamme de tuyère
-      TC.fillStyle=acc; TC.fillRect(cx-14,cy-2,6,1.5);
-      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-9,cy+0.5,2.4,'#ff4a2a'));
+    if (era===3){                                                                              // DRONE DE CELLULE (v1.18) : drone-cargo bricolé, bidon ocre, deux hélices carénées, bâche rouge
+      const dark='#2a2e38';
+      TC.strokeStyle=dark; TC.lineWidth=1.8; TC.lineCap='round';                                        // bras de nacelles
+      strokeP([cx-6,cy+1, cx-14,cy-4]); TC.stroke(); strokeP([cx+6,cy+1, cx+14,cy-4]); TC.stroke();
+      TC.fillStyle=lgrad(cx-10,cy-3,cx-10,cy+8,[[0,shade(body,1.25)],[1,shade(body,0.6)]]); rrectT(cx-11,cy-3,22,11,4); TC.fill();   // corps : bidon ocre
+      TC.strokeStyle='rgba(0,0,0,0.3)'; TC.lineWidth=0.8; strokeP([cx-3,cy-3, cx-3,cy+8]); TC.stroke(); strokeP([cx+4,cy-3, cx+4,cy+8]); TC.stroke();   // cerclages
+      plateT([cx-9,cy-4.4, cx+8,cy-5, cx+11,cy+1, cx+9,cy+3, cx-10,cy+3.2], '#b8302a');                // bâche rouge
+      TC.strokeStyle='rgba(60,20,16,0.7)'; TC.lineWidth=0.8; strokeP([cx-4,cy-4.6, cx-5,cy+3]); TC.stroke(); strokeP([cx+3,cy-4.8, cx+4,cy+2.6]); TC.stroke();
+      for (const px of [-14,14]){ TC.fillStyle=dark; TC.beginPath(); TC.ellipse(cx+px,cy-5,6.4,2.1,0,0,6.283); TC.fill();   // hélices carénées
+        TC.fillStyle='rgba(190,210,230,0.28)'; TC.beginPath(); TC.ellipse(cx+px,cy-5.6,4.6,0.9,0,0,6.283); TC.fill();
+        TC.strokeStyle=dark; TC.lineWidth=1.3; TC.beginPath(); TC.ellipse(cx+px,cy-5,6.4,2.1,0,0,6.283); TC.stroke(); }
+      tubeT(cx+6,cy+7,cx+19,cy+8.2,1.1,'#1c2026'); TC.fillStyle='#d8a630'; TC.beginPath(); TC.arc(cx+19.4,cy+8.2,0.9,0,6.283); TC.fill();   // canon artisanal
+      TC.fillStyle=acc; TC.fillRect(cx-8,cy+4.6,5,1.4);
+      glowDot(cx+9,cy+2.2,1,'#ffd890',4);                                                              // phare
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+2,2.4,'#ff4a2a'));
       return;
     }
     // ère 4 : PLANEUR SOLAIRE — nacelle d'or sous une grande aile à cellules
