@@ -205,6 +205,7 @@ const FAC_TRAITS = {
 const AI_K = [1, 1, 0.8, 0.75];
 // 2e passe (lots 2-3 ; appliqué dès Difficile seulement depuis la v1.18) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
 const AI_KF = { HUM:0.78, IA:1.06 };
+const AI_KF_LOW = { HUM:0.85, IA:1 };   // Facile et Normal (v1.18) : ni le 0,78 ni le 1,06 de Difficile ; HUM 0,85 garde le joueur G·P·T de Normal près de 80 % (0,78 : 90 %, 1 : 58 %)
 const ft = (fk, k) => FAC_TRAITS[fk][k];
 const fte = (fk, k) => FAC_TRAITS[fk].env[k];
 // BONUS DE LONGÉVITÉ : une ferme/marché/puits gardé en vie monte lentement en régime,
