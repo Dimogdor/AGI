@@ -275,22 +275,34 @@ function m4Lie(g, x, y, s, d, col){ g.fillStyle = col || M4_INK0;
   g.beginPath(); g.moveTo(x-d*s*0.3, y); g.lineTo(x-d*s*0.3, y-s*0.16); g.lineTo(x+d*s*0.26, y-s*0.18); g.lineTo(x+d*s*0.26, y); g.closePath(); g.fill(); }
 const m4Flakes = (g, t, n, a) => { g.fillStyle = 'rgba(31,27,23,'+(a||0.3)+')'; for (let i=0;i<n;i++){ const x = ((i*83.1 - t*14*(1+(i%3)*0.4)) % 480 + 480) % 480, y = (i*47.3 + t*17*(1+(i%4)*0.3)) % 270; g.fillRect(x, y, 1.8, 1.8); } };
 
+// une chaise vide, de face, pieds en (0,0) : dossier ajouré (montants, traverse, barreaux), assise, quatre pieds
+const m4Chair = (g, k, sc) => { g.save(); g.scale(sc, sc);
+  inkLine(g, [-8,-1, -8,-25], k, 1.5); inkLine(g, [8,-1, 8,-25], k, 1.5);                                          // pieds de devant
+  inkLine(g, [-6,-4, -6,-25], k, 1.1, '#5a5148'); inkLine(g, [6,-4, 6,-25], k, 1.1, '#5a5148');                    // pieds de derrière, plus clairs
+  inkWash(g, [-12,-27, 12,-27, 10,-23, -10,-23], M4_INK0, 0.3); inkLine(g, [-12,-27, 12,-27, 10,-23, -10,-23, -12,-27], k, 1.7);   // l'assise
+  inkLine(g, [-9,-27, -9,-72], k, 1.6); inkLine(g, [9,-27, 9,-72], k, 1.6);                                        // les montants du dossier
+  inkLine(g, [-11,-72, 11,-72], k, 3.2);                                                                           // la traverse du haut
+  inkLine(g, [-9,-35, 9,-35], k, 1.3);                                                                             // la traverse du bas
+  for (const x of [-4.5, 0, 4.5]) inkLine(g, [x,-38, x,-69], k, 1);                                                // les barreaux : le dossier est ajouré
+  g.restore(); };
+
 const M4_PLATES = {
   // P1 · La dissolution : la table du conseil, douze chaises vides, l'écran affiche le vote puis « G·P·T v8 » ; board2 : « NOUS » en bleu
   board(g, w, h, t, mode){ plateBase(g, w, h, 'rgba(70,92,120,0.08)');
-    const n = clamp(t/1.6, 0, 1), omega = mode==='omega' || t >= 3.8;
-    inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, M4_INK0, 0.2);
+    const n = clamp(t/1.6, 0, 1), corp = mode==='corp', omega = mode==='omega' || (!corp && t >= 3.8);
+    inkLine(g, [0,200, 480,200], 1, 2.2); inkHatch(g, 0, 200, 480, 70, 7, M4_INK0, 0.13);                            // le pied du mur ; le sol de la salle, en hachures claires
     inkWash(g, m4R(160,40,160,70), '#3a4a58', 0.22); inkLine(g, m4R(160,40,160,70), n, 2.4);                    // l'écran, au mur
-    for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, x = 240+u*172, ch = 44 + (i%3)*3 - 8*u*u, k = clamp(t/1.8-i*0.05, 0, 1);   // douze dossiers de chaises vides, derrière la table, de travers
-      g.save(); g.translate(x, 204+8*u*u*0); g.rotate(Math.sin(i*2.3)*0.13 + u*0.05);
-      inkWash(g, m4R(-9, -ch, 18, ch), M4_INK0, 0.2); inkLine(g, m4R(-9, -ch, 18, ch), k, 1.6);
-      inkLine(g, [-11,-ch, 11,-ch], k, 3);                                                                         // la traverse du haut
-      inkLine(g, [-3,-ch+7, -3,-10], k, 1); inkLine(g, [3,-ch+7, 3,-10], k, 1);                                    // les barreaux
-      g.restore(); }
-    g.fillStyle = '#c4b99f'; g.fillRect(58, 200, 364, 14);                                                          // la table, vue de face, devant les chaises : opaque
-    inkWash(g, [60,200, 420,200, 414,214, 66,214], M4_INK0, 0.4); inkLine(g, [60,200, 420,200, 414,214, 66,214, 60,200], n, 2.6);
-    inkLine(g, [80,214, 80,230], n, 2.2); inkLine(g, [400,214, 400,230], n, 2.2);
-    if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
+    for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, k = clamp(t/1.8-i*0.05, 0, 1);                                  // douze chaises vides rangées derrière la table, quelques-unes de travers
+      g.save(); g.translate(240+u*170+Math.sin(i*4.1)*3, 226+(i%2)*3); g.rotate(Math.sin(i*2.3)*0.08 + (i===4||i===9? 0.1 : 0)); m4Chair(g, k, 1.12+(i%3)*0.03); g.restore(); }
+    g.save(); g.translate(240, 170); g.rotate(-0.022); g.translate(-240, -170);                                     // la table du conseil, au premier plan, légèrement de travers
+    g.fillStyle = '#d6ccb3'; g.beginPath(); g.moveTo(66,160); g.lineTo(414,160); g.lineTo(430,168); g.lineTo(50,168); g.closePath(); g.fill();   // le plateau (opaque)
+    inkLine(g, [66,160, 414,160, 430,168, 50,168, 66,160], n, 2.2);
+    g.fillStyle = '#c4b99f'; g.fillRect(50, 168, 380, 10);                                                         // la tranche, devant les chaises : opaque
+    inkWash(g, [50,168, 430,168, 430,178, 50,178], M4_INK0, 0.35); inkLine(g, [50,168, 430,168, 430,178, 50,178, 50,168], n, 2.4);
+    inkLine(g, [72,178, 72,248], n, 2.6); inkLine(g, [408,178, 408,248], n, 2.6);                                  // ses pieds
+    g.restore();
+    if (corp) m4Text(g, 'OMNICORP', 240, 96, 27, M4_INK0, 146);                                                      // intro de l'escarmouche : l'écran porte le nom de la corporation
+    else if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
       ls.forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), 240, 70+i*22, i? 13 : 14, '#1f2a33', 148); left -= l.length; }); }
     else if (mode==='omega') m4Text(g, '« NOUS »', 240, 98, 40, '#0b6fa8', 140);                                 // A13 : le système change de nom (seconde planche)
     else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = k; m4Text(g, 'G·P·T v8', 240, 98, 30, M4_INK0, 140); g.globalAlpha = 1; }
