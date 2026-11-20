@@ -313,6 +313,7 @@ function handleTap(sx, sy, shift, opts){
         netDisconnect();
         paused=false; settingsOpen=false; netPause=null; game=null; buildMenu=null; selMode=false; selBox=null;
         M1_RETRY = M3_RETRY = M4_RETRY = false;                  // campagne quittée : plus de reprise allégée
+        campCredits(false);
         $('menu').style.display='flex';
       }
       sfx('sel'); return;

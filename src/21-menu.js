@@ -139,6 +139,7 @@ $('campNextBtn').addEventListener('click', ()=>{ const i = +$('campNextBtn').dat
 $('replayBtn').addEventListener('click', ()=>{
   const wasCamp = !!(game && game.camp);
   $('endscreen').style.display = 'none';
+  campCredits(false);
   $('menu').style.display = 'flex';
   if (wasCamp){ campView = -1; const tb = document.querySelector('.tab[data-page="camp"]'); if (tb) tb.click(); }   // retour au carnet
   netDisconnect();
