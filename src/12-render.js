@@ -1683,6 +1683,11 @@ function muzzleOf(u){
 // torse, tête, arme) — et les jambes changent de pose au rythme du pas. Avant, les unités
 // glissaient avec un simple balancement. Les jambes sont de petites toiles (48×40).
 let SPART = 'full', SPOSE = 0;
+// A10 (v1.18) : trois teintes de peau pour les humains, choisies de façon stable d'après u.id (le héros garde la première).
+// SKIN_IDX est posé juste avant le tracé d'une unité ; il entre dans la clé des couches qui montrent la peau.
+const SKIN_TONES = ['#e2b48a','#b98560','#7a5236'];
+let SKIN_IDX = 0;
+const skinIdxOf = id => (Math.imul((id|0)+1, 2654435761)>>>20) % 3;
 const LEGS = { W:48, H:40, ox:-24, oy:-34 };          // position de la toile des jambes / pieds
 const unitHeavy = (kind, role) => role==='tank' || (kind==='bot' && role==='siege');
 const unitHasBack = (kind, role, era) => role==='support' || role==='siege' || era>=3;
@@ -1694,7 +1699,8 @@ function unitPart(kind, fac, role, era, trans, part, pose){
   if (part==='legs'){ const h = unitHeavy(kind, role);
     return sprite('SL'+kind+(h?'h':'n')+era+'p'+pose, LEGS.W, LEGS.H, ()=>{ TC.translate(-(USP.cx+LEGS.ox), -(USP.foot+LEGS.oy));
       bakePart(kind, fac, h? 'tank' : 'melee', era, false, 'legs', pose); }); }
-  return sprite(PART_KEY[part]+kind+role+era+(trans?'T':''), USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
+  const sk = (kind==='hum' && SKIN_IDX>0)? 's'+SKIN_IDX : '';
+  return sprite(PART_KEY[part]+kind+role+era+(trans?'T':'')+sk, USP.W, USP.H, ()=>bakePart(kind, fac, role, era, trans, part));
 }
 const PART_KEY = { back:'SB', front:'S', body:'SY', armb:'SQ', arm:'SA' };
 // dessine un personnage complet (couches) au repère courant : pieds en (0,0), tourné vers +x
@@ -1786,7 +1792,7 @@ function drawHumSprite(fac, role, era, trans, hero){
   const tank = role==='tank', sw = tank? 10 : 8;                 // demi-largeur d'épaules
   const pants = era===4? shade(uni,0.72) : mix(uni,'#26262c',0.42);
   const boot = era===4? '#8a6a2a' : era===3? '#2c2a36' : '#2a2420';
-  const skin = '#e2b48a', glove = era>=3? shade(uni,0.85) : era===2? '#2a2c30' : skin;
+  const skin = (hero? SKIN_TONES[0] : SKIN_TONES[SKIN_IDX]||SKIN_TONES[0]), glove = era>=3? shade(uni,0.85) : era===2? '#2a2c30' : skin;
   const metal = era===4? '#ecd27e' : '#a2aab6';
   const lw = tank? 8 : 7, aw = tank? 6.2 : 5.4;
   const P = hero? { b:[cx-3,F-42, cx-5,F-33, cx-2,F-26], f:[cx+2,F-42, cx+10,F-48, cx+12.5,F-60] } : armPose(role, era, cx, F);
@@ -1843,7 +1849,8 @@ function drawHumSprite(fac, role, era, trans, hero){
   TC.strokeStyle='rgba(0,0,0,0.28)'; TC.lineWidth=1;
   if (era===0){
     strokeP([cx+2,F-44, cx+1,F-25]); TC.stroke();                                         // fermeture éclair
-    plateT([cx-7,F-47, cx-1,F-46, cx-3,F-42, cx-8,F-43], shade(uni,0.82), false);         // capuche
+    const HOOD = {melee:'#b8452e', tank:'#4f7d5a', ranged:'#d8a630', siege:'#7a5a9a', support:'#e8e4da'}[role] || '#b8452e';
+    plateT([cx-8,F-48, cx-0.5,F-47, cx-2.5,F-41, cx-9,F-42.5], HOOD, false);               // capuche (couleur variable selon le rôle)
     TC.fillStyle=shade(uni,1.18); TC.fillRect(cx-5,F-38,4,4);                              // rapiéçage
     // foulard aux couleurs de la faction (seul accent de l'ère 0)
     TC.fillStyle=lgrad(cx-4,F-48,cx+5,F-43,[[0,shade(acc,1.15)],[1,shade(acc,0.7)]]);
@@ -2406,8 +2413,11 @@ function blitHumanoid(u, x, gy, kind){
   if (stepSkew) ctx.transform(1,0,stepSkew*dir,1,0,0);
   ctx.scale(dir, sy);
   const aa = !qFx()? undefined : cheer? -1.05+0.25*Math.sin(performance.now()/190 + u.bob) : armAngle(u, moving, ph);
-  drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
-  if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
+  SKIN_IDX = (kind==='hum' && u.role!=='hero')? skinIdxOf(u.id) : 0;
+  try {
+    drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa);
+    if (u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=Math.min(0.5,u.flash*0.9); drawUnitLayers(kind, fac, u.role, u.era, u.trans, pose, ctx, aa); }
+  } finally { SKIN_IDX = 0; }
   ctx.restore();
   if (atk){ const m=muzzleOf(u); attackFX(u, x+lunge, gy+m[1], imp, m[0]); }
 }

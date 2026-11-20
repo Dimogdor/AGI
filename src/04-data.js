@@ -70,7 +70,7 @@ const FACTIONS = {
       {name:"LA COMMUNE",                    tag:"☭"},     // commune solarpunk (fin de M5)
     ],
     sym:"☭",
-    eraCols:["#8a9a5b","#7a5838","#9a4a32","#5f6a4a","#e8c84a"],
+    eraCols:["#6f7f96","#7a5838","#9a4a32","#9a6a34","#e8c84a"],
     names:{
       // v1.17 : noms de résistants / civils, propres à chaque ère (rue → usine → quartier → cellules → commune)
       melee:["Émeutier","Gréviste","Insurgé","Exo-combattant","Champion solaire"],
