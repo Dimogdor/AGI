@@ -383,6 +383,14 @@
     #endscreen .endSheet { width:min(500px,58vw); padding-top:10px; padding-bottom:10px; }
     #endstats { font-size:11px; line-height:1.3; } .esJournal { margin-top:3px; padding-top:3px; line-height:1.3; } #endscreen .endHead { font-size:10px; }
     #endscreen .go { margin-top:8px; padding:7px 24px 5px; font-size:19px; } }
+  /* téléphone en paysage (< 480 px de haut) : écran de fin de campagne sans la photo (elle débordait du carnet), carnet pleine largeur, boutons sur UNE ligne */
+  #endscreen .endBtns { display:contents; }
+  @media (max-height:479px){
+    #endscreen.camp #endart { display:none; }
+    #endscreen.camp .endSheet { width:min(620px,92vw); }
+    #endscreen .endBtns { display:flex; flex-wrap:nowrap; justify-content:center; gap:8px; margin-top:8px; }
+    #endscreen .endBtns .go { margin:0 !important; padding:6px 14px 4px; font-size:clamp(14px,4.6vh,18px); white-space:nowrap; flex:0 1 auto; min-width:0; }
+  }
   /* ---------- BRIEFING DE CAMPAGNE (v1.16) : dossier de mission plein écran, même papier que le menu ---------- */
   #menu .campAbout { font-size:clamp(11.5px,1.9vh,14px); line-height:1.45; color:var(--ink); border-left:3px solid var(--red); padding:2px 0 2px 9px; }
   body[dir="rtl"] #menu .campAbout { border-left:0; border-right:3px solid var(--red); padding:2px 9px 2px 0; }
@@ -670,9 +678,11 @@
       <div class="endHead"><span id="endComm" data-i18n="end_comm">COMMUNIQUÉ</span><span id="endNo">#0451</span></div>
       <div id="endtitle"></div>
       <div id="endstats"></div>
+      <div class="endBtns">
       <button class="go" id="campNextBtn" style="display:none"></button>
       <button class="go" id="creditsBtn" style="display:none"></button>
       <button class="go" id="replayBtn" data-i18n="replay">REJOUER</button>
+      </div>
     </div>
   </div>
   <!-- CRÉDITS (après la mission V ; rempli par campCredits, 16b-campaign.js) -->
