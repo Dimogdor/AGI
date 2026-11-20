@@ -287,8 +287,13 @@ const M3_PLATES = {
   grey(g, w, h, t){ plateBase(g, w, h, 'rgba(70,76,88,0.30)');
     const n = clamp(t/1.6, 0, 1);
     inkLine(g, [0,190, 480,190], n, 2.4); inkHatch(g, 0, 190, 480, 80, 8, M3_INK0, 0.2);
-    inkLine(g, [92,190, 118,98], n, 2.6); inkLine(g, [146,190, 120,98], n, 2.6); inkLine(g, [101,158, 137,158], n, 1.6);       // le chevalement
-    g.strokeStyle = M3_INK0; g.lineWidth = 2.4; g.beginPath(); g.arc(119, 92, 10, 0, 6.283); g.stroke();
+    g.save(); g.translate(119, 190); g.scale(0.6, 0.6); g.translate(-240, -230);                                  // B13 : le chevalement de « M4-mute » (deux montants en croisillons, molette à rayons), à 60 %
+    inkLine(g, [186,230, 222,70], n, 2.8); inkLine(g, [294,230, 258,70], n, 2.8);
+    inkLine(g, [200,170, 280,170], n, 1.6); inkLine(g, [212,120, 268,120], n, 1.6); inkLine(g, [196,200, 284,200], n, 1.6);
+    inkLine(g, [200,170, 268,120], n, 1.2); inkLine(g, [280,170, 212,120], n, 1.2);
+    g.strokeStyle = M3_INK0; g.lineWidth = 2.2; g.beginPath(); g.arc(240, 54, 20, 0, 6.283*n); g.stroke();
+    for (let k=0;k<3;k++){ const a = k*1.0472; inkLine(g, [240-20*Math.cos(a), 54-20*Math.sin(a), 240+20*Math.cos(a), 54+20*Math.sin(a)], n, 1.2); }
+    g.restore();
     // le relais : un mât d'antenne (treillis) portant une parabole, un feu rouge au sommet
     inkLine(g, [350,190, 362,58], n, 2.6); inkLine(g, [378,190, 366,58], n, 2.6);
     for (let y=182, i=0; y>66; y-=22, i++){ const k = (190-y)/132, xl = 350+12*k, xr = 378-12*k; inkLine(g, i%2? [xl,y, xr,y-22] : [xr,y, xl,y-22], n, 1.2); inkLine(g, [xl,y, xr,y], n, 1.2); }
@@ -296,7 +301,7 @@ const M3_PLATES = {
     g.fillStyle = 'rgba(74,80,90,0.7)'; g.beginPath(); g.ellipse(0, 0, 11, 25, 0, -Math.PI/2, Math.PI/2, true); g.closePath(); g.fill();
     g.strokeStyle = M3_INK0; g.lineWidth = 2.2; g.stroke(); inkLine(g, [0,0, -22,0], n, 1.4); g.fillStyle = M3_INK0; g.fillRect(-25, -2.5, 5, 5); g.restore();
     g.fillStyle = (Math.sin(t*3) > 0)? M3_RED : 'rgba(196,42,28,0.3)'; g.beginPath(); g.arc(364, 54, 3.4, 0, 6.283); g.fill();
-    for (let i=0;i<20;i++){ const x = (i*61.3 + t*26 + 480) % 480, y = (i*47.1 + t*40) % 270; g.fillStyle = 'rgba(80,86,98,0.55)'; g.fillRect(x-0.6, y-0.6, 4.2, 4.2); g.fillStyle = '#fff'; g.fillRect(x, y, 3, 3); }
+    for (let i=0;i<20;i++){ const x = (i*61.3 + t*26 + 480) % 480, y = (i*47.1 + t*40) % 270; g.fillStyle = 'rgba(80,86,98,0.55)'; g.beginPath(); g.arc(x+1.5, y+1.5, 2.6, 0, 6.283); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x+1.5, y+1.5, 1.8, 0, 6.283); g.fill(); }   // neige : points ronds
     plateEnd(g, w, h); },
   // P8 · La vanne fermée : la vanne, son volant, la chaîne et le cadenas Omnicorp, le lit craquelé, une feuille sèche
   shut(g, w, h, t){ plateBase(g, w, h, 'rgba(210,150,80,0.15)');
@@ -307,9 +312,9 @@ const M3_PLATES = {
     g.strokeStyle = M3_INK0; g.lineWidth = 2.6; g.beginPath(); g.arc(240, 88, 20, 0, 6.283); g.stroke();         // le volant
     inkLine(g, [220,88, 260,88], n, 2); inkLine(g, [240,68, 240,108], n, 2);
     for (let i=0;i<5;i++){ g.strokeStyle = M3_INK0; g.lineWidth = 1.8; g.beginPath(); g.ellipse(240 + (i%2? 2 : -2), 114 + i*9, 4.4, 3.4, 0, 0, 6.283); g.stroke(); }   // la chaîne
-    inkWash(g, [222,158, 258,158, 258,190, 222,190], '#2a2622', 0.9); m3Loop(g, [222,158, 258,158, 258,190, 222,190], n, 2);   // le cadenas
-    g.strokeStyle = M3_INK0; g.lineWidth = 3; g.beginPath(); g.arc(240, 158, 9, Math.PI, 6.283); g.stroke();
-    m3Plate(g, 'Ω', 240, 182, 20, M3_RED);
+    inkWash(g, [206,158, 274,158, 274,190, 206,190], '#2a2622', 0.9); m3Loop(g, [206,158, 274,158, 274,190, 206,190], n, 2);   // le cadenas
+    g.strokeStyle = M3_INK0; g.lineWidth = 3; g.beginPath(); g.arc(240, 158, 12, Math.PI, 6.283); g.stroke();
+    m3Plate(g, 'OMNICORP', 240, 178, 9, '#e9dfc6');                                                            // A13 : le cadenas porte le nom de la corporation (Ω n'existe pas encore)
     inkLine(g, [0,220, 480,220], n, 2.2); inkHatch(g, 0, 220, 480, 50, 7, M3_INK0, 0.22);                       // le lit asséché : une hachure
     plateEnd(g, w, h); },
 };

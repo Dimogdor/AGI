@@ -1012,7 +1012,7 @@ const M5_PLATES = {
   // K2 · Le silence : une allée de serveurs en perspective ; les voyants s'éteignent du premier plan vers le fond
   silence(g, w, h, t){ const c = m5C(); plateBase(g, w, h, 'rgba(10,14,24,0.55)');
     const V = [240, 118], n = clamp(t/1.0, 0, 1), D = [0, 0.3, 0.52, 0.68, 0.8, 0.89, 0.95];
-    g.fillStyle = 'rgba(8,10,16,0.8)'; g.fillRect(0, 0, 480, 270);
+    g.fillStyle = 'rgba(8,10,16,0.8)'; g.fillRect(12, 12, 456, 246);                                                                     // C6 : une marge de papier reste visible
     for (let side=-1; side<=1; side+=2){ for (let i=0;i<6;i++){
       const x0 = lerp(side<0? 20 : 460, V[0], D[i]), x1 = lerp(side<0? 20 : 460, V[0], D[i+1]);
       const t0 = lerp(24, V[1]-4, D[i]), t1 = lerp(24, V[1]-4, D[i+1]), b0 = lerp(238, V[1]+10, D[i]), b1 = lerp(238, V[1]+10, D[i+1]);
@@ -1024,6 +1024,7 @@ const M5_PLATES = {
     const wh = clamp((t-3.2)/1.2, 0, 1), gl = g.createRadialGradient(V[0], V[1], 2, V[0], V[1], 60); gl.addColorStop(0,'rgba(255,255,255,'+(0.5+0.5*wh).toFixed(2)+')'); gl.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gl; g.fillRect(150, 60, 180, 120);
     g.fillStyle = '#f6fbff'; g.beginPath(); g.arc(V[0], V[1], 14, 0, 6.283); g.fill();                                                  // la porte ronde, ouverte, d'où sort la lumière
     if (c){ const [l1, l2] = m5Bilan2(c); const a = clamp((t-1.2)/0.8, 0, 1); g.globalAlpha = a; g.fillStyle = 'rgba(8,10,16,0.82)'; g.fillRect(10, 238, 460, 28); m5Txt(g, l1, 240, 250, 11, '#e8d8a0'); m5Txt(g, l2, 240, 262, 11, '#dfe8ee'); g.globalAlpha = 1; }
+    g.save(); g.globalAlpha = 0.4; g.drawImage(cinePaper(), 0, 0, 480, 270); g.restore();                                                         // C6 : le grain du papier repasse à 40 %
     plateEnd(g, w, h); },
   // carton d'acte : la porte, de plus en plus étroite
   door(a){ return (g, w, h, t) => { plateBase(g, w, h, a===3? 'rgba(120,170,200,0.20)' : 'rgba(20,30,50,0.28)');
@@ -1105,9 +1106,13 @@ const M5_PLATES = {
     for (let i=0;i<5;i++){ const y0 = 70 + i*28, cut = t > 0.8 + i*0.7, cp = [[366,y0],[300,y0+10+i*4],[210,y0+30],[120,y0+34+i*8],[10,y0+36+i*10]];
       g.strokeStyle = M5_INK; g.lineWidth = 7; g.lineCap = 'round';
       if (!cut){ g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], cp[2][0],cp[2][1], cp[4][0],cp[4][1]); g.stroke(); }
-      else { g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], 270,y0+16, 250,y0+22); g.stroke();                                                    // le tronçon central a disparu
-        g.beginPath(); g.moveTo(150,y0+34+i*3); g.bezierCurveTo(100,y0+34+i*6, 60,y0+38+i*8, 10,y0+36+i*10); g.stroke(); }
+      else { const gx = 238 - i*8, lx = 150 + i*3, ly = y0+34+i*3;                                                                                              // B10 : les bouts coupés retombent jusqu'au sol (10 px de mou)
+        g.beginPath(); g.moveTo(cp[0][0],cp[0][1]); g.bezierCurveTo(cp[1][0],cp[1][1], 290,y0+16, 276,y0+22); g.quadraticCurveTo(268,y0+70+i*14, gx,236); g.stroke();   // côté tour
+        g.beginPath(); g.moveTo(10,y0+36+i*10); g.bezierCurveTo(60,y0+38+i*8, 100,y0+34+i*6, lx,ly); g.quadraticCurveTo(lx+8,ly+50, lx+24,236); g.stroke(); }          // côté monde
       g.strokeStyle = 'rgba(233,223,198,0.5)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(cp[0][0],cp[0][1]-2); g.bezierCurveTo(cp[1][0],cp[1][1]-2, cp[2][0],cp[2][1]-2, 330,y0-1); g.stroke(); }
+    { const last = t > 0.8 + 4*0.7;                                                                                              // l'étincelle rouge : l'unique accent, à la coupe du dernier câble
+      if (last && Math.sin(t*22) > -0.5){ const sx = 273, sy = 70 + 4*28 + 20; g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(sx, sy, 3.2, 0, 6.283); g.fill();
+        g.strokeStyle = '#c42a1c'; g.lineWidth = 1.4; for (let k=0;k<5;k++){ const a = -0.4 - k*0.9, r1 = 5, r2 = 9 + (k%2)*4; g.beginPath(); g.moveTo(sx+Math.cos(a)*r1, sy+Math.sin(a)*r1); g.lineTo(sx+Math.cos(a)*r2, sy+Math.sin(a)*r2); g.stroke(); } } }
     inkFolk(g, 190, 230, 34, M5_INK, 0); inkFolk(g, 232, 230, 36, M5_INK, 0); inkLine(g, [200,206, 218,176], 1, 2.4); inkLine(g, [208,206, 224,176], 1, 2.4); inkLine(g, [240,208, 262,176], 1, 2.4); inkLine(g, [248,208, 266,180], 1, 2.4);   // les grandes pinces
     plateEnd(g, w, h); },
   // D3 · La table et la lampe : devant la porte de la tour, la nuit ; Sol veille, un papillon tourne autour de la lampe
