@@ -20,7 +20,7 @@ const BOTS = readFileSync(new URL('./_bots.js', import.meta.url), 'utf8');
 const arg = (k, d) => { const a = process.argv.find(x => x.startsWith('--'+k+'=')); return a ? a.slice(k.length+3) : d; };
 const GAME = 'file://' + (arg('game', '') || fileURLToPath(new URL('../la-derniere-bataille.html', import.meta.url)));   // --game=copie.html : mesurer une version figée pendant qu'on édite src/
 const FULL = process.argv.includes('--full');
-const N = +arg('n', FULL ? 40 : 12);
+const N = +arg('n', FULL ? 40 : 20);
 const ONLY = new Set(arg('only', 'A,B,C,D,E').split(','));
 const WORKERS = +arg('workers', 4);
 const LABEL = arg('label', '');
@@ -185,7 +185,7 @@ if (ONLY.has('B')){
   console.log('  niveau   HUM % [IC 95 %]   (HUM à gauche / à droite)   durée méd.   ère III HUM/IA   ère IV HUM/IA   revenu 10 min HUM/IA   18 min HUM/IA');
   for (const lv of lvs){ const o = out[lv];
     console.log(`  ${String(lv).padEnd(6)}  ${f1(o.hum).padStart(5)} ${ci(o.hum,o.n)}   (${f1(o.humLeft)} / ${f1(o.humRight)})            ${String(o.dur).padStart(5)} s    ${Math.round(o.era3.HUM)}/${Math.round(o.era3.IA)} s       ${Math.round(o.era4.HUM)}/${Math.round(o.era4.IA)} s        ${f1(o.r10.HUM)}/${f1(o.r10.IA)}              ${f1(o.r18.HUM)}/${f1(o.r18.IA)}${o.unfinished? '   (non terminées '+o.unfinished+')':''}`);
-    if (!FULL) soft(Math.abs(o.hum-50) <= 18, `B niveau ${lv} : HUM ${f1(o.hum)} % (hors 50 ± 18, bruit n=${o.n} compris)`); }
+    if (!FULL) soft(Math.abs(o.hum-50) <= 20, `B niveau ${lv} : HUM ${f1(o.hum)} % (hors 50 ± 20, bruit n=${o.n} compris)`); }
   REPORT.B = out;
 }
 

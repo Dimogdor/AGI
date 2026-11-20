@@ -114,9 +114,9 @@ const DIFFS = [ // cheat = bonus de production caché de l'IA
   // Depuis que l'IA ne gèle plus ses dépenses pour son héros et fortifie toujours sa base, les
   // anciens réglages donnaient 71 % / 56 % / 21 % / 8 %.
   {name:"FACILE",    inc:0.3,  think:4.0,  eraLag:1.5,  hpMul:0.4,  cheat:0.6},
-  {name:"NORMAL",    inc:0.4,  think:2.6,  eraLag:0.8,  hpMul:0.55, cheat:0.8},
+  {name:"NORMAL",    inc:0.62, think:2.6,  eraLag:0.8,  hpMul:0.55, cheat:0.8},
   {name:"DIFFICILE", inc:0.75, think:1.3,  eraLag:0.15, hpMul:0.9,  cheat:0.95},
-  {name:"BRUTAL",    inc:1.3,  think:0.65, eraLag:0.03, hpMul:1.3,  cheat:1.7},
+  {name:"BRUTAL",    inc:1.3,  think:0.65, eraLag:0.03, hpMul:1.3,  cheat:1.8},
 ];
 const BUILDS = {
   wall:  {label:"Muraille",  hp:900,  cost:{f:90,m:50}},
@@ -175,12 +175,12 @@ const FAC_TRAITS = {
     occupy:1.5,                                      // M8 : chaque unité compte ×1,5 pour capturer lacs et zones
     wallCost:0.75, wallGar:3, siteMax:3, siteHp:200, // M5 : muraille −25 %, 3 places de garnison, 3 chantiers, chantier à 200 PV
     env:{ rainBase:1.4, rainFarm:1.2, sigCd:1.1,                       // pluie fertile (nourriture) · signal renforcé (pouvoir ✸)
-          frozen:0.3, strikeProd:0.5, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés, production à moitié (0 avant la v1.18 : audit n°2, ~10 points d'écart au banc B), −20 % de dégâts subis, puis « acquis sociaux »
+          frozen:0.5, strikeProd:0.8, piquet:0.8, acqK:1.2, acqT:30,    // couvre-feu : figés (riposte ×0,5 comme les machines), production −20 % (v1.19 ; 0 avant la v1.18 : audit n°2, ~10 points d'écart au banc B), −20 % de dégâts subis, puis « acquis sociaux »
           acidUnit:19, acidBld:28, heatUnit:16, heatTired:0.18, heatSpd:0.9,
           sand:0.85, sandTur:0.85, winterSpd:0.82, floodSafe:80 },
   },
   IA: {
-    heroDmg:1.3, heroAura:6,                         // Singularité : dégâts ×1,3, aura de réparation 6·ère/s à 150 px (`hero`), recalée au lot 3 avec M6
+    heroDmg:1.3, heroAura:5,                         // Singularité : dégâts ×1,3, aura de réparation 6·ère/s à 150 px (`hero`), recalée au lot 3 avec M6
     infCost:1,
     healBase:40, healLvl:9, healPeriod:1.35,         // ruche : soin 40 + 9 par niveau, 35 % plus lent (elle produit aussi des drones)
     texD:1.22, texR:1.22,                            // texture de frappe : dégâts ×1,22, cadence ×1,22 (lent et lourd)
