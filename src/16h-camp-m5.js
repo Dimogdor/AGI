@@ -28,7 +28,7 @@ const M5 = {
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
   hp:{ base:2200, gate:[2600,7000,24000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)
-  eMul:[0.5,1.0,1.2], eMulII:[1,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
+  eMul:[0.5,1.0,1.2], eMulII:[0.8,1,1.2], capK:[1,1,0.75], breach:0.0015,                          // acte II : machines plus solides au Dernier carré (l'acte tenait ≈ 1 min) ;                                          // solidité des machines de la citadelle par acte, AVANT le multiplicateur de niveau
   refund:0.25, refundMax:300,                                    // survivants : 25 % de leur coût, au plus 300 de chaque
   spCd:[110,85,75],                                              // leurs frappes d'ère sont plus rares ici
   sapSpd:34, sapPlant:2.2,                                       // sapeur : vitesse (px/s), durée de pose (s)

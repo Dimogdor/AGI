@@ -16,7 +16,7 @@ const play = ({ bot, trace }) => {
       'sap'+c.saps.length+'+'+c.charges+'-'+c.sapLost, 'cl'+c.cellsLeft, 'z'+c.owned, mode, c.avatar? 'av'+Math.round(100*c.avatar.hp/c.avatar.maxhp) : ''].join(' '));
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;
     game.sel.clear();
-    p.f += 5; p.m += 1;                                                                                                   // aide d'économie FIXE (5 / 1 par demi-seconde, tous niveaux) : un joueur compétent a une économie plus solide que ce script ; sans écart croissant qui masquait la courbe (audit n°2, B9)
+    p.f += 9; p.m += 3;                                                                                                   // aide d'économie FIXE (9 / 3 par demi-seconde, tous niveaux : le milieu de l'ancienne échelle 5+4·D / 1+2·D) : un joueur compétent a une économie plus solide que ce script ; sans écart croissant qui masquait la courbe (audit n°2, B9)
     ['farmF','farmF','turret'].forEach((ty,i)=>{ if (!p.slots[i].b) tryBuild(p, p.slots[i], ty); });
     for (const s of p.slots) if (s.b && s.b.type!=='site' && s.b.hp < s.b.maxhp*0.6) tryRepair(p, s);
     for (const s of g.neut) if (!s.b && p.units.some(u=>Math.abs(u.x-s.x)<100)) tryBuild(p, s, s.x<1500? 'farmF' : 'farmM');
