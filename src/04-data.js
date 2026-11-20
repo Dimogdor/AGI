@@ -190,7 +190,7 @@ const FAC_TRAITS = {
     texDU:1.06, execK:1.1, execHp:0.5, siegeAoe:1.14,   // M2 : texture ×1,06 (au lieu de ×1,22 : le ciblage concentré vaut beaucoup) ; tireurs/aériens : cible la plus entamée, +10 % sous 50 % de PV ; zone du siège ×1,14
     recycNear:0.06, recycFar:0.025, recycR:500, arCost:{m:260, w:70}, arBld:6, arBase:10,   // M3 : perte d'unité remboursée (6 % près de la base ou d'une ruche, 2,5 % ailleurs) ; nano-réparation 260 ◈ / 70 💧, 6 et 10 PV/s
     coolRec:0.05, coolW:0.04, coolMin:40, overHeat:0.75, overK:1.08,   // M4 : si 💧 ≥ 40, refroidissement 0,05/s (0,04 💧/s par unité chaude) ; chaleur ≥ 0,75 : +8 % de dégâts (surrégime)
-    strikeN:5, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres, bâtiments ×1,2
+    strikeN:5, strikeHeroPct:0.06, strikeK:1.4, strikeRest:0.4, strikeBld:1.2,   // M7 : Frappe chirurgicale — 1,4·D sur les 5 unités les plus précieuses (héros d'abord), 0,4·D sur les autres (au moins 6 % des PV max pour le héros), bâtiments ×1,2
     heroCool:2, assimR:200, fragN:5,                 // M6 : Singularité vivante, chaleur ×2 plus vite évacuée ; un ennemi tué à ≤ 200 px fait naître un drone ; à sa mort 5 drones hors plafond
     terrK:1.25,                                      // M8 : zones, lacs et zone bonus rapportent +25 %
     turDmg:1.2, turRange:1.1, turLink:0.9, turLinkR:300,   // M5 : tourelles +20 % dégâts, +10 % portée ; liaison (≤ 300 px d'une autre) : cadence +10 %

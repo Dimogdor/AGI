@@ -193,7 +193,9 @@ function trySpecial(side){
   }
   for (const u of foe.units){
     const k = !pw? 1 : hum? ft('HUM','upDmg') : (elite.has(u)? ft('IA','strikeK') : ft('IA','strikeRest'));
-    u.hp -= Math.min(dmg*k, u.maxhp*0.65);   // plafonné : impossible de one-shot
+    let dd = dmg*k;
+    if (pw && !hum && u.role==='hero') dd = Math.max(dd, u.maxhp*ft('IA','strikeHeroPct'));   // v1.18 : contre le héros, au moins 6 % de ses PV max (172 PV sur 15 120 ne lui faisaient rien)
+    u.hp -= Math.min(dd, u.maxhp*0.65);   // plafonné : impossible de one-shot
     u.flash=0.3; burst(u.x, gY(u.x)-22, side.fac.accent, elite && elite.has(u)? 16 : 10);
   }
   if (pw && hum) for (const u of side.units){ u.hp = Math.min(u.maxhp, u.hp + u.maxhp*ft('HUM','upHeal')); u.heat = 0; u.tiredT = 0; burst(u.x, gY(u.x)-22, '#6dff8a', 5, 0.6); }
