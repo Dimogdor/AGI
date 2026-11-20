@@ -9,7 +9,7 @@ const V = process.argv.includes('-v');
 // lancée au-dessus du front dès que des machines s'en approchent
 const play = (bot) => {
   const g = game, c = g.camp, p = g.p, e = g.e; let steps = 0, think = 0, cines = 0; const st = {};
-  while (!g.over && steps++ < 20000){
+  while (!g.over && steps++ < 28000){
     if (CINE.on){ cines++; cineEnd(); }
     update(0.05); if (steps%40===0) render(1/60);
     if (!bot || (think -= 0.05) > 0) continue; think = 0.5;

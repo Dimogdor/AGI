@@ -637,7 +637,7 @@ campMission(3, {
   ownBase:true,                                                   // drawBase enveloppé : pas de halos de fenêtres de l'escarmouche (drawBaseGlow)
   num:'IV', when:M4_TX.when, ai:[0,2,2], doctrines:['caisse','ordre'], eraCap:3, era0:2, oneLife:true, dev0:0.25,
   dm:[{inc:0.10, cheat:0.5}, {inc:0.14, cheat:0.6, think:2.4, eraLag:0.8}, {inc:0.15, cheat:0.6, think:2.2, eraLag:0.8}],   // IA « Difficile » en Lutte et Dernier carré
-  dAdj:[null, null, { wave:1.1, gap:1, base:1, eBase:1, res:1, eHp:1.05, eDmg:1.05 }],                               // v1.18 : vagues ×1,1, vie et dégâts ×1,05 (tout à 1 neutralisait le niveau : base 97–100 % comme en Lutte) ; Dernier carré : la rue ne tient pas plus de machines et il n'y a plus de métal passif ; avec le modèle commun (colonnes ×1,25, machines ×1,12, ressources ×0,9) le joueur scripté s'effondre avant la fin, on tempère donc les colonnes, la vie et les dégâts des machines et la caisse
+  dAdj:[null, null, { wave:1, gap:1, base:1, eBase:1, res:1, eHp:1, eDmg:1 }],                               // v1.18 : essayé vagues ×1,1 / vie et dégâts ×1,05 (et variantes) : le joueur scripté perd alors certaines graines (2 sur 6, base −1 à −8 % au lieu de 97–99 %) — résultat binaire, valeurs 1 conservées ; Dernier carré : la rue ne tient pas plus de machines et il n'y a plus de métal passif ; avec le modèle commun (colonnes ×1,25, machines ×1,12, ressources ×0,9) le joueur scripté s'effondre avant la fin, on tempère donc les colonnes, la vie et les dégâts des machines et la caisse
   title:M4_TX.title, place:M4_TX.place, recap:M4_TX.recap, where:M4_TX.where, goal2:M4_TX.goal2, rule:M4_TX.rule,
   tips:M4_TX.tips, docWhy:M4_TX.docWhy, debrief:M4_TX.debrief, fail:M4_TX.fail,
   radio:[
