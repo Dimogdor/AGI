@@ -2163,11 +2163,11 @@ function blitHumanoid(u, x, gy, kind){
 function drawHuman(u, x, gy){ blitHumanoid(u, x, gy, 'hum'); }
 function drawBot(u, x, gy){ blitHumanoid(u, x, gy, 'bot'); }
 // AÉRONEFS (v1.17) : un appareil crédible par ère et par camp, dessiné pour remplir la toile 64×44.
-//  HUM : parapente armé → hélico léger → VTOL furtif à rotors carénés → chasseur plasma → planeur solaire.
+//  HUM : parapente armé → ULM → autogire de récup → drone-cargo de cellule → planeur solaire.
 //  IA  : drones — quadrirotor → quadrirotor blindé → drone à turbines carénées → drone hexa à ailerons → drone cristal à anneaux.
 // Les rotors tournent en direct dans drawAir (AIR_ROT : [dx, dy, demi-largeur] en pixels de sprite).
 const AIR_ROT = {
-  HUM: [ null, [[-1.4,-10.6,13]], [[-13,-8.5,7],[9,-8.5,7]], null, null ],
+  HUM: [ null, [[-1.4,-10.6,13]], [[-1,-14,17]], null, null ],
   IA:  [ [[-17,-8,8.5],[17,-8,8.5],[-10,-11,5.5],[10,-11,5.5]],
          [[-18,-8,9.5],[18,-8,9.5],[-11,-11.5,6],[11,-11.5,6]],
          [[-16,-7.2,8],[16,-7.2,8]],
@@ -2220,20 +2220,40 @@ function airSprite(fac, era, trans){
       if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-1,cy+5,2.6,'#ff4a2a'));
       return;
     }
-    if (era===2){                                                                              // VTOL FURTIF (deux rotors carénés)
-      const dark='#2a2e38';
-      plateT([cx-24,cy+0.5, cx-14,cy-4.5, cx+14,cy-5, cx+28,cy+1.5, cx+12,cy+6, cx-14,cy+6], body);   // fuselage à facettes
-      polyP([cx-24,cy+0.5, cx-14,cy-4.5, cx-9,cy-1, cx-20,cy+3]); TC.fillStyle=shade(body,0.6); TC.fill();
-      plateT([cx-27,cy-9, cx-22,cy-8, cx-19,cy+0.5, cx-25,cy+0.5], shade(body,0.85));                  // dérive
-      TC.fillStyle='rgba(20,28,40,0.95)'; polyP([cx+9,cy-4.2, cx+19,cy-0.6, cx+10,cy+1.6, cx+5,cy-1.5]); TC.fill();   // verrière sombre
-      TC.fillStyle='rgba(150,200,240,0.55)'; polyP([cx+10,cy-3.4, cx+15,cy-1.4, cx+10,cy-0.4]); TC.fill();
-      TC.strokeStyle=dark; TC.lineWidth=2; TC.lineCap='round';                                          // mâts de nacelles
-      strokeP([cx-13,cy-2, cx-13,cy-6.5]); TC.stroke(); strokeP([cx+9,cy-3, cx+9,cy-6.5]); TC.stroke();
-      for (const px of [-13,9]){ TC.fillStyle=dark; rrectT(cx+px-8,cy-10.5,16,4.4,2); TC.fill();        // nacelles carénées
-        TC.fillStyle='rgba(180,200,220,0.18)'; TC.fillRect(cx+px-6,cy-9.8,12,1.4); }
-      tubeT(cx+2,cy+6,cx+14,cy+7.2,1.4,'#1c2026'); TC.fillStyle='#c84a2a'; TC.beginPath(); TC.arc(cx+14.4,cy+7.2,1,0,6.283); TC.fill();  // panier d'armes
-      TC.fillStyle=acc; TC.fillRect(cx-6,cy-1.2,5,1.6);
-      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-4,cy+2,2.6,'#ff4a2a'));
+    if (era===2){                                                                              // AUTOGIRE DE RÉCUP (v1.19) : baignoire de tôles rivetées, rotor libre sur mât, roues de vélo, hélice tractrice
+      const tole='#c89a48', patch='#7a8a52', dark='#2a2420', rivet='rgba(40,28,16,0.75)';
+      TC.strokeStyle=dark; TC.lineWidth=1.8; TC.lineCap='round';                                        // poutre de queue (tube de cadre) + haubans
+      strokeP([cx-7,cy+0.5, cx-27,cy-3]); TC.stroke();
+      TC.lineWidth=0.8; strokeP([cx-6,cy-4, cx-25,cy-4]); TC.stroke(); strokeP([cx-25,cy-4, cx-27,cy-3]); TC.stroke();
+      plateT([cx-28,cy-11, cx-23.5,cy-10.5, cx-23,cy-2.5, cx-28,cy-2.2], '#d8b038');                    // dérive : panneau de signalisation jaune récupéré
+      TC.strokeStyle='rgba(60,40,10,0.6)'; TC.lineWidth=0.8; strokeP([cx-27,cy-9.4, cx-24.4,cy-9]); TC.stroke(); strokeP([cx-27,cy-6.6, cx-24.2,cy-6.2]); TC.stroke();
+      plateT([cx-27,cy-3.6, cx-18,cy-4.4, cx-17,cy-2.6, cx-26,cy-1.8], shade(patch,0.9));                 // plan fixe en tôle
+      TC.strokeStyle=dark; TC.lineWidth=1.9;                                                             // mât du rotor
+      strokeP([cx-2,cy-3, cx-1,cy-13]); TC.stroke(); strokeP([cx-8,cy+1, cx-1,cy-12]); TC.stroke(); strokeP([cx+8,cy-2, cx-1,cy-12]); TC.stroke();
+      TC.strokeStyle='#6a4a2a'; TC.lineWidth=2.6;                                                        // pales : planches de bois, légèrement relevées
+      strokeP([cx-19,cy-12.4, cx-8,cy-13.8, cx-1,cy-14]); TC.stroke(); strokeP([cx-1,cy-14, cx+8,cy-13.8, cx+17,cy-12.4]); TC.stroke();
+      TC.fillStyle='#8a8e94'; TC.beginPath(); TC.arc(cx-1,cy-14,2.1,0,6.283); TC.fill();               // moyeu
+      TC.fillStyle=lgrad(cx-6,cy-3,cx-6,cy+9,[[0,shade(tole,1.2)],[1,shade(tole,0.7)]]);                  // coque en baignoire
+      polyP([cx-10,cy-1.5, cx+10,cy-2.5, cx+16,cy+2.5, cx+11,cy+9, cx-7,cy+9, cx-11,cy+4]); TC.fill();
+      TC.strokeStyle='rgba(30,22,16,0.8)'; TC.lineWidth=1; polyP([cx-10,cy-1.5, cx+10,cy-2.5, cx+16,cy+2.5, cx+11,cy+9, cx-7,cy+9, cx-11,cy+4]); TC.stroke();
+      plateT([cx-10,cy+1, cx-2,cy+0.6, cx-1,cy+9, cx-7,cy+9, cx-11,cy+4], patch);                         // panneau rapporté vert olive
+      plateT([cx+3,cy+3.4, cx+13,cy+2.8, cx+11,cy+8.6, cx+3,cy+8.8], shade('#b8ad90',0.95));              // plaque de tôle grise (capot)
+      TC.fillStyle=rivet; for (const [rx,ry] of [[-9,2.6],[-9,6.6],[-3,2],[-3,6.8],[4.4,4.4],[4.4,7.6],[10.4,4],[10.4,7.4],[0.6,-0.6],[6,-1]]){ TC.beginPath(); TC.arc(cx+rx,cy+ry,0.65,0,6.283); TC.fill(); }   // rivets
+      TC.fillStyle=acc; TC.fillRect(cx-1,cy+1.6,3,5.6);                                                    // bande peinte au pinceau
+      TC.fillStyle='rgba(215,230,240,0.85)'; polyP([cx+8,cy-2.4, cx+11,cy-5.6, cx+13.4,cy-1.6, cx+10.6,cy-0.4]); TC.fill();   // pare-brise de récup
+      TC.fillStyle='#e2b48a'; TC.beginPath(); TC.arc(cx+3.6,cy-4,3.1,0,6.283); TC.fill();                 // pilote
+      TC.fillStyle='#4a5a3a'; TC.beginPath(); TC.arc(cx+3.3,cy-4.8,3.4,Math.PI,0); TC.fill();             // bonnet
+      TC.fillStyle=acc; TC.fillRect(cx+0.4,cy-2.6,6.4,1.4);                                               // foulard
+      TC.strokeStyle='#e8d890'; TC.lineWidth=0.9; TC.beginPath(); TC.arc(cx+5.6,cy-4.4,1,0,6.283); TC.stroke();   // lunettes
+      TC.fillStyle='#5a5e62'; rrectT(cx+9,cy+3.4,5,3.6,1); TC.fill();                                    // moteur
+      TC.fillStyle='rgba(235,230,215,0.5)'; TC.beginPath(); TC.ellipse(cx+17.4,cy+2.4,1.8,8.4,0,0,6.283); TC.fill();   // disque de l'hélice tractrice
+      TC.strokeStyle='#3a2a1a'; TC.lineWidth=2; strokeP([cx+17.4,cy-5.8, cx+17.4,cy+10.6]); TC.stroke();
+      tubeT(cx+6,cy+9.4,cx+21,cy+10.4,1.1,'#3a3e44'); TC.fillStyle='#d8a630'; TC.beginPath(); TC.arc(cx+21.4,cy+10.4,0.9,0,6.283); TC.fill();   // tuyau-canon
+      for (const wx of [-6,9]){ TC.strokeStyle='#222'; TC.lineWidth=1.4; TC.beginPath(); TC.arc(cx+wx,cy+13.4,3.2,0,6.283); TC.stroke();   // roues de vélo
+        TC.lineWidth=0.5; strokeP([cx+wx-3,cy+13.4, cx+wx+3,cy+13.4]); TC.stroke(); strokeP([cx+wx,cy+10.2, cx+wx,cy+16.6]); TC.stroke();
+        TC.lineWidth=1.2; strokeP([cx+wx,cy+9, cx+wx,cy+13.4]); TC.stroke(); }
+      glowDot(cx+14,cy+1.4,0.9,'#ffd890',4);                                                              // phare
+      if (trans) bloomT('#ff3a2a',7,()=>drawStar(cx-3,cy+4,2.6,'#ff4a2a'));
       return;
     }
     if (era===3){                                                                              // DRONE DE CELLULE (v1.18) : drone-cargo bricolé, bidon ocre, deux hélices carénées, bâche rouge

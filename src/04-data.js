@@ -70,15 +70,15 @@ const FACTIONS = {
       {name:"LA COMMUNE",                    tag:"☭"},     // commune solarpunk (fin de M5)
     ],
     sym:"☭",
-    eraCols:["#6f7f96","#7a5838","#9a4a32","#9a6a34","#e8c84a"],
+    eraCols:["#74748e","#7a5838","#9a4a32","#9a6a34","#e8c84a"],
     names:{
       // v1.17 : noms de résistants / civils, propres à chaque ère (rue → usine → quartier → cellules → commune)
       melee:["Émeutier","Gréviste","Insurgé","Mineur de choc","Champion solaire"],
       tank:["Barricadier","Métallo blindé","Porte-panneau","Bouclier de mine","Bastion humain"],
-      ranged:["Franc-tireur","Tireur d'élite","Partisan gauss","Lanceur plasma","Sentinelle solaire"],
-      siege:["Bazooka bricolé","Lance-roquettes","Canon rail","Obusier ionique","Canon solaire"],
-      air:["Parapente armé","ULM","VTOL furtif","Drone de cellule","Planeur solaire"],
-      support:["Secouriste","Infirmier de rue","Médic de guerre","Bio-ingénieur","Guérisseur solaire"],
+      ranged:["Franc-tireur","Tireur d'élite","Tireur de toit","Lanceur plasma","Sentinelle solaire"],
+      siege:["Bazooka bricolé","Lance-roquettes","Tube à fusées","Obusier ionique","Canon solaire"],
+      air:["Parapente armé","ULM","Autogire de récup","Drone de cellule","Planeur solaire"],
+      support:["Secouriste","Infirmier de rue","Médic de barricade","Bio-ingénieur","Guérisseur solaire"],
     },
     specials:["Pluie de pavés","Brouilleurs","Mortiers de fortune","Coupure du réseau","Miroirs solaires"],   // A6 : noms civiques (un comité de quartier n'a pas d'aviation)
     supportKind:'medic',
