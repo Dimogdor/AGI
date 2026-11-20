@@ -375,7 +375,7 @@ const M2_PL = {
   radio: M2T("RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI","RADIO-QUAI"),
   banner:M2T("ON NE DÉSAFFECTE PAS LES GENS","YOU CAN'T SCRAP PEOPLE","A LA GENTE NO SE LA DESECHA","MENSCHEN SIND KEIN SCHROTT","LE PERSONE NON SI DISMETTONO","GENTE NÃO SE DESATIVA","ЛЮДЕЙ НЕ СПИСЫВАЮТ","人不是报废品","البشر ليسوا خردة"),
   frag:  M2T("…DÉSAFFECTE PAS…","…CAN'T SCRAP…","…NO SE DESECHA…","…KEIN SCHROTT…","…NON SI DISMETTONO…","…NÃO SE DESATIVA…","…НЕ СПИСЫВАЮТ…","…不是报废品…","…ليسوا خردة…"),
-  noon:  M2T("12 h 00","12:00","12:00","12:00","12:00","12h00","12:00","12:00","12:00"),
+  noon:  M2T("ONZE VILLES · 12 h 00","ELEVEN CITIES · 12:00","ONCE CIUDADES · 12:00","ELF STÄDTE · 12:00","UNDICI CITTÀ · 12:00","ONZE CIDADES · 12h00","ОДИННАДЦАТЬ ГОРОДОВ · 12:00","十一座城市 · 12:00","إحدى عشرة مدينة · 12:00"),
   six:   M2T("6 h 00","6:00","6:00","6:00","6:00","6h00","6:00","6:00","6:00"),
 
   // P1 · Les outils posés : un établi, trois outils à plat, l'horloge du mur — l'aiguille des minutes arrive sur 12 (6 h 00) et s'arrête
@@ -457,10 +457,11 @@ const M2_PL = {
     g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(236, 154, 1.4, 0, 6.283); g.arc(244.5, 154, 1.4, 0, 6.283); g.fill();   // les yeux
     inkLine(g, [236.5,160.5, 240,162, 244,160.5], 1, 1.3);                                         // la bouche
     g.fillStyle = '#1f1b17'; g.beginPath(); g.ellipse(240, 147, 13, 9.5, 0, Math.PI, 6.283); g.fill();   // la casquette, à l'encre
-    g.beginPath(); g.moveTo(240, 148); g.lineTo(264, 149); g.lineTo(262, 152.5); g.lineTo(240, 151.5); g.closePath(); g.fill();
+    g.fillStyle = '#4a4238'; g.beginPath(); g.roundRect ? g.roundRect(227, 146.5, 26, 5, 2) : g.rect(227, 146.5, 26, 5); g.fill();   // B11 : bonnet de docker, revers côtelé
     inkWash(g, [226,165.5, 240,171, 254,165.5, 255,172, 240,178, 225,172], '#c42a1c', 0.95);       // l'écharpe, sous le menton : le seul rouge
-    inkWash(g, [246.3,153.1, 287.4,134.3, 292.6,155.7, 247.7,158.9], '#c8b27a', 1); inkLine(g, [246.3,153.1, 287.4,134.3, 292.6,155.7, 247.7,158.9, 246.3,153.1], n, 1.6);   // le mégaphone en cône
-    g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(262, 150, 4.2, 0, 6.283); g.fill();             // la main qui le tient
+    inkWash(g, [234,160.5, 198,148, 192,176, 234,166], '#c8b27a', 1); inkLine(g, [234,160.5, 198,148, 192,176, 234,166, 234,160.5], n, 1.6);   // B11 : le mégaphone à hauteur de bouche, ouvert vers la foule (à gauche)
+    inkLine(g, [196,150, 194,174], n, 2.2);                                                                                               // le pavillon
+    g.fillStyle = '#1f1b17'; g.beginPath(); g.arc(222, 172.5, 4.2, 0, 6.283); g.fill(); inkLine(g, [222,172, 226,182], 1, 3);              // la main sur la poignée
     plateEnd(g, w, h); },
 
   // P5 · L'antenne : contre-plongée sur le mât, une petite silhouette sur l'échelle, des ondes rouges vers la droite
@@ -477,18 +478,18 @@ const M2_PL = {
       inkLine(g, m2Circ(246,24,r,14, -0.8, 0.8), 1, 2, 'rgba(196,42,28,'+(0.95*(1-age/2.6)).toFixed(3)+')'); }
     plateEnd(g, w, h); },
 
-  // P6 · L'Hexagone : le pays, très simple ; Valmont en rouge ; onze points qui s'allument un par un, reliés à Valmont
+  // P6 · La côte : le pays, très simple (contour libre) ; Valmont en rouge ; onze points qui s'allument un par un, reliés à Valmont
   hexa(g, w, h, t){ plateBase(g, w, h);
-    const hx = [240,40, 340,90, 340,190, 240,240, 140,190, 140,90, 240,40];
+    const hx = [200,40, 168,68, 150,108, 156,140, 150,150, 205,160, 150,172, 140,204, 172,238, 250,242, 330,228, 352,182, 332,132, 350,92, 312,48, 250,32, 200,40];   // B12 : une côte libre, un estuaire à gauche (plus d'hexagone)
     inkWash(g, hx, '#c8b27a', 0.2); inkLine(g, hx, clamp(t/1.2, 0, 1), 2.2);
-    const V = [305,92], P = [[190,78],[250,70],[170,120],[220,112],[285,128],[320,150],[190,160],[245,160],[285,188],[215,205],[265,215]];
+    const V = [305,92], P = [[190,78],[250,70],[170,120],[220,112],[285,128],[320,150],[228,176],[245,160],[285,188],[215,205],[265,215]];
     P.forEach((p,i)=>{ const on = clamp((t - 1.2 - i*0.35)/0.5, 0, 1);
       if (on>0){ const mx = (V[0]+p[0])/2, my = (V[1]+p[1])/2 - 14, pts = []; for (let s=0;s<=10;s++){ const u = s/10; pts.push((1-u)*(1-u)*V[0]+2*u*(1-u)*mx+u*u*p[0], (1-u)*(1-u)*V[1]+2*u*(1-u)*my+u*u*p[1]); }
         inkLine(g, pts, on, 1.2, '#c42a1c'); }
       g.fillStyle = on>=1? '#c42a1c' : 'rgba(31,27,23,0.45)'; g.beginPath(); g.arc(p[0], p[1], on>=1? 4.6 : 3.4, 0, 6.283); g.fill(); });
     g.fillStyle = '#c42a1c'; g.beginPath(); g.arc(V[0], V[1], 6.5, 0, 6.283); g.fill();
     g.strokeStyle = 'rgba(196,42,28,0.5)'; g.lineWidth = 1.4; g.beginPath(); g.arc(V[0], V[1], 10+3*Math.sin(t*4), 0, 6.283); g.stroke();
-    m2Txt(g, cT(M2_PL.noon), 20, 32, 18, '#1f1b17', 'left');
+    m2Txt(g, cT(M2_PL.noon), 20, 32, 14, '#1f1b17', 'left');
     plateEnd(g, w, h); },
 
   // P7 · Le bipeur, 3 % : le bipeur de la mission I (même cadre), « 55 · 3 % » défile de droite à gauche, deux fois

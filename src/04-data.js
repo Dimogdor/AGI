@@ -70,19 +70,19 @@ const FACTIONS = {
       {name:"LA COMMUNE",                    tag:"☭"},     // commune solarpunk (fin de M5)
     ],
     sym:"☭",
-    eraCols:["#8a9a5b","#7a5838","#9a4a32","#5f6a4a","#e8c84a"],
+    eraCols:["#6f7f96","#7a5838","#9a4a32","#9a6a34","#e8c84a"],
     names:{
       // v1.17 : noms de résistants / civils, propres à chaque ère (rue → usine → quartier → cellules → commune)
-      melee:["Émeutier","Gréviste","Insurgé","Exo-combattant","Champion solaire"],
-      tank:["Barricadier","Métallo blindé","Mécha-garde","Colosse d'acier","Bastion humain"],
+      melee:["Émeutier","Gréviste","Insurgé","Mineur de choc","Champion solaire"],
+      tank:["Barricadier","Métallo blindé","Porte-panneau","Bouclier de mine","Bastion humain"],
       ranged:["Franc-tireur","Tireur d'élite","Partisan gauss","Lanceur plasma","Sentinelle solaire"],
-      siege:["Bazooka bricolé","Lance-roquettes","Canon rail","Obusier ionique","Marteau d'orbite"],
-      air:["Parapente armé","Hélico léger","VTOL furtif","Chasseur plasma","Planeur solaire"],
+      siege:["Bazooka bricolé","Lance-roquettes","Canon rail","Obusier ionique","Canon solaire"],
+      air:["Parapente armé","ULM","VTOL furtif","Drone de cellule","Planeur solaire"],
       support:["Secouriste","Infirmier de rue","Médic de guerre","Bio-ingénieur","Guérisseur solaire"],
     },
     specials:["Pluie de pavés","Brouilleurs","Mortiers de fortune","Coupure du réseau","Miroirs solaires"],   // A6 : noms civiques (un comité de quartier n'a pas d'aviation)
     supportKind:'medic',
-    transName:"COMMUNISME À VISAGE HUMAIN", transTxt:"L'argent est aboli — 🪙 n'est plus nécessaire",
+    transName:"TOUT EST À NOUS", transTxt:"L'argent est aboli — 🪙 n'est plus nécessaire",
   },
   IA: {
     name:"G·P·T", accent:"#5ad0ff",
@@ -99,10 +99,10 @@ const FACTIONS = {
     names:{
       melee:["Bot domestique","Agent autonome","Exécuteur","Avatar fractal","Émanation"],
       tank:["Châssis lourd","Garde-serveur","Mécha-noyau","Monolithe","Gardien absolu"],
-      ranged:["Drone laser","Optimiseur","Essaim-tireur","Projecteur neural","Œil de l'AGI"],
+      ranged:["Bot vigile","Optimiseur","Essaim-tireur","Projecteur neural","Œil de l'AGI"],
       siege:["Brouilleur","Canon data","Désintégrateur","Faisceau lourd","Logos final"],
       air:["Quadrirotor","Aile-rasoir","Spectre aérien","Nuée fractale","Ange-machine"],
-      support:["Drone-réparateur","Essaim de maintenance","Ruche d'agents","Forge d'esprits","Matrice-mère"],
+      support:["Bot de maintenance","Essaim de maintenance","Ruche d'agents","Forge d'esprits","Matrice-mère"],
     },
     specials:["Surcharge réseau","Essaim kamikaze","Tempête de données","Effacement logique","Verdict de l'AGI"],
     supportKind:'hive',

@@ -276,7 +276,7 @@ function m4Lie(g, x, y, s, d, col){ g.fillStyle = col || M4_INK0;
 const m4Flakes = (g, t, n, a) => { g.fillStyle = 'rgba(31,27,23,'+(a||0.3)+')'; for (let i=0;i<n;i++){ const x = ((i*83.1 - t*14*(1+(i%3)*0.4)) % 480 + 480) % 480, y = (i*47.3 + t*17*(1+(i%4)*0.3)) % 270; g.fillRect(x, y, 1.8, 1.8); } };
 
 const M4_PLATES = {
-  // P1 · La dissolution : la table du conseil, douze chaises vides, l'écran affiche le vote puis « Ω » (accent bleu)
+  // P1 · La dissolution : la table du conseil, douze chaises vides, l'écran affiche le vote puis « G·P·T v8 » ; board2 : « NOUS » en bleu
   board(g, w, h, t, mode){ plateBase(g, w, h, 'rgba(70,92,120,0.08)');
     const n = clamp(t/1.6, 0, 1), omega = mode==='omega' || t >= 3.8;
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, M4_INK0, 0.2);
@@ -292,7 +292,8 @@ const M4_PLATES = {
     inkLine(g, [80,214, 80,230], n, 2.2); inkLine(g, [400,214, 400,230], n, 2.2);
     if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
       ls.forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), 240, 70+i*22, i? 13 : 14, '#1f2a33', 148); left -= l.length; }); }
-    else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = (mode==='omega')? 1 : k; m4Text(g, 'Ω', 240, 100, 62, M4_BLUE, 120); g.globalAlpha = 1; }
+    else if (mode==='omega') m4Text(g, '« NOUS »', 240, 98, 40, '#0b6fa8', 140);                                 // A13 : le système change de nom (seconde planche)
+    else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = k; m4Text(g, 'G·P·T v8', 240, 98, 30, M4_INK0, 140); g.globalAlpha = 1; }
     plateEnd(g, w, h); },
   // P2 · Mnémosyne : le plateau, le monolithe au centre-droit, des pages qui dérivent de gauche à droite (40 px/s) et entrent dedans
   mnemo(g, w, h, t){ plateBase(g, w, h, 'rgba(120,124,132,0.25)');
@@ -301,7 +302,9 @@ const M4_PLATES = {
     inkWash(g, m4R(280,30,80,170), M4_INK0, 0.55); inkLine(g, m4R(280,30,80,170), n, 2.4);
     inkLine(g, [282,34, 358,34], n, 3.2, M4_BLUE);                                                               // le liseré bleu au sommet
     for (let i=0;i<34;i++){ const x = ((i*43.7 + t*40) % 290) - 10, fy = (i*29) % 66, y = 128 + fy + Math.sin(t*2+i)*3, a = clamp((278-x)/16, 0, 1);
-      if (a <= 0.02) continue; g.globalAlpha = a; g.fillStyle = '#fffdf4'; g.fillRect(x, y, 4, 6); g.strokeStyle = M4_INK0; g.lineWidth = 0.9; g.strokeRect(x, y, 4, 6); g.globalAlpha = 1; }
+      if (a <= 0.02) continue; g.globalAlpha = a; const red = i%5===2, rot = Math.sin(i*1.7+t*1.3)*0.25;                         // C5 : de vraies pages (8×10, deux lignes d'écriture), certaines rouges (carnets)
+      g.save(); g.translate(x+4, y+5); g.rotate(rot); g.fillStyle = red? '#c42a1c' : '#fffdf4'; g.fillRect(-4, -5, 8, 10); g.strokeStyle = M4_INK0; g.lineWidth = 0.9; g.strokeRect(-4, -5, 8, 10);
+      g.strokeStyle = red? '#f4d8d0' : M4_INK0; g.lineWidth = 0.7; g.beginPath(); g.moveTo(-2.4,-1.8); g.lineTo(2.4,-1.8); g.moveTo(-2.4,1.2); g.lineTo(1.2,1.2); g.stroke(); g.restore(); g.globalAlpha = 1; }
     plateEnd(g, w, h); },
   // P3 · Huit minutes : le bipeur sur une table givrée ; « 55 · 08:00 » puis « 07:59 » (le nombre suit le niveau) ; accent bleu
   pager(g, w, h, t){ plateBase(g, w, h, 'rgba(60,66,76,0.16)');
@@ -377,7 +380,7 @@ const M4_PLATES = {
     const tw = [236,210, 236,32, 244,32, 244,210, 236,210];
     inkWash(g, tw, '#2a2a2c', 0.8); inkLine(g, tw, n, 2.2);
     const bl = Math.sin(t*4.2) > -0.2? 1 : 0.2; g.globalAlpha = bl; inkLine(g, [244,34, 244,120], 1, 2.4, M4_BLUE); g.globalAlpha = 1;      // le liseré bleu clignote
-    for (let i=0;i<9;i++) inkFolk(g, 18+i*34+t*12, 252, 26+(i%3)*2, '#2a2520', 0);                                 // ils marchent vers elle (12 px/s)
+    for (let i=0;i<9;i++) inkFolk(g, 18+((i*21+t*12)%182), 210, 26+(i%3)*2, '#2a2520', 0);                                 // ils marchent vers elle (12 px/s)
     for (let i=0;i<46;i++){ const x = (i*61.7 + Math.sin(t*0.6+i)*8) % 480, y = (i*37.1 + t*(14+(i%4)*4)) % 270; g.fillStyle = 'rgba(70,60,52,0.4)'; g.fillRect(x, y, 1.8, 1.8); }   // la cendre tombe
     plateEnd(g, w, h); },
   // P8 · Le relais muet : le chevalement sous la neige (deux montants, la molette, l'antenne) ; la neige monte et recouvre la base
@@ -397,7 +400,7 @@ const M4_PLATES = {
     inkWash(g, sn, '#f4f6f8', 0.92); inkLine(g, sn.slice(2, sn.length-2), 1, 1.6);                                 // la congère qui monte
     m4Flakes(g, t, 44, 0.45); plateEnd(g, w, h); },
 };
-M4_PLATES.board2 = (g, w, h, t) => M4_PLATES.board(g, w, h, t, 'omega');                    // même planche : l'écran affiche « Ω »
+M4_PLATES.board2 = (g, w, h, t) => M4_PLATES.board(g, w, h, t, 'omega');                    // même planche : l'écran affiche « NOUS »
 M4_PLATES.copy2 = (g, w, h, t) => M4_PLATES.copy(g, w, h, t+3);
 M4_PLATES.mute2 = (g, w, h, t) => M4_PLATES.mute(g, w, h, t+5);
 
