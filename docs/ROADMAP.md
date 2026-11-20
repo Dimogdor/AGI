@@ -45,7 +45,8 @@
   mission II : la canonnière frappe plus fort et plus souvent selon le niveau.
 
 ## À venir
-- Refonte audio finale (voix procédurales à l'accent correct, répliques réécrites) — à la demande de l'auteur.
+- Refonte audio finale (voix procédurales à l'accent correct, répliques réécrites) — à la demande de l'auteur. Pistes proposées :
+  ElevenLabs (voix natives 9 langues, émotions), OpenAI gpt-4o-mini-tts, Google/Azure, Chatterbox (libre) ; test d'écoute à l'aveugle d'abord.
 - Second avis de Fable (conseiller) quand il sera disponible.
 - Équilibrage : banc B niveau 3 à 57 % (au bord de 50 ± 8) ; carte plate IA/IA 58,7 % ; Normal ~90 % de victoires du joueur scripté ;
   banc E (événements forcés) très défavorable à l'Humanité ; M5 Lutte acte I de 9 à 14 min.
