@@ -1065,11 +1065,12 @@ function drawZone(z, dev, t, vw){
 // ÉTIQUETTES DE TERRAIN (v1.17) : nom de l'oasis, « ZONE … », « CONSTRUIRE / TERRAIN LIBRE » — enregistrées pendant le décor, puis posées EN UN SEUL PASSAGE
 // au-dessus des unités, sur un petit fond papier ; celles d'une même zone s'empilent verticalement au lieu de se superposer.
 let FIELD_LBLS = [];
-function fieldLabel(x, y, wx, txt, col, rank){ if (FIELD_LBLS.length<64) FIELD_LBLS.push({x, y, wx, txt, col, rank}); }
+function fieldLabel(x, y, wx, txt, col, rank, oasis){ if (FIELD_LBLS.length<64) FIELD_LBLS.push({x, y, wx, txt, col, rank, oasis}); }
 function drawFieldLabels(){
   if (!FIELD_LBLS.length) return;
-  const L = FIELD_LBLS.slice().sort((a,b)=>a.x-b.x), groups = [];
+  const L = FIELD_LBLS.slice().sort((a,b)=>a.x-b.x), groups = [], oas = L.filter(l=>l.oasis);
   for (const l of L){
+    if (l.rank===1 && oas.some(o=>Math.abs(o.x-l.x)<84)) continue;      // « ZONE … » au pied de l'oasis : l'étiquette de l'oasis dit déjà qui la tient
     if (l.rank===2 && (game.p.units.some(u=>Math.abs(u.x-l.wx)<30) || game.e.units.some(u=>Math.abs(u.x-l.wx)<30))) continue;   // « CONSTRUIRE » / « TERRAIN LIBRE » : masqué dès qu'une unité s'y tient
     const g = groups[groups.length-1];
     if (g && Math.abs(l.x-g.x1)<84){ g.items.push(l); g.x1 = l.x; } else groups.push({ x0:l.x, x1:l.x, items:[l], });
@@ -1081,11 +1082,15 @@ function drawFieldLabels(){
     g.items.sort((a,b)=>a.rank-b.rank);                                  // du haut (nom du lieu) au bas (zone, puis socle)
     g.items.forEach((l,i)=>{
       const y = bottom - (g.items.length-1-i)*(hh+2), tw = ctx.measureText(l.txt).width, w = tw+10+(l.col? 7 : 0), x0 = cx-w/2;
+      // l'oasis s'efface (25 %) dès que la mêlée s'y tient : on lit le combat, pas l'étiquette
+      const crowd = l.oasis && (game.p.units.reduce((n,u)=>n+(Math.abs(u.x-l.wx)<100),0) + game.e.units.reduce((n,u)=>n+(Math.abs(u.x-l.wx)<100),0))>=3;
+      if (crowd) ctx.globalAlpha *= 0.25;
       ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(x0+1.2, y-hh/2+1.8, w, hh);
       ctx.fillStyle='rgba(233,224,202,0.94)'; ctx.fillRect(x0, y-hh/2, w, hh);
       ctx.strokeStyle='rgba(31,27,23,0.55)'; ctx.lineWidth=1; ctx.strokeRect(x0+0.5, y-hh/2+0.5, w-1, hh-1);
       if (l.col){ ctx.fillStyle=l.col; ctx.fillRect(x0+1, y-hh/2+1, 4, hh-2); }
       ctx.fillStyle='#1f1b17'; ctx.fillText(l.txt, cx+(l.col? 3 : 0), y+0.5);
+      if (crowd) ctx.globalAlpha /= 0.25;
     });
   }
   ctx.restore();
@@ -1591,7 +1596,7 @@ function drawNode(n){
   if (Math.abs(n.prog)<1 && n.prog!==0){
     ctx.fillStyle='#000a'; ctx.fillRect(x-22,y-58,44,5);
     ctx.fillStyle = n.prog>0? game.p.fac.accent : game.e.fac.accent; ctx.fillRect(x-22,y-58,44*Math.abs(n.prog),5); }
-  if (n.center) fieldLabel(x, y-82, n.x, tr('oasis'), null, 0);
+  if (n.center) fieldLabel(x, y-82, n.x, tr(n.owner==='p'? 'oasis_p' : n.owner==='e'? 'oasis_e' : 'oasis_n'), null, 0, true);   // UNE étiquette : nom + qui la tient
 }
 
 /* ====== ÉCLAIRAGE & MATIÈRE — relief 2.5D sculpté + accents néon ====== */
