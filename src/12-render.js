@@ -2357,7 +2357,9 @@ function drawForeground(vw){
   const par = 1.38, off = camX*par, dev = game.dev||0, y0 = GROUND+24;
   for (let k=Math.floor((off-120)/230); k*230 < off+vw+120; k++){
     const h = lhash(k, 91); if (h>0.62) continue;
-    const x = k*230 + lhash(k,92)*120 - off, ty = (h*100|0)%3, type = (ty===0 && dev>0.6)? 2 : ty;
+    const wx = k*230 + lhash(k,92)*120, x = wx - off, ty = (h*100|0)%3;
+    const wm = wx/par, nearBase = wm < 300 || wm > WORLD-300;           // B4 : jamais de gravats à moins de 300 px d'une base
+    const type = (ty===0 && dev>0.6 && !nearBase)? 2 : ty;
     const sp = fxSprite('FG'+type, 96, 44, g => { if (CANF) g.filter='blur(1.1px)';
       g.fillStyle='rgba(13,10,12,0.72)'; g.strokeStyle='rgba(13,10,12,0.8)'; g.lineCap='round';
       if (type===0){ for (let i=0;i<22;i++){ const bx=10+i*3.5, bh=10+lhash(i,5)*26, bd=(lhash(i,6)-0.5)*14; g.lineWidth=1.6+lhash(i,7)*1.4;
@@ -2365,8 +2367,10 @@ function drawForeground(vw){
       else if (type===1){ g.lineWidth=3; g.beginPath(); g.moveTo(18,44); g.lineTo(21,8); g.moveTo(76,44); g.lineTo(73,12); g.stroke();
         g.lineWidth=1.1; for (let r=0;r<2;r++){ g.beginPath(); g.moveTo(0,16+r*11); g.quadraticCurveTo(48,24+r*11,96,15+r*11); g.stroke();
           for (let i=0;i<7;i++){ const bx=8+i*13, by=17+r*11+Math.sin(i/6*3.14)*4; g.beginPath(); g.moveTo(bx-2,by-2); g.lineTo(bx+2,by+2); g.moveTo(bx+2,by-2); g.lineTo(bx-2,by+2); g.stroke(); } } }
-      else { g.globalAlpha=0.7; g.beginPath(); g.moveTo(6,44); g.lineTo(14,26); g.lineTo(30,20); g.lineTo(44,30); g.lineTo(58,22); g.lineTo(72,27); g.lineTo(90,44); g.closePath(); g.fill();
-        g.lineWidth=2.4; g.beginPath(); g.moveTo(36,26); g.lineTo(31,6); g.moveTo(31,6); g.lineTo(40,10); g.stroke(); } });
+      else { g.globalAlpha=0.35; g.lineWidth=2.6;                                   // B4 (v1.18) : poutre en biais et deux briques, au trait, à 35 %
+        g.beginPath(); g.moveTo(10,42); g.lineTo(70,18); g.stroke();
+        g.lineWidth=1.6; g.strokeRect(54,34,14,8); g.strokeRect(70,36,12,6);
+        g.beginPath(); g.moveTo(22,44); g.lineTo(34,38); g.stroke(); } });
     ctx.drawImage(sp, x-48, y0-44, 96, 44);
   }
 }
@@ -3700,7 +3704,7 @@ const IA_LIVE = [
   },
 ];
 // caméra / œil scrutateur : position (repère base) par ère, suit le front
-const IA_EYE = [[20,-100,'cam'],[0,-110,'eye'],[6,-112,'eye'],[-4,-112,'eye'],[0,-86,'eye']];
+const IA_EYE = [[20,-100,'cam'],[0,-110,'eye'],[6,-112,'eye'],[-4,-112,'rings'],[0,-86,'eye']];
 const eyeGlow = col => fxSprite('EYEG'+col, 24, 24, g => { const r=g.createRadialGradient(12,12,1,12,12,12);
   r.addColorStop(0,rgbaC(col,0.9)); r.addColorStop(0.4,rgbaC(col,0.45)); r.addColorStop(1,rgbaC(col,0)); g.fillStyle=r; g.fillRect(0,0,24,24); });
 function drawIAEye(c, s, t, d, ex, ey, kind){
@@ -3714,6 +3718,14 @@ function drawIAEye(c, s, t, d, ex, ey, kind){
     c.fillStyle='#d8dde2'; c.fillRect(-1,-2.6,10,5.2); c.fillStyle='#1a2028'; c.fillRect(8,-2,2.6,4);
     c.fillStyle = col; c.beginPath(); c.arc(9.6,0,1.2,0,6.283); c.fill(); c.restore();
     return;
+  }
+  if (kind==='rings'){                                             // B5 (v1.18) : l'emblème de « NOUS » — trois anneaux concentriques gris-bleu, pulsation 0,5 Hz
+    const ph = 0.5+0.5*Math.sin(t*Math.PI);                           // 0,5 Hz : une pulsation toutes les 2 s
+    c.save(); c.lineWidth=1.8;
+    for (let i=0;i<3;i++){ const k = ((ph*0.6 + i*0.2)%1), r = 5+i*5.5;
+      c.strokeStyle = rgbaC('#4a5a6e', 0.45+0.55*(i===0? ph : i===1? 1-Math.abs(ph-0.5)*2 : 1-ph)); c.beginPath(); c.arc(ex,ey,r,0,6.283); c.stroke(); }
+    c.fillStyle=rgbaC('#4a5a6e',0.9); c.beginPath(); c.arc(ex,ey,1.6,0,6.283); c.fill();
+    c.restore(); return;
   }
   const lx = look*4;
   c.fillStyle='#cfe0ee'; rr(ex-12, ey-7, 24, 14, 6); c.fill();
