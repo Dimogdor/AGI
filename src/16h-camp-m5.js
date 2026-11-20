@@ -553,6 +553,7 @@ function m5Halls(g, c, dt){
     if (M5.capK[D]<1 && z.prog>pr && z.prog<1) z.prog = pr + (z.prog-pr)*M5.capK[D];
     c.zProg[i] = z.prog; });
   g.zones.forEach((z,i)=>{ const was = c.zo[i];
+    if (D===0 && was==='p' && z.owner!=='p'){ z.owner = 'p'; z.prog = 1; }                                   // Récit (v1.18) : une baie éteinte ne se rallume plus (l'acte II durait 20 à 30 min)
     if (z.owner!==was){
       if (z.owner==='p'){ c.offN++; sfx('node'); g.shake = Math.max(g.shake, 5); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOff), '#9fd6ea', 14); }       // son coupé net
       else if (was==='p'){ c.relaunchN++; sfx('deny'); addFloater(z.x, gY(z.x)-112, cT(M5_TX.bayOn), '#e0533f', 14); c.bayT[i] = 6; }
