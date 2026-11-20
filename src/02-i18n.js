@@ -65,6 +65,7 @@ function applyLang(){
   const L = SETTINGS.lang || 'fr';
   document.documentElement.lang = L;
   document.body.setAttribute('dir', L==='ar'? 'rtl':'ltr');
+  try { uiFontsForLang(); } catch(e){}              // polices du canvas (pile arabe système) — 13-hud.js les fixe aussi au chargement
   document.querySelectorAll('[data-i18n]').forEach(el=>{ const v=t(el.dataset.i18n); if (typeof v==='string') el.textContent=v; });
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });

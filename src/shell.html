@@ -31,6 +31,10 @@
     border:1px solid #4a3a32; border-radius:6px; }
   #fsBtn:active { background:#2a0e0a; }
   body[dir="rtl"] .setRow span { text-align:right; }
+  /* arabe : polices SYSTÈME uniquement (le jeu marche hors ligne, aucun chargement réseau) — les polices du jeu n'ont pas d'arabe, le navigateur se
+     rabattait sur Courier New (lettres étirées) ; et l'espacement des lettres casse la liaison des lettres arabes */
+  body[dir="rtl"] { --f-sten:'Noto Naskh Arabic','Geeza Pro','Segoe UI',Tahoma,sans-serif; --f-type:'Noto Naskh Arabic','Geeza Pro','Segoe UI',Tahoma,sans-serif; --f-term:'Noto Naskh Arabic','Geeza Pro','Segoe UI',Tahoma,sans-serif; }
+  body[dir="rtl"], body[dir="rtl"] * { font-family:'Noto Naskh Arabic','Geeza Pro','Segoe UI',Tahoma,sans-serif !important; letter-spacing:0 !important; }
   #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   canvas { display:block; background:#0d0a0a; }
   #ui { position:absolute; inset:0; pointer-events:none; }

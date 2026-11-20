@@ -9,8 +9,19 @@ const UIPAL = {
         dull:'#b3c0bd', tab:'#b9c9cb', kraft:'#d3e2dc', photo:'#a9c6d2', photo2:'#9daeb2', bad:'#b3261e',
         head:'"AGI Term","Courier New",monospace', headW:400, type:'"AGI Term","Courier New",monospace', k:1.3, ia:true },
 };
-const UI_COND = '"AGI Cond","Arial Narrow",sans-serif';
-const UI_TYPE = '"AGI Type","Courier New",monospace', UI_STEN = '"AGI Stencil","AGI Cond",Impact,sans-serif';
+// polices du canvas ; en arabe, pile de polices SYSTÈME (les polices embarquées n'ont pas d'arabe → repli Courier New) ; uiFontsForLang() les rebascule au changement de langue
+const AR_STACK = '"Noto Naskh Arabic","Geeza Pro","Segoe UI",Tahoma,sans-serif';
+let UI_COND = '"AGI Cond","Arial Narrow",sans-serif';
+let UI_TYPE = '"AGI Type","Courier New",monospace', UI_STEN = '"AGI Stencil","AGI Cond",Impact,sans-serif';
+function uiFontsForLang(){
+  const ar = SETTINGS.lang==='ar';
+  UI_COND = ar? AR_STACK : '"AGI Cond","Arial Narrow",sans-serif';
+  UI_TYPE = ar? AR_STACK : '"AGI Type","Courier New",monospace';
+  UI_STEN = ar? AR_STACK : '"AGI Stencil","AGI Cond",Impact,sans-serif';
+  UIPAL.HUM.head = ar? AR_STACK : '"AGI Stencil","AGI Cond",Impact,sans-serif'; UIPAL.HUM.type = ar? AR_STACK : '"AGI Type","Courier New",monospace';
+  UIPAL.IA.head = ar? AR_STACK : '"AGI Term","Courier New",monospace';           UIPAL.IA.type = ar? AR_STACK : '"AGI Term","Courier New",monospace';
+}
+uiFontsForLang();
 // police du HUD : condensée de presse (Oswald 600) — plus typée que l'Arial gras et plus étroite,
 // donc moins de libellés comprimés par fitFont dans les langues longues
 const HF = px => '600 '+px+'px '+UI_COND;
