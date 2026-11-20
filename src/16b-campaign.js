@@ -79,10 +79,12 @@ const CAMP_UI = {
   docHint:  {fr:"Le comité vous laisse choisir une ligne pour cette mission. Elle ne vaut que pour cette mission.", en:"The committee lets you choose one line for this mission. It applies to this mission only.", es:"El comité le deja elegir una línea para esta misión. Solo vale para esta misión.", de:"Das Komitee lässt Sie für diese Mission eine Linie wählen. Sie gilt nur für diese Mission.", it:"Il comitato le lascia scegliere una linea per questa missione. Vale solo per questa missione.", pt:"O comitê deixa você escolher uma linha para esta missão. Ela vale só para esta missão.", ru:"Комитет позволяет вам выбрать линию для этой миссии. Она действует только в этой миссии.", zh:"委员会让您为本次任务选择一条路线，仅对本次任务有效。", ar:"تترك لك اللجنة اختيار خطّ لهذه المهمة. لا يسري إلا عليها."},
   noDoc:    {fr:"Pas de doctrine pour cette première nuit : on part avec ce qu'on a.", en:"No doctrine for this first night: we go with what we have.", es:"No hay doctrina para esta primera noche: salimos con lo que tenemos.", de:"Keine Doktrin für diese erste Nacht: Wir ziehen mit dem los, was wir haben.", it:"Nessuna dottrina per questa prima notte: partiamo con quello che abbiamo.", pt:"Nenhuma doutrina para esta primeira noite: saímos com o que temos.", ru:"В эту первую ночь доктрины нет: идём с тем, что есть.", zh:"第一夜没有学说可选：我们有什么就带什么。", ar:"لا عقيدة في هذه الليلة الأولى: ننطلق بما لدينا."},
   chosen:   {fr:"CHOISIE", en:"CHOSEN", es:"ELEGIDA", de:"GEWÄHLT", it:"SCELTA", pt:"ESCOLHIDA", ru:"ВЫБРАНО", zh:"已选", ar:"مختارة"},
+  diffMore: {fr:"détail des réglages", en:"settings detail", es:"detalle de los ajustes", de:"Details der Einstellungen", it:"dettaglio delle impostazioni", pt:"detalhe dos ajustes", ru:"подробности настроек", zh:"设置详情", ar:"تفاصيل الإعدادات"},
+  docMore:  {fr:"détails", en:"details", es:"detalles", de:"Details", it:"dettagli", pt:"detalhes", ru:"подробнее", zh:"详情", ar:"التفاصيل"},
   effect:   {fr:"EFFET", en:"EFFECT", es:"EFECTO", de:"WIRKUNG", it:"EFFETTO", pt:"EFEITO", ru:"ЭФФЕКТ", zh:"效果", ar:"الأثر"},
   minus:    {fr:"EN CONTREPARTIE", en:"THE TRADE-OFF", es:"A CAMBIO", de:"DER PREIS", it:"IN CAMBIO", pt:"EM TROCA", ru:"ЦЕНА ВЫБОРА", zh:"代价", ar:"في المقابل"},
   launch:   {fr:"LANCER LA MISSION", en:"START THE MISSION", es:"INICIAR LA MISIÓN", de:"MISSION STARTEN", it:"AVVIA LA MISSIONE", pt:"INICIAR A MISSÃO", ru:"НАЧАТЬ МИССИЮ", zh:"开始任务", ar:"ابدأ المهمة"},
-  fxRes:    {fr:"{n} de vivres, d'argent et d'eau au départ", en:"{n} food, money and water at the start", es:"{n} de víveres, dinero y agua al empezar", de:"{n} Nahrung, Geld und Wasser zu Beginn", it:"{n} di viveri, denaro e acqua all'inizio", pt:"{n} de víveres, dinheiro e água no início", ru:"{n} еды, денег и воды на старте", zh:"开局粮食、资金和水 {n}", ar:"{n} من المؤن والمال والماء عند البداية"},
+  fxRes:    {fr:"{n} de nourriture, d'argent et d'eau au départ", en:"{n} food, money and water at the start", es:"{n} de víveres, dinero y agua al empezar", de:"{n} Nahrung, Geld und Wasser zu Beginn", it:"{n} di viveri, denaro e acqua all'inizio", pt:"{n} de víveres, dinheiro e água no início", ru:"{n} еды, денег и воды на старте", zh:"开局粮食、资金和水 {n}", ar:"{n} من المؤن والمال والماء عند البداية"},
   fxBase:   {fr:"{n} de solidité pour votre base", en:"{n} toughness for your base", es:"{n} de solidez para su base", de:"{n} Stabilität für Ihre Basis", it:"{n} di solidità per la sua base", pt:"{n} de resistência para sua base", ru:"{n} прочности вашей базы", zh:"您的基地坚固度 {n}", ar:"{n} في صلابة قاعدتك"},
   fxSquad:  {fr:"Dès le départ : {list}", en:"From the start: {list}", es:"Desde el inicio: {list}", de:"Von Anfang an: {list}", it:"Fin dall'inizio: {list}", pt:"Desde o início: {list}", ru:"С самого начала: {list}", zh:"开局即有：{list}", ar:"منذ البداية: {list}"},
   fxAct:    {fr:"Bouton de mission rechargé {n} plus vite", en:"Mission button recharges {n} faster", es:"El botón de misión se recarga un {n} más rápido", de:"Missionsknopf lädt {n} schneller", it:"Il pulsante di missione si ricarica il {n} più in fretta", pt:"O botão de missão recarrega {n} mais rápido", ru:"Кнопка миссии перезаряжается на {n} быстрее", zh:"任务按钮充能快 {n}", ar:"زرّ المهمة يُشحن أسرع بنسبة {n}"},
@@ -242,15 +244,15 @@ const DOCTRINES = {
     fx:{ squad:[0,2,0,2], vet:true, cap:-3 } },
   radio:   { name:{fr:"Radio libre", en:"Free radio", es:"Radio libre", de:"Freies Radio", it:"Radio libera", pt:"Rádio livre", ru:"Свободное радио", zh:"自由电台", ar:"الراديو الحر"},
     short:{fr:"Sol a doublé l'antenne.", en:"Sol doubled the aerial.", es:"Sol ha duplicado la antena.", de:"Sol hat die Antenne verdoppelt.", it:"Sol ha raddoppiato l'antenna.", pt:"Sol dobrou a antena.", ru:"Sol удвоила антенну.", zh:"Sol把天线加倍了。", ar:"ضاعفت Sol الهوائي."},
-    long:{fr:"Sol a doublé l'antenne sur le toit et recruté deux opératrices de plus : chaque appel passe plus vite, chaque ordre arrive à temps. L'action propre à la mission (vannes, appel aux cellules…) se recharge nettement plus vite — à vous d'en faire l'arme principale.",
-      en:"Sol has doubled the aerial on the roof and recruited two more operators: every call goes through faster, every order arrives in time. The mission's own action (sluices, call to the cells…) recharges markedly faster — make it your main weapon.",
-      es:"Sol ha duplicado la antena del tejado y ha reclutado a dos operadoras más: cada llamada pasa antes, cada orden llega a tiempo. La acción propia de la misión (compuertas, llamada a las células…) se recarga claramente más rápido: conviértala en su arma principal.",
-      de:"Sol hat die Antenne auf dem Dach verdoppelt und zwei weitere Funkerinnen gewonnen: Jeder Ruf kommt schneller durch, jeder Befehl rechtzeitig an. Die eigene Aktion der Mission (Schleusen, Ruf an die Zellen …) lädt deutlich schneller – machen Sie sie zu Ihrer Hauptwaffe.",
-      it:"Sol ha raddoppiato l'antenna sul tetto e reclutato altre due operatrici: ogni chiamata passa prima, ogni ordine arriva in tempo. L'azione propria della missione (paratoie, chiamata alle cellule…) si ricarica molto più in fretta: ne faccia la sua arma principale.",
-      pt:"Sol dobrou a antena do telhado e recrutou mais duas operadoras: cada chamada passa mais rápido, cada ordem chega a tempo. A ação própria da missão (comportas, chamada às células…) recarrega bem mais rápido — faça dela sua arma principal.",
-      ru:"Sol удвоила антенну на крыше и взяла ещё двух радисток: каждый вызов проходит быстрее, каждый приказ приходит вовремя. Особое действие миссии (шлюзы, вызов ячеек…) перезаряжается заметно быстрее — сделайте его главным оружием.",
-      zh:"Sol把屋顶的天线加倍了，还多招了两名接线员：每次呼叫都更快接通，每道命令都能及时送达。任务专属行动（开闸、呼叫小组……）的充能明显加快——把它当成您的主要武器吧。",
-      ar:"ضاعفت Sol الهوائي على السطح وجنّدت مشغّلتين إضافيتين: كل نداء يمرّ أسرع، وكل أمر يصل في وقته. يُشحن الإجراء الخاص بالمهمة (البوابات، نداء الخلايا…) أسرع بوضوح — اجعله سلاحك الرئيسي."},
+    long:{fr:"Sol a doublé l'antenne sur le toit et recruté deux opératrices de plus : chaque appel passe plus vite, chaque ordre arrive à temps. Le bouton de mission, sous l'objectif, se recharge nettement plus vite : à vous d'en faire l'arme principale.",
+      en:"Sol has doubled the aerial on the roof and recruited two more operators: every call goes through faster, every order arrives in time. The mission button, under the objective, recharges markedly faster: make it your main weapon.",
+      es:"Sol ha duplicado la antena del tejado y ha reclutado a dos operadoras más: cada llamada pasa antes, cada orden llega a tiempo. El botón de la misión, bajo el objetivo, se recarga claramente más rápido: conviértalo en su arma principal.",
+      de:"Sol hat die Antenne auf dem Dach verdoppelt und zwei weitere Funkerinnen gewonnen: Jeder Ruf kommt schneller durch, jeder Befehl rechtzeitig an. Der Missionsknopf unter dem Ziel lädt deutlich schneller: Machen Sie ihn zu Ihrer Hauptwaffe.",
+      it:"Sol ha raddoppiato l'antenna sul tetto e reclutato altre due operatrici: ogni chiamata passa prima, ogni ordine arriva in tempo. Il pulsante della missione, sotto l'obiettivo, si ricarica molto più in fretta: ne faccia la sua arma principale.",
+      pt:"Sol dobrou a antena do telhado e recrutou mais duas operadoras: cada chamada passa mais rápido, cada ordem chega a tempo. O botão da missão, sob o objetivo, recarrega bem mais rápido: faça dele sua arma principal.",
+      ru:"Sol удвоила антенну на крыше и взяла ещё двух радисток: каждый вызов проходит быстрее, каждый приказ приходит вовремя. Кнопка миссии под целью перезаряжается заметно быстрее — сделайте её главным оружием.",
+      zh:"Sol把屋顶的天线加倍了，还多招了两名接线员：每次呼叫都更快接通，每道命令都能及时送达。目标下方的任务按钮充能明显加快——把它当成您的主要武器吧。",
+      ar:"ضاعفت Sol الهوائي على السطح وجنّدت مشغّلتين إضافيتين: كل نداء يمرّ أسرع، وكل أمر يصل في وقته. يُشحن زرّ المهمة، تحت الهدف، أسرع بوضوح — اجعله سلاحك الرئيسي."},
     minus:{fr:"L'antenne a coûté cher, et personne ne vient en plus sur le terrain.", en:"The aerial cost a lot, and nobody extra joins you in the field.", es:"La antena costó cara, y nadie más se une sobre el terreno.", de:"Die Antenne war teuer, und niemand kommt zusätzlich ins Feld.", it:"L'antenna è costata cara, e nessuno in più scende in campo.", pt:"A antena custou caro, e ninguém a mais entra em campo.", ru:"Антенна обошлась дорого, и на поле никто не прибавится.", zh:"天线花了不少钱，战场上也不会多出任何人。", ar:"كلّف الهوائي كثيرًا، ولا أحد إضافي ينضمّ في الميدان."},
     fx:{ actCd:0.65, warn:4, res:0.9 } },
 };
@@ -782,11 +784,11 @@ window.addEventListener('keydown', e=>{
    Ouvert par le carnet (menu), par « mission suivante » et par « réessayer » : récit, lieu, objectif(s),
    règle du lieu, conseils, difficulté, doctrine (deux fiches), puis LANCER → cinématique → mission.
    Musique de fond : thème 'c_map' s'il existe (03-audio), sinon 'carnet'.                                   */
-const CAMP_BRIEF = { open:false, i:0 };
+const CAMP_BRIEF = { open:false, i:0, diffOpen:false, docOpen:{} };   // diffOpen / docOpen : sections dépliées du briefing (repliées à l'ouverture)
 function campBriefOpen(i){
   i = clamp(i|0, 0, Math.min(CAMPAIGN.length-1, CAMP_SAVE.done)); if (!CAMPAIGN[i]) return;
   if (typeof game!=='undefined' && game && game.camp){ if (CINE.on) cineEnd(true); game = null; }   // on quitte la mission terminée
-  CAMP_BRIEF.open = true; CAMP_BRIEF.i = i;
+  CAMP_BRIEF.open = true; CAMP_BRIEF.i = i; CAMP_BRIEF.diffOpen = false; CAMP_BRIEF.docOpen = {};
   $('menu').style.display = 'none'; $('endscreen').style.display = 'none';
   intro = -1; pendingStart = null; paused = false; settingsOpen = false; buildMenu = null;
   try { audioInit(); musicStart(); } catch(e){}
@@ -822,7 +824,10 @@ function campBriefRender(){
   const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+campWhen(m)));
   ht.appendChild(el('div', 'cbTitle', cT(m.title))); ht.appendChild(el('div', 'cbPlace', cT(m.place)));
   head.appendChild(ht); sheet.appendChild(head);
-  const body = el('div', 'cbBody'); sheet.appendChild(body);
+  const bwrap = el('div', 'cbBodyWrap'), body = el('div', 'cbBody'), shade = el('div', 'cbShade');      // l'ombre du bas dit qu'il reste du contenu à faire défiler
+  bwrap.appendChild(body); bwrap.appendChild(shade); sheet.appendChild(bwrap);
+  const syncShade = () => shade.classList.toggle('on', body.scrollTop+body.clientHeight < body.scrollHeight-4);
+  body.addEventListener('scroll', syncShade, { passive:true }); setTimeout(syncShade, 0); requestAnimationFrame(syncShade);
   const L = el('div', 'cbCol'), R = el('div', 'cbCol'); body.appendChild(L); body.appendChild(R);
   // récit
   { const s = sec(cT(CAMP_UI.recap), null, 1, 1);
@@ -846,26 +851,38 @@ function campBriefRender(){
       b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campBriefRender(); }); row.appendChild(b); });
     s.appendChild(row); const D = campDiff(CAMP_SAVE.diff); if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);   // comme startMission()
     s.appendChild(el('p', 'cbDiffTag', cT(CAMP_UI['dTag'+D.i])));
-    const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); s.appendChild(ul);
+    // les lignes chiffrées sont repliées derrière « détail des réglages ▸ » (la phrase en italique suffit à choisir)
+    const det = el('details', 'cbDiffMore'); if (CAMP_BRIEF.diffOpen) det.open = true;
+    const sm = el('summary', null, cT(CAMP_UI.diffMore)); sm.dataset.ar = SETTINGS.lang==='ar'? '1' : ''; det.appendChild(sm);
+    det.addEventListener('toggle', ()=>{ CAMP_BRIEF.diffOpen = det.open; setTimeout(syncShade, 0); });
+    const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); det.appendChild(ul); s.appendChild(det);
     L.appendChild(s); }                                                        // colonne de gauche, sous « Où nous sommes »
   // doctrine : le titre et l'indication à gauche, les deux fiches (explications longues) en pleine largeur dessous
   { const s = sec(cT(CAMP_UI.doc), 'cbDocHead', 4, 7), pair = campDocPair(i);
-    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc))); L.appendChild(s);
+    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc))); body.appendChild(s);       // titre + consigne en pleine largeur, juste au-dessus des deux fiches
     if (pair){ const cards = el('div', 'cbCards'); cards.style.setProperty('--o', 5); cards.style.setProperty('--op', 8);
       pair.forEach((id,k)=>{ const d = DOCTRINES[id], sel = (CAMP_SAVE.doc[i]? 1 : 0)===k;
         const cd = el('div', 'cbDoc'+(sel? ' sel' : '')); cd.setAttribute('role', 'button'); cd.tabIndex = 0;
         cd.appendChild(el('span', 'cbMark', cT(CAMP_UI.chosen)));
         cd.appendChild(el('b', 'cbDocName', cT(d.name))); cd.appendChild(el('i', 'cbDocShort', cT(d.short)));
+        // fiche compacte : nom, devise, 2 lignes d'EFFET, 1 ligne de CONTREPARTIE ; le reste (« utile ici parce que… », texte long) se déplie au clic
+        const eff = docEffects(d, m.era0||0), good = eff.filter(l=>!l.bad), bad = eff.filter(l=>l.bad);
         const fx = el('div', 'cbFx'); fx.appendChild(el('h5', null, cT(CAMP_UI.effect))); const ul = el('ul');
-        const eff = docEffects(d, m.era0||0);
-        for (const l of eff) if (!l.bad) ul.appendChild(el('li', null, l.txt)); fx.appendChild(ul); cd.appendChild(fx);
-        if (m.docWhy && m.docWhy[id]) cd.appendChild(el('p', 'cbWhy', cT(m.docWhy[id])));            // « Utile ici parce que… » (propre à la mission)
-        cd.appendChild(el('p', 'cbDocLong', cT(d.long)));
-        const bad = eff.filter(l=>l.bad);
-        if (d.minus || bad.length){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus)));
-          if (bad.length){ const ub = el('ul'); for (const l of bad) ub.appendChild(el('li', null, l.txt)); mi.appendChild(ub); }
-          if (d.minus) mi.appendChild(el('p', null, cT(d.minus))); cd.appendChild(mi); }
-        const pick = ()=>{ if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
+        for (const l of good.slice(0,2)) ul.appendChild(el('li', null, l.txt)); fx.appendChild(ul); cd.appendChild(fx);
+        const minus1 = bad.length? bad[0].txt : d.minus? cT(d.minus) : '';
+        if (minus1){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus))); mi.appendChild(el('p', null, minus1)); cd.appendChild(mi); }
+        const more = el('div', 'cbDocMore');
+        if (good.length>2){ const u2 = el('ul', 'cbFx'); for (const l of good.slice(2)) u2.appendChild(el('li', null, l.txt)); more.appendChild(u2); }
+        if (m.docWhy && m.docWhy[id]) more.appendChild(el('p', 'cbWhy', cT(m.docWhy[id])));            // « Utile ici parce que… » (propre à la mission)
+        more.appendChild(el('p', 'cbDocLong', cT(d.long)));
+        if (bad.length>1 || (bad.length && d.minus)){ const mi = el('div', 'cbMinus'), ub = el('ul');
+          for (const l of bad.slice(1)) ub.appendChild(el('li', null, l.txt)); if (bad.length>1) mi.appendChild(ub);
+          if (bad.length && d.minus) mi.appendChild(el('p', null, cT(d.minus))); if (mi.childNodes.length) more.appendChild(mi); }
+        cd.appendChild(more);
+        const open = !!CAMP_BRIEF.docOpen[k]; if (open) cd.classList.add('open');
+        cd.appendChild(el('span', 'cbMore', cT(CAMP_UI.docMore)+(open? ' ▾' : (SETTINGS.lang==='ar'? ' ◂' : ' ▸'))));
+        const pick = ()=>{ if (sel) CAMP_BRIEF.docOpen[k] = !CAMP_BRIEF.docOpen[k]; else { CAMP_BRIEF.docOpen = {}; CAMP_BRIEF.docOpen[k] = true; }    // choisir déplie la fiche ; re-cliquer la replie
+          if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
         cd.addEventListener('click', pick); cd.addEventListener('keydown', ev=>{ if (ev.key==='Enter' || ev.key===' '){ ev.preventDefault(); pick(); } });
         cards.appendChild(cd); });
       body.appendChild(cards); }

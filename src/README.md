@@ -25,6 +25,7 @@ de concaténation = l'ordre d'origine, donc le comportement est identique.
 | `01-settings.js` | réglages + touches reconfigurables |
 | `02-i18n.js` | tables de traduction (fr/en/es/de/it/pt/ru/zh/ar) |
 | `02b-i18n-asym.js` | textes de l'asymétrie des factions : lignes d'explication d'événement par faction (`evx_*_hum/_ia`), libellés flottants, puces d'identité du menu |
+| `02d-i18n-ui.js` | surcharges de traduction v1.18 (OUI/NON, titres courts des événements, cartouche de chaleur, sous-titres des pouvoirs, étiquette de l’oasis), chargées après 02c |
 | `03-audio.js` | moteur audio : bus (musique / effets / ambiances, limiteur, réverbération), synthèse de repli, musique d'escarmouche, ambiance |
 | `03b-samples.js` | sons enregistrés CC0 (`assets/audio/`, manifeste) : chargement par lots, effets, héros, boucles d'ambiance par lieu — repli synthèse hors ligne |
 | `03c-music.js` | thèmes de campagne joués aux instruments échantillonnés (`m_night`… `e_ash`), ritournelles ; refaire les sons : `tools/audio/build.py`, banc : `tools/test-audio.mjs` |

@@ -50,7 +50,7 @@ function voiceIndex(L){
   return undefined;
 }
 // les insécables de la typographie française (U+00A0, U+202F) n'entrent pas dans l'empreinte : l'index a été généré avec des espaces simples
-const voiceText = txt => (typeof txt==='string'? txt : cT(txt)).replace(/[\u00A0\u202F]/g, ' ');
+const voiceText = txt => (typeof txt==='string'? txt : cT(txt)).replace(/[\u00A0\u202F]/g, ' ').replace(/\u2212/g, '-');
 // durée (s) de la réplique dans la langue courante, 0 si elle n'a pas de voix
 function voiceDur(who, txt){
   if (!SETTINGS.voice || !who) return 0;
@@ -172,7 +172,7 @@ function voiceWatch(){
 // réglages : interrupteur + volume (menu PARAMÈTRES → AUDIO)
 function voiceRefreshOpts(){
   const b = document.getElementById('oVoice'), v = document.getElementById('oVoiceVol'), vv = document.getElementById('oVoiceVolV');
-  if (b){ b.classList.toggle('on', !!SETTINGS.voice); b.textContent = (SETTINGS.voice? t('on') : t('off')).toUpperCase();
+  if (b){ b.classList.toggle('on', !!SETTINGS.voice); b.textContent = (SETTINGS.voice? t('yes') : t('no')).toUpperCase();
     b.title = voiceCanFetch()? '' : cT(VOICE_UI.none); }
   if (v) v.value = Math.round(SETTINGS.voiceVol*100);
   if (vv) vv.textContent = Math.round(SETTINGS.voiceVol*100)+'%';
