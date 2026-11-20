@@ -203,7 +203,7 @@ const FAC_TRAITS = {
 // Recalage de la difficulté de l'escarmouche : les mécaniques d'asymétrie renforcent l'IA (réseau, héros…) ; on baisse d'autant son bonus
 // caché de production à Difficile/Brutal pour garder la courbe de DIFFS (~100/88/48/25 %). Jamais en campagne, tutoriel ni en ligne.
 const AI_K = [1, 1, 0.8, 0.75];
-// 2e passe (lots 2-3) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
+// 2e passe (lots 2-3 ; appliqué dès Difficile seulement depuis la v1.18) : la machine adverse est un peu plus faible que l'Humanité adverse à difficulté égale (banc A) ; on rééquilibre par camp
 const AI_KF = { HUM:0.78, IA:1.06 };
 const ft = (fk, k) => FAC_TRAITS[fk][k];
 const fte = (fk, k) => FAC_TRAITS[fk].env[k];
