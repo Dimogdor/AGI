@@ -278,7 +278,7 @@ const m4Flakes = (g, t, n, a) => { g.fillStyle = 'rgba(31,27,23,'+(a||0.3)+')'; 
 const M4_PLATES = {
   // P1 · La dissolution : la table du conseil, douze chaises vides, l'écran affiche le vote puis « G·P·T v8 » ; board2 : « NOUS » en bleu
   board(g, w, h, t, mode){ plateBase(g, w, h, 'rgba(70,92,120,0.08)');
-    const n = clamp(t/1.6, 0, 1), omega = mode==='omega' || t >= 3.8;
+    const n = clamp(t/1.6, 0, 1), corp = mode==='corp', omega = mode==='omega' || (!corp && t >= 3.8);
     inkLine(g, [0,230, 480,230], 1, 2.2); inkHatch(g, 0, 230, 480, 40, 7, M4_INK0, 0.2);
     inkWash(g, m4R(160,40,160,70), '#3a4a58', 0.22); inkLine(g, m4R(160,40,160,70), n, 2.4);                    // l'écran, au mur
     for (let i=0;i<12;i++){ const u = (i-5.5)/5.5, x = 240+u*172, ch = 44 + (i%3)*3 - 8*u*u, k = clamp(t/1.8-i*0.05, 0, 1);   // douze dossiers de chaises vides, derrière la table, de travers
@@ -290,7 +290,8 @@ const M4_PLATES = {
     g.fillStyle = '#c4b99f'; g.fillRect(58, 200, 364, 14);                                                          // la table, vue de face, devant les chaises : opaque
     inkWash(g, [60,200, 420,200, 414,214, 66,214], M4_INK0, 0.4); inkLine(g, [60,200, 420,200, 414,214, 66,214, 60,200], n, 2.6);
     inkLine(g, [80,214, 80,230], n, 2.2); inkLine(g, [400,214, 400,230], n, 2.2);
-    if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
+    if (corp) m4Text(g, 'OMNICORP', 240, 96, 27, M4_INK0, 146);                                                      // intro de l'escarmouche : l'écran porte le nom de la corporation
+    else if (!omega){ const ls = cT(M4_TX.pVote).split('|'); let left = Math.floor((t-0.8)*18);
       ls.forEach((l, i) => { if (left > 0) m4Text(g, l.slice(0, left), 240, 70+i*22, i? 13 : 14, '#1f2a33', 148); left -= l.length; }); }
     else if (mode==='omega') m4Text(g, '« NOUS »', 240, 98, 40, '#0b6fa8', 140);                                 // A13 : le système change de nom (seconde planche)
     else { const k = ease(clamp((t-3.8)/0.6, 0, 1)); g.globalAlpha = k; m4Text(g, 'G·P·T v8', 240, 98, 30, M4_INK0, 140); g.globalAlpha = 1; }
