@@ -99,7 +99,16 @@ check(garH === 3 && await B.page.evaluate(() => garMax(game.e.slots[1].b)) === 3
 await A.page.evaluate(() => { game.p.morale = 90; game.p.martyrT = game.t + 15; }); await tick(2);
 const moG = await B.page.evaluate(() => [game.e.morale, (game.e.martyrT||0)-game.t]);
 check(Math.abs(moG[0]-90) <= 6 && moG[1] > 8 && moG[1] <= 16, `moral et martyr de l'hôte lus par l'invité (${moG.map(v=>v.toFixed(1))})`);
-check(await A.page.evaluate(() => NET_PROTO) >= 5, 'NET_PROTO incrémenté');
+// v1.18 : chaleur des machines (champ 16 des unités) et annonce du héros G·P·T traduite chez l'invité
+await A.page.evaluate(() => { spawnUnit(game.e, 0, false, 900); const u = game.e.units[game.e.units.length-1]; u.heat = 0.6; window.__hid = u.id; });
+await tick(1);
+const heatG = await B.page.evaluate((id) => { const u = game.p.units.find(v => v.id===id); return u? u.heat : -1; }, await A.page.evaluate(() => window.__hid));
+check(heatG > 0.45 && heatG < 0.65, `chaleur d'une machine de G·P·T lue par l'invité (${heatG.toFixed(2)})`);
+await A.page.evaluate(() => { const e = game.e; e.f = e.m = e.w = 99999; e.heroCd = 0; e.units = e.units.filter(u => u.role!=='hero'); e.heroAlive = false; tryHero(e); });
+await tick(2);
+const hmsg = await B.page.evaluate(() => ({ txt: game.msg && game.msg.txt, ia: tr('a_hero_ia') }));
+check(hmsg.txt && hmsg.txt.includes(hmsg.ia) && hmsg.txt.startsWith('◆ '), `annonce du héros de G·P·T dans la langue de l'invité (« ${hmsg.txt} »)`);
+check(await A.page.evaluate(() => NET_PROTO) >= 6, 'NET_PROTO incrémenté');
 check(!A.errs.length && !B.errs.length, 'aucune erreur JS'+((A.errs[0]||B.errs[0])? ' — '+(A.errs[0]||B.errs[0]) : ''));
 await browser.close();
 if (fails){ console.log('\n'+fails+' échec(s)'); process.exit(1); }
