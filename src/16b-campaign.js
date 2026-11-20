@@ -79,6 +79,8 @@ const CAMP_UI = {
   docHint:  {fr:"Le comité vous laisse choisir une ligne pour cette mission. Elle ne vaut que pour cette mission.", en:"The committee lets you choose one line for this mission. It applies to this mission only.", es:"El comité le deja elegir una línea para esta misión. Solo vale para esta misión.", de:"Das Komitee lässt Sie für diese Mission eine Linie wählen. Sie gilt nur für diese Mission.", it:"Il comitato le lascia scegliere una linea per questa missione. Vale solo per questa missione.", pt:"O comitê deixa você escolher uma linha para esta missão. Ela vale só para esta missão.", ru:"Комитет позволяет вам выбрать линию для этой миссии. Она действует только в этой миссии.", zh:"委员会让您为本次任务选择一条路线，仅对本次任务有效。", ar:"تترك لك اللجنة اختيار خطّ لهذه المهمة. لا يسري إلا عليها."},
   noDoc:    {fr:"Pas de doctrine pour cette première nuit : on part avec ce qu'on a.", en:"No doctrine for this first night: we go with what we have.", es:"No hay doctrina para esta primera noche: salimos con lo que tenemos.", de:"Keine Doktrin für diese erste Nacht: Wir ziehen mit dem los, was wir haben.", it:"Nessuna dottrina per questa prima notte: partiamo con quello che abbiamo.", pt:"Nenhuma doutrina para esta primeira noite: saímos com o que temos.", ru:"В эту первую ночь доктрины нет: идём с тем, что есть.", zh:"第一夜没有学说可选：我们有什么就带什么。", ar:"لا عقيدة في هذه الليلة الأولى: ننطلق بما لدينا."},
   chosen:   {fr:"CHOISIE", en:"CHOSEN", es:"ELEGIDA", de:"GEWÄHLT", it:"SCELTA", pt:"ESCOLHIDA", ru:"ВЫБРАНО", zh:"已选", ar:"مختارة"},
+  diffMore: {fr:"détail des réglages", en:"settings detail", es:"detalle de los ajustes", de:"Details der Einstellungen", it:"dettaglio delle impostazioni", pt:"detalhe dos ajustes", ru:"подробности настроек", zh:"设置详情", ar:"تفاصيل الإعدادات"},
+  docMore:  {fr:"détails", en:"details", es:"detalles", de:"Details", it:"dettagli", pt:"detalhes", ru:"подробнее", zh:"详情", ar:"التفاصيل"},
   effect:   {fr:"EFFET", en:"EFFECT", es:"EFECTO", de:"WIRKUNG", it:"EFFETTO", pt:"EFEITO", ru:"ЭФФЕКТ", zh:"效果", ar:"الأثر"},
   minus:    {fr:"EN CONTREPARTIE", en:"THE TRADE-OFF", es:"A CAMBIO", de:"DER PREIS", it:"IN CAMBIO", pt:"EM TROCA", ru:"ЦЕНА ВЫБОРА", zh:"代价", ar:"في المقابل"},
   launch:   {fr:"LANCER LA MISSION", en:"START THE MISSION", es:"INICIAR LA MISIÓN", de:"MISSION STARTEN", it:"AVVIA LA MISSIONE", pt:"INICIAR A MISSÃO", ru:"НАЧАТЬ МИССИЮ", zh:"开始任务", ar:"ابدأ المهمة"},
@@ -782,11 +784,11 @@ window.addEventListener('keydown', e=>{
    Ouvert par le carnet (menu), par « mission suivante » et par « réessayer » : récit, lieu, objectif(s),
    règle du lieu, conseils, difficulté, doctrine (deux fiches), puis LANCER → cinématique → mission.
    Musique de fond : thème 'c_map' s'il existe (03-audio), sinon 'carnet'.                                   */
-const CAMP_BRIEF = { open:false, i:0 };
+const CAMP_BRIEF = { open:false, i:0, diffOpen:false, docOpen:{} };   // diffOpen / docOpen : sections dépliées du briefing (repliées à l'ouverture)
 function campBriefOpen(i){
   i = clamp(i|0, 0, Math.min(CAMPAIGN.length-1, CAMP_SAVE.done)); if (!CAMPAIGN[i]) return;
   if (typeof game!=='undefined' && game && game.camp){ if (CINE.on) cineEnd(true); game = null; }   // on quitte la mission terminée
-  CAMP_BRIEF.open = true; CAMP_BRIEF.i = i;
+  CAMP_BRIEF.open = true; CAMP_BRIEF.i = i; CAMP_BRIEF.diffOpen = false; CAMP_BRIEF.docOpen = {};
   $('menu').style.display = 'none'; $('endscreen').style.display = 'none';
   intro = -1; pendingStart = null; paused = false; settingsOpen = false; buildMenu = null;
   try { audioInit(); musicStart(); } catch(e){}
@@ -822,7 +824,10 @@ function campBriefRender(){
   const ht = el('div', 'cbHT'); ht.appendChild(el('div', 'cbKick', cT(CAMP_UI.carnet)+' '+(m.num||'')+' · '+campWhen(m)));
   ht.appendChild(el('div', 'cbTitle', cT(m.title))); ht.appendChild(el('div', 'cbPlace', cT(m.place)));
   head.appendChild(ht); sheet.appendChild(head);
-  const body = el('div', 'cbBody'); sheet.appendChild(body);
+  const bwrap = el('div', 'cbBodyWrap'), body = el('div', 'cbBody'), shade = el('div', 'cbShade');      // l'ombre du bas dit qu'il reste du contenu à faire défiler
+  bwrap.appendChild(body); bwrap.appendChild(shade); sheet.appendChild(bwrap);
+  const syncShade = () => shade.classList.toggle('on', body.scrollTop+body.clientHeight < body.scrollHeight-4);
+  body.addEventListener('scroll', syncShade, { passive:true }); setTimeout(syncShade, 0); requestAnimationFrame(syncShade);
   const L = el('div', 'cbCol'), R = el('div', 'cbCol'); body.appendChild(L); body.appendChild(R);
   // récit
   { const s = sec(cT(CAMP_UI.recap), null, 1, 1);
@@ -846,26 +851,38 @@ function campBriefRender(){
       b.addEventListener('click', ()=>{ CAMP_SAVE.diff = k; campSave(); campBriefRender(); }); row.appendChild(b); });
     s.appendChild(row); const D = campDiff(CAMP_SAVE.diff); if (m.dAdj && m.dAdj[D.i]) Object.assign(D, m.dAdj[D.i]);   // comme startMission()
     s.appendChild(el('p', 'cbDiffTag', cT(CAMP_UI['dTag'+D.i])));
-    const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); s.appendChild(ul);
+    // les lignes chiffrées sont repliées derrière « détail des réglages ▸ » (la phrase en italique suffit à choisir)
+    const det = el('details', 'cbDiffMore'); if (CAMP_BRIEF.diffOpen) det.open = true;
+    const sm = el('summary', null, cT(CAMP_UI.diffMore)); sm.dataset.ar = SETTINGS.lang==='ar'? '1' : ''; det.appendChild(sm);
+    det.addEventListener('toggle', ()=>{ CAMP_BRIEF.diffOpen = det.open; setTimeout(syncShade, 0); });
+    const ul = el('ul', 'cbDiffLines'); for (const l of campDiffLines(D, m)) ul.appendChild(el('li', null, l)); det.appendChild(ul); s.appendChild(det);
     L.appendChild(s); }                                                        // colonne de gauche, sous « Où nous sommes »
   // doctrine : le titre et l'indication à gauche, les deux fiches (explications longues) en pleine largeur dessous
   { const s = sec(cT(CAMP_UI.doc), 'cbDocHead', 4, 7), pair = campDocPair(i);
-    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc))); L.appendChild(s);
+    s.appendChild(el('p', 'cbHint', cT(pair? CAMP_UI.docHint : CAMP_UI.noDoc))); body.appendChild(s);       // titre + consigne en pleine largeur, juste au-dessus des deux fiches
     if (pair){ const cards = el('div', 'cbCards'); cards.style.setProperty('--o', 5); cards.style.setProperty('--op', 8);
       pair.forEach((id,k)=>{ const d = DOCTRINES[id], sel = (CAMP_SAVE.doc[i]? 1 : 0)===k;
         const cd = el('div', 'cbDoc'+(sel? ' sel' : '')); cd.setAttribute('role', 'button'); cd.tabIndex = 0;
         cd.appendChild(el('span', 'cbMark', cT(CAMP_UI.chosen)));
         cd.appendChild(el('b', 'cbDocName', cT(d.name))); cd.appendChild(el('i', 'cbDocShort', cT(d.short)));
+        // fiche compacte : nom, devise, 2 lignes d'EFFET, 1 ligne de CONTREPARTIE ; le reste (« utile ici parce que… », texte long) se déplie au clic
+        const eff = docEffects(d, m.era0||0), good = eff.filter(l=>!l.bad), bad = eff.filter(l=>l.bad);
         const fx = el('div', 'cbFx'); fx.appendChild(el('h5', null, cT(CAMP_UI.effect))); const ul = el('ul');
-        const eff = docEffects(d, m.era0||0);
-        for (const l of eff) if (!l.bad) ul.appendChild(el('li', null, l.txt)); fx.appendChild(ul); cd.appendChild(fx);
-        if (m.docWhy && m.docWhy[id]) cd.appendChild(el('p', 'cbWhy', cT(m.docWhy[id])));            // « Utile ici parce que… » (propre à la mission)
-        cd.appendChild(el('p', 'cbDocLong', cT(d.long)));
-        const bad = eff.filter(l=>l.bad);
-        if (d.minus || bad.length){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus)));
-          if (bad.length){ const ub = el('ul'); for (const l of bad) ub.appendChild(el('li', null, l.txt)); mi.appendChild(ub); }
-          if (d.minus) mi.appendChild(el('p', null, cT(d.minus))); cd.appendChild(mi); }
-        const pick = ()=>{ if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
+        for (const l of good.slice(0,2)) ul.appendChild(el('li', null, l.txt)); fx.appendChild(ul); cd.appendChild(fx);
+        const minus1 = bad.length? bad[0].txt : d.minus? cT(d.minus) : '';
+        if (minus1){ const mi = el('div', 'cbMinus'); mi.appendChild(el('h5', null, cT(CAMP_UI.minus))); mi.appendChild(el('p', null, minus1)); cd.appendChild(mi); }
+        const more = el('div', 'cbDocMore');
+        if (good.length>2){ const u2 = el('ul', 'cbFx'); for (const l of good.slice(2)) u2.appendChild(el('li', null, l.txt)); more.appendChild(u2); }
+        if (m.docWhy && m.docWhy[id]) more.appendChild(el('p', 'cbWhy', cT(m.docWhy[id])));            // « Utile ici parce que… » (propre à la mission)
+        more.appendChild(el('p', 'cbDocLong', cT(d.long)));
+        if (bad.length>1 || (bad.length && d.minus)){ const mi = el('div', 'cbMinus'), ub = el('ul');
+          for (const l of bad.slice(1)) ub.appendChild(el('li', null, l.txt)); if (bad.length>1) mi.appendChild(ub);
+          if (bad.length && d.minus) mi.appendChild(el('p', null, cT(d.minus))); if (mi.childNodes.length) more.appendChild(mi); }
+        cd.appendChild(more);
+        const open = !!CAMP_BRIEF.docOpen[k]; if (open) cd.classList.add('open');
+        cd.appendChild(el('span', 'cbMore', cT(CAMP_UI.docMore)+(open? ' ▾' : (SETTINGS.lang==='ar'? ' ◂' : ' ▸'))));
+        const pick = ()=>{ if (sel) CAMP_BRIEF.docOpen[k] = !CAMP_BRIEF.docOpen[k]; else { CAMP_BRIEF.docOpen = {}; CAMP_BRIEF.docOpen[k] = true; }    // choisir déplie la fiche ; re-cliquer la replie
+          if (k) CAMP_SAVE.doc[i] = 1; else delete CAMP_SAVE.doc[i]; campSave(); campBriefRender(); };
         cd.addEventListener('click', pick); cd.addEventListener('keydown', ev=>{ if (ev.key==='Enter' || ev.key===' '){ ev.preventDefault(); pick(); } });
         cards.appendChild(cd); });
       body.appendChild(cards); }
