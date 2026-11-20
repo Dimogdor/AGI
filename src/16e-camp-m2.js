@@ -588,18 +588,26 @@ function m2Drones(g, c, n){
   if (hi - lo < 20) return;
   for (let i=0;i<n;i++) m2Spawn(g, c, 4, 0, lo + Math.random()*(hi-lo));
 }
+// v1.18 : le NIVEAU joue sur le nombre et l'intervalle des barges (avant : même déroulé partout, seule la force du cortège changeait).
+// Dates d'arrivée par tronçon, en s depuis l'entrée du tronçon : [Récit, Lutte, Dernier carré] (Lutte = ancien déroulé).
+const M2_BARGE_T = [ [[0,30],[0,26,52],[0,22,44,66]],          // tronçon 0 (dates relatives à l'arrivée au quai 600)
+                     [[12,46],[10,38],[8,30,52]],              // tronçon 1
+                     [[8,42],[6,36],[5,28,50]] ];              // tronçon 2
 const M2_BARGE_ROLES = [[[0,0],[0,0],[0,0],[2,0]], [[0,0],[0,0],[0,1],[0,1]], [[1,0],[0,1],[0,1],[0,1]]];   // [rôle, ère] par barge : bots + drone laser / bots + agents / châssis lourd + agents
 function m2Plan(g, c){                                                   // chronologie des arrivées, par tronçon (temps depuis l'entrée)
   const s = c.seg, dt = c.t - c.segT[s];
   if (s===0){
     if (!c.t1 && c.mx >= 600){ c.t1 = c.t; c.n1 = 0; }
-    if (c.t1!=null && c.n1 < 3 && c.t - c.t1 >= 26*c.n1){ if (m2Barge(g, c, M2_BARGE_ROLES[0])) c.n1++; else c.n1 = 3; }
+    const T0 = M2_BARGE_T[0][c.D.i];
+    if (c.t1!=null && c.n1 < T0.length && c.t - c.t1 >= T0[c.n1]){ if (m2Barge(g, c, M2_BARGE_ROLES[0])) c.n1++; else c.n1 = T0.length; }
     if (c.D.i>=1 && c.t >= 25 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
   } else if (s===1){
-    if (c.n2 < 2 && dt >= [10,38][c.n2]){ if (m2Barge(g, c, M2_BARGE_ROLES[1])) c.n2++; else c.n2 = 2; }
+    const T1 = M2_BARGE_T[1][c.D.i];
+    if (c.n2 < T1.length && dt >= T1[c.n2]){ if (m2Barge(g, c, M2_BARGE_ROLES[1])) c.n2++; else c.n2 = T1.length; }
     if (dt >= 8 && c.t >= (c.dT||0)){ c.dT = c.t + 30; m2Drones(g, c, 2); }
   } else if (s===2){
-    if (c.n3 < 2 && dt >= [6,36][c.n3]){ if (m2Barge(g, c, M2_BARGE_ROLES[2])) c.n3++; else c.n3 = 2; }
+    const T2 = M2_BARGE_T[2][c.D.i];
+    if (c.n3 < T2.length && dt >= T2[c.n3]){ if (m2Barge(g, c, M2_BARGE_ROLES[2])) c.n3++; else c.n3 = T2.length; }
   } else if (c.term.active && !c.term.dead){
     if (c.t >= c.term.nextT){ const k = c.term.n++, early = c.t - c.term.t0 < 60;
       c.term.nextT = c.t + (early? 6 : 12);
