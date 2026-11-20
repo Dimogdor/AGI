@@ -1,4 +1,4 @@
-# Avancement — v1.17 (mis à jour par l'orchestrateur à chaque étape)
+# Avancement — v1.18 (mis à jour par l'orchestrateur à chaque étape)
 
 Branche de travail : `claude/age-of-war-online-balance-xn6ump` · v1.17.0 livrée (cd47236, PR #58). Prochaine étape : retours de l'auteur ; Fable en second avis quand disponible.
 Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'auteur : `docs/DECISIONS.md`.
@@ -14,4 +14,5 @@ Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'au
 | fin | Audit indépendant (12 constats) → corrigés, version 1.17.0 | dev-gameplay | **intégré** | Soulèvement gardé à 50 % (mesures) |
 | fin | Conseiller (opus ; Fable indisponible) : unités/héros, planches, campagne (carnet de fin, briefing), HUD/textes | dev-ui ×4 | **intégré** | Fable en second avis plus tard |
 | fin | Livraison v1.17 | orchestrateur | **livrée** (cd47236) : Pages 1.17.0, AAB Android signé | — |
-| v1.18 | Audit complet n°2 avec Opus en conseiller (lecture seule) : technique, équilibrage, graphismes et cohérence | reviewer opus ×3 | **fait** (docs/audit/v1.17-audit2/) | lots 1 (bugs) et 4 (graphismes) **intégrés** ; 2 (équilibrage), 3a (interface, textes, arabe), 3b (intro en planches, retouches) en cours |
+| v1.18 | Audit complet n°2 avec Opus en conseiller (lecture seule) : technique, équilibrage, graphismes et cohérence | reviewer opus ×3 | **fait** (docs/audit/v1.17-audit2/) | — |
+| v1.18 | Lots 1 (bugs), 2 (équilibrage), 3a (interface, textes, arabe), 3b (intro en planches), 4 (graphismes) | dev-gameplay, dev-ui ×3 | **intégrés**, version 1.18.0 | livraison ; restes dans ROADMAP « À venir » |
