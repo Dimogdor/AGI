@@ -17,3 +17,5 @@ Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'au
 | v1.18 | Audit complet n°2 avec Opus en conseiller (lecture seule) : technique, équilibrage, graphismes et cohérence | reviewer opus ×3 | **fait** (docs/audit/v1.17-audit2/) | — |
 | v1.18 | Lots 1 (bugs), 2 (équilibrage), 3a (interface, textes, arabe), 3b (intro en planches), 4 (graphismes) | dev-gameplay, dev-ui ×3 | **intégrés**, version 1.18.0 | — |
 | v1.18 | Livraison v1.18 | orchestrateur | **livrée** (d5ee505, PR #59) : Pages 1.18.0, AAB Android signé | restes dans ROADMAP « À venir » ; Fable en second avis |
+| v1.19 | Restes de l'audit n°2 — interface : noms et aviation de l'ère III, jean de l'ère I, briefing M4/M5 | dev-ui | en cours (worktree) | — |
+| v1.19 | Restes de l'audit n°2 — équilibrage : banc B, impasses en Brutal, M5 (acte II, Dernier carré), M2 (cortège) | dev-gameplay | en cours (worktree) | — |
