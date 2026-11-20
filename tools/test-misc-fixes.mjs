@@ -46,6 +46,35 @@ const h = await page.evaluate(async () => { newGame('HUM', 1, false); game.aiThi
   const n1 = n; for (let i=0;i<10;i++) update(0.1); const n2 = n; window.sfxAt = o; return { n0, n1, n2 }; });
 check(h.n0===0 && h.n1===0, 'pas de détonation tant que la simulation ne tourne pas (pause, menu)');
 check(h.n2===1, 'une seule détonation, ~0,6 s de jeu après le flash ('+h.n2+')');
+console.log('\nTRAÎNÉE D\'OBUS (invité) — pas de fumée fantôme');
+const tf = await page.evaluate(async () => { const o = game.net; game.net = 'guest'; _guestTrails.clear();
+  const pr = () => ({ sx:100, tx:500, fac:'HUM' });
+  const a = shellTrailFor(pr()); a.push([1,1],[2,2],[3,3]);
+  const b = shellTrailFor(pr()).length;                                       // même obus, instantané suivant : la traînée continue
+  await new Promise(r => setTimeout(r, 320));
+  const c = shellTrailFor(pr()).length;                                       // obus identique 320 ms plus tard : repart de zéro
+  game.net = o; _guestTrails.clear(); return { b, c }; });
+check(tf.b===3 && tf.c===0, 'traînée conservée entre deux instantanés, vidée après 250 ms ('+tf.b+' / '+tf.c+')');
+console.log('\nTÉLÉPHONE 844×390 — « ? » de l\'objectif et repli « Facultatif »');
+for (const lang of ['fr', 'ar']) {
+  const ctx2 = await browser.newContext({ viewport:{ width:844, height:390 }, hasTouch:true, isMobile:true });
+  const p2 = await ctx2.newPage(); const e2 = []; p2.on('pageerror', e => e2.push(e.message));
+  await p2.addInitScript((lang) => { window.requestAnimationFrame = () => 0; localStorage.setItem('agi_langChosen','1'); localStorage.setItem('agi_tutoSeen','1'); localStorage.setItem('agi_introSeen','1');
+    localStorage.setItem('agi_settings', JSON.stringify({ quality:'low', lang, music:false, sfx:false })); localStorage.removeItem('agi_camp'); }, lang);
+  await p2.goto(GAME); await p2.waitForTimeout(300);
+  const m = await p2.evaluate(() => { document.getElementById('menu').style.display = 'none'; CAMP_SAVE.done = 4; startMission(0); cineEnd();
+    for (let i=0;i<4;i++){ game.aiThink = 1e9; update(0.05); } ctx.setTransform(SCALE,0,0,SCALE,0,0); render(1/60);
+    const c = game.camp, k = uiK(), r = cv.getBoundingClientRect();
+    return { helpX:c.helpRect.x, helpW:c.helpRect.w, clockR:HUD.clockR, objX:c.objRect.x, optH:c.optRect? c.optRect.h*k : 0, W,
+      tap:c.optRect? { x:r.left+(c.optRect.x+c.optRect.w/2)*k, y:r.top+(c.optRect.y+c.optRect.h-2)*k } : null }; });
+  check(m.helpX >= m.clockR+3, `${lang} : le « ? » ne mord pas sur le chrono de la frise (? à ${m.helpX.toFixed(0)}, chrono jusqu'à ${m.clockR.toFixed(0)})`);
+  check(m.helpX+m.helpW <= m.objX, `${lang} : le « ? » reste à gauche de l'objectif`);
+  check(m.optH >= 32, `${lang} : zone tactile du repli ${m.optH.toFixed(1)} px CSS de haut (≥ 32)`);
+  if (m.tap){ await p2.touchscreen.tap(m.tap.x, m.tap.y); await p2.waitForTimeout(100);
+    check(await p2.evaluate(() => !!game.camp.optOpen), `${lang} : un toucher sur le bord bas de la zone déplie les objectifs facultatifs`); }
+  check(!e2.length, `${lang} : aucune erreur JS`+(e2[0]? ' — '+e2[0] : ''));
+  await ctx2.close();
+}
 check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
 await browser.close();
 if (fails){ console.log('\n'+fails+' échec(s)'); process.exit(1); }

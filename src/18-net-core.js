@@ -37,11 +37,13 @@ function serialize(){
   const u2 = u => { const a = [u.id, ROLE_CODES[u.role], Math.round(u.x), Math.round(u.hp), Math.round(u.maxhp),
     u.era, u.fac==='HUM'?0:1, u.side, u.fly?1:0, u.flyH|0, u.vet?1:0, u.tiredT>0?1:0, u.trans?1:0,
     (u.atkT>u.rate-0.12?1:0)];
-    if (u.role==='hero') a.push(((u.atkN|0)&7) | (u.hstate==='flee'? 8:0) | ((u.gestT!=null && game.t-u.gestT<1.1)? 16:0));
+    a.push(u.role==='hero'? (((u.atkN|0)&7) | (u.hstate==='flee'? 8:0) | ((u.gestT!=null && game.t-u.gestT<1.1)? 16:0)) : 0);
+    a.push(Math.round(Math.max(0, Math.min(1, u.heat||0))*100));         // 16e champ : chaleur de la machine (0-100), v6
     return a; };
   return {
     t:game.t, sv:game.speed||1, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
+    wc:Math.round(game.wClock||0),
     wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
@@ -167,6 +169,7 @@ function applySnapshot(snap){
   const ck = isIdx(snap.ca, CATA_KEYS.length)? CATA_KEYS[snap.ca] : null;
   g.cata = ck; g.cataT = SN(snap.cat, 0, 600); g.cataDur = ck? CATAS[ck].dur : 0;
   g.cataX = WORLD - SN(snap.cax, 0, WORLD);
+  g.wClock = SN(snap.wc, 0, 150);                              // compte à rebours couvre-feu / mise à jour
   g.winter = !!snap.wi; g.winterT = SN(snap.wt, 0, 3600);
   // l'armée de l'invité = canonical 'e' → devient le local p (à gauche) ; mirroir des x
   const fillSide = (loc, ser)=>{
@@ -210,6 +213,7 @@ function applySnapshot(snap){
       atkT:a[13]?1:0, rate:1, bob:Math.random()*6.28, flash:0, range:role==='ranged'||role==='siege'||role==='air'?150:16 };
     // CONTINUITÉ D'ANIMATION : l'unité est recréée à chaque instantané — on reprend la phase de marche
     // et l'état de rendu de son prédécesseur (sinon la démarche hachait et l'apparition rejouait sans fin)
+    u.heat = SN(a[15], 0, 100)/100;
     if (role==='hero'){ const hb = SN(a[14], 0, 31)|0; u.atkN = hb&7; u.hstate = (hb&8)? 'flee' : null; u._hg = !!(hb&16); }
     const pv = GV[id];
     if (role==='hero'){ if (pv){ u._h = pv._h; u.gestT = pv.gestT; } if (u._hg && !(pv && pv._hg)) u.gestT = g.t; }

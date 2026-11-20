@@ -597,7 +597,8 @@ function drawCampHUD(){
   const c = game.camp; if (!c || game.over) return;
   const pal = uiPal(), m = c.m, h = (m.hud? m.hud(game, c) : null) || {};
   // OBJECTIF : étiquette de papier sous le bandeau, à droite — toujours visible, progression comprise
-  const q = uiPx(10)/10, w = clamp(Math.round(W*0.23*q), 236, Math.min(W*0.45, 300*q)), x = W-w-8, y = 43;   // q > 1 : petit écran, textes relevés à 11 px réels
+  const q = uiPx(10)/10, wMax = Math.max(236, W-8-((HUD.clockR||0)+4+31)),                  // le « ? » (27 px + 4) tient entre le chrono de la frise et l'objectif
+    w = clamp(Math.round(W*0.23*q), 236, Math.min(W*0.45, 300*q, wMax)), x = W-w-8, y = 43;   // q > 1 : petit écran, textes relevés à 11 px réels
   ctx.font = uiF(pal,'cond',uiPx(11.5)); const lines = newsWrap(cT(c.goalTxt || m.goal), w-18).slice(0,3);
   const bar = h.prog!=null || h.clock!=null, g2 = !!m.goal2;
   // objectifs facultatifs : une ligne chacun (☐ / ☑) ; en paysage de téléphone, repliés en « Facultatif 1/3 ▸ » (toucher pour déplier)
@@ -626,7 +627,8 @@ function drawCampHUD(){
   if (opts){ const rtl = SETTINGS.lang==='ar', nOk = opts.filter(o=>o.st>0).length;
     ctx.font = uiPx(8.5)+'px '+UI_TYPE; ctx.fillStyle = nOk===opts.length? pal.ok : pal.ink2; ctx.textAlign = 'left';
     ctx.fillText(cT(CAMP_UI.opt)+' '+nOk+'/'+opts.length+(compact? (oOpen? ' ▾' : (rtl? ' ◂' : ' ▸')) : ''), x+9, yy+6*q);
-    if (compact) c.optRect = { x, y:yy-2, w, h:16*q };
+    if (compact){ const oh = Math.max(16*q, 34/uiK()), up = (oh-16*q)*0.7;   // zone tactile ≥ 32 px CSS : agrandie surtout vers le haut (texte de l'objectif, non cliquable)
+      c.optRect = { x, y:Math.max(y, yy-2-up), w, h:oh }; }
     if (oOpen) opts.forEach((o, k) => { const ly = yy + (19 + k*12)*q;
       ctx.strokeStyle = o.st>0? pal.ok : o.st<0? pal.ink2 : pal.ink; ctx.lineWidth = 1.2; ctx.strokeRect(x+9.5, ly-4.5, 8, 8);
       if (o.st>0){ ctx.beginPath(); ctx.moveTo(x+11, ly); ctx.lineTo(x+13.5, ly+2.5); ctx.lineTo(x+18.5, ly-5); ctx.stroke(); }

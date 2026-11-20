@@ -2,6 +2,7 @@
 // échappement HTML : en ligne, une partie des valeurs affichées vient de l'autre joueur
 const escH = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function showEnd(){
+  if (typeof campCredits==='function') campCredits(false);
   if (!game || !game.over) return;           // partie quittée/relancée pendant le délai de 1,1 s : rien à afficher
   const et = document.getElementById('endtitle'), s = document.getElementById('endstats');
   const camp = game.camp || null;

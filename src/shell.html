@@ -357,7 +357,7 @@
   @media (max-height:520px){ #endscreen.camp #endart { width:min(250px,32vw); margin:0 -20px 0 0; position:relative; z-index:2; border-width:5px; border-bottom-width:16px; }
     #endscreen.camp #endtitle { font-size:clamp(22px,7vh,34px); margin:8px 0 8px; } #endscreen.camp .endSheet { width:min(520px,64vw); } }
   /* crédits (après la mission V) */
-  #credits { position:absolute; inset:0; z-index:14; display:none; align-items:center; justify-content:center; padding:10px 14px; overflow-y:auto;
+  #credits { position:absolute; inset:0; z-index:14; display:none; pointer-events:auto; max-height:100%; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; align-items:center; justify-content:center; padding:10px 14px; overflow-y:auto;
     background:radial-gradient(ellipse at 50% 35%, rgba(26,16,14,.9) 0%, rgba(6,5,5,.98) 75%); font-family:'AGI Type','Courier New',monospace; color:#1f1b17; }
   #credits .crSheet { width:min(520px,94vw); margin:auto; padding:18px clamp(16px,4vw,32px) 20px; text-align:center; transform:rotate(-.5deg);
     background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); box-shadow:0 18px 40px rgba(0,0,0,.6); }
@@ -366,7 +366,7 @@
   #credits .crRow { margin:0 0 12px; line-height:1.4; font-size:clamp(12px,2vh,14.5px); }
   #credits .crRow b { display:block; font-family:'AGI Stencil','AGI Cond',Impact,sans-serif; font-weight:800; font-size:.9em; letter-spacing:.1em; text-transform:uppercase; color:#4d453b; }
   #credits .crEnd { display:block; margin:16px 0 10px; padding-top:10px; border-top:1px dashed rgba(31,27,23,.35); color:#4d453b; line-height:1.45; }
-  #credits .go { margin-top:6px; }
+  #credits .go { margin-top:6px; position:sticky; bottom:0; min-height:40px; cursor:pointer; }
   #endscreen.fac-ia .go { font-family:'AGI Term','Courier New',monospace; font-weight:400; background:var(--red); transform:none; border-radius:0; box-shadow:4px 4px 0 var(--ink); }
   /* écrans bas (≈ 1280×720) : illustration réduite et boutons côte à côte, tout tient sans défiler */
   @media (min-height:521px) and (max-height:800px){ #endart { width:min(250px,60vw); margin-bottom:-18px; }
