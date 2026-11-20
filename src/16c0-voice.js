@@ -49,7 +49,8 @@ function voiceIndex(L){
     VOICE.idx[L] = m && Object.keys(m).length? m : null; return VOICE.idx[L]; });
   return undefined;
 }
-const voiceText = txt => typeof txt==='string'? txt : cT(txt);
+// les insécables de la typographie française (U+00A0, U+202F) n'entrent pas dans l'empreinte : l'index a été généré avec des espaces simples
+const voiceText = txt => (typeof txt==='string'? txt : cT(txt)).replace(/[\u00A0\u202F]/g, ' ');
 // durée (s) de la réplique dans la langue courante, 0 si elle n'a pas de voix
 function voiceDur(who, txt){
   if (!SETTINGS.voice || !who) return 0;
