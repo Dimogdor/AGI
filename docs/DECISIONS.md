@@ -31,3 +31,8 @@
   Reste ouvert : niveaux de bot 1 et 3 de B à ~40 %, bench E instable d'une graine à l'autre. Détails : `docs/audit/FACTIONS-BALANCE.md`.
 - **2026-11 · Conseiller final v1.17 (auteur)** : Fable bloqué par la limite de dépense mensuelle → même brief confié à opus (lecture seule) ;
   Fable sera relancé en second avis s'il redevient disponible avant la livraison.
+- **2026-11 · Arbitrages après l'audit n°2 (auteur)** : plan complet validé (4 lots → v1.18). Le Che reste le héros humain
+  PARTOUT (campagne comprise). Intro de l'escarmouche refaite en planches à l'encre (planches de campagne existantes), textes
+  alignés sur la bible. Devise d'ère V « TOUT EST À NOUS » (au lieu de « COMMUNISME À VISAGE HUMAIN »), ☭ conservé. Unités
+  renommées selon leur dessin : Porte-panneau, Bouclier de mine, Mineur de choc, Canon solaire, Bot vigile, Bot de maintenance,
+  Drone de cellule (9 langues).
