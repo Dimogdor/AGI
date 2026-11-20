@@ -471,7 +471,8 @@ function tryHero(side){
   }
   if (side===game.p){ game.flash=0.8; game.shake=16; }
   // révélation surprise : on ne nomme la légende qu'à l'instant de l'invocation
-  announce(side.facKey==='HUM'? tr('a_hero_hum') : '◆ '+heroNameOf('IA', side.era)+' — '+tr('a_hero_ia'), side.fac.accent);
+  if (side.facKey==='HUM') announce(tr('a_hero_hum'), side.fac.accent);
+  else announce('◆ '+heroNameOf('IA', side.era)+' — '+tr('a_hero_ia'), side.fac.accent, {q:'a_hero_ia', pr:'◆ '+heroNameOf('IA', side.era)+' — '});   // clé + préfixe : l'invité traduit
   return true;
 }
 function spawnHero(side, power){
