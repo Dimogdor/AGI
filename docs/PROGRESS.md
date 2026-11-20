@@ -14,3 +14,4 @@ Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'au
 | fin | Audit indépendant (12 constats) → corrigés, version 1.17.0 | dev-gameplay | **intégré** | Soulèvement gardé à 50 % (mesures) |
 | fin | Conseiller (opus ; Fable indisponible) : unités/héros, planches, campagne (carnet de fin, briefing), HUD/textes | dev-ui ×4 | **intégré** | Fable en second avis plus tard |
 | fin | Livraison v1.17 | orchestrateur | **livrée** (cd47236) : Pages 1.17.0, AAB Android signé | — |
+| v1.18 | Audit complet n°2 avec Opus en conseiller (lecture seule) : technique, équilibrage, graphismes et cohérence | reviewer opus ×3 | en cours | rapport consolidé → plan présenté à l'auteur |
