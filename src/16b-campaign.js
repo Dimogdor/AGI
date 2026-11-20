@@ -251,8 +251,8 @@ const DOCTRINES = {
       ru:"Sol удвоила антенну на крыше и взяла ещё двух радисток: каждый вызов проходит быстрее, каждый приказ приходит вовремя. Особое действие миссии (шлюзы, вызов ячеек…) перезаряжается заметно быстрее — сделайте его главным оружием.",
       zh:"Sol把屋顶的天线加倍了，还多招了两名接线员：每次呼叫都更快接通，每道命令都能及时送达。任务专属行动（开闸、呼叫小组……）的充能明显加快——把它当成您的主要武器吧。",
       ar:"ضاعفت Sol الهوائي على السطح وجنّدت مشغّلتين إضافيتين: كل نداء يمرّ أسرع، وكل أمر يصل في وقته. يُشحن الإجراء الخاص بالمهمة (البوابات، نداء الخلايا…) أسرع بوضوح — اجعله سلاحك الرئيسي."},
-    minus:{fr:"L'antenne a coûté cher, et personne ne vient en plus sur le terrain.", en:"The aerial cost a lot, and nobody extra joins you in the field.", es:"La antena costó cara, y nadie más se une sobre el terreno.", de:"Die Antenne war teuer, und niemand kommt zusätzlich ins Feld.", it:"L'antenna è costata cara, e nessuno in più scende in campo.", pt:"A antena custou caro, e ninguém a mais entra em campo.", ru:"Антенна обошлась дорого, и на поле никто не прибавится.", zh:"天线花了不少钱，战场上也不会多出任何人。", ar:"كلّف الهوائي كثيرًا، ولا أحد إضافي ينضمّ في الميدان."},
-    fx:{ actCd:0.65, warn:4, res:0.9 } },
+    minus:{fr:"Aucun renfort ni réserve en plus : seule l'antenne y gagne.", en:"No extra troops or reserves: only the aerial benefits.", es:"Ni refuerzos ni reservas extra: solo gana la antena.", de:"Keine zusätzlichen Truppen oder Vorräte: nur die Antenne profitiert.", it:"Nessun rinforzo né riserva in più: ci guadagna solo l'antenna.", pt:"Nenhum reforço nem reserva extra: só a antena ganha.", ru:"Ни подкрепления, ни запасов сверх обычного: выигрывает только антенна.", zh:"没有额外的援军或储备：只有天线得到加强。", ar:"لا تعزيزات ولا مخزون إضافي: الهوائي وحده يستفيد."},
+    fx:{ actCd:0.65, warn:4 } },
 };
 const campDocPair = i => { const m = CAMPAIGN[i]; return (m && m.doctrines && m.doctrines.length===2)? m.doctrines : null; };
 const campDoc = i => { const pair = campDocPair(i); return pair? DOCTRINES[pair[CAMP_SAVE.doc[i]? 1 : 0]] : null; };
@@ -274,7 +274,7 @@ function docEffects(d, era){ const f = d.fx || {}, out = [], add = (o, n, bad) =
   if (f.squad){ const n = {}; f.squad.forEach(r=>{ n[r] = (n[r]||0)+1; });
     out.push({ txt:cT(CAMP_UI.fxSquad).replace('{list}', Object.keys(n).map(r=> n[r]+' × '+lUnit('HUM', ROLES[r].key, era|0)).join(', ')) });
     if (f.vet) add(CAMP_UI.fxVet, ''); }
-  if (f.actCd) add(CAMP_UI.fxAct, campPct(2-f.actCd).replace('+',''));
+  if (f.actCd) add(CAMP_UI.fxAct, campPct(1/f.actCd).replace('+',''));   // recharge ×1/actCd : 0,65 → « 54 % plus vite » (campPct(2-actCd) affichait un faux « 35 % »)
   if (f.warn) add(CAMP_UI.fxWarn, f.warn);
   if (f.cap) add(CAMP_UI.fxCap, (f.cap>0? '+' : '−')+Math.abs(f.cap), f.cap<0);
   return out; }
