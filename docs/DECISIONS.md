@@ -36,3 +36,7 @@
   alignés sur la bible. Devise d'ère V « TOUT EST À NOUS » (au lieu de « COMMUNISME À VISAGE HUMAIN »), ☭ conservé. Unités
   renommées selon leur dessin : Porte-panneau, Bouclier de mine, Mineur de choc, Canon solaire, Bot vigile, Bot de maintenance,
   Drone de cellule (9 langues).
+- **2026-11 · Équilibrage v1.19 (orchestrateur)** : cause des parties sans fin trouvée (`formationWant` ancrait la colonne sur mêlée/tank :
+  une armée de tireurs seuls restait plantée ; la porte de M5 acte II n'était jamais attaquée). Recalage : Couvre-feu `strikeProd` 0,5 → 0,8,
+  riposte des figés 0,3 → 0,5, aura de la Singularité 6 → 5 (réglage de calibrage, comme 7 → 6 ; sans aura l'Humanité gagne ~27 points de plus),
+  Normal `inc` 0,4 → 0,7, Brutal `cheat` 1,7 → 1,8. Détails : `docs/audit/FACTIONS-BALANCE.md`.

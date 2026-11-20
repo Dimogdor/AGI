@@ -35,11 +35,19 @@
 - Interface : bandeaux uniques, fiches d'unités compactes sur téléphone, coûts en icônes, refroidissement lisible,
   OUI/NON, briefing compact, police arabe système, écarts de traduction corrigés.
 
+## Fait — v1.19 (restes de l'audit n°2)
+- Ère III humaine civile : Tireur de toit, Tube à fusées, Autogire de récup (appareil bricolé, plus de jet rouge), Médic de barricade ;
+  jean de l'ère I réchauffé ; briefing sans défilement en 1280×720 dans les 9 langues.
+- Équilibrage : formation corrigée (une armée sans mêlée ni tank avance ; la garde « tenir » n'ancre plus la colonne) → parties
+  sans fin en Brutal 22 → 1 sur 100 ; Couvre-feu à 80 % de production ; aura de la Singularité 6 → 5 ; Normal et Brutal recalés ;
+  banc B Humanité 42,8 → 47,9 %.
+- Mission V : porte de l'acte II enfin attaquable (acte II ~3 min au lieu de ~30), avatar du Dernier carré allégé ;
+  mission II : la canonnière frappe plus fort et plus souvent selon le niveau.
+
 ## À venir
 - Refonte audio finale (voix procédurales à l'accent correct, répliques réécrites) — à la demande de l'auteur.
 - Second avis de Fable (conseiller) quand il sera disponible.
-- Équilibrage : banc B à 42,8 % pour l'Humanité (cible ≥ 45, niveau 1 à 36) ; Brutal 22 % de parties non finies ;
-  M5 Dernier carré perdu par le bot à 2 graines sur 6 (siège de la porte), acte II Vétérans long ; M2 cortège identique par niveau.
-- Restes visuels/textes : noms d'unités humaines de l'ère III encore militaires, avion humain de l'ère III trop « jet » ;
-  briefing M4/M5 qui déborde de 14–31 px ; répliques voix gelées à mettre à jour (« Colosse d'acier » en M4, « vivres / métal » en M1).
+- Équilibrage : banc B niveau 3 à 57 % (au bord de 50 ± 8) ; carte plate IA/IA 58,7 % ; Normal ~90 % de victoires du joueur scripté ;
+  banc E (événements forcés) très défavorable à l'Humanité ; M5 Lutte acte I de 9 à 14 min.
+- Restes visuels/textes : briefing qui défile encore sur téléphone paysage (contenu ~2× la hauteur utile) ; répliques voix gelées à mettre à jour (« Colosse d'acier » en M4, « vivres / métal » en M1).
 - Validation à l'oreille des sons et de la voix (par l'auteur), playtests humains de la campagne.
