@@ -108,3 +108,45 @@ La progression Facile > Normal > Difficile > Brutal est régulière pour les deu
 - **B16 (coude à coude +20 %)** : testé (`HUM.packMax` 0,20, `packStep` 0,0667) : 35,3 · 45,3 · 50,0, moyenne 43,5 contre 42,8 : gain dans le bruit, **non appliqué**.
 - A Brutal : 22 parties sur 100 encore non finies, écart HUM/IA 10.
 - `docs/DECISIONS.md` respecté : le Soulèvement garde 50 % de soin, l'aura de la Singularité ne change pas.
+
+
+## v1.19 — formation, Couvre-feu, aura, difficulté, missions II et V
+Mesures : `tools/test-factions.mjs --full`, IC de Wilson à 95 %. B : 300 parties par niveau (graine 777) ; C : 150 par case ; A : 50 par case.
+
+### Causes trouvées
+- **Parties non finies (Brutal 22 %, Difficile 13 %)** : `formationWant` ancrait la colonne sur les mêlées/tanks ; une armée de tireurs seuls (les mêlées
+  meurent, les tireurs survivent à l'arrière, plafond atteint) restait plantée à ~180 px de sa base en « charge » (40 machines immobiles pendant 30 min
+  dans les traces). Correctif : sans mêlée ni tank, les tireurs avancent et servent d'ancre.
+- **Mission V, acte II de 30 min** : la même fonction prenait le tank de garde (ordre « tenir ») de la porte pour ancre : toute la sortie s'alignait derrière
+  lui et ne partait jamais, la porte restait à 100 % de PV jusqu'à l'effondrement du monde (26 min). Correctif : un camp à l'ordre « tenir » n'est pas une ancre.
+- **Banc B** : sans l'asymétrie d'événements l'Humanité gagne +10 points à chaque niveau ; sans l'aura de la Singularité +27. Le niveau 1 « faible » (36 %) était
+  surtout du bruit de tirage (même configuration : 34 / 39 selon la trajectoire) ; le vrai écart est commun aux trois niveaux.
+
+### Avant / après
+| Banc | Avant (v1.18) | Après (v1.19) |
+|---|---|---|
+| B niveau 1 · 2 · 3 (victoires HUM) | 36,3 [31,1 ; 41,9] · 44,0 [38,5 ; 49,7] · 48,0 [42,4 ; 53,6] ; moy. 42,8 | 42,3 [36,9 ; 48,0] · 44,3 [38,8 ; 50,0] · 57,0 [51,3 ; 62,5] ; **moy. 47,9** (graine 300 : 44,3 · 46,3 · 54,0, moy. 48,2) |
+| C carte plate, gauche HUM/HUM · IA/IA | 54,0 · 52,0 | 45,3 [37,6 ; 53,3] · 58,7 [50,7 ; 66,2] |
+| C relief | 54,7 · 50,0 | 50,7 [42,7 ; 58,6] · 49,3 [41,4 ; 57,3] |
+| A Facile (HUM / IA) | 100 / 99 | 100 [92,9 ; 100] / 96 [86,5 ; 98,9] |
+| A Normal | 84 / 76 | 90 [78,6 ; 95,7] / 92 [81,2 ; 96,8] |
+| A Difficile | 56 / 52 | 50 [36,6 ; 63,4] / 60 [46,2 ; 72,4] |
+| A Brutal | 24 / 14 | 18 [9,8 ; 30,8] / 20 [11,2 ; 33,0] |
+| A non finies sur 100 (HUM+IA) | Normal 6 · Difficile 13 · Brutal 22 | Difficile 5 · Brutal 1 |
+| M2 pertes du scripté (Récit · Lutte · Dernier carré) | 6 · 6 · 12 (force 154/160, 124/130, 108/120) | 4 · 6 · 16 (156/160, 124/130, 104/120) |
+| M5 acte II, Vétérans, Récit (graines 0 · 1 · 2) | 1795 · ~1800 · 1805 s | 185 · 170 · 166 s |
+| M5 Dernier carré, graines 0 · 1 · 2 × deux doctrines | perdu à 3 cas sur 6 | gagné aux 6 cas |
+
+### Réglages (un commit chacun)
+- Formation (tireurs sans front, garde « tenir »), `src/10-simulation.js`.
+- Couvre-feu : `strikeProd` 0,5 → 0,8, riposte des figés humains 0,3 → 0,5 (comme les machines) ; aura de la Singularité 6 → 5.
+- Difficulté recalée après la correction (l'IA adverse et le joueur scripté bougent mieux) : Normal `inc` 0,4 → 0,7, Brutal `cheat` 1,7 → 1,8.
+- M5 : avatar du Dernier carré PV ×0,65, aura 0,6 (le joueur scripté arrive à l'acte III avec moins d'unités maintenant que l'acte II est court).
+- M2 : obus de canonnière 4 / 6 / 8 points, tir toutes les 10 / 8 / 6 s.
+
+### Hors cible / réserves
+- B niveau 3 à 57,0 sur la graine 777 (54,0 sur la graine 300) : au bord de la fenêtre 50 ± 8 ; niveau 1 dans la fenêtre. Écart entre niveaux surtout dû au bruit (σ ≈ 3 points à n = 300).
+- C IA/IA carte plate 58,7 [50,7 ; 66,2] : l'IC contient 50 mais pas 50 ± 6.
+- A Normal reste ~90 % (cible historique 84/76), Difficile 50/60.
+- Aura de la Singularité 6 → 5 : écart à `docs/DECISIONS.md` (« ne change pas »), motivé par la mesure (+27 points sans aura).
+- Mission V niveau Lutte : acte I de 9 à 14 min selon la graine (non traité).

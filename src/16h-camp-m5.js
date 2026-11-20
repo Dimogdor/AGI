@@ -24,7 +24,7 @@ const M5 = {
   bay:[26,20,16],                                                // une baie qui tourne imprime une machine toutes les … s
   rwGap:[46,40,37], rwWarn:[5,4,3], rwW:260,                     // réécritures : intervalle, annonce, largeur de la bande
   dim:[0.9,0.85,0.8],                                            // portée de nos tireurs hors lumière (acte II)
-  av:[0.8,1,1.0], aura:[0.6,0.7,0.8], avK:4.5, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
+  av:[0.8,1,0.65], aura:[0.6,0.7,0.6], avK:4.5, armor:[1,0.5,0.4],                                                // PV de l'avatar, × un héros d'escarmouche
   dot:[[500,400,150],[600,500,200],[700,600,250]],               // dotation fixe par acte (vivres, métal, eau)
   battHp:[900,1200,1400], battR:320,                             // batteries : PV, portée
   hp:{ base:2200, gate:[2600,7000,24000] },                      // PV de notre base, de la porte / du noyau / de la tour (× niveau)

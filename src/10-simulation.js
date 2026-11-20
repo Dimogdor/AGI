@@ -565,11 +565,15 @@ function stackMax(side, u){
 function formationWant(side, u){
   let anchor = side.x + side.side*220;                       // défaut si aucune unité de front
   let tankX = null;                                          // tête du mur de tanks (bouclier)
+  let hasFront = false, lead = null;                         // v1.19 : armée sans mêlée ni tank — les tireurs en font office (sinon elle restait plantée à 180 px de sa base : parties « non finies » en Difficile/Brutal)
   for (const a of side.units){
-    if (a.fly || a.hp<=0) continue;
+    if (a.fly || a.hp<=0 || a.ord==='hold') continue;       // v1.19 : une garde postée (ordre « tenir », ex. la porte de la mission V) n'est pas l'ancre de la colonne — sinon toute la sortie venait s'aligner derrière elle et ne partait jamais
     if (a.role==='tank' && (tankX===null || (a.x-tankX)*side.side>0)) tankX = a.x;
     if ((a.role==='melee'||a.role==='tank') && (a.x-anchor)*side.side>0) anchor = a.x;
+    if (a.role==='melee' || a.role==='tank') hasFront = true;
+    else if (a.role==='ranged' && (lead===null || (a.x-lead)*side.side>0)) lead = a.x;
   }
+  if (!hasFront && lead!==null){ if (u.role==='ranged') return null; if ((lead-anchor)*side.side>0) anchor = lead; }   // les tireurs avancent librement et servent d'ancre
   const hasTank = tankX!==null;
   const hum = side.facKey==='HUM';
   let off;

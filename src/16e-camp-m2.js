@@ -550,6 +550,7 @@ function m2PagerPlate(msg){ return (g, w, h, t) => { plateBase(g, w, h);
 
 /* ================= MÉCANIQUES : cortège, grilles, barges, canonnières, terminal ================= */
 const m2Front = g => { let f = g.p.x; for (const u of g.p.units) if (!u.fly && u.x > f) f = u.x; return f; };
+const m2Shell = c => [4,6,8][c.D.i];                                       // v1.19 : points perdus par obus de canonnière (le niveau pesait seulement sur la durée de vie des barges)
 const m2Dec = c => [-1,0,1][c.D.i];                                       // machines par barge : −1 / 0 / +1
 const m2Lead = c => [8,6,4][c.D.i] + (c.warnLead||0);                     // annonce des barges (s)
 const m2NextGate = c => c.seg<3? M2.gates[c.seg] : null;
@@ -570,7 +571,7 @@ function m2Targets(c, foe, out){
   const g = game;
   if (foe === g.p){                                                         // les machines visent la tête, le milieu, la queue et les barricades
     for (const b of c.bars) out.push({ isB:true, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } });
-    for (const dx of [0, 85, 165]) out.push({ isB:true, m2:true, x:c.mx-dx, get hp(){ return c.hp; }, m2hit(a){ m2HitMarch(c, a && (a.role==='ranged'||a.role==='air')? 2 : 1); }, hit(){ m2HitMarch(c, 6, true); } });
+    for (const dx of [0, 85, 165]) out.push({ isB:true, m2:true, x:c.mx-dx, get hp(){ return c.hp; }, m2hit(a){ m2HitMarch(c, a && (a.role==='ranged'||a.role==='air')? 2 : 1); }, hit(){ m2HitMarch(c, m2Shell(c), true); } });
   } else if (c.seg >= 2){
     for (const b of c.boats) if (!b.dead) out.push({ isB:true, x:b.x, get hp(){ return b.hp; }, hit(d){ b.hp -= d; } });
   }
@@ -635,9 +636,9 @@ function m2Boats(g, c, dt){
     if (c.seg < 2 || frozen) continue;
     if (b.aim){ b.aim.t -= dt; if (b.aim.t <= 0){ const x = b.aim.x; b.aim = null;
         explode(x, gY(x)-6, 1.3); sfxAt('boom', x); g.shake = Math.max(g.shake, 4);
-        if (x > c.mx-M2.span-60 && x < c.mx+60) m2HitMarch(c, 6, true);
+        if (x > c.mx-M2.span-60 && x < c.mx+60) m2HitMarch(c, m2Shell(c), true);
         for (const u of g.p.units) if (!u.fly && Math.abs(u.x-x) < 60){ u.hp -= 34*c.D.eDmg; u.flash = 0.2; } } }
-    else if (Math.abs(c.mx - b.x) < 520 && (b.fireT -= dt) <= 0){ b.fireT = 8; b.aim = { x:c.mx - 10 - Math.random()*150, t:2 }; }
+    else if (Math.abs(c.mx - b.x) < 520 && (b.fireT -= dt) <= 0){ b.fireT = [10,8,6][c.D.i]; b.aim = { x:c.mx - 10 - Math.random()*150, t:2 }; }
   }
 }
 // ---- grilles ----
