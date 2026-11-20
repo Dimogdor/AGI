@@ -406,7 +406,7 @@ function tryRepairBase(side){
   if (game.t < (side.repBaseT||0)) return false;   // recharge de 20 s (v1.18, audit n°2) : sans elle, la réparation illimitée après la transcendance bloquait les parties (50 à 80 % non finies en Difficile/Brutal)
   const c = {f:120, m:120};
   if (!canPay(side,c)) return false;
-  pay(side,c); side.hp = Math.min(side.maxhp, side.hp+500); side.repBaseT = game.t + 20;
+  pay(side,c); side.hp = Math.min(side.maxhp, side.hp+(game.collapse? 250 : 500)); side.repBaseT = game.t + (game.collapse? 30 : 20);   // après l'effondrement du monde : 250 PV toutes les 30 s (sinon la réparation annulait l'effondrement : parties à 45 min)
   if (side===game.p){ sfx('build'); announce(tr('a_baserepaired'), "#9dc88a"); }
   return true;
 }
