@@ -47,6 +47,12 @@ function __runGame(cfg){
   const lv = __LV[cfg.lv||2], st1={}, st2={}, eraT = {HUM:[0,0,0,0,0], IA:[0,0,0,0,0]}, rate = {};
   const max = (cfg.maxMin||45)*1200; let n=0, bad=null;
   const fk = s => s.facKey;
+  // OUVERTURE TIRÉE (audit n°2, A1) : sans aléa, bot contre bot jouait la MÊME ouverture à chaque graine (parties identiques à l'unité près
+  // pendant ~4 min) : chaque case ne tirait qu'une seule trajectoire. On tire donc, par camp, le mélange d'unités (×0,6–1,4), la taille de
+  // la vague (±2) et la phase de décision, comme le banc E. Ces tirages se font APRÈS newGame (graine déjà posée).
+  const jm = () => [3,2,4,1,2,1].map(v => v*(0.6+0.8*Math.random()));
+  const o1 = {pushN:lv.pushN + Math.floor(Math.random()*5) - 2, mix:jm()}, o2 = {pushN:lv.pushN + Math.floor(Math.random()*5) - 2, mix:jm()};
+  const ph1 = Math.floor(Math.random()*lv.every), ph2 = Math.floor(Math.random()*lv.every);
   while (!game.over && n<max){
     if (bot) game.aiThink = 1e9;
     update(0.05); n++;
@@ -54,7 +60,7 @@ function __runGame(cfg){
       for (const s of [game.p, game.e]) if (!eraT[fk(s)][s.era] && s.era) eraT[fk(s)][s.era] = game.t;
       if (n===12000 || n===21600){ for (const s of [game.p, game.e]){ const r = calcRates(s); (rate[fk(s)] = rate[fk(s)]||{})[n===12000?'r10':'r18'] = r.f+r.m+r.w; } }
     }
-    if (bot){ if (n%lv.every===0){ __competentSide(game.p, game.e, st1, {pushN:lv.pushN}); __competentSide(game.e, game.p, st2, {pushN:lv.pushN}); } }
+    if (bot){ if (n%lv.every===ph1) __competentSide(game.p, game.e, st1, o1); if (n%lv.every===ph2) __competentSide(game.e, game.p, st2, o2); }
     else if (n%20===0) __competent(st1, {});
     if (n%400===0) for (const s of [game.p, game.e]){ for (const k of ['f','m','w','xp','hp']) if (!Number.isFinite(s[k])) bad = bad || ('NaN '+k); for (const u of s.units) if (!Number.isFinite(u.x) || !Number.isFinite(u.hp)) bad = bad || ('NaN unité '+u.role); }
     if (bad) break;
@@ -119,6 +125,9 @@ async function runAll(jobs, fn, label){
   return res;
 }
 const pct = (w, n) => n? 100*w/n : NaN;
+// IC de Wilson à 95 % d'une proportion (k sur n), en % : « 37,5 [33,7 ; 41,4] »
+const wil = (pc, n) => { if (!n || !Number.isFinite(pc)) return [NaN, NaN]; const z = 1.96, p = pc/100, d = 1+z*z/n, c = p+z*z/(2*n), h = z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n)); return [100*(c-h)/d, 100*(c+h)/d]; };
+const ci = (pc, n) => { const [a,b] = wil(pc, n); return `[${f1(a)} ; ${f1(b)}]`; };
 const f1 = x => Number.isFinite(x)? x.toFixed(1) : '—';
 const median = a => { const s = a.filter(Number.isFinite).sort((x,y)=>x-y); return s.length? s[s.length>>1] : NaN; };
 const mn = a => a.length? a.reduce((x,y)=>x+y,0)/a.length : NaN;
@@ -132,7 +141,7 @@ if (ONLY.has('A')){
   const jobs = []; for (const fac of ['HUM','IA']) for (const diff of diffs) for (let s=0;s<N;s++) jobs.push({mode:'vs', left:fac, right:undefined, diff, seed:SEED0+1000+s*13+diff});
   const res = await runAll(jobs, '__runGame', 'A');
   console.log('\nA — joueur scripté contre l\'IA (victoires du joueur ; une partie non terminée à 45 min est jugée sur la base restante)');
-  console.log('  difficulté      HUM          IA          écart   durée médiane HUM/IA');
+  console.log('  difficulté      HUM [IC 95 %]            IA [IC 95 %]             écart   durée médiane HUM/IA');
   REPORT.A = {};
   for (const diff of diffs){
     const row = {};
@@ -143,7 +152,7 @@ if (ONLY.has('A')){
       fails += r.filter(x=>x.bad).length;
     }
     REPORT.A[diff] = row;
-    console.log(`  ${['Facile','Normal','Difficile','Brutal'][diff].padEnd(11)}  ${f1(row.HUM.win).padStart(6)} %    ${f1(row.IA.win).padStart(6)} %    ${f1(Math.abs(row.HUM.win-row.IA.win)).padStart(5)}    ${row.HUM.dur}/${row.IA.dur} s${row.HUM.unfinished+row.IA.unfinished? '  (non terminées '+(row.HUM.unfinished+row.IA.unfinished)+')':''}`);
+    console.log(`  ${['Facile','Normal','Difficile','Brutal'][diff].padEnd(11)}  ${f1(row.HUM.win).padStart(6)} % ${ci(row.HUM.win,row.HUM.n).padEnd(14)} ${f1(row.IA.win).padStart(6)} % ${ci(row.IA.win,row.IA.n).padEnd(14)} ${f1(Math.abs(row.HUM.win-row.IA.win)).padStart(5)}    ${row.HUM.dur}/${row.IA.dur} s${row.HUM.unfinished+row.IA.unfinished? '  (non terminées '+(row.HUM.unfinished+row.IA.unfinished)+')':''}`);
     if (!FULL) soft(Math.abs(row.HUM.win-row.IA.win) <= 40, `A diff ${diff} : écart HUM/IA ${f1(Math.abs(row.HUM.win-row.IA.win))} pts (> 40, bruit n=${N} compris)`);
   }
 }
@@ -173,9 +182,9 @@ if (ONLY.has('B')){
   const lvs = FULL? arg('lv','1,2,3').split(',').map(Number) : [2], n = N*2;       // n par placement
   const out = await benchB(lvs, n, ASYM_ARG, 'B'); B2 = out[2];
   console.log('\nB — bot contre bot (victoires HUM, %, HUM+IA placements confondus ; n = ' + (n*2) + ' par niveau)');
-  console.log('  niveau   HUM %   (HUM à gauche / à droite)   durée méd.   ère III HUM/IA   ère IV HUM/IA   revenu 10 min HUM/IA   18 min HUM/IA');
+  console.log('  niveau   HUM % [IC 95 %]   (HUM à gauche / à droite)   durée méd.   ère III HUM/IA   ère IV HUM/IA   revenu 10 min HUM/IA   18 min HUM/IA');
   for (const lv of lvs){ const o = out[lv];
-    console.log(`  ${String(lv).padEnd(6)}  ${f1(o.hum).padStart(5)}   (${f1(o.humLeft)} / ${f1(o.humRight)})            ${String(o.dur).padStart(5)} s    ${Math.round(o.era3.HUM)}/${Math.round(o.era3.IA)} s       ${Math.round(o.era4.HUM)}/${Math.round(o.era4.IA)} s        ${f1(o.r10.HUM)}/${f1(o.r10.IA)}              ${f1(o.r18.HUM)}/${f1(o.r18.IA)}${o.unfinished? '   (non terminées '+o.unfinished+')':''}`);
+    console.log(`  ${String(lv).padEnd(6)}  ${f1(o.hum).padStart(5)} ${ci(o.hum,o.n)}   (${f1(o.humLeft)} / ${f1(o.humRight)})            ${String(o.dur).padStart(5)} s    ${Math.round(o.era3.HUM)}/${Math.round(o.era3.IA)} s       ${Math.round(o.era4.HUM)}/${Math.round(o.era4.IA)} s        ${f1(o.r10.HUM)}/${f1(o.r10.IA)}              ${f1(o.r18.HUM)}/${f1(o.r18.IA)}${o.unfinished? '   (non terminées '+o.unfinished+')':''}`);
     if (!FULL) soft(Math.abs(o.hum-50) <= 18, `B niveau ${lv} : HUM ${f1(o.hum)} % (hors 50 ± 18, bruit n=${o.n} compris)`); }
   REPORT.B = out;
 }
@@ -191,7 +200,7 @@ if (ONLY.has('C')){
     const r = res.filter((x,i)=>x && jobs[i].left===fac && !!jobs[i].flat===flat);
     const w = r.reduce((a,x)=>a+(x.win?1:0), 0), decisive = r.filter(x=>x.over);
     REPORT.C[fac+(flat?'-flat':'')] = { leftWin:pct(w,r.length), n:r.length, dur:median(r.map(x=>x.t)), leftWinDecisive:pct(decisive.filter(x=>x.win).length, decisive.length) }; fails += r.filter(x=>x.bad).length;
-    console.log(`  ${fac}/${fac} ${flat? 'carte plate' : 'relief     '}  gauche ${f1(pct(w,r.length))} %   (n=${r.length}, durée médiane ${median(r.map(x=>x.t))} s, parties décidées ${decisive.length} : gauche ${f1(pct(decisive.filter(x=>x.win).length, decisive.length))} %)`);
+    console.log(`  ${fac}/${fac} ${flat? 'carte plate' : 'relief     '}  gauche ${f1(pct(w,r.length))} % ${ci(pct(w,r.length), r.length)}   (n=${r.length}, durée médiane ${median(r.map(x=>x.t))} s, parties décidées ${decisive.length} : gauche ${f1(pct(decisive.filter(x=>x.win).length, decisive.length))} %)`);
     if (!FULL && flat) soft(Math.abs(pct(w,r.length)-50) <= 22, `C ${fac}/${fac} carte plate : gauche ${f1(pct(w,r.length))} %`);
   }
 }
@@ -201,12 +210,12 @@ const MECHS = (process.env.ASYM_KEYS || 'env,terrain,bld,econ').split(',');
 if (ONLY.has('D') && FULL){
   const n = N*3;
   const base = (await benchB([2], n, null, 'D-on'))[2];
-  console.log(`\nD — ablation (HUM %, bot niveau 2, n=${n*2} ; référence « tout activé » ${f1(base.hum)} %)`);
+  console.log(`\nD — ablation (HUM %, bot niveau 2, n=${n*2} ; référence « tout activé » ${f1(base.hum)} % ${ci(base.hum, base.n)})`);
   REPORT.D = { all:base.hum };
   for (const k of MECHS){
     const o = (await benchB([2], n, {[k]:false}, 'D-'+k))[2];
     REPORT.D[k] = o.hum;
-    console.log(`  sans ${k.padEnd(8)}  HUM ${f1(o.hum).padStart(5)} %   déplacement ${(o.hum-base.hum>=0?'+':'')+f1(o.hum-base.hum)} pts   (cible : |Δ| ≤ 10)`);
+    console.log(`  sans ${k.padEnd(8)}  HUM ${f1(o.hum).padStart(5)} % ${ci(o.hum, o.n)}   déplacement ${(o.hum-base.hum>=0?'+':'')+f1(o.hum-base.hum)} pts   (cible : |Δ| ≤ 10)`);
   }
 }
 
