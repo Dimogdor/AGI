@@ -400,20 +400,20 @@
     padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
     background:radial-gradient(ellipse at 50% 35%, rgba(30,20,16,.84) 0%, rgba(8,6,6,.97) 75%); color:var(--ink); font-family:var(--f-type); touch-action:manipulation; }
   #campBrief * { touch-action:manipulation; }
-  #campBrief .cbSheet { position:relative; width:min(1120px,100%); height:min(780px,100%); display:flex; flex-direction:column; min-height:0;
+  #campBrief .cbSheet { position:relative; width:min(1240px,100%); height:min(840px,100%); display:flex; flex-direction:column; min-height:0;
     background:var(--grain), linear-gradient(180deg, var(--paper) 0%, var(--paper2) 100%); box-shadow:0 18px 44px rgba(0,0,0,.6), 0 2px 4px rgba(0,0,0,.4); transform:rotate(-.25deg); }
   #campBrief .cbHead { flex:none; display:flex; align-items:center; gap:14px; padding:clamp(6px,1.6vh,14px) clamp(12px,2vw,24px) clamp(4px,1vh,8px); padding-right:58px;   /* bouton plein écran (toujours à droite) */ border-bottom:3px double var(--ink); }
-  #campBrief .cbNo { flex:none; min-width:1.6em; text-align:center; font-family:var(--f-sten); font-weight:800; font-size:clamp(24px,6vh,48px); line-height:1; color:var(--paper); background:var(--red); padding:4px 10px 2px; transform:rotate(-3deg); }
+  #campBrief .cbNo { flex:none; min-width:1.6em; text-align:center; font-family:var(--f-sten); font-weight:800; font-size:clamp(24px,5.4vh,48px); line-height:1; color:var(--paper); background:var(--red); padding:4px 10px 2px; transform:rotate(-3deg); }
   #campBrief .cbHT { min-width:0; }
-  #campBrief .cbKick { font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.16em; color:var(--red); text-transform:uppercase; }
-  #campBrief .cbTitle { font-family:var(--f-sten); font-weight:800; font-size:clamp(18px,4.4vh,34px); line-height:1.02; letter-spacing:.02em; text-transform:uppercase; }
+  #campBrief .cbKick { font-size:clamp(11px,1.6vh,12px); letter-spacing:.16em; color:var(--red); text-transform:uppercase; }
+  #campBrief .cbTitle { font-family:var(--f-sten); font-weight:800; font-size:clamp(18px,4.1vh,34px); line-height:1.02; letter-spacing:.02em; text-transform:uppercase; }
   #campBrief .cbPlace { font-size:clamp(10px,1.7vh,13px); color:var(--ink2); }
   #campBrief .cbBody { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
-    gap:clamp(5px,1.1vh,12px) clamp(14px,2.4vw,30px); padding:clamp(6px,1.2vh,12px) clamp(12px,2vw,24px); align-content:start; scrollbar-width:thin; scrollbar-color:var(--ink2) transparent; }
-  #campBrief .cbCol { display:flex; flex-direction:column; gap:clamp(5px,1.05vh,10px); min-width:0; }
+    gap:clamp(4px,.9vh,10px) clamp(14px,2.2vw,28px); padding:clamp(6px,1.2vh,12px) clamp(12px,2vw,24px); align-content:start; scrollbar-width:thin; scrollbar-color:var(--ink2) transparent; }
+  #campBrief .cbCol { display:flex; flex-direction:column; gap:clamp(4px,.85vh,8px); min-width:0; }
   #campBrief .cbSec h3 { font-family:var(--f-sten); font-weight:800; font-size:clamp(11.5px,2vh,15px); letter-spacing:.08em; color:var(--red); margin:0 0 3px; border-bottom:1px dashed var(--line); padding-bottom:2px; }
   #campBrief .cbSec h4 { font-family:var(--f-sten); font-weight:800; font-size:clamp(10.5px,1.8vh,13px); letter-spacing:.06em; color:var(--ink2); margin:6px 0 1px; }
-  #campBrief .cbSec p, #campBrief .cbSec li { font-size:clamp(11.5px,1.74vh,14px); line-height:1.32; margin:0 0 .3em; user-select:text; -webkit-user-select:text; }
+  #campBrief .cbSec p, #campBrief .cbSec li { font-size:clamp(11.5px,1.68vh,14px); line-height:1.27; margin:0 0 .3em; user-select:text; -webkit-user-select:text; }
   #campBrief .cbPrev { margin:0 0 .6em; padding:4px 9px; border-left:3px solid var(--ink2); font-style:italic; color:var(--ink2); font-size:clamp(11px,1.85vh,13.5px); line-height:1.4; }
   #campBrief .cbPrev b { font-style:normal; color:var(--ink); }
   #campBrief .cbSec { order:var(--o,0); }
@@ -442,7 +442,7 @@
   #campBrief .cbDocHead { margin-bottom:-2px; } #campBrief .cbDocHead h3 { display:inline; margin-inline-end:10px; border-bottom:0; } #campBrief .cbDocHead .cbHint { display:inline; font-size:clamp(11px,1.75vh,13px); }
   #campBrief .cbHint { color:var(--ink2); }
   #campBrief .cbCards { display:grid; align-items:start; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,18px); }
-  #campBrief .cbDoc { position:relative; cursor:pointer; text-align:start; border:2px solid var(--ink); padding:6px 11px 4px; background:rgba(255,255,255,.14); transition:transform .1s; }
+  #campBrief .cbDoc { position:relative; cursor:pointer; text-align:start; border:2px solid var(--ink); padding:5px 11px 3px; background:rgba(255,255,255,.14); transition:transform .1s; }
   #campBrief .cbDoc:hover { transform:translateY(-1px); }
   #campBrief .cbDoc.sel { border-color:var(--red); outline:2px solid var(--red); outline-offset:3px; background:rgba(255,255,255,.3); }
   #campBrief .cbDoc:focus-visible { outline:3px dashed var(--red); outline-offset:3px; }
@@ -450,12 +450,12 @@
   #campBrief .cbDoc.sel .cbMark { display:block; }
   #campBrief .cbDocName { display:block; font-family:var(--f-sten); font-weight:800; font-size:clamp(14px,2.6vh,20px); padding-inline-end:5.5em; }
   #campBrief .cbDocShort { display:block; font-size:clamp(11px,1.85vh,13.5px); color:var(--ink2); margin:1px 0 4px; }
-  #campBrief .cbDoc h5 { font-family:var(--f-sten); font-weight:800; font-size:clamp(9.5px,1.6vh,12px); letter-spacing:.08em; color:var(--red); margin:2px 0 0; }
+  #campBrief .cbDoc h5 { font-family:var(--f-sten); font-weight:800; font-size:clamp(11px,1.6vh,12px); letter-spacing:.08em; color:var(--red); margin:2px 0 0; }
   #campBrief .cbFx li { font-weight:bold; font-size:clamp(11px,1.85vh,13.5px) !important; margin:0 !important; }
   #campBrief .cbDocLong { margin:5px 0 3px !important; }
   #campBrief .cbWhy { margin:4px 0 0 !important; font-style:italic; color:var(--red); }
-  #campBrief .cbMinus li { color:var(--ink2); font-weight:bold; margin:0 !important; }
-  #campBrief .cbMinus p { color:var(--ink2); margin:0 !important; }
+  #campBrief .cbMinus li { color:var(--ink2); font-weight:bold; margin:0 !important; font-size:clamp(11px,1.85vh,13.5px); }
+  #campBrief .cbMinus p { color:var(--ink2); margin:0 !important; font-size:clamp(11px,1.85vh,13.5px); line-height:1.3; }
   #campBrief .cbFoot { flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:clamp(5px,1.2vh,10px) clamp(12px,2vw,24px); border-top:2px solid var(--ink); }
   #campBrief .cbBack { cursor:pointer; font-family:inherit; font-size:clamp(12px,2vh,15px); color:var(--ink2); background:none; border:0; text-decoration:underline; text-underline-offset:3px; }
   #campBrief .cbBack:hover { color:var(--red); }
@@ -464,6 +464,14 @@
   @media (max-width:700px){ #campBrief .cbBody, #campBrief .cbCards { grid-template-columns:minmax(0,1fr); }
     #campBrief .cbCol { display:contents; } #campBrief .cbSec { order:var(--op,0); } #campBrief .cbCards { order:var(--op,0); } }
   @media (max-height:460px){ #campBrief .cbSheet { transform:none; } #campBrief .cbPlace { display:none; } }
+  /* v1.19 : fiches de doctrine compactes sur grand écran (nom + devise sur une ligne, intitulés EFFET / CONTREPARTIE en marge) : le briefing tient sans défilement en 1280×720 */
+  @media (min-width:1000px) and (min-height:600px){
+    #campBrief .cbDocName { display:inline; padding-inline-end:0; } #campBrief .cbDocShort { display:inline; margin:0 0 0 .7em; }
+    #campBrief .cbDoc > div.cbFx, #campBrief .cbDoc > .cbMinus { display:grid; grid-template-columns:8.6em minmax(0,1fr); column-gap:8px; align-items:baseline; }
+    #campBrief .cbDoc > div.cbFx h5, #campBrief .cbDoc > .cbMinus h5 { margin:0; }
+    #campBrief .cbDoc > div.cbFx ul { margin:0; padding-inline-start:1.1em; } #campBrief .cbDoc > .cbMinus { margin-top:2px; }
+    #campBrief .cbGo { font-size:clamp(16px,2.9vh,24px); padding:clamp(4px,1vh,8px) clamp(18px,3vw,34px) clamp(2px,.8vh,6px); }
+  }
   /* ---------- sélecteur de langue (1er lancement) et bouton plein écran : même papier ---------- */
   #langPick .lpSheet { background:var(--grain), linear-gradient(180deg,#e8dfc9,#ddd2b8); color:#1f1b17; padding:18px 22px 20px;
     box-shadow:0 18px 40px rgba(0,0,0,.6); transform:rotate(-1deg); max-width:640px; display:flex; flex-direction:column; gap:14px; align-items:center; }
