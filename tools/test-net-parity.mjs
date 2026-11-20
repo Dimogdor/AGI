@@ -108,6 +108,9 @@ await A.page.evaluate(() => { const e = game.e; e.f = e.m = e.w = 99999; e.heroC
 await tick(2);
 const hmsg = await B.page.evaluate(() => ({ txt: game.msg && game.msg.txt, ia: tr('a_hero_ia') }));
 check(hmsg.txt && hmsg.txt.includes(hmsg.ia) && hmsg.txt.startsWith('◆ '), `annonce du héros de G·P·T dans la langue de l'invité (« ${hmsg.txt} »)`);
+await A.page.evaluate(() => { game.wClock = 40; game.weather = 'strike'; }); await tick(1);
+const wcG = await B.page.evaluate(() => game.wClock);
+check(Math.abs(wcG - 40) <= 2, `horloge du couvre-feu lue par l'invité (${wcG})`);
 check(await A.page.evaluate(() => NET_PROTO) >= 6, 'NET_PROTO incrémenté');
 check(!A.errs.length && !B.errs.length, 'aucune erreur JS'+((A.errs[0]||B.errs[0])? ' — '+(A.errs[0]||B.errs[0]) : ''));
 await browser.close();

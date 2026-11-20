@@ -43,6 +43,7 @@ function serialize(){
   return {
     t:game.t, sv:game.speed||1, dev:Math.round(game.dev*1000)/1000, we:game.weather||0, bo:game.boon||0, ov:game.over?1:0,
     ca:game.cata?CATA_KEYS.indexOf(game.cata):-1, cat:Math.round(game.cataT*10)/10, cax:Math.round(game.cataX||0),
+    wc:Math.round(game.wClock||0),
     wi:game.winter?1:0, wt:Math.round(game.winterT||0),
     pw:game.win?1:0, kills:game.kills, ekills:game.eKills,
     p:serSide(game.p), e:serSide(game.e),
@@ -168,6 +169,7 @@ function applySnapshot(snap){
   const ck = isIdx(snap.ca, CATA_KEYS.length)? CATA_KEYS[snap.ca] : null;
   g.cata = ck; g.cataT = SN(snap.cat, 0, 600); g.cataDur = ck? CATAS[ck].dur : 0;
   g.cataX = WORLD - SN(snap.cax, 0, WORLD);
+  g.wClock = SN(snap.wc, 0, 150);                              // compte à rebours couvre-feu / mise à jour
   g.winter = !!snap.wi; g.winterT = SN(snap.wt, 0, 3600);
   // l'armée de l'invité = canonical 'e' → devient le local p (à gauche) ; mirroir des x
   const fillSide = (loc, ser)=>{
