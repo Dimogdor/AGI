@@ -46,6 +46,15 @@ const h = await page.evaluate(async () => { newGame('HUM', 1, false); game.aiThi
   const n1 = n; for (let i=0;i<10;i++) update(0.1); const n2 = n; window.sfxAt = o; return { n0, n1, n2 }; });
 check(h.n0===0 && h.n1===0, 'pas de détonation tant que la simulation ne tourne pas (pause, menu)');
 check(h.n2===1, 'une seule détonation, ~0,6 s de jeu après le flash ('+h.n2+')');
+console.log('\nTRAÎNÉE D\'OBUS (invité) — pas de fumée fantôme');
+const tf = await page.evaluate(async () => { const o = game.net; game.net = 'guest'; _guestTrails.clear();
+  const pr = () => ({ sx:100, tx:500, fac:'HUM' });
+  const a = shellTrailFor(pr()); a.push([1,1],[2,2],[3,3]);
+  const b = shellTrailFor(pr()).length;                                       // même obus, instantané suivant : la traînée continue
+  await new Promise(r => setTimeout(r, 320));
+  const c = shellTrailFor(pr()).length;                                       // obus identique 320 ms plus tard : repart de zéro
+  game.net = o; _guestTrails.clear(); return { b, c }; });
+check(tf.b===3 && tf.c===0, 'traînée conservée entre deux instantanés, vidée après 250 ms ('+tf.b+' / '+tf.c+')');
 check(!errs.length, 'aucune erreur JS'+(errs[0]? ' — '+errs[0] : ''));
 await browser.close();
 if (fails){ console.log('\n'+fails+' échec(s)'); process.exit(1); }

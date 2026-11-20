@@ -392,6 +392,7 @@ function shellTrailFor(pr){
   let e = _guestTrails.get(key);
   if (!e){ e = {tr:[], at:now}; _guestTrails.set(key, e);
     if (_guestTrails.size>60) for (const [k,v] of _guestTrails) if (now-v.at>600) _guestTrails.delete(k); }
+  if (now-e.at>250) e.tr.length = 0;                      // obus précédent disparu depuis un moment : pas de fumée fantôme près de l'impact
   e.at = now; return (pr._tr = e.tr);
 }
 function drawShellTrail(pr, px, py){
