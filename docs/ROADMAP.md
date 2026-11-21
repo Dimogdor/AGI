@@ -44,6 +44,11 @@
 - Mission V : porte de l'acte II enfin attaquable (acte II ~3 min au lieu de ~30), avatar du Dernier carré allégé ;
   mission II : la canonnière frappe plus fort et plus souvent selon le niveau.
 
+## Fait — v1.19.1
+- Bâtiment abîmé : son menu plantait (variable non définie) — on ne pouvait plus ni réparer ni améliorer. Corrigé.
+- Audit des actions du joueur dans tous les états (bâtiments, base, barre d'actions, événements, invité en ligne, campagne,
+  PC et téléphone) : aucun autre bug. Nouveaux tests durables : `tools/test-actions-states.mjs`, `tools/test-lint.mjs` (variables non déclarées).
+
 ## À venir
 - Refonte audio finale (voix procédurales à l'accent correct, répliques réécrites) — à la demande de l'auteur. Pistes proposées :
   ElevenLabs (voix natives 9 langues, émotions), OpenAI gpt-4o-mini-tts, Google/Azure, Chatterbox (libre) ; test d'écoute à l'aveugle d'abord.
