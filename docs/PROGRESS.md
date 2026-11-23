@@ -1,6 +1,6 @@
 # Avancement — v1.19 (mis à jour par l'orchestrateur à chaque étape)
 
-Branche de travail : `claude/age-of-war-online-balance-xn6ump` · v1.19.0 livrée (d50d6b3, PR #60). Prochaine étape : choix de l'auteur pour des voix plus naturelles (test d'écoute proposé) ; restes dans ROADMAP.
+Branche de travail : `claude/age-of-war-online-balance-xn6ump` · v1.19.1 livrée (ad5ac1d, PR #61). Prochaine étape : choix de l'auteur pour des voix plus naturelles (test d'écoute proposé) ; restes dans ROADMAP.
 Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'auteur : `docs/DECISIONS.md`.
 **Audio et voix gelés** jusqu'à la version finale.
 
@@ -20,4 +20,4 @@ Audits : `docs/audit/` (BUGS, VISUEL, LORE-CHRONO, FACTIONS). Arbitrages de l'au
 | v1.19 | Restes de l'audit n°2 — interface : noms et aviation de l'ère III, jean de l'ère I, briefing M4/M5 | dev-ui | **intégré** | briefing téléphone : défile encore |
 | v1.19 | Restes de l'audit n°2 — équilibrage : banc B, impasses en Brutal, M5 (acte II, Dernier carré), M2 (cortège) | dev-gameplay | **intégré**, version 1.19.0 | — |
 | v1.19 | Livraison v1.19 | orchestrateur | **livrée** (d50d6b3, PR #60) : Pages 1.19.0, AAB Android signé | voix : piste à choisir par l'auteur |
-| v1.19.1 | Bug : menu d'un bâtiment abîmé (ni réparer ni améliorer) + audit des actions dans tous les états + analyse statique | orchestrateur + qa | **intégré** | livraison |
+| v1.19.1 | Bug : menu d'un bâtiment abîmé (ni réparer ni améliorer) + audit des actions dans tous les états + analyse statique | orchestrateur + qa | **livrée** (ad5ac1d, PR #61) : Pages 1.19.1, AAB Android signé | — |
